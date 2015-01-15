@@ -46,8 +46,6 @@ Actor.click.optionList = function(act,eid,slot){
 	OptionList.executeOption(Actor.getMain(act),option);
 }
 
-
-
 Actor.click.teleport = function(act,eid){
 	var e = Actor.get(eid);
 	
@@ -63,6 +61,11 @@ Actor.click.dialogue = function(act,eid){
 	if(TESTDISTANCE(act,e)) return;
 	if(!testQuestActive(act,e)) return;
 	dia(act.id);
+	e.move = false;
+	e.angle = Tk.atan2(act.y-e.y,act.x-e.x);
+	Actor.setTimeout(e,function(){
+		e.move = !e.nevermove;	//BAD
+	},25*15);
 }
 
 Actor.click.pushable = function(pusher,beingPushed){
@@ -139,12 +142,12 @@ Actor.click.skillPlot = function(act,eid){
 	
 	var amount = 1;
 	var exp = plot.exp;
-	if(plot.useQuestBonus){
+	/*	if(plot.useQuestBonus){
 		var bonus = Main.getSimpleQuestBonus(main,quest);
 		amount = Math.roundRandom(bonus.item);
 		Message.add(key,Quest.get(quest).name.q() + ' Quest Modifier: x' + bonus.item.r(2) + ' Item, x' + bonus.exp.r(2) + ' Exp');
 		exp *= bonus.exp;
-	} 
+	} */
 	if(amount === 0)
 		Message.add(key,'You harvested the plot but there was no enough resource for a whole item.');
 	else {
@@ -191,7 +194,7 @@ Actor.click.toggle = function(act,eid){
 	if(e.viewedIf(act.id)){
 		var showMessage = e.toggle(act.id,eid);
 		if(showMessage !== false)
-			Message.add(act.id,"You interacted with the object.");
+			Message.add(act.id,"You interacted with the switch.");
 	} else
 		act.removeList[eid] = 1;
 }
@@ -222,7 +225,6 @@ Actor.click.drop.rightClick = function(act,pt){
 	//Main.setOptionList(Actor.getMain(act),OptionList('Pick',option,false));
 }
 
-
 Actor.click.bank = function(act,eid){
 	var e = Actor.get(eid);
 	if(!e.bank) return ERROR(4,'not a bank');
@@ -237,6 +239,19 @@ Actor.click.signpost = function(act,eid){
 	e.signpost(act.id,eid);
 }
 
+Actor.click.party = function(act,eid){
+	var main = Actor.getMain(act);
+	if(main.questActive) 
+		return Message.add(act.id,"You can't invite a player to your party while having a quest active.");
+	var main2 = Main.get(eid);
+	if(main2.questActive) 
+		return Message.add(act.id,"The player you are trying to invite is currently has an active quest and therefore can't join your party.");
+	if(Main.getPartyId(main) === Main.getPartyId(main2))
+		return Message.add(act.id,"This player is already in your party.");
+	Main.question(main2,function(){
+		Main.changeParty(main2,Main.getPartyId(main));
+	},'Do you want to join "' + act.name + '" party?','boolean');
+}	
 
 Actor.movePush = function(act,angle,magn,time){	//push that isnt pushable, ex: player fall
 	if(act.timeout.movePush) return false;	//only 1 push at a time

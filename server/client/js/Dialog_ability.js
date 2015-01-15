@@ -3,7 +3,7 @@
 Dialog('ability','Ability',Dialog.Size(800,500),Dialog.Refresh(function(html,variable,param){
 	Dialog.ability(html,variable,param);
 },function(html,variable,param){
-	return Tk.stringify(player.ability) + Tk.stringify(player.abilityList) + variable.param + variable.typeShowed;	
+	return Tk.stringify(player.ability) + Tk.stringify(player.abilityList) + variable.param + variable.typeShowed + Tk.stringify(Actor.getEquip(player).piece);	
 },10),{
 	ability:null,	//object
 	typeShowed:'all',
@@ -96,37 +96,18 @@ Dialog.ability.leftSide = function(html,variable,ability,left){
 }
 
 Dialog.ability.abilityList = function(html,variable,selectedAb,right){
-	var obj = {'all':[],'attack':[],'boost':[],'dodge':[],'heal':[],'summon':[]};
 	var abilityList = Actor.getAbilityList(player);
+	var obj = [];
 	for(var i in abilityList){
 		var ability = QueryDb.get('ability',i);
 		if(ability){
-			obj[ability.type].push(ability);
-			obj.all.push(ability);
+			obj.push(ability);
 		}
-	}	
-	var el = $('<p>');
-	el.append('Display: ');
-	right.append(el);
-	for(var j in obj){
-		var el2 = $("<span>")
-			.attr('title','Display ' + j.capitalize() + ' Abilities')
-			.css({textDecoration:j === variable.typeShowed ? 'underline' : 'none'})
-			.click((function(j){
-				return function(){
-					variable.typeShowed = j;
-				}	
-			})(j))
-			.html(j.capitalize());
-		
-		el.append(el2);
-		el.append(', ');		
-	}	
-	//###################
+	}
 	var el = $('<p>');
 	el.append('Select Ability: ');
-	for(var j = 0 ; j < obj[variable.typeShowed].length; j++){
-		var ability = obj[variable.typeShowed][j];	
+	for(var j = 0 ; j < obj.length; j++){
+		var ability = obj[j];	
 		
 		var el2 = Img.drawIcon.html(ability.icon,30,'Select: ' + ability.name,(function(id){
 			return function(){
@@ -246,7 +227,7 @@ Dialog.ability.attack = function(html,variable,ab,right){
 	//########################
 	
 	var mod = $('<div>')
-		.append('x' + atk.amount + ' Bullet at ' + atk.angle + '°');
+		.append('x' + atk.amount + ' Bullet at ' + atk.angleRange + '°');
 		
 	right.append(mod);	
 	

@@ -11,7 +11,7 @@ Message.add = function(key,textOrMsg){
 	Main.addMessage(Main.get(key),textOrMsg);
 }
 Message.addPopup = function(key,text,time){
-	Message.add(key,Message('questPopup',text,null,Message.QuestPopup(time || 25*30,false)));
+	Main.openDialog(Main.get(key),'questPopup',{text:text,time:time || 25*60});
 }
 		
 Message.broadcast = function(text){
@@ -34,7 +34,7 @@ Message.receive = function(key,msg){
 	
 	if(msg.type === 'public') Message.receive.public(key,msg);
 	else if(msg.type === 'pm') Message.receive.pm(key,msg); 
-	else if(msg.type === 'question') Message.receive.question(key,msg); 
+	else if(msg.type === 'questionAnswer') Message.receive.question(key,msg); 
 	else if(msg.type === 'report') Message.receive.report(key,msg); 
 	/*
 	else if(msg.type === 'clan') Message.receive.clan(key,msg); 
@@ -64,14 +64,13 @@ Message.receive.public = function(key,msg){
 	var newMsg = Message('public',msg.text,msg.from,Message.Public(main.social.customChat));
 	
 	//Send info
-	var alreadySentTo = {};
-	Message.add(key,newMsg);
+	var alreadySentTo = [];
 	for(var i in act.activeList){
 		if(!Actor.isPlayer(i)) continue;	//aka non player
-		alreadySentTo[i] = 1;
+		alreadySentTo.push(i);
 		Message.add(i,newMsg);
 	}
-	Party.addMessage(Main.getParty(Main.get(key)),msg.text,key);
+	Party.addMessage(Main.getParty(Main.get(key)),msg,alreadySentTo);
 
 }
 

@@ -35,7 +35,7 @@ Material.getMaterialRelatedToSkill = function(skill,lvl){
 }
 
 Material.roundLevel = function(lvl){
-	return Math.floor((lvl ||0)/20);	
+	return Math.round((lvl ||0)/20)*20;
 }	
 
 Material.DROP_RATE = {

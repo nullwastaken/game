@@ -32,7 +32,7 @@ Challenge.compressClient = function(info){
 Challenge.Bonus = function(bonus,perm,failure){
 	bonus = bonus || 2;
 	return {
-		success:typeof bonus === 'object ' ? bonus : Quest.RewardInfo(2,(bonus-1)/2+1,(bonus-1)/5+1),
+		success:typeof bonus === 'object ' ? bonus : Quest.RewardInfo(bonus,(bonus-1)/2+1,(bonus-1)/5+1),
 		perm:perm || Quest.RewardInfo(1.5,1.25,1.1),
 		failure:failure || Quest.RewardInfo(1,1,1),
 	};
@@ -97,7 +97,8 @@ Challenge.onStart = function(main){
 }
 
 Challenge.testSuccess = function(challenge,key){
-	return challenge.testSuccess(key);
+	var res = challenge.testSuccess(key); 
+	return res !== false;
 }	
 
 

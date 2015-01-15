@@ -8,10 +8,37 @@ var DOWN_TIMEOUT = null;
 var SERVER_RESPONDED = false;
 var HIDE_SOCIALMEDIA = true;
 
+var temp = null;
+
+		//	height:'auto',width:'auto',
+
 Sign.init = function(){
-	Sign.init.html();
-	Sign.init.html.highscore();
-	Sign.init.html.about();
+	var startDiv = $('#startDiv');
+	
+	var signIn = Sign.init.html();
+	signIn.addClass("lg-container");
+	startDiv.append(signIn);
+	
+	
+	var high = Sign.init.html.highscore();
+	var comp = Sign.init.html.competition();
+	
+	temp = $('<div>')
+		.addClass("lg-container")
+		.css({font: '20px Kelly Slab',textAlign:'center'})
+		.append(
+			//Tk.arrayToTable([[high,comp]]).css({margin:
+			high.addClass('inline'),
+			comp.addClass('inline')
+				
+		)
+		
+	startDiv.append(temp);
+	
+	var about = Sign.init.html.about();
+	about.addClass("lg-container")
+	startDiv.append(about);
+		
 	Sign.init.socket();
 	
 	if(localStorage.getItem('username')){
@@ -22,9 +49,6 @@ Sign.init = function(){
 
 Sign.init.html = function(){
 	var full = $('<div>')
-		.addClass("lg-container");
-		
-	$('#startDiv').append(full);
 	
 	var containerDiv =  $('<div>')
 		.css({width:'auto',height:'auto',textAlign:'center',font:'20px Kelly Slab'});
@@ -181,12 +205,11 @@ Sign.init.html = function(){
 	containerDiv.append($('<div>')
 		.attr({id:"lg-message"})
 	);
-	
+	return full;
 }
 
 Sign.init.html.about = function(){
 	var full = $('<div>')
-		.addClass("lg-container")
 		.css({font: '20px Kelly Slab',textAlign:'center'});
 	$('#startDiv').append(full);
 	full.append($('<h2>')
@@ -207,14 +230,52 @@ Sign.init.html.about = function(){
 	return full;
 }	
 
+Sign.init.html.competition = function(){
+	var full = $('<div>');
+	full.hide();
+	
+	$.ajax({
+		url: '/competitionHomePage',
+		data: '',
+		type: 'POST',
+		success: function(data) {
+			full.append(
+				$('<u>')
+					.html('Competition<br>')
+					.css({fontSize:'1.5em'})
+					.attr('title','Ends on ' + (new Date(data.competition.endTime)).toDateString()),
+				$('<span>')
+					.html(data.competition.quest + "<br>")
+					.css({fontSize:'1.2em'})
+					.attr('title',data.competition.name + ": " + data.competition.description)
+			);
+			var array = [['Rank','Name','Score']];
+			
+			for(var i = 0 ; i < data.competition.rank.length && i < 5; i++){
+				var info = data.competition.rank[i];
+				//full.append('Rank ' + (i+1) + ': ' + info.username + ' (' + info.score + ')<br>');
+				array.push([i+1,info.username,info.score]);
+			}
+			full.append(Tk.arrayToTable(array,true,false,true).css({marginLeft: 'auto', marginRight:'auto'}));
+			
+			full.show();
+			//temp.addClass("lg-container").css({width:'auto',height:'auto'});
+		}
+	});
+	
+	return full;
+}
 
 Sign.init.html.highscore = function(){
-	var full = $('<div>')
-		.addClass("lg-container")
-		.css({font: '20px Kelly Slab',textAlign:'center'});
-	$('#startDiv').append(full);
-	full.append($('<h2>')
-		.html('Highscore - Most Quests Complete') 
+	var full = $('<div>');
+	
+	full.append(
+		$('<u>')
+		.html('Highscore<br>')
+		.css({fontSize:'1.5em'}),
+		$('<span>')
+		.html('Most Quests Complete<br>')
+		.css({fontSize:'1.2em'})
 	);
 	full.hide();
 	
@@ -223,14 +284,17 @@ Sign.init.html.highscore = function(){
 		data: '',
 		type: 'POST',
 		success: function(data) {
+			var array = [['Rank','Name','Quest']];
 			for(var i = 0 ; i < data.highscore.length; i++){
-				full.append('Rank ' + data.highscore[i].rank + ': ' + data.highscore[i].username + ' (' + data.highscore[i].value + ' Quests)<br>');
+				//full.append('Rank ' + data.highscore[i].rank + ': ' + data.highscore[i].username + ' (' + data.highscore[i].value + ' Quests)<br>');
+				array.push([data.highscore[i].rank,data.highscore[i].username,data.highscore[i].value]);
 			}
+			full.append(Tk.arrayToTable(array,true,false,true).css({marginLeft: 'auto', marginRight:'auto'}));
+			
 			full.show();
+			//temp.addClass("lg-container").css({width:'auto',height:'auto'});
 		}
 	});
-	
-	
 	
 	return full;
 }	

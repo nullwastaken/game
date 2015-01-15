@@ -5,9 +5,10 @@
 var s = loadAPI('v1.0','Qbtt000',{
 	name:'Break Targets',
 	author:'',
-	reward:{"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}}
+	reward:{"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
+	description:"Find the fastest way to break 10 targets.",
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 
@@ -36,12 +37,13 @@ s.newChallenge('fireonly','Fire Only','Get below 15 seconds only using the fire 
 	return s.get(key,'chrono') < 25*15;
 });
 s.newChallenge('fivetimes','5 Times!','Get below 10 seconds five times in a row.',2,function(key){
-	
+	return true;
 });
 
 s.newEvent('_start',function(key){	//
 	if(s.isAtSpot(key,'QfirstTown-east','t6',200))
-		s.callEvent('startGame',key);
+		s.callEvent('talkMatthe',key);
+	else s.addQuestMarker(key,'start','QfirstTown-east','t6');
 });
 s.newEvent('_debugSignIn',function(key){	//
 	s.teleport(key,'QfirstTown-east','t6','main');
@@ -69,6 +71,7 @@ s.newEvent('_complete',function(key){	//
 	s.callEvent('_abandon',key);
 });
 s.newEvent('startGame',function(key){	//
+	s.removeQuestMarker(key,'start');
 	s.message(key,"Break all 10 targets in less than 18 seconds.");
 	s.message(key,"Press [$4] to restart the quest quickly.");
 	if(s.isChallengeActive(key,'fireonly')) 
@@ -135,7 +138,9 @@ s.newEvent('abilityReset',function(key){	//
 	}
 	s.callEvent('resetCourse',key);
 });
-
+s.newEvent('talkMatthe',function(key){ //
+	s.startDialogue(key,'Matthe','intro');
+});
 s.newAbility('simple','attack',{
 	name:'Bullet',
 	icon:'offensive.bullet',
@@ -197,6 +202,12 @@ s.newAbility('fastmove','dodge',{
 s.newPreset('target',s.newPreset.ability(['simple','boomerang','5ways','','reset','fastmove']),null,False,False,False,False);
 s.newPreset('fireonly',s.newPreset.ability(['5ways','','','','reset','']),null,False,False,False,False);
 
+s.newDialogue('Matthe','Matthe','villager-male.5',[ //{ 
+	s.newDialogue.node('intro',"Hey! There is a weird bug in the map ahead. There are 10 targets that spawned out of nowhere and I can get rid of them fast enough. Can you help me out?",[ 
+		s.newDialogue.option("Sure",'','startGame')
+	],''),
+]); //}
+
 s.newMap('main',{
 	name:'Practice Field',
 	lvl: 0,
@@ -213,9 +224,13 @@ s.newMap('main',{
 s.newMapAddon('QfirstTown-east',{
 	spot:{t6:{x:2880,y:1536}},
 	load: function(spot){
-		m.spawnTeleporter(spot.t6,'startGame','zone',{
+		m.spawnActor(spot.t6,'npc',{
+			dialogue:'talkMatthe',
+			sprite:s.newNpc.sprite('villager-male5',1),
 			minimapIcon:'minimapIcon.quest',
-			angle:s.newNpc.angle('down'),
+			angle:s.newNpc.angle('up'),
+			nevermove:true,
+			name:'Matthe',
 		});
 	}
 });

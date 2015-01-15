@@ -86,6 +86,12 @@ ActiveList.init = function(act){	//when Map.enter
 	}	
 	if(act.type === 'npc'){	
 		for(var j in map.list.actor){	//only check for player nearby
+			if(!LIST[j]){
+				ERROR(2,'actor is in map list but not in LIST');
+				delete map.list.actor[j];
+				continue;
+			}	
+			
 			if(LIST[j].type === 'player' && ActiveList.test(act,LIST[j])){
 				act.activeList[j] = ActiveList.NEVER_SEEN;
 				LIST[j].activeList[act.id] = ActiveList.NEVER_SEEN;	

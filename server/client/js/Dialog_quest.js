@@ -24,6 +24,9 @@ Dialog.quest = function (html,variable,param){
 	Dialog.quest.bonus(top,q,mq);
 	Dialog.quest.start(top,q,mq);
 	
+	Dialog.quest.expectedReward(html,q,mq);
+	
+	
 	var bottom = $('<div>');
 	html.append(bottom);
 	
@@ -176,6 +179,34 @@ Dialog.quest.start = function(top,q,mq){
 	}
 }	
 
+Dialog.quest.expectedReward = function(html,q,mq){	//BAD
+	html.append('<u style="font-size:1.7em">Expected Reward:</u>');
+	
+	var gem; 
+	var sumBonus = 1;
+	for(var i in mq._bonus){
+		sumBonus *= mq._bonus[i].score;
+	}
+	
+	if(!mq._complete)	
+		gem = Actor.getGEM.scoreToGEM(100*sumBonus)*100;	//*100 for %
+	else {
+		var currentGem = Actor.getGEM.scoreToGEM(mq._rewardScore);
+		var futureGem = Actor.getGEM.scoreToGEM(mq._rewardScore + 10*sumBonus);
+		gem = (futureGem - currentGem)*100;
+	}	
+	//exp
+	var expBonus = 100;
+	for(var i in mq._bonus){
+		expBonus *= mq._bonus[i].exp;
+	}
+		
+	html.append($('<span>')
+		.css({fontSize:'1.2em'})
+		.html('GEM: +' + Tk.round(gem,2) + '%, Exp: +' + Tk.round(expBonus,0))
+	);
+}
+
 //##################
 
 Dialog.quest.generalInfo = function(bottom,q,mq){
@@ -202,7 +233,7 @@ Dialog.quest.playerInfo = function(bottom,q,mq){
 	el.append('Quest completed: ' + mq._complete + ' times<br>');
 	el.append($('<span>')
 		.html('Cumulative Quest Score: ' + mq._rewardScore.r(0) + ' / 10000')
-		.attr('title',"Everytime you beat a quest, you get a Quest Score that depends on performance and Score Bonus.")
+		.attr('title',"Impact GEM. Everytime you beat a quest, you get a Quest Score that depends on performance and Score Bonus.")
 	);
 	el.append('<br>');
 	

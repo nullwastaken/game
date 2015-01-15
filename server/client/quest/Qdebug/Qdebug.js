@@ -8,7 +8,7 @@ var s = loadAPI('v1.0','Qdebug',{
 	dailyTask:false,
 	showInTab:false,
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 
 //0,0,Qdebug-testCutscene

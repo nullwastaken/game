@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Challenge','Party','Debug','Server','Main','ItemList','Save','Highscore','Message','Dialogue','Boost','Drop','Quest','Collision','Command','Contribution']));
+eval(loadDependency(['Actor','Challenge','Competition','Party','Debug','Server','Main','ItemList','Save','Highscore','Message','Dialogue','Boost','Drop','Quest','Collision','Command','Contribution']));
 
 (function(){ //}
 var REMOVAL_ORB_CHANCE = 0.1;
@@ -31,6 +31,7 @@ Main.startQuest.action = function(main,qid){
 	var q = Quest.get(qid);
 	var mq = main.quest[qid];
 	mq._started = 1;
+	mq._startTime = Date.now();
 	main.questActive = qid;
 	
 	Quest.onStart(q,main);
@@ -52,7 +53,6 @@ Main.completeQuest = function(main){
 	var firstTimeCompleted = mq._complete === 0;
 	mq._complete++;
 	Main.setFlag(main,'quest',qid);
-	console.log('rated',Main.quest.hasRatedQuest(main,qid));
 	if(!Main.quest.hasRatedQuest(main,qid)) 
 		Main.displayQuestRating(main,qid);
 		
@@ -66,7 +66,8 @@ Main.completeQuest = function(main){
 	var reward = Quest.getReward(q,finalBonus,scoreMod,firstTimeCompleted);
 	Main.quest.applyReward(main,reward,mq,q);
 	
-	Highscore.setNewScore(q,main,mq);	//after reward
+	var highscoreInfo = Highscore.setNewScore(q,main,mq);	//after reward
+	Competition.onQuestComplete(main.id,highscoreInfo);
 	Main.completeQuest.updateGlobalHighscore(main);
 	
 	Main.questCompleteDialog(main,Tk.deepClone(mq),q,challengeSuccess,dailyTaskSucess,rawBonus,finalBonus,reward,scoreMod);
@@ -172,7 +173,7 @@ Main.resetQuest = function(main,abandon){
 	}
 	
 	Quest.onReset(q,main);
-	
+	Party.setQuest(Main.getParty(main),null);
 	Main.updateQuestHint(main,qid);
 }
 
@@ -201,7 +202,6 @@ Main.questCompleteDialog = function(main,mq,q,challengeSuccess,dailytaskSuccess,
 		
 		_complete:mq._complete,
 		_rewardScore:mq._rewardScore,
-		_rewardPt:mq._rewardPt,
 		_challengeDone:mq._challengeDone,
 		
 	};	

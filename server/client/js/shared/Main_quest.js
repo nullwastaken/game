@@ -16,6 +16,7 @@ Main.Quest.part = function(quest,overwrite){
 		_rewardScore:0,
 		_complete:0,
 		_started:0,
+		_startTime:0,
 		_bonus:Main.Quest.bonus(),
 		_challenge:Quest.getChallengeList(quest),
 		_challengeDone:Quest.getChallengeList(quest),

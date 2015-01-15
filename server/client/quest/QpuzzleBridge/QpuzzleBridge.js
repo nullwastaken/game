@@ -5,10 +5,11 @@
 //'use strict';
 var s = loadAPI('v1.0','QpuzzleBridge',{
 	name:"Puzzle & Bridge",
-	author:"",
-	scoreModInfo:"Depends on amount of puzzles done."
+	author:"rc",
+	scoreModInfo:"Depends on amount of puzzles done.",
+	description:"Puzzle where you need to move blocks to form a bridge.",
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 Move bridge part to create a bridge and go to next puzzle
@@ -45,7 +46,7 @@ s.newChallenge('noreset',"No Reset","Complete all 5 puzzles without resetting.",
 
 s.newEvent('_start',function(key){ //
 	if(s.isAtSpot(key,'QfirstTown-east','t5',200))
-		s.callEvent('startGame',key);
+		s.callEvent('talkPoont',key);
 	s.addQuestMarker(key,'myQuestMarker','QfirstTown-east','t5');
 });
 s.newEvent('_getScoreMod',function(key){ //impact reputation pts given
@@ -89,9 +90,13 @@ s.newEvent('pushRock',function(key){ //
 	s.add(key,'pushCount',1);
 });
 s.newEvent('endGame',function(key){ //
-	s.set(key,'lvl',5);
-	s.set(key,'chrono',s.stopChrono(key,'timer'));
-	s.completeQuest(key);
+	s.displayPopup(key,'You fixed the glitched chest.',25*5);
+	s.setTimeout(key,function(){
+		s.set(key,'lvl',5);
+		s.set(key,'chrono',s.stopChrono(key,'timer'));
+		s.completeQuest(key);
+	},25*3);
+	
 });
 s.newEvent('saveBridge',function(key,map){ //return object with position of every bridge
 	var tmp = [];
@@ -169,12 +174,12 @@ s.newEvent('tele23',function(key){ //
 	s.teleport(key,'w4','t1','solo',true);
 	//s.teleport(key,'w3','t1','solo',true);
 	s.set(key,'lvl',4);
-	s.message(key,'Leaving now will complete the quest but with a considerable penalty.');
+	s.displayPopup(key,'Leaving now will complete the quest but with a considerable penalty.');
 });
 s.newEvent('tele34',function(key){ //
 	s.teleport(key,'w2','t1','solo',true);
 	s.set(key,'lvl',3);
-	s.message(key,'Leaving now will complete the quest but with a big penalty.');
+	s.displayPopup(key,'Leaving now will complete the quest but with a big penalty.');
 });
 s.newEvent('teleQuit',function(key){ //when trying to leave, ask player first
 	s.displayQuestion(key,'Abandon the quest and leave?',function(key){
@@ -210,9 +215,25 @@ s.newEvent('spawn',function(spot,list){ //
 	for(var i in list.rock)	s.callEvent('spawnRock',spot[list.rock[i]]);
 });
 
+s.newEvent('talkPoont',function(key){	//
+	s.startDialogue(key,'Poont','intro');
+});
+
 s.newItem('stuck',"Reset",'resource.dodge',[    //{
 	s.newItem.option('_signIn',"Reset Puzzle","Use to reset the current puzzle.")
 ],''); //}
+
+s.newDialogue('Poont','Poont','villager-female.0',[ //{ 
+	s.newDialogue.node('intro',"Can you help me? Apparently there's a glitched chest if you follow this path. It would be very easy to fix but I can't seem to reach the chest.",[ 
+		s.newDialogue.option("Why so?",'intro2','')
+	],''),
+	s.newDialogue.node('intro2',"Someone thought it would be a good idea to place that chest at the very end of a puzzle section. What an idiot!",[ 
+		s.newDialogue.option("So what do I need to do?",'intro3',''),
+	],''),
+	s.newDialogue.node('intro3',"Just push rocks and bridge sections to form a bridge then raise the water with the switch. Have fun!",[ 
+		s.newDialogue.option("Okay.",'','startGame'),
+	],'')
+]); //}
 
 s.newMap('g0',{
 	name:"Bridge Lvl 0",
@@ -372,9 +393,13 @@ s.newMap('w4',{
 s.newMapAddon('QfirstTown-east',{
 	spot:{t5:{x:3152,y:1008}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t5,'startGame','zone',{
+		m.spawnActor(spot.t5,'npc',{
+			dialogue:'talkPoont',
+			sprite:s.newNpc.sprite('villager-female0',1),
 			minimapIcon:'minimapIcon.quest',
-			angle:s.newNpc.angle('right'),
+			angle:s.newNpc.angle('left'),
+			nevermove:true,
+			name:'Poont',
 		});
 	}
 });

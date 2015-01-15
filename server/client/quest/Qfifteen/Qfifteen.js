@@ -8,7 +8,7 @@ var s = loadAPI('v1.0','Qfifteen',{
 	author:'',
 	scoreModInfo:'Depends on your time.'
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 Bug: moving 2 blocks real fast in empty jams the puzzle
@@ -36,7 +36,7 @@ s.newChallenge('wise',"Master Mind","Complete the quest in less than 125 moves."
 	return s.get(key,'pushCount') < 125;
 });
 s.newChallenge('shuffle',"Shuffle","You need to order the numbers in a custom order.",2.5,function(key){
-	
+	return true;
 });
 
 s.newEvent('_start',function(key){ //

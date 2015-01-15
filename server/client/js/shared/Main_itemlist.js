@@ -56,7 +56,7 @@ Main.removeItem = function(main,id,amount){
 }
 
 Main.haveItem = function(main,id,amount){
-	return ItemList.contains(main.invList,id,amount);
+	return ItemList.have(main.invList,id,amount);
 }
 
 Main.getItemAmount = function(main,id){

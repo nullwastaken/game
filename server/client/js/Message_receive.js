@@ -8,9 +8,6 @@ Message.receive = function(msg){
 	else if(msg.type === 'input')	Dialog.chat.setInput(msg.text);
 	else if(msg.type === 'signNotification') Message.receive.signNotification(msg);
 	else if(msg.type === 'pm')	Message.receive.pm(msg);
-	else if(msg.type === 'dialog') Dialog.open('basic',msg);
-	else if(msg.type === 'questPopup') Dialog.open('questPopup',msg);
-	else if(msg.type === 'question') Dialog.open('question',msg);
 	
 	/*
 	else if(msg.type === 'clan') 	Message.receive.clan(msg);
@@ -139,6 +136,7 @@ Message.ADMIN_USERNAME = 'rc';
 
 Message.clickUsername = function(name){	//in public chat
 	/*
+	use Message.setInputForPM(key,i);
 	Main.setOpti onList(main,OptionList(name,[
 		OptionList.Option(Dialog.chat.setInput,['@' + name + ','],'Send Message'),
 		OptionList.Option(Command.execute,['fl,add',[name]],'Add Friend'),

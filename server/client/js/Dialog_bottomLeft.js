@@ -47,11 +47,15 @@ Dialog.UI('chat',{
 			.attr('id','chatBoxInput')
 			.addClass('onlyText')
 			.css({width:400})
-		)
+		)			
 		.submit(function(e) {
 			e.preventDefault();
-			if(Dialog.chat.getInput())
+			if(Dialog.chat.getInput()){
 				Message.sendChatToServer(Dialog.chat.getInput());
+				setTimeout(function(){
+					Dialog.chat.blurInput(true);
+				},50);
+			}
 			else
 				Dialog.chat.blurInput(true);
 				
@@ -70,15 +74,9 @@ Dialog.UI('chat',{
 	html.append($('<span>')
 		.css({
 			position:'absolute',
-			left:WIDTH-24*2-4,	//-4 cuz border
+			left:WIDTH-24-4,	//-4 cuz border
 			top:HEIGHT-24,
 		})
-		.append(Img.drawIcon.html("tab.friend",24,'Shift-Left: Get Player Currently Online')
-			.click(function(e){
-				if(!e.shiftKey) return 
-				Command.execute('playerlist',[]);
-			})
-		)
 		.append(Img.drawIcon.html("attackMelee.cube",24,'Shift-Left: Clear Chat and PM')
 			.click(function(e){
 				if(!e.shiftKey) return;
@@ -195,6 +193,7 @@ Dialog.UI('dialogue',{
 	html.addClass('onlyText container shadow');
 	
 	var FACE = false;
+	main.dialogue = dia;
 	
 	if(dia.face && dia.face.image){
 		var face = Img.drawFace(dia.face,96);
@@ -221,7 +220,7 @@ Dialog.UI('dialogue',{
 	html.append(text);
 	
 	for(var i = 0 ; i < dia.node.option.length; i++){
-		text.append('&nbsp; - ');
+		text.append('&nbsp; ' + (i+1) + '- ');
 		text.append($('<span>')
 			.html(dia.node.option[i].text + '<br>')	//padding?
 			.css({cursor:'pointer'})

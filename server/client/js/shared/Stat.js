@@ -179,9 +179,15 @@ var initStat = function(){	//global in client...
 			var el = CST.element.list[j];
 			for(var k in {'+':1,'*':1,'^':1,'x':1,'mod':1}){
 				var id = i + '-' + el + '-' + k;
-				var name = i.capitalize() + '-' + el.capitalize() + '-' + k;
-				if(i === 'def')	var description = 'Reduce ' + el.capitalize() + ' Damage Taken';
-				else var description = 'Increase ' + el.capitalize() + ' Damage Dealt';
+				if(k === '+')
+					var name = el.capitalize() + ' ' + i.capitalize();
+				else
+					var name = i.capitalize() + '-' + el.capitalize() + '-' + k;
+				if(i === 'def')	
+					var description = 'Reduce ' + el.capitalize() + ' Damage Taken';
+				else 
+					var description = 'Increase ' + el.capitalize() + ' Damage Dealt';
+					
 				var icon = 'element.' + el;
 				var path = ["mastery",i,el,k];
 				var value = {base:k === '+' ? 0 : 1};

@@ -137,7 +137,7 @@ Actor.equip.updateDef = function(equip){
 }
 
 Actor.getWeapon = function(act){
-	return Actor.getEquip(act).piece.equip || CST.UNARMED;
+	return Actor.getEquip(act).piece.weapon || CST.UNARMED;
 }
 
 })();

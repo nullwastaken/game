@@ -191,7 +191,7 @@ if(!SERVER){ //}
 	}
 	Actor.loop.player.OLD = {};
 	
-	Actor.loop.updatePosition = function(act){	//BOB
+	Actor.loop.updatePosition = function(act){	//
 		var diffX = act.serverX - act.x;
 		var diffY = act.serverY - act.y;
 		

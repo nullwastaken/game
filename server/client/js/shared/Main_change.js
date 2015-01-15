@@ -73,10 +73,11 @@ Main.uncompressChange = function(change){
 	if(change.bankList) change.bankList = Main.ItemList.uncompressClient(change.bankList);
 	if(change.party) change.party = Main.Party.uncompressClient(change.party);
 	
-	if(change.questHint)	//bad
+	if(change.questHint){	//bad
 		change.questHint = (main.questActive || change.questActive)
 			? '<span title="Hint for Active Quest: ' + QueryDb.getQuestName(main.questActive || change.questActive) + '">Hint: ' + Message.receive.parseInput(change.questHint) + '</span>'
 			: '<span title="Active a quest via the Quest Tab">No Active Quest</span>';
+	}
 	
 	if(change.dialogue !== undefined){	//sometimes null
 		if(!change.dialogue){
@@ -110,7 +111,7 @@ Main.Flag = function(){
 }
 
 Main.setFlag = function(act,what,info){
-	if(what === 'quest') act.flag[info] = 1; //gonna use the Q
+	if(what === 'quest') act.flag[info] = 1; //gonna use info[0] == Q in initFlag
 	else act.flag[what] = 1;
 }
 

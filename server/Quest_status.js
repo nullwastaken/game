@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Main','Sprite','QuestVar','Debug','Actor','Challenge','Preset','Highscore','Server','Material','ItemList','Message','Dialogue','Quest']));
+eval(loadDependency(['Main','Sprite','QuestVar','Equip','Debug','Actor','Challenge','Preset','Highscore','Server','Material','ItemList','Message','Dialogue','Quest']));
 
-var CHANCEPLAN = 1/4;
+var CHANCE_EQUIP = 1;
 
 //## START ##################
 Quest.onStart = function(quest,main){
@@ -25,7 +25,6 @@ Quest.onSignIn = function(main,questVar,account){
 		Challenge.onSignIn(main);
 		if(!main.questActive) return;
 		//QuestVar.addToList done in QuestVar.onSignIn
-		Preset.onSignIn(main,q,questVar);
 		
 		Main.updateQuestHint(main);
 	}
@@ -48,7 +47,8 @@ Quest.getScoreMod = function(q,main){
 }
 Quest.getReward = function(q,bonus,scoreMod,firstTimeCompleted){
 	var finalScore = q.reward.reputation.mod * bonus.score * scoreMod;
-	if(firstTimeCompleted) finalScore += Quest.getFirstTimeBonus(q.reward.reputation);
+	if(firstTimeCompleted) 
+		finalScore += Quest.getFirstTimeBonus(q.reward.reputation);
 	
 	return QuestReward(
 		finalScore,
@@ -61,10 +61,11 @@ Quest.getReward.item = function(mod){
 	var item = {};
 	for(var i = 0 ; i < 3; i++){
 		var num = Math.roundRandom(mod); 
-		if(num !== 0) item[Material.getRandom(0)] = num;
+		if(num !== 0) 
+			item[Material.getRandom(0)] = num;
 	}
-	if(Math.random() / mod < CHANCEPLAN){
-		//item[Plan().id] = 1;
+	if(Math.random() / mod < CHANCE_EQUIP){
+		item[Equip.randomlyGenerate().id] = 1;
 	}
 	return item;
 }
@@ -82,7 +83,7 @@ Quest.getFirstTimeBonus = function(reputation){
 //## RESET ##################
 
 Quest.onAbandon = function(q,main){
-	q.event._abandon(main.id);	
+	q.event._abandon(main.id);
 }
 
 Quest.getChallengeSuccess = function(q,main,mq){	//null:non-active
@@ -100,9 +101,6 @@ Quest.getChallengeSuccess = function(q,main,mq){	//null:non-active
 	}
 	return tmp;
 }
-
-
-
 
 Quest.onReset = function(q,main){	//undo what the quest could have done
 	var key = main.id;
@@ -129,20 +127,24 @@ Quest.onReset = function(q,main){	//undo what the quest could have done
 		if(i.contains(q.id,true)) 
 			Actor.permBoost(act,i);
 	}
-	s.removePreset(act.id);
+	for(var i in act.preset){
+		if(i.contains(q.id,true)) 
+			Actor.removePreset(act,i,s);
+	}	
 	for(var i in q.ability)	
 		Actor.ability.remove(act,i);	
 	
 	Main.reputation.updateBoost(main);
 	Actor.boost.removeAll(act,q.id);
 	
-	if(s.isInQuestMap(key))
+	if(q.id !== 'Qtutorial' && s.isInQuestMap(key))	//BAD
 		s.teleportTown(key);
 	
 	s.enableAttack(key,true);
 	s.enablePvp(key,false);
 	s.enableMove(key,true);
-	Main.dialogue.end(main);
+	s.restoreHUD(key);
+	//Main.dialogue.end(main);
 	Actor.setCombatContext(act,'ability','normal');
 	Actor.setCombatContext(act,'equip','normal');
 	Actor.changeSprite(act,{name:'normal',sizeMod:1});

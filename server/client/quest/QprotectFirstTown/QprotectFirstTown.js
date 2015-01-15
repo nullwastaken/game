@@ -5,9 +5,10 @@
 'use strict';
 var s = loadAPI('v1.0','QprotectFirstTown',{
 	name:"Protect Town",
-	author:""
+	author:"rc",
+	description:"Protect villagers from waves of monsters.",
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 
@@ -17,19 +18,26 @@ s.newVariable({
 	interval:125,
 	started:false,
 	time:0,
-	timeToSurvive:1500
+	timeToSurvive:25*5,//1500
 });
 
 s.newChallenge('hardmode',"I want MORE!","More enemies! More villagers!",2,function(key){
-	
+	return true;
 });
 s.newChallenge('longer',"Longer","Protect for 2 minutes.",2,function(key){
-	
+	return true;
 });
+
+s.newChallenge('boss',"Ending Surprise!","Fun surprise at the end.",2,function(key){
+	return true;
+});
+
+
 
 s.newEvent('_start',function(key){ //
 	if(s.isAtSpot(key,'QfirstTown-main','n3',200))
 		s.callEvent('talkCyber',key);
+	else s.addQuestMarker(key,'start','QfirstTown-main','n3');
 });
 s.newEvent('_hint',function(key){ //
 	if(!s.get(key,'started')) return 'Talk with Cyber north of Town.';
@@ -42,7 +50,7 @@ s.newEvent('_death',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('_debugSignIn',function(key){ //
-	s.teleport.force(key,1650,450,'QfirstTown-main');
+	s.teleport.force(key,1650,450,'QfirstTown-main','main');
 });
 s.newEvent('_abandon',function(key){ //
 	if(s.isInQuestMap(key))
@@ -53,6 +61,7 @@ s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
 });
 s.newEvent('startGame',function(key){ //
+	s.removeQuestMarker(key,'start');
 	var LIFE = 1000;
 	
 	s.teleport(key,'main','n3','solo',true);
@@ -71,8 +80,19 @@ s.newEvent('startGame',function(key){ //
 	if(s.isChallengeActive(key,'longer')){
 		s.set(key,'timeToSurvive',2*60*25);
 	}
-		
-	s.setTimeout(key,s.completeQuest,s.get(key,'timeToSurvive'));	//use setTimeout for timing
+	
+	
+	s.setTimeout(key,function(){
+		if(!s.isChallengeActive(key,'boss'))
+			s.completeQuest(key);
+		else 
+			s.spawnActor(key,'main','n3','dragon',{
+				deathEvent:function(){ s.completeQuest(key); },
+				sprite:s.newNpc.sprite('dragon',2.5),
+				hp:5000,
+			});
+	},s.get(key,'timeToSurvive'));	//use setTimeout for timing
+	
 	s.set(key,'started',true);
 	s.displayPopup(key,'Protect the villagers.');
 	
@@ -106,13 +126,8 @@ s.newEvent('killNpc',function(killer,villagerId){ //
 });
 
 s.newDialogue('cyber','Cyber','villager-male.5',[ //{ 
-	s.newDialogue.node('intro1',"The town is about attacked! Protect the village!",[ 
-		s.newDialogue.option("I'll save you!",'','startGame'),
-		s.newDialogue.option("No.",'intro2','')
-	],''),
-	s.newDialogue.node('intro2',"Please!",[ 
-		s.newDialogue.option("Okay...",'','startGame'),
-		s.newDialogue.option("No.",'intro2','')
+	s.newDialogue.node('intro1',"There's a glitch in the town script! Monsters are going to spawn all over the place very soon. Protect the villagers!",[ 
+		s.newDialogue.option("I'll save you!",'','startGame')
 	],'')
 ]); //}
 

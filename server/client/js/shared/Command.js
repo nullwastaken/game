@@ -199,7 +199,6 @@ Command('win,bank,click',"Withdraw Items from Bank.",false,[ //{
 	Main.clickBank(m,side,slot,amount);
 }); //}
 
-
 Command('win,quest,toggleChallenge',"Toggle a Quest Challenge. Only possible before starting the quest.",false,[ //{
 	Command.Param('string','Challenge Id',false),
 ],function(key,challenge){
@@ -212,8 +211,13 @@ Command('win,quest,start',"Start a quest.",false,[ //{
 }); //}
 Command('win,quest,abandon',"Abandon a quest.",false,[ //{
 	Command.Param('string','Quest Id',false),
-],function(key){
-	Main.abandonQuest(Main.get(key));
+],function(key,qid){
+	var main = Main.get(key);
+	if(main.quest[qid] && Date.now() - main.quest[qid]._startTime > CST.MIN)
+		if(!Main.quest.hasRatedQuest(main,qid)) 
+			Main.displayQuestRating(main,qid,true);
+			
+	Main.abandonQuest(main);
 }); //}
 Command('win,reputation,add',"Select a Reputation",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
@@ -301,7 +305,21 @@ Command('equipMastery',"Improve an equip.",false,[ //{
 	
 }); //}
 
+Command('equipSalvage',"Salvage an equip.",false,[ //{
+	Command.Param('string','Equip Id',false),
+],function(key,id){
+	Equip.salvage(key,id);	
+}); //}
+
+
+
 //############
+
+Command('lvlup',"Level Up",false,[ //{
+],function(key){
+	Actor.levelUp(Actor.get(key));
+}); //}
+
 
 Command('tab,removeEquip',"Remove a piece of equipment",false,[ //{
 	Command.Param('string','Equipement Piece',false,{whiteList:CST.equip.piece}),
@@ -380,7 +398,8 @@ Command('actorOptionList',"Select an option from the Right-Click Option List of 
 Command('party,join',"Join a party.",true,[ //{
 	Command.Param('string','Party Name (Usually Username)',false),
 ],function(key,name){
-	if(name.contains('@') || name.contains('!')) return Message.add(key,"You can't join this party.");	//reserved
+	if(name.contains('@') || name.contains('!')) 
+		return Message.add(key,"You can't join this party.");	//reserved
 	Main.changeParty(Main.get(key),name);
 }); //}
 
@@ -406,8 +425,9 @@ Command('questRating',"Rate a quest.",false,[ //{
 	Command.Param('string','Quest Id',false),
 	Command.Param('number','Rating',false,{min:1,max:3}),
 	Command.Param('string','Comment',true),
-],function(key,quest,rating,text){
-	Quest.rate(Main.get(key),quest,rating,text);
+	Command.Param('string','Abandon Reason',true),
+],function(key,quest,rating,text,abandonReason){
+	Quest.rate(Main.get(key),quest,rating,text,abandonReason);
 }); //}
 
 Command('reward,purchase',"Purchase a Contribution Reward",false,[ //{

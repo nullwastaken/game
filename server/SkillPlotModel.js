@@ -21,10 +21,7 @@ SkillPlotModel('rock-bronze','rock-bronze','rock-down',100,{
 },true);		
 SkillPlotModel('hunt-squirrel','hunt-squirrel','hunt-down',100,{
 	'bone-0':0.9,'ruby-0':0.025,'sapphire-0':0.025,'topaz-0':0.05,
-},true);			
-SkillPlotModel('Qtutorial-tree-red','tree-red','tree-down',100,{ //sketchy
-	'Qtutorial-resource':1,
-},false);	
+},true);
 
 SkillPlotModel.get = function(id){
 	return DB[id] || null;

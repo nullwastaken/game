@@ -58,6 +58,34 @@ Input.changeSetting = function(move,ability,custom){
 			$(".ui-tooltip-content").parents('div').remove();
 			return false;
 		}),
+		Input.Setting.custom(49,function(event){ 	//1
+			if(Dialog.isActive('dialogue') && main.dialogue.node.option[0]){
+				Command.execute('dialogue,option',[0]);
+			} else {
+				return true;
+			}
+		}),
+		Input.Setting.custom(50,function(event){ 	//2
+			if(Dialog.isActive('dialogue') && main.dialogue.node.option[1]){
+				Command.execute('dialogue,option',[1]);
+			} else {
+				return true;
+			}
+		}),
+		Input.Setting.custom(51,function(event){ 	//3
+			if(Dialog.isActive('dialogue') && main.dialogue.node.option[2]){
+				Command.execute('dialogue,option',[2]);
+			} else {
+				return true;
+			}
+		}),
+		Input.Setting.custom(52,function(event){ 	//4
+			if(Dialog.isActive('dialogue') && main.dialogue.node.option[3]){
+				Command.execute('dialogue,option',[3]);
+			} else {
+				return true;
+			}
+		}),
 	];
 	Input.setting = Input.Setting(move,ability,custom);
 	Input.reset();

@@ -5,9 +5,10 @@
 'use strict';
 var s = loadAPI('v1.0','QbulletHeaven',{
 	name:"Bullet Heaven",
-	author:""
+	author:"rc",
+	description:"Survive as long as you can in a cave filled with deadly towers.",
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 enter map, towers keep spawning
@@ -30,22 +31,23 @@ s.newHighscore('timer',"Longest Time","Longest Time Surviving",'descending',func
 });
 
 s.newChallenge('killTower',"Tower Killer","Kill 50 Towers and finish the quest.",2,function(key){
-	
+	return true;
 });
 s.newChallenge('infinite',"Infinite","Last at least 2 minutes to win.",2,function(key){
-	
+	return true;
 });
 s.newChallenge('powerless',"Powerless","You cannot kill Towers.",2,function(key){
-	
+	return true;
 });
 
 s.newEvent('_start',function(key){ //
 	if(s.isAtSpot(key,'QfirstTown-east','a',200))
 		s.callEvent('startGame',key);
+	else s.addQuestMarker(key,'start','QfirstTown-east','a');
 });
 s.newEvent('_debugSignIn',function(key){ //
-	//s.teleport.force(key,1632,48,'QfirstTown-eastCave');
-	s.teleport.force(key,1648,208,'QfirstTown-east');
+	//s.teleport.force(key,1632,48,'QfirstTown-eastCave','main');
+	s.teleport.force(key,1648,208,'QfirstTown-east','main');
 });
 s.newEvent('_hint',function(key){ //
 	return "Try to destroy the towers when they turn blue.";
@@ -61,7 +63,6 @@ s.newEvent('_death',function(key){ //
 	}
 });
 s.newEvent('_abandon',function(key){ //
-	//s.teleport(key,'QfirstTown-eastCave','t5','main',false,'base');
 	if(s.isInQuestMap(key))
 		s.teleport(key,'QfirstTown-east','a','main',false);
 });
@@ -74,6 +75,7 @@ s.newEvent('_signIn',function(key){ //
 s.newEvent('startGame',function(key){ //teleport and start timer.
 	s.teleport(key,'base','e5','solo',true);
 	s.setRespawn(key,'QfirstTown-east','a','main',true);
+	s.removeQuestMarker(key,'start');
 	
 	if(s.isChallengeActive(key,'powerless')){
 		s.addBoost(key,'globalDmg',0);

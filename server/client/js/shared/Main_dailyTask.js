@@ -18,7 +18,8 @@ Main.verifyDailyTask = function(main,q,challengeSuccess){	//called when quest co
 	return false;
 }
 
-Main.updateDailyTask = function(main){
+Main.updateDailyTask = function(main){	//DEAD
+	return;
 	if(main.dailyTask.length >= 3)	main.dailyTask.shift();
 	
 	var task = DailyTask.generateRandom();

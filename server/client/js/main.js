@@ -79,42 +79,9 @@ Game.init.other = function(data){
 			Message.addPopup(key,data.DEV_MESSAGE);
 		},10000);
 	}
+		
 	
-	if(data.firstSignIn){
-		var AZERTY = true;
-		var div = $('<div>')
-			.append('ASDW to move. ')
-			.append($('<span>')
-				.html('AZERTY?')
-				.attr('title','Click to switch to AZERTY key bindings.')
-				.css({color:'blue',textDecoration:'underline'})
-				.click(function(){
-					if(AZERTY){
-						this.innerHTML = 'Revert.'
-						Input.usePreset('azerty');
-					} else {
-						this.innerHTML = 'AZERTY?'
-						Input.usePreset('qwerty');
-					}
-					AZERTY = !AZERTY;
-				})
-			)
-			.append('<br>')
-			.append('Small Screen? Press Ctrl -.<br>')
-			.append($('<span>')
-				.html('Mute Audio?')
-				.attr('title','Mute audio. Can be turned back on by pressing Esc.')
-				.css({color:'blue',textDecoration:'underline'})
-				.click(function(){
-					Command.execute('pref',['volumeMaster',0]);
-				})
-			)
-		Dialog.open('basic',{text:div,title:'Welcome!'});
-	}
-	
-	
-	
-	$("#infoDay")[0].innerHTML = 'Info of the day: ' + data.infoDay;
+	$("#infoDay").html('Info of the day: ' + data.infoDay);
 	
 	Game.debug = data.testing;	//TOFIX
 	if(data.testing){
@@ -151,7 +118,6 @@ Game.loop = function(){
 	
 	Performance.loop();
 }
-
 
 Game.loop.FRAME_COUNT = 0;
 

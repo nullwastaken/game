@@ -137,11 +137,13 @@ Main.closeDialogAll = function(main){
 	Main.openDialog(main,'ALL',false);
 }
 
-
-Main.displayQuestRating = function(main,questRating){
-	main.temp.questRating = questRating;
+Main.displayQuestRating = function(main,questRating,abandon){
+	main.temp.questRating = {quest:questRating,abandon:!!abandon};
 }
 
+Main.updatePlayerOnline = function(main,playerOnline){
+	main.temp.playerOnline = playerOnline;
+}
 
 Main.applyTempChange = function(main,temp){	//on client when receive
 	if(!temp) return;
@@ -160,6 +162,31 @@ Main.applyTempChange = function(main,temp){	//on client when receive
 		else
 			Dialog.open(i,temp.dialog[i]);
 	}
+	if(temp.playerOnline){
+		var div = $('<div>')
+			.html(temp.playerOnline.length + ' player(s) online: ');
+		for(var i in temp.playerOnline){
+			if(temp.playerOnline[i] === player.name) continue;
+			
+			div.append($('<span>')
+				.html(temp.playerOnline[i])
+				.click((function(i){
+					return function(){
+						Message.setInputForPM(key,temp.playerOnline[i]);
+						//reply to temp.playerOnline[i]
+					}
+				})(i))
+				.attr('title','Click to send PM')
+			);
+			if(i != temp.playerOnline.length - 2) //-2 cuz continue if own name
+				div.append(', ');
+		}
+		$('#playerOnline').html(div);
+	}
+	
+	if(temp.questRating)
+		Dialog.open('questRating',temp.questRating);
+	
 	
 	for(var i in temp.screenEffectAdd)
 		Main.screenEffect.add(main,temp.screenEffectAdd[i]);

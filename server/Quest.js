@@ -24,7 +24,6 @@ Quest.getAPItemplate = function(extra){	//todo touse
 		reward:Quest.Reward(),
 		showInTab:true,
 		showWindowComplete:true,
-		includeInSignInPack:true,
 		dailyTask:true,
 		inMain:true,	//in Main.get(key).quest
 		globalHighscore:false,	//call updateHighscore everytime a quest complete
@@ -33,6 +32,8 @@ Quest.getAPItemplate = function(extra){	//todo touse
 		admin:false,		//allow extra in item, ability
 		autoStartQuest:true,
 		author:'rc',
+		description:'A super awesome quest!',
+		thumbnail:'',
 		scoreModInfo:'',
 		lvl:0,
 		difficulty:'Easy',
@@ -125,8 +126,7 @@ Quest.get = function(id){
 Quest.getSignInPack = function(){
 	var q = {};	
 	for(var i in DB){
-		if(DB[i].includeInSignInPack) 
-			q[i] = Quest.compressClient(DB[i],false);
+		q[i] = Quest.compressClient(DB[i],false);
 	}
 	return q;
 }
@@ -135,6 +135,9 @@ Quest.compressClient = function(quest,full){
 	if(!full){
 		return {
 			name:quest.name,
+			author:quest.author,
+			description:quest.description,
+			thumbnail:quest.thumbnail,
 			showInTab:quest.showInTab,
 			isPartialVersion:true,
 		};
@@ -144,7 +147,8 @@ Quest.compressClient = function(quest,full){
 		name:quest.name,
 		icon:quest.icon,
 		reward:quest.reward,
-		description:quest,
+		description:quest.description,
+		thumbnail:quest.thumbnail,
 		variable:quest.variable,
 		author:quest.author,
 		challenge:Quest.compressClient.challenge(quest.challenge),
@@ -239,14 +243,15 @@ Quest.getHighscoreList = function(q){
 }
 
 
-Quest.rate = function(main,quest,rating,text){
+Quest.rate = function(main,quest,rating,text,abandonReason){
 	if(!main.quest[quest]) return;
 	db.questRating.insert({
 		quest:quest,
 		rating:rating || 0,
 		text:(text || '').slice(0,1000),
 		username:main.username,
-		timestamp:Date.now(),	
+		timestamp:Date.now(),
+		abandonReason:abandonReason,
 	})
 }
 //ts("Quest.updateRating(true)")

@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Server','Main','ActiveList','Socket','Map','Actor','Performance','Anim','ItemList','Strike','Drop','Bullet'],['Send']));
+eval(loadDependency(['Server','Sign','Main','ActiveList','Socket','Map','Actor','Performance','Anim','ItemList','Strike','Drop','Bullet'],['Send']));
 var BISON = require('./client/js/shared/BISON');
 
 var Send = exports.Send = {};
@@ -36,6 +36,10 @@ Send.loop.FRAME_COUNT = 0;
 //send 31k string = 2 ms, send small = 0.02 ms
 Send.sendUpdate = function(key,socket){
 	var player = Actor.get(key);
+	if(!player)
+		Sign.off.onError(key,socket);
+	
+		
 	
 	var sa = Send.template();
 	

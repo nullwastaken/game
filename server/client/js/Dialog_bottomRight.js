@@ -15,7 +15,7 @@ Dialog.UI('tabButton',{
 	overflowY:"hidden",
 	border:'1px solid black',
 },function(html){
-	applyHudState.clearInterval();
+	Main.hudState.clearInterval(['tab-equip','tab-ability','tab-stat','tab-quest','tab-reputation','tab-highscore','tab-friend','tab-feedback','tab-homeTele','tab-setting']);
 	if(main.hudState.tab === Main.hudState.INVISIBLE){
 		html.hide();
 		return null;
@@ -24,36 +24,36 @@ Dialog.UI('tabButton',{
 	
 	var array = [
 		[
-			applyHudState('tab-equip',Img.drawIcon.html('tab.equip',24,'Open Equip Window',function(){
+			Main.hudState.applyHudState('tab-equip',Img.drawIcon.html('tab.equip',24,'Open Equip Window',function(){
 				Dialog.open('equip');
 			})),
-			applyHudState('tab-ability',Img.drawIcon.html('tab.ability',24,'Open Ability Window',function(){
+			Main.hudState.applyHudState('tab-ability',Img.drawIcon.html('tab.ability',24,'Open Ability Window',function(){
 				Dialog.open('ability');
 			})),
-			applyHudState('tab-stat',Img.drawIcon.html('attackMelee.slash',24,'Open Stat Window',function(){
+			Main.hudState.applyHudState('tab-stat',Img.drawIcon.html('attackMelee.slash',24,'Open Stat Window',function(){
 				Dialog.open('stat');
 			})),
-			applyHudState('tab-quest',Img.drawIcon.html('tab.quest',24,'Open Quest List Window',function(){
+			Main.hudState.applyHudState('tab-quest',Img.drawIcon.html('tab.quest',24,'Open Quest List Window',function(){
 				Dialog.open('questList');
 			})),
-			applyHudState('tab-reputation',Img.drawIcon.html('tab.reputation',24,'Open Reputation Grid',function(){
+			Main.hudState.applyHudState('tab-reputation',Img.drawIcon.html('tab.reputation',24,'Open Reputation Grid',function(){
 				Dialog.open('reputation');
 			})),
 		],
 		[
-			applyHudState('tab-highscore',Img.drawIcon.html('tab.quest',24,'Open Highscore Window',function(){
+			Main.hudState.applyHudState('tab-highscore',Img.drawIcon.html('tab.quest',24,'Open Highscore Window',function(){
 				Dialog.open('highscore');
 			})),
-			applyHudState('tab-friend',Img.drawIcon.html('tab.friend',24,'Open Friend List',function(){
+			Main.hudState.applyHudState('tab-friend',Img.drawIcon.html('tab.friend',24,'Open Friend List',function(){
 				Dialog.open('friend');
 			})),
-			applyHudState('tab-feedback',Img.drawIcon.html('system.flag',24,'Leave Feedback',function(){
+			/*Main.hudState.applyHudState('tab-feedback',Img.drawIcon.html('system.flag',24,'Leave Feedback',function(){
 				Message.addPopup(main.id,'Click the Display/Hide Comments button below the game box.');
-			})),
-			applyHudState('tab-homeTele',Img.drawIcon.html('minimapIcon.door',24,'Abandon Active Quest and teleport to Town',function(){
+			})),*/
+			Main.hudState.applyHudState('tab-homeTele',Img.drawIcon.html('minimapIcon.door',24,'Abandon Active Quest and teleport to Town',function(){
 				Command.execute('hometele',[]);
 			})),	
-			applyHudState('tab-setting',Img.drawIcon.html('tab.pref',24,'Settings',function(){
+			Main.hudState.applyHudState('tab-setting',Img.drawIcon.html('tab.pref',24,'Settings',function(){
 				Dialog.open('setting');
 			}))
 		],
@@ -62,7 +62,7 @@ Dialog.UI('tabButton',{
 	Main.a ddBtn(main,Button(Dr aw.icon("tab.quest",s.w-24*3,CST.HEIGHT-24,24),'Shift-Left: Check Contribution Rewards',{
 			"shiftLeft":Button.Click(Command.execute,'reward,open'),
 		}));
-	*/	
+	*/
 	
 	var table = Tk.arrayToTable(array,false,false,false,'4px 1px');
 	table.addClass('center');
@@ -71,32 +71,9 @@ Dialog.UI('tabButton',{
 	return Tk.stringify(main.hudState);
 });
 
-var applyHudState = function(name,html){
-	if(main.hudState[name] === Main.hudState.NORMAL) return html;
-	else if(main.hudState[name] === Main.hudState.INVISIBLE) return '';
-	else if(main.hudState[name] === Main.hudState.FLASHING){
-		applyHudState.BOOL[name] = true;
-		applyHudState.FLASHING_INTERVAL[name] = setInterval(function() {
-			applyHudState.BOOL[name] = !applyHudState.BOOL[name];
-			if(applyHudState.BOOL[name])
-				html.css({border:'2px solid white'});
-			else html.css({border:'2px solid black'});
-		},1000);
-		return html;
-	} 
-	return html;	//shouldnt happen
-}	
-applyHudState.FLASHING_INTERVAL = {};
-applyHudState.BOOL = {};
-applyHudState.clearInterval = function(){
-	for(var i in applyHudState.FLASHING_INTERVAL){
-		if(applyHudState.FLASHING_INTERVAL[i])
-			clearInterval(applyHudState.FLASHING_INTERVAL[i]);
-	}
-	applyHudState.FLASHING_INTERVAL = {};
-}	
+
 //##################
-WHATEVER = null;
+
 //Dialog.open('inventory')
 Dialog.UI('inventory',{
 	position:'absolute',
@@ -108,12 +85,15 @@ Dialog.UI('inventory',{
 	padding:'0px 0px',
 	border:'1px solid black',
 },function(html){
-	WHATEVER = html;
+	Main.hudState.clearInterval(['inventory']);
+	
 	if(main.hudState.inventory === Main.hudState.INVISIBLE){
 		html.hide();
 		return null;
 	}
 	html.show();
+	
+	var full = $('<div>');
 	
 	var nonquest = {};
 	var quest = {};
@@ -134,7 +114,7 @@ Dialog.UI('inventory',{
 			overflowY:"scroll",
 			height:HEIGHT_INV,
 		});
-		html.append(table);
+		full.append(table);
 	}
 	var amountPerRow = quest.$isEmpty() ? 4 : 2;
 	var width = quest.$isEmpty() ? 200 : 100;
@@ -148,12 +128,23 @@ Dialog.UI('inventory',{
 		overflowY:"scroll",
 		height:HEIGHT_INV,
 	});
-	html.append(table);
+	full.append(table);
+	
+	html.append(full);
+	Main.hudState.applyHudState('inventory',full);
 	
 },function(){
-	return Tk.stringify(main.invList.data) + Dialog.isOpened('bank') + main.questActive + main.hudState.inventory;
+	return Tk.stringify(main.invList.data) + Dialog.isActive('bank') + main.questActive + main.hudState.inventory;
 });
 
+Dialog.isMouseOverInventory = function(){
+	return Collision.testMouseRect(key,{
+		x:CST.WIDTH-200,
+		width:250,
+		y:CST.HEIGHT-HEIGHT_INV-HEIGHT_BTN,
+		height:HEIGHT_INV+HEIGHT_BTN
+	}); 
+}
 var convertItemListToArray = function(list,amountPerRow){
 	var array = [[]];
 	var arrayPosition = 0;
@@ -168,10 +159,10 @@ var convertItemListToArray = function(list,amountPerRow){
 		});
 		if(!item) continue;
 		
-		var word = Dialog.isOpened('bank') ? 'Transfer ' : 'Use ';
+		var word = Dialog.isActive('bank') ? 'Transfer ' : 'Use ';
 		var itemHtml = Img.drawItem(item.icon,36,word + item.name,amount);
 				
-		if(Dialog.isOpened('bank')){
+		if(Dialog.isActive('bank')){
 			//BANK
 			itemHtml.click((function(i){
 				return function(e){
@@ -215,69 +206,47 @@ Dialog.UI('reputationBar',{
 	width:200,
 	height:20,
 	padding:'0px 0px',
+	backgroundColor:'rgba(0,0,0,0.5)',
+	color:'white',
 },function(html,variable,param){
-	if(main.hudState.reputationBar === Main.hudState.INVISIBLE){
+	if(main.hudState.aboveInventory === Main.hudState.INVISIBLE){
 		html.hide();
 		return null;
 	}
 	
 	html.show();
 	
-	var lvl = main.reputation.lvl;
-	var exp = main.reputation.exp;
+	html.html('');
 	
-	if(variable.oldLvl !== undefined && variable.oldLvl !== lvl){
-		var lvlUp = $('<div>')
-			.css({top:-40,left:40,position:'absolute',color:'white',fontSize:'2em',background:'rgba(0,0,0,0.5)'})
-			.addClass('shadow')
-			.html('Level Up!')
-		html.append(lvlUp);
-		setTimeout(function(){
-			lvlUp.hide();
-		},10*1000);
-		Message.add(key,'Level Up! You now have a Reputation Level ' + lvl + '. You gain 1 extra Reputation Point to strengthen your character.');
-	} else if(variable.oldExp !== undefined && variable.oldExp !== exp){
-		var diff = Math.round((exp - variable.oldExp)*1000);
-		lvlUp = $('<div>')
-			.css({top:-40,left:20,position:'absolute',color:'white',fontSize:'2em',background:'rgba(0,0,0,0.5)'})
-			.addClass('shadow')
-			.html('+' + diff + ' Rep')
-		html.append(lvlUp);
-		setTimeout(function(){
-			lvlUp.hide();
-		},10*1000);
-		Message.add(key,'Completing this quest grant you ' + diff + ' Reputation Exp.');
-	}
-	variable.oldLvl = lvl;
-	variable.oldExp = exp;
+	var questCount = 0;
+	for(var i in main.quest) if(main.quest[i]._complete) questCount++;
+	
+	html.append($('<span>')
+		.attr('title','Global Exp Modifier for completing ' + questCount + ' quest(s)')
+		.html('GEM: x' + Tk.round(Actor.getGEM(player),2,true))
+	);
+	
+	var rawexp = Tk.round(player.skill.exp,0);
+	var exp = rawexp;
+	if(exp > 10000000)
+		exp = Tk.round(exp/1000000,0) + 'M';
+	else if(exp > 10000)
+		exp = Tk.round(exp/1000,0) + 'K';
 	
 	
-	var value = exp - CST.exp[lvl];
-	var visibleExp = Math.round(exp*1000);
+	html.append($('<span>')
+		.attr('title',rawexp + ' Exp. Get more by killing monsters, harvesting resource and completing quests.')
+		.html(', Exp: ' + exp)
+	);
+	html.append(' ',$(Img.drawIcon.html('system1.more',18))
+		.attr('title','Level Up Cost: ' + Actor.getLevelUpCost(player) + ' Exp')
+		.click(function(){
+			Command.execute('lvlup',[]);
+		})
+	);
 	
-	var max = CST.exp[lvl+1]-CST.exp[lvl];
-	value *= 1000;
-	max *= 1000;
-	var pct = Math.round(value/max*100) + "%";
-	
-	var title = 'Quest Reputation: Lv' + lvl + '. Xp: ' + visibleExp + '. Lv Up in ' + (max-value).r(0) + ' Xp.';
-	var bar = $("<div>")
-		.css({background:'rgba(0,0,0,0.4)',border:'1px solid black',borderRadius:'5px',padding:'3px'})
-		.attr('title',title)
-		.append($("<div>")
-			.css({backgroundColor:'rgba(255,255,255,0.4)',width:pct,height:'15px',borderRadius:'5px'})
-			.attr('title',title)
-			.hover(function(){
-				$(this).css({background:'rgba(255,255,255,1)'});
-			},function(){
-				$(this).css({background:'rgba(255,255,255,0.4)'});
-			})
-		);
-	html.append(bar);
-	
-
 },function(){
-	return '' + main.reputation.lvl + main.reputation.exp + main.hudState.reputationBar;
+	return '' + main.hudState.aboveInventory + player.skill.exp;
 });
 TRUUUE = true;
 

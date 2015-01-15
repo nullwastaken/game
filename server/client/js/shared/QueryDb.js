@@ -124,7 +124,9 @@ QueryDb.respond.highscore = function(key,query,cb){
 	QueryDb.getQuestShowInTab = function(id){
 		return DB.quest.data[id].showInTab || false;
 	}
-	
+	QueryDb.getPartialQuest = function(id){
+		return DB.quest.data[id];
+	}
 	QueryDb.getHighscoreForQuest = function(id){
 		var list = {};
 		for(var i in DB.highscore.data)

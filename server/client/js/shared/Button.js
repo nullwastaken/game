@@ -54,6 +54,7 @@ Button.onclick = function(side){	//called when clicking
 	Dialog.close('equipPopup');
 	
 	if(Dialog.isMouseOverDialog()) return true;
+	if(Dialog.isMouseOverInventory()) return true;
 	var btn = Button.getBtnUnderMouse();	
 	if(!btn) return false;
 

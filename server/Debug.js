@@ -1,12 +1,12 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Quest','Send','ActorModel','MapModel','Highscore','QuestVar','Party','SpriteModel','ItemModel','Account','ItemList','Combat','Message','OptionList','Boss','Server', 'Boost',  'Cycle', 'Actor',  'Main', 'Attack', 'Strike', 'Bullet',  'ActiveList', 'ItemList','Sign', 'Save',  'Combat', 'Map', 'Input', 'Message', 'Dialogue',  'Drop', 'Performance', 'Ability',  'Equip', 'Quest', 'Clan', 'Collision', 'Button', 'Sprite', 'Anim', 'Command', 'ReputationGrid', 'Contribution'],['Debug']));
+eval(loadDependency(['Quest','OfflineAction','Send','Competition','ActorModel','MapModel','Highscore','QuestVar','Party','SpriteModel','ItemModel','Account','ItemList','Combat','Message','OptionList','Boss','Server', 'Boost',  'Cycle', 'Actor',  'Main', 'Attack', 'Strike', 'Bullet',  'ActiveList', 'ItemList','Sign', 'Save',  'Combat', 'Map', 'Input', 'Message', 'Dialogue',  'Drop', 'Performance', 'Ability',  'Equip', 'Quest', 'Clan', 'Collision', 'Button', 'Sprite', 'Anim', 'Command', 'ReputationGrid', 'Contribution'],['Debug']));
 
 var db = null; //Debug.init
 var DEV_TOOL = 'DEV_TOOL';
 var QUEST_TOOL_SUFFIX = '_Tool';
 var Debug = exports.Debug = {
 	trackQuestVar:!NODEJITSU,
-	SKIP_TUTORIAL:false,
+	SKIP_TUTORIAL:PUBLIC_VERSION || false,
 	DMG_MOD:{player:1,npc:1,pvp:1},
 	ACTIVE:!NODEJITSU,
 	TOEVAL:'',
@@ -69,8 +69,8 @@ Debug.giveRandomEquip = function(key){
 }
 
 Debug.onSignIn = function(key,name){
-	Debug.displayDeveloperMessage(key);
-	if(Server.isAdmin(0,name)) Debug.giveDevTool(key);
+	if(Server.isAdmin(0,name)) 
+		Debug.giveDevTool(key);
 	if(!Debug.ACTIVE)	return;
 	
 	var main = Main.get(key);
@@ -185,16 +185,6 @@ Debug.ts = function(socket,d){
 	}			
 }
 
-Debug.displayDeveloperMessage = function(key){
-	//developper. TOFIX
-	setTimeout(function(){
-		db.report.findOne({version:Server.version},{message:1},function(err,res){	if(err) ERROR.err(3,err);
-			if(!Actor.get(key)) return; //dced
-			if(res && res.message)	Message.add(key,Message('dialog',res.message));	
-			if(!NODEJITSU) Message.add(key,'You are using Game Engine v' + Server.version + '.');
-		});
-	},2000);
-}
 
 Debug.changeDeveloperMessage = function(version,text){
 	db.report.upsert({version:version},{'$set':{version:version,message:text}},db.err);
@@ -236,7 +226,7 @@ Debug.createQuestTool = function(q){
 		INFO('########### ' + Date.now() + ' ###########');
 		var mq = QuestVar.getViaMain(Main.get(key));
 		for(var i in mq){
-			if(['quest','username','key','_preset'].contains(i)) continue;
+			if(['quest','username','key'].contains(i)) continue;
 			var attr = i;
 			for(var j = attr.length; j < 15; j++)
 				attr += ' ';

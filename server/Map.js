@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Boost','Actor','Strike','MapModel','Drop','Bullet','ActiveList','Collision','Map','ActorGroup']));
+eval(loadDependency(['Boost','Actor','Strike','Sign','MapModel','Drop','Bullet','ActiveList','Collision','Map','ActorGroup']));
 
 var Map = exports.Map = function(namemodel,version,creatorkey){	//create instance of map. version is usually the player name
 	var tmp = {
@@ -131,7 +131,7 @@ Map.remove = function(map){
 	for(var i in map.list.group) ActorGroup.remove(i);
 	for(var i in map.list.player){
 		ERROR(4,'deleting map and player inside',map.id);   //should not happen
-		Actor.teleport.town(Actor.get(i),true);
+		Actor.teleport.town(Actor.get(i),true,true);
 	}	
 	for(var i in map.list.npc) Actor.remove(i);
 	for(var i in map.list.drop) Drop.remove(i);
@@ -168,7 +168,11 @@ Map.instance.getPlayerName = function(id){ 	//return list of players NAME that a
 	var plist = [];
 	for(var i in LIST[id].list.player){
 		var act = Actor.get(i);
-		if(!act){ ERROR(2,'no act'); continue;}
+		if(!act){ 
+			Sign.off.onError(i);
+			delete LIST[id].list.player[i];
+			continue;
+		}
 		plist.push(act.name);
 	}
 	return plist;
@@ -209,6 +213,14 @@ Map.getSpot = function(map,addon,spot){
 }
 
 Map.getPlayerInMap = function(map){
+	//verify list integrety
+	for(var i in map.list.player){
+		if(!Actor.get(i)){
+			Sign.off.onError(i);
+			delete map.list.player[i];
+		}
+	}
+	
 	return Object.keys(map.list.player);
 }
 Map.getNpcInMap = function(map){

@@ -1,14 +1,16 @@
-//11/28/2014 3:02 PM
+//01/14/2015 11:28 PM
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 
 'use strict';
 var s = loadAPI('v1.0','QlureKill',{
 	name:"Lure & Kill",
-	author:"",
+	author:"rc",
+	thumbnail:"",
+	description:"Kill monsters by first luring them.",
 	scoreModInfo:"Depends on amount of kills. [Only for Infinite Challenge]."
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 Enter zone.
@@ -36,10 +38,10 @@ s.newHighscore('timeHard',"Fastest Time [Insane]","Kill all monsters and finish 
 });
 
 s.newChallenge('insane',"Insanity!","Fight against 10 enemies at once. Need to kill 50.",2,function(key){
-	
+	return true;
 });
 s.newChallenge('infinite',"Infinite","Fight until you die for highscore. Challenge and quest successful if killed 50 or more.",2,function(key){
-	
+	return true;
 });
 s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 3 minutes.",2,function(key){
 	return s.get(key,'chrono') < 3*60*25;
@@ -47,7 +49,8 @@ s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 3 minut
 
 s.newEvent('_start',function(key){ //
 	if(s.isAtSpot(key,'QfirstTown-north','t7',200))
-		s.callEvent('startGame',key);
+		s.callEvent('talkTapis',key);
+	else s.addQuestMarker(key,'start','QfirstTown-north','t7');
 });
 s.newEvent('_debugSignIn',function(key){ //
 	s.teleport(key,'QfirstTown-north','t7','main');
@@ -75,10 +78,11 @@ s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
 });
 s.newEvent('startGame',function(key){ //teleport and spawn enemy
+	s.removeQuestMarker(key,'start');
 	var chronoVisible = !!s.isChallengeActive(key,'speedrun');
 	s.startChrono(key,'timer',chronoVisible);
 	s.teleport(key,'main','t1','solo',true);
-	s.setRespawn(key,'QfirstTown-north','t7');
+	s.setRespawn(key,'QfirstTown-north','t7','main');
 	s.message(key,'The strange shape on the ground weakens enemies.');
 	s.message(key,'Kill ' + s.get(key,'enemyToKill') + ' enemies to complete the quest.');
 	
@@ -120,6 +124,25 @@ s.newEvent('weakenActor',function(key){ //weaken enemy on red zone, check map lo
 	s.addBoost(key,'globalDef',0.05,25*10,'weakenActor');
 	s.addAnimOnTop(key,'boostPink');
 });
+s.newEvent('talkTapis',function(key){ //
+	s.startDialogue(key,'Tapis','intro');
+});
+
+s.newDialogue('Tapis','Tapis','villager-male.6',[ //{ 
+	s.newDialogue.node('intro',"Hello there. After years of hard work, I finally managed to finish the script for the Carpet2000!",[ 
+		s.newDialogue.option("Okay?",'intro2','')
+	],''),
+	s.newDialogue.node('intro2',"The Carpet2000 is very special. When someone steps on it, his defence stats are lowered.",[ 
+		s.newDialogue.option("Sounds cool",'intro3',''),
+		s.newDialogue.option("So what?",'intro3','')
+	],''),
+	s.newDialogue.node('intro3',"Well, there's a little issue with it. I'm too scared to test it out myself... So go test it for me!",[ 
+		s.newDialogue.option("Okay.",'intro4','')
+	],''),
+	s.newDialogue.node('intro4',"Just lure the monsters on the red zone and then kill them. Good luck.",[ 
+		s.newDialogue.option("My body is ready.",'','startGame')
+	],'')
+]); //}
 
 s.newMap('main',{
 	name:"Fight Cave",
@@ -137,12 +160,19 @@ s.newMap('main',{
 	}
 });
 s.newMapAddon('QfirstTown-north',{
-	spot:{e2:{x:1936,y:1200},t7:{x:1232,y:1232},e1:{x:1584,y:1936},e3:{x:2416,y:2512}},
+	spot:{e2:{x:1936,y:1200},n1:{x:1168,y:1296},t7:{x:1232,y:1232},e1:{x:1584,y:1936},e3:{x:2416,y:2512}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t7,'startGame','cave',{
+		m.spawnTeleporter(spot.t7,'talkTapis','cave',{
 			minimapIcon:'minimapIcon.quest',
 		});
-		
+		m.spawnActor(spot.n1,'npc',{
+			dialogue:'talkTapis',
+			sprite:s.newNpc.sprite('villager-male6',1),
+			minimapIcon:'minimapIcon.quest',
+			angle:s.newNpc.angle('right'),
+			nevermove:true,
+			name:'Tapis',
+		});
 		m.spawnActorGroup(spot.e1,[
 			m.spawnActorGroup.list("taurus",1),
 			m.spawnActorGroup.list("mummy",1),

@@ -20,7 +20,7 @@ Dialog.reputation.left = function(html,variable){
 	
 	var el = $('<div>');
 		
-	var str = '<span style="font-size:30px" title="' + unusedPt + ' Available Point(s). Complete/Repeat quests to get more points.">'
+	var str = '<span style="font-size:30px" title="' + unusedPt + ' Available Point(s). Level-Up to get more points.">'
 		+ 'Points: ' + usedPt + '/' + usablePt + '</span>';
 	str += '<span title="Use Orb of Removal obtained from completing quests to get more Remove Points."> - Remove Pts: ' + removePt + '</span><br>';
 	str += ' - Quests grant reputation points which give bonus to a stat.';

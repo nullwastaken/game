@@ -5,9 +5,10 @@
 'use strict';
 var s = loadAPI('v1.0','Qrgb',{
 	name:"RGB",
-	author:"rc"
+	author:"rc",
+	description:"You must restore the RBG setting by activating 2 switches guarded by enemies.",
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 activate switch

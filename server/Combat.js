@@ -231,7 +231,7 @@ Combat.collision.reflect = function(dmg,b,def){
 
 	sum /= atker.globalDef;
 	sum = sum || 0;
-	Actor.changeHp(atker,-sum);
+	Actor.addHp(atker,-sum);
 }
 	
 Combat.collision.crit = function(b){
@@ -250,7 +250,7 @@ Combat.collision.damage = function(atk,player){
 		
 	dmgInfo.sum *= Debug.DMG_MOD[player.type];	//TOFIX
 	
-	Actor.changeHp(player,-dmgInfo.sum);
+	Actor.addHp(player,-dmgInfo.sum);
 	player.lastAbilitySkill = dmgInfo.mainType;
 	
 	player.damagedBy[atk.parent] = player.damagedBy[atk.parent] || 0;

@@ -5,10 +5,11 @@
 'use strict';
 var s = loadAPI('v1.0','QbaseDefence',{
 	name:"Defend The Base",
-	author:"",
-	reward:{"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}}
+	author:"rc",
+	reward:{"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
+	description:"Kill waves of monsters before they reach your base using the right ability.",
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 kill zombies by using the right ability
@@ -21,7 +22,6 @@ s.newVariable({
 	amountWave:15,
 	pt:125,
 	life:5,
-	upgradeLife:0,
 	upgradeAmount:0,
 	upgradeSpd:0
 });
@@ -40,18 +40,19 @@ s.newHighscore('remainingpt4',"Remaining Pts [4 Colors]","Most points at the end
 });
 
 s.newChallenge('hardmode',"Hardmode!","Only 3 Life. Survive 20 waves.",2,function(key){
-	
+	return true;
 });
 s.newChallenge('pt400',"400+ Pts","End the quest with 400 remaining points.",2,function(key){
 	return s.get(key,'pt') > 400;
 });
 s.newChallenge('color4',"4 Types","There are 4 types of enemies.",2,function(key){
-	
+	return true;
 });
 
 s.newEvent('_start',function(key){ //
 	if(s.isAtSpot(key,'QfirstTown-east','t4',200))
-		s.callEvent('startGame',key);
+		s.callEvent('talkPoppy',key);
+	else s.addQuestMarker(key,'start','QfirstTown-east','t4');
 });
 s.newEvent('_hint',function(key){ //
 	return 'Pt: ' + s.get(key,'pt') + ' | Wave: ' + s.get(key,'wave') + '/' + s.get(key,'amountWave') + ' | Life: ' + s.get(key,'life');
@@ -73,10 +74,16 @@ s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
 });
 s.newEvent('startGame',function(key){ //
-	s.teleport(key,'base','t1','solo',true);
+	s.removeQuestMarker(key,'start');
+	s.teleport(key,'base','t1','party',true);
 	s.addItem(key,'upgradeSpd');
 	s.addItem(key,'upgradeAmount');
-	s.displayPopup(key,'Use items to upgrade attack.');
+	s.displayPopup(key,'Don\'t forget to use items to upgrade your attack speed and bullet amount.');
+	
+	s.setTimeout(key,function(){
+		if(s.get(key,'upgradeAmount') === 0 && s.get(key,'upgradeSpd') === 0)
+			s.displayPopup(key,'Don\'t forget to use items to upgrade your attack speed and bullet amount.');
+	},25*40);
 	
 	if(s.isChallengeActive(key,'hardmode')){
 		s.set(key,'life',3);
@@ -91,7 +98,7 @@ s.newEvent('startGame',function(key){ //
 		s.message(key,'Use the right ability to defeat the enemies ([$0], [$1], [$2], [$3]).');
 		s.usePreset(key,'color4');
 	}
-	s.setTimeout(key,'nextWave',10*25);	//call the first wave in 10 sec
+	s.setTimeout(key,'nextWave',1*25);	//call the first wave in 1 sec
 });
 s.newEvent('nextWave',function(key){ //
 	if(s.get(key,'wave') >= s.get(key,'amountWave')){ 	//if survived long enough, complete quest
@@ -195,6 +202,9 @@ s.newEvent('reachEnd',function(key){ //when mushroom reach end
 		s.failQuest(key);
 		return true;	//stops the loop in the map loop
 	}
+});
+s.newEvent('talkPoppy',function(key){ //when mushroom reach end
+	s.startDialogue(key,'Poppy','intro');
 });
 
 s.newItem('upgradeAmount',"Amount",'element.range',[    //{
@@ -301,6 +311,15 @@ s.newNpc('green',{
 	damageIf:'false'
 });
 
+s.newDialogue('Poppy','Poppy','villager-female.3',[ //{ 
+	s.newDialogue.node('intro',"Hello. Some weird-ass coloured squares appeared out of nowhere and tried to kill me! Exterminate them please, they don't belong to this game!",[ 
+		s.newDialogue.option("Sure",'intro2','')
+	],''),
+	s.newDialogue.node('intro2',"Apparently, red monsters can only be killed by red attacks (fire), yellow monsters by lightning and blue ones by cold.",[ 
+		s.newDialogue.option("Okay. I'm ready.",'','startGame')
+	],''),
+]); //}
+
 s.newMap('base',{
 	name:"Base",
 	lvl:0,
@@ -315,9 +334,13 @@ s.newMap('base',{
 s.newMapAddon('QfirstTown-east',{
 	spot:{e1:{x:1136,y:720},e2:{x:2000,y:1008},t4:{x:1680,y:1552}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t4,'startGame','zone',{
+		m.spawnActor(spot.t4,'npc',{
+			dialogue:'talkPoppy',
+			name:'Poppy',
+			sprite:s.newNpc.sprite('villager-female3',1),
 			minimapIcon:'minimapIcon.quest',
-			angle:s.newNpc.angle('down'),
+			angle:s.newNpc.angle('up'),
+			nevermove:true,
 		});
 		
 		m.spawnActorGroup(spot.e1,[

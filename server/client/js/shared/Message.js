@@ -18,10 +18,8 @@ Message.TYPE = [ //{
 	'clan', //appear in chatbox with clan name
 	'pm', //appear in pmbox
 	'report',	//logged in db
+	'questionAnswer', //when client answers
 	'input',	//overwrite chat input
-	'dialog',	//popup in jquery dialog
-	'questPopup', //popup for quest
-	'question',	//prompt asking for answer, call function with answer as param
 	'contribution',	//appear in contribution box
 	'signNotification',	//appear chatbox. called when player logs in game
 ]; //}
@@ -46,11 +44,7 @@ Message.Public = function(customChat){
 		color:customChat.color,
 	}
 }
-Message.QuestPopup = function(time,title){
-	return {
-		time:time || 8*1000,
-	}
-}
+
 
 Message.Report = function(title){
 	return {
@@ -65,15 +59,6 @@ Message.uncompressClient = function(msg){
 	
 //###############
 
-Message.Question = function(answerType,option,title){
-	var tmp = {
-		answerType:answerType || 'boolean',	//string, number, option
-		option:option || [],
-		title:title || '',
-	}
-	return tmp;
-}
-Message.Question.YES = 'Yes';
-Message.Question.NO = 'No';
+
 
 

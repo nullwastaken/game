@@ -61,7 +61,7 @@ Message.sendToServer = function(msg){
 
 Message.reply = function(){
 	if(Message.reply.HISTORY.length){
-		Dialog.chat.setInput('@' + Message.reply.HISTORY[0].from + ',');
+		Message.setInputForPM(key,Message.reply.HISTORY[0].from);
 	}
 	if(Message.reply.HISTORY.length > 20){
 		Message.reply.HISTORY = Message.reply.HISTORY.slice(0,10);
@@ -70,6 +70,10 @@ Message.reply = function(){
 }
 Message.reply.HISTORY = [];
 
+Message.setInputForPM = function(key,name){
+	Dialog.chat.setInput('@' + name + ',');
+}
+
 //###############
 
 Message.add = function(key,msg){
@@ -77,6 +81,6 @@ Message.add = function(key,msg){
 	Message.receive(msg);
 }
 Message.addPopup = function(key,text,time){
-	Message.add(main.id,Message('questPopup',text,null,Message.QuestPopup(time || 25*30,false)));	
+	Dialog.open('questPopup',{text:text,time:time || 25*60});	
 }
 

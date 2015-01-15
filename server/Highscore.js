@@ -131,9 +131,12 @@ Highscore.compressDb = function(category,value,username){
 }
 
 Highscore.setNewScore = function(q,main,mq){
+	var ret = {};
 	for(var i in q.highscore){
 		var score = q.highscore[i].getScore(main.id);
 		if(typeof score !== 'number') continue;
+		ret[i] = score;
+		
 		if(mq._highscore[i] == null
 			|| (q.highscore[i].order === 'ascending' && score < mq._highscore[i])
 			|| (q.highscore[i].order === 'descending' && score > mq._highscore[i])){
@@ -142,6 +145,7 @@ Highscore.setNewScore = function(q,main,mq){
 			Highscore.saveScore(i,mq._highscore[i],main.username);
 		}
 	}
+	return ret;
 }
 
 Highscore.saveAllScore = function(main,cb){

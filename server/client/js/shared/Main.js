@@ -35,7 +35,6 @@ var Main = exports.Main = function(key,extra){
 		screenEffect:{},
 	};
 	for(var i in extra) main[i] = extra[i];
-	Main.reputation.updatePt(main);
 	
 	return main;
 }
@@ -111,7 +110,6 @@ Main.destroyInv = function(main,id,amount){
 	return true;
 }
 
-
 Main.HudState = function(){
 	return {
 		tab:0,
@@ -128,7 +126,7 @@ Main.HudState = function(){
 		'tab-setting':0,
 		chat:0,
 		bottomChatIcon:0,
-		reputationBar:0,
+		aboveInventory:0,
 		mana:0,
 		hp:0,
 		party:0,
@@ -136,6 +134,7 @@ Main.HudState = function(){
 		minimap:0,	//impact hint and belowMinimap
 		abilityBar:0,
 		curseClient:0,
+		questHint:0,
 	};
 }
 Main.hudState = {};
@@ -149,7 +148,41 @@ Main.hudState.NORMAL = 0;
 Main.hudState.INVISIBLE = 1;
 Main.hudState.FLASHING = 2;
 
-
+Main.hudState.applyHudState = function(name,html){
+	if(main.hudState[name] === Main.hudState.NORMAL) return html;
+	else if(main.hudState[name] === Main.hudState.INVISIBLE) return '';
+	else if(main.hudState[name] === Main.hudState.FLASHING){
+		//if(Main.hudState.FLASHING_INTERVAL[name])	//prevent interval to stack up
+		//	return html;
+		
+		Main.hudState.BOOL[name] = true;
+		Main.hudState.HTML[name] = html;
+		Main.hudState.BORDER[name] = html.css('border');
+		Main.hudState.FLASHING_INTERVAL[name] = setInterval(function() {
+			Main.hudState.BOOL[name] = !Main.hudState.BOOL[name];
+			if(Main.hudState.BOOL[name])
+				html.css({border:'2px solid white'});
+			else html.css({border:'2px solid black'});
+		},1000);
+		return html;
+	} 
+	return html;	//shouldnt happen
+}	
+Main.hudState.FLASHING_INTERVAL = {};
+Main.hudState.BOOL = {};
+Main.hudState.BORDER = {};
+Main.hudState.HTML = {};
+Main.hudState.clearInterval = function(list){
+	for(var i in Main.hudState.FLASHING_INTERVAL){
+		if(Main.hudState.FLASHING_INTERVAL[i] && list.contains(i)){
+			delete Main.hudState.FLASHING_INTERVAL[i];
+			clearInterval(Main.hudState.FLASHING_INTERVAL[i]);
+			if(Main.hudState.HTML[i])
+				Main.hudState.HTML[i].css({border:Main.hudState.BORDER[i]});
+		}
+	}
+	
+}	
 
 
 

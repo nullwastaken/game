@@ -33,6 +33,9 @@ ERROR.err = function(lvl,err,p0,p1,p2,p3,p4,p5,p6){
 	if(ERROR.last === str) return all['con' + 'sole'].log('Same: x' + ERROR.count);
 	ERROR.last = str;
 	
+	if(ERROR.LOG.length < 10000)
+		ERROR.LOG += str;
+	
 	all['con' + 'sole'].log(str);
 	
 	//quest
@@ -62,6 +65,8 @@ ERROR.count = 0;
 ERROR.last = '';
 ERROR.display = true;
 ERROR.resetAt = 100;
+
+ERROR.LOG = '';
 
 ERROR.getStack = function(){
 	if(SERVER || window.chrome) return (new Error()).stack;

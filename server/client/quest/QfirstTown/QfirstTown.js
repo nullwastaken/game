@@ -5,7 +5,7 @@ eval(loadDependency(["Debug"]));
 
 var s = loadAPI('v1.0','QfirstTown',{
 	name:"",
-	author:"",
+	author:"rc",
 	admin:true,
 	dailyTask:false,
 	showWindowComplete:false,
@@ -14,7 +14,7 @@ var s = loadAPI('v1.0','QfirstTown',{
 	alwaysActive:true,
 	autoStartQuest:false,
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 
@@ -108,34 +108,34 @@ s.newMap('main',{
 	spot:{t1:{x:1664,y:48},g:{x:3152,y:48},s1:{x:1888,y:592},n8:{x:2640,y:560},c:{x:2224,y:624},n7:{x:1680,y:688},t3:{x:3472,y:688},t7:{x:368,y:784},t8:{x:1216,y:816},s5:{x:2496,y:976},n2:{x:1264,y:976},i:{x:48,y:1008},s6:{x:3168,y:1136},s3:{x:192,y:1296},l:{x:1488,y:1328},q1:{x:1200,y:1488},n1:{x:2096,y:1488},k:{x:1584,y:1680},q4:{x:3056,y:1680},t5:{x:48,y:1776},f:{x:1024,y:1776},n5:{x:464,y:1808},g1:{x:2336,y:1888},q2:{x:1584,y:1904},n3:{x:2224,y:2256},n4:{x:1264,y:2288},a:{x:672,y:2416},b:{x:1856,y:2448},q3:{x:1040,y:2480},s4:{x:800,y:2672},s2:{x:2112,y:2672},n6:{x:1488,y:2640},h:{x:3472,y:3040},j:{x:112,y:3152},t4:{x:1472,y:3152}},
 	load:function(spot){
 		m.spawnTeleporter(spot.t3,function(key){
-			s.teleport(key,'east','t7');
+			s.teleport(key,'east','t7','main');
 		},'zone',null,'east');
 		m.spawnTeleporter(spot.t4,function(key){
-			s.teleport(key,'south','t1');
+			s.teleport(key,'south','t1','main');
 		},'zone','down','south');
 		
 		m.spawnTeleporter(spot.t1,function(key){
-			s.teleport(key,'north','t1');
+			s.teleport(key,'north','t1','main');
 		},'zone','up','north');
 		
 		m.spawnTeleporter(spot.t7,function(key){
-			s.teleport(key,'nwLong','t1');
+			s.teleport(key,'nwLong','t1','main');
 		},'door',null,'nwLong');
 		m.spawnTeleporter(spot.t8,function(key){ 
-			s.message(key,'There\'s nothing here.'); 
+			s.teleport(key,'Qtutorial-genetosHouse2','t1','main');
 		},'door');
 		m.spawnTeleporter(spot.a,function(key){ 
 			s.message(key,'There\'s nothing here.');
 		},'door');
 		m.spawnTeleporter(spot.b,function(key){
-			s.teleport(key,'high','t1');
+			s.teleport(key,'high','t1','main');
 		},'door',null,'high');
 		m.spawnTeleporter(spot.c,function(key){ 
 			s.message(key,'There\'s nothing here.');
 		},'door');
 		
 		m.spawnTeleporter(spot.k,function(key){ 
-			s.teleport(key,'eastCave','t1');
+			s.teleport(key,'eastCave','t1','main');
 		},'cave','right','eastCave');
 		
 		
@@ -219,7 +219,7 @@ s.newMap('main',{
 		s.usePreset(key,'inTown');
 	},
 	playerLeave:function(key){
-		s.removePreset(key);
+		s.removePreset(key,'inTown');
 	}
 });
 s.newMap('east',{
@@ -230,7 +230,7 @@ s.newMap('east',{
 },{
 	spot:{t3:{x:864,y:48},t2:{x:1232,y:48},t1:{x:2608,y:144},a:{x:1648,y:208},s4:{x:736,y:304},s7:{x:224,y:288},s3:{x:2368,y:336},s5:{x:2112,y:560},s6:{x:1152,y:544},t8:{x:3024,y:560},t7:{x:48,y:784},e1:{x:1136,y:784},g1:{x:1792,y:960},e2:{x:2064,y:944},t5:{x:3152,y:1008},s1:{x:2496,y:1168},s2:{x:1056,y:1392},t4:{x:1680,y:1552},t6:{x:2896,y:1552}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t7,function(key){s.teleport(key,'main','t3');},'zone','left','main');
+		m.spawnTeleporter(spot.t7,function(key){s.teleport(key,'main','t3','main');},'zone','left','main');
 		
 		m.spawnSkillPlot(spot.s3,'QtowerDefence','tree-red',0);
 		m.spawnSkillPlot(spot.s5,'QbulletHeaven','tree-red',0);
@@ -263,7 +263,7 @@ s.newMap('south',{
 },{
 	spot:{t1:{x:1760,y:48},t2:{x:1552,y:1200},t7:{x:48,y:1248},t3:{x:3152,y:1728},t6:{x:48,y:2240},t5:{x:1216,y:3152},t4:{x:2176,y:3152}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','t4');},'zone','up','main');
+		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','t4','main');},'zone','up','main');
 	}
 });
 s.newMap('north',{
@@ -274,7 +274,7 @@ s.newMap('north',{
 },{
 	spot:{t3:{x:1728,y:48},s4:{x:1120,y:208},t8:{x:880,y:208},t4:{x:3152,y:432},s5:{x:3104,y:848},s3:{x:2160,y:976},e2:{x:1936,y:1200},t7:{x:1232,y:1232},t2:{x:48,y:1264},s6:{x:976,y:1296},g1:{x:1888,y:1664},b1:{x:2592,y:1632,width:128,height:32},t5:{x:3152,y:1792},e1:{x:1584,y:1936},s8:{x:1216,y:2064},s1:{x:2304,y:2288},s2:{x:1840,y:2288},a:{x:2768,y:2448},t6:{x:3152,y:2448},e3:{x:2416,y:2512},s7:{x:2896,y:2864},t1:{x:1280,y:3152}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','t1');},'zone','down','main');
+		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','t1','main');},'zone','down','main');
 		m.spawnBlock(spot.b1,function(){ return true; },'spike');	
 		
 		m.spawnSkillPlot(spot.s6,'QlureKill','rock-bronze',0);
@@ -292,7 +292,7 @@ s.newMap('nwLong',{
 },{
 	spot:{n1:{x:368,y:912},t1:{x:528,y:1168},t2:{x:528,y:1456}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','t7');},'zone','down','main');
+		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','t7','main');},'zone','down','main');
 	}
 });
 s.newMap('high',{
@@ -303,7 +303,7 @@ s.newMap('high',{
 },{
 	spot:{t2:{x:352,y:384},n1:{x:368,y:592},t1:{x:528,y:928}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','b');},'zone','down','main');
+		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','b','main');},'zone','down','main');
 	}
 });
 s.newMap('simpleMap',{
@@ -327,5 +327,13 @@ s.newMap('transitionMap',{
 		
 	}
 });
+
+s.newMapAddon('Qtutorial-genetosHouse2',{
+	spot:{n1:{x:880,y:560},t1:{x:976,y:784}},
+	load:function(spot){}
+});
+
+
+
 
 s.exports(exports);

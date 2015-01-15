@@ -1,5 +1,3 @@
-
-
 Actor.drawAll = function (ctx){
 	var array = Actor.drawAll.getSortedList();
 	var context = null;
@@ -12,7 +10,7 @@ Actor.drawAll = function (ctx){
 	}
 	return context;
 }	
-	
+
 Actor.drawAll.getSortedList = function(){
 	var drawSortList = [];
 	for(var i in Actor.LIST){
@@ -141,8 +139,7 @@ Actor.drawAll.getMinimapList = function(){	//bad...
 	}
 	return toReturn;
 }
-	
-	
+
 	
 	
 	

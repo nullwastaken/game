@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['ItemList','Message','OptionList','Combat','Material','CraftBoost','ItemModel','Main','Actor'],['Equip']));
+eval(loadDependency(['ItemList','Message','Boost','OptionList','Combat','Material','CraftBoost','ItemModel','Main','Actor'],['Equip']));
 var db = null; 	//Equip.init
 
 var Equip = exports.Equip = function(quest,id,piece,type,name,lvl,valueMod,boost,extra,addDb){	//called directly when creating quest equip
@@ -207,6 +207,10 @@ Equip.Lvl = function(lvl){
 	return Math.max(0,Math.floor(lvl * (1 + 0.2*Math.randomML())));		//aka lvl += 10%
 }
 
+Equip.Boost = function(stat,value,type){
+	return Boost.Perm(stat,value,type);
+}
+
 Equip.generateRarity = Equip.generateQuality = function(rarity){
 	rarity = rarity || 0;
 	return Math.max(0,rarity * Math.random() * 0.5 + Math.randomML());
@@ -309,7 +313,7 @@ Equip.createItemVersion = function(equip){
 	var extra = {type:'equip',drop:0};
 	
 	if(equip.salvagable)	
-		option.push(ItemModel.Option(Equip.salvage,'Salvage','Convert into crafting materials.',[equip.id]));
+		option.push(ItemModel.Option(Equip.salvage,'Salvage','Destroy equip into crafting materials.',[equip.id]));
 	else 
 		option.push(ItemModel.Option(Equip.destroy,'Destroy','Destroy the equip permanently.',[equip.id]));
 	//if(equip.upgradable && equip.boost.length < equip.maxAmount)	
@@ -383,15 +387,16 @@ Equip.salvage = function(key,id){
 		Main.addItem(main,item);
 		
 		//give exp
+		/*
 		var expAmount = (equip.boost.length + 1)*250;
 		var act = Actor.get(key);
 		if(equip.creator === act.username)
 			Actor.addExp(act,expAmount);
-		
+		*/
 		
 		Message.add(key,'You salvaged the equip.');
 		Equip.removeFromDb(id);
-	},'Salvage this equip?','boolean');
+	},'Are you sure you want to destroy this equip into crafting materials?','boolean');
 }
 
 Equip.destroy = function(key,id){

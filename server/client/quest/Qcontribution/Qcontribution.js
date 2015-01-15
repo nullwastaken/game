@@ -9,7 +9,7 @@ var s = loadAPI('v1.0','Qcontribution',{
 	dailyTask:false,
 	globalHighscore:true,
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 

@@ -153,7 +153,7 @@ Actor.status.loop.burn = function(act){
 	var status = act.status.burn;
 	if(status.time > 0){
 		status.time -= INTERVAL_STATUS;
-		Actor.changeHp(act, -status.magn*act.hp*INTERVAL_STATUS);
+		Actor.addHp(act, -status.magn*act.hp*INTERVAL_STATUS);
 	}
 }
 
@@ -162,7 +162,7 @@ Actor.status.loop.bleed = function(act){
 	
 	if(status.time > 0){
 		status.time -= INTERVAL_STATUS;
-		Actor.changeHp(act, -status.magn*INTERVAL_STATUS);
+		Actor.addHp(act, -status.magn*INTERVAL_STATUS);
 	}
 }
 

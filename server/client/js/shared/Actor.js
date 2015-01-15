@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Account','Boss','Map','ActiveList','Debug','ActorGroup','Quest','Message','Send','Stat','Button','OptionList','Sprite','Main','ActorModel'],['Actor']));
+eval(loadDependency(['Account','Boss','Preset','Map','ActiveList','Debug','ActorGroup','Quest','Message','Send','Stat','Button','OptionList','Sprite','Main','ActorModel'],['Actor']));
 
 var Actor = exports.Actor = function(modelId,extra){
 	var act = {
@@ -92,6 +92,7 @@ var Actor = exports.Actor = function(modelId,extra){
 		respawnLoc:Actor.RespawnLoc(),
 		respawnTimer:25,
 		questMarker:{},
+		preset:{},
 	}
 	var model = Tk.deepClone(ActorModel.get(modelId));
 	if(!model) return ERROR(2,'no model dont exist',modelId);
@@ -323,7 +324,7 @@ Actor.generateOptionList = function(act){
 		if(act.onclick.shiftRight) option.push(act.onclick.shiftRight);
 	}
 	
-	//if(act.type === 'player') option.push(OptionList.Option(Actor.click.trade,[OptionList.ACTOR,act.id],'Trade'));
+	if(act.type === 'player') option.push(OptionList.Option(Actor.click.party,[OptionList.ACTOR,act.id],'Invite to Party'));
 	if(act.dialogue) option.push(OptionList.Option(Actor.click.dialogue,[OptionList.ACTOR,act.id],'Talk'));
 	if(act.waypoint) option.push(OptionList.Option(Actor.click.waypoint,[OptionList.ACTOR,act.id],'Set Respawn'));
 	if(act.loot)	option.push(OptionList.Option(Actor.click.loot,[OptionList.ACTOR,act.id],'Loot'));
@@ -507,3 +508,75 @@ Actor.Summoned = function(parent,name,time,distance){
 Actor.OptionList = function(name,option){
 	return OptionList(name,option);
 }
+
+//Preset
+Actor.addPreset = function(act,name,s){
+	act.preset[name] = Preset.get(name);
+	Actor.updatePreset(act,s);
+}
+
+Actor.removePreset = function(act,name,s){
+	delete act.preset[name];
+	Actor.updatePreset(act,s);
+}
+
+Actor.updatePreset = function(act,s){
+	var key = act.id;
+	
+	var reputation = true;
+	var ability = true;
+	var pvp = false;
+	var combat = true;
+	
+	for(var i in act.preset){
+		if(act.preset[i].noReputation)
+			reputation = false;
+		if(act.preset[i].noAbility)
+			ability = false;
+		if(act.preset[i].pvp)
+			pvp = true;
+		if(act.preset[i].noCombat)
+			combat = false;
+	}
+	s.enableReputation(key,reputation); 
+	s.enableAttack(key,ability); 	
+	s.enablePvp(key,pvp); 
+	s.enableCombat(key,combat); //case quest isAlwaysActive???
+	
+	var ability = false;	
+	for(var i in act.preset){
+		var preset = act.preset[i];
+		if(preset.ability){
+			Actor.setCombatContext(act,'ability','quest',true);
+			for(var i = 0 ; i < preset.ability.length; i++){
+				if(preset.ability[i])
+					s.addAbility(act.id,preset.ability[i],i);
+			}
+			s.rechargeAbility(act.id);
+			ability = true;
+			break;
+		}
+	}
+	if(!ability)
+		Actor.setCombatContext(Actor.get(key),'ability','normal');
+	
+	
+	var equip = false;	
+	for(var i in act.preset){
+		var preset = act.preset[i];
+		if(preset.equip){
+			Actor.setCombatContext(act,'equip','quest',true);
+			for(var i in preset.equip){
+				if(preset.equip[i])
+					s.addEquip(act.id,preset.equip[i]);
+			}
+			equip = true;
+			break;
+		}
+	}
+	if(!equip)
+		Actor.setCombatContext(Actor.get(key),'equip','normal');
+	
+}
+
+

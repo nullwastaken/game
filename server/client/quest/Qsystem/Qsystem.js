@@ -11,7 +11,7 @@ var s = loadAPI('v1.0','Qsystem',{
 	alwaysActive:true,
 	admin:true,
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 (function(){	//Sprite
 	if(typeof SERVER === 'undefined') return;
@@ -183,7 +183,6 @@ var m = s.map; var b = s.boss;
 	s.newSprite.picture("tower-enemy","picture/tower-enemy.png",32,32,2);
 })();
 
-
 //{ General Item
 s.newItem('bugged-drop','I AM ERR0R','system.square');
 s.newItem('test','Test','system.square');
@@ -200,40 +199,52 @@ s.newItem('orb-removal','Orb of Removal','orb.removal',[
 
 //{ Equip
 s.newEquip('unarmed','weapon','mace','Mace',1);
-s.newEquip('start-body','body','metal','Body',1,[],{
+s.newEquip('start-body','body','metal','Body',1,[
+	s.newEquip.boost('hp-regen',0.05,'*'),
+],{
 	upgradable:true,
-	maxAmount:1,
-	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qtutorial-resource',2]])),
+	maxAmount:2,
+	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
-s.newEquip('start-helm','helm','wood','Helm',1,[],{
+s.newEquip('start-helm','helm','wood','Helm',1,[
+	s.newEquip.boost('def-melee-+',0.05,'*'),
+],{
 	upgradable:true,
-	maxAmount:1,
-	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qtutorial-resource',2]])),
+	maxAmount:2,
+	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
-s.newEquip('start-amulet','amulet','ruby','Amulet',1,[],{
+s.newEquip('start-amulet','amulet','ruby','Amulet',1,[
+	s.newEquip.boost('maxSpd',0.05,'*'),
+],{
 	upgradable:true,
-	maxAmount:1,
-	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qtutorial-resource',2]])),
+	maxAmount:2,
+	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
-s.newEquip('start-ring','ring','sapphire','Ring',1,[],{
+s.newEquip('start-ring','ring','sapphire','Ring',1,[
+	s.newEquip.boost('magicFind-quantity',0.15,'*'),
+],{
 	upgradable:true,
-	maxAmount:1,
-	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qtutorial-resource',2]])),
+	maxAmount:2,
+	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
-s.newEquip('start-weapon','weapon','mace','Mace',1,[],{
+s.newEquip('start-weapon','weapon','mace','Mace',1,[
+	s.newEquip.boost('dmg-melee-+',0.15,'*'),
+],{
 	upgradable:true,
-	maxAmount:1,
-	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qtutorial-resource',2]])),
+	maxAmount:2,
+	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
-s.newEquip('start-bow','weapon','bow','Bow',1,[],{
+s.newEquip('start-bow','weapon','bow','Bow',1,[
+	s.newEquip.boost('dmg-range-+',0.15,'*'),
+],{
 	upgradable:true,
-	maxAmount:1,
-	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qtutorial-resource',2]])),
+	maxAmount:2,
+	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
 s.newEquip('start-staff','weapon','staff','Staff',1,[],{
 	upgradable:true,
-	maxAmount:1,
-	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qtutorial-resource',2]])),
+	maxAmount:2,
+	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
 
 //}
@@ -1038,7 +1049,6 @@ s.newNpc("orc-melee",{
 			boost:[
 				s.newBoost('bleed-chance',1000,100,'+'),
 				s.newBoost('atkSpd',3,100),
-				s.newBoost('globalDef',10,100),
 			],
 		}),[0.2,0.4,0.4]),
 		s.newNpc.abilityAi.ability(s.newAbility(null,'rangeBullet',{},{

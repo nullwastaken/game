@@ -139,7 +139,7 @@ Actor.setChange.npc = function(act,frame){
 			var x = Math.floor(act.x);	if(act.old.x !== x) act.change.x = act.old.x = x; 
 			var y = Math.floor(act.y);	if(act.old.y !== y) act.change.y = act.old.y = y;
 			
-			if(act['spriteFilter']){ act.change['spriteFilter'] = act['spriteFilter']; act['spriteFilter'] = null; }	//BAD
+			if(act.flag.spriteFilter){ act.flag.spriteFilter = 0; act.change.spriteFilter = act.spriteFilter; }
 		}
 		if(frame % 4 === 0){
 			var angle = Math.floor(act.angle/15)*15+1;	if(act.old.a !== angle) act.change.a = act.old.a = angle;
@@ -396,7 +396,7 @@ Actor.uncompressDb = function(act,key){
 		act.abilityChange = Actor.AbilityChange(act.ability.normal);	//bad...
 		act.respawnLoc = Actor.RespawnLoc.uncompressDb(act.respawnLoc);
 		
-		act.skill = act.skill;	//kinda dumb but w/e
+		act.skill = Actor.Skill(act.skill.exp,act.skill.lvl);
 		act.context = act.name;
 		act.id = key;
 

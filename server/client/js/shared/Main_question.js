@@ -8,22 +8,31 @@ Main.Question = function(func,answerType){
 	}
 }
 
-Main.question = function(main,func,text,answerType,option,title){
+Main.question = function(main,func,text,answerType,option){
 	answerType = answerType || 'boolean';
 	text = text || "Are you sure?";
 	option = option || [];
-	title = title || 'Please answer this question';
-	if(answerType === 'boolean') option = [Message.Question.YES,Message.Question.NO];
+	if(answerType === 'boolean') 
+		option = [Main.Question.YES,Main.Question.NO];
 	
-	if(!Main.question.ANSWER_TYPE.contains(answerType)) return ERROR(3,'invalid answerType',answerType);
+	if(!Main.Question.ANSWER_TYPE.contains(answerType)) 
+		return ERROR(3,'invalid answerType',answerType);
 	
-	var msg = Message('question',text,null,Message.Question(answerType,option,title));
-	Main.addMessage(main,msg);
+	Main.openDialog(main,'question',Main.Question.Dialog(text,option));
 	main.question = Main.Question(func,answerType);
 	
 }
-Main.question.ANSWER_TYPE = ['boolean','number','string','option'];
+Main.Question.ANSWER_TYPE = ['boolean','number','string','option'];
 
+Main.Question.YES = 'Yes';
+Main.Question.NO = 'No';
+Main.Question.Dialog = function(text,option){
+	return {
+		text:text,
+		option:option
+	}
+}
+	
 Main.handleQuestionAnswer = function(main,msg){	//both
 	if(!main.question) return;
 	
@@ -31,7 +40,7 @@ Main.handleQuestionAnswer = function(main,msg){	//both
 	var answerType = main.question.answerType;
 	main.question = null;	//needed cuz func can remodify question
 	if(answerType === 'boolean'){
-		if(msg.text === Message.Question.YES)
+		if(msg.text === Main.Question.YES)
 			SERVER ? func(main.id) : func();
 		return;
 	}
@@ -53,7 +62,7 @@ Main.question.init = function(){
 			if(main.question) //means question was asked on client
 				return Main.handleQuestionAnswer(main,answer);
 			
-			Message.sendToServer(Message('question',answer,player.name));
+			Message.sendToServer(Message('questionAnswer',answer,player.name));
 		}
 		
 		if(msg.option.length){

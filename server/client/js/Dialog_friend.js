@@ -22,7 +22,7 @@ Dialog.friend = function(html,variable){
 			.html(i)
 			.click((function(i){
 				return function(){
-					Dialog.chat.setInput('@' + i + ',');
+					Message.setInputForPM(key,i);
 				}
 			})(i))
 			.bind('contextmenu',(function(i){
@@ -64,6 +64,7 @@ Dialog.friend = function(html,variable){
 
 Dialog.friend.rightClick = function(name){
 	/*
+	use Message.setInputForPM(key,i);
 	Main.set OptionList(main,OptionList(name,[
 		OptionList.Option(Dialog.chat.setInput,['@' + name + ','],'Send Message'),
 		OptionList.Option(Dialog.chat.setInput,['$fl,nick,' + name + ','],'Change Nickname'),

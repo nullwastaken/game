@@ -116,11 +116,12 @@ Dialog('questPopup','Quest Help',Dialog.Size('auto','auto'),Dialog.Refresh(funct
 	html.css({	
 		zIndex:Dialog.ZINDEX.HIGH,	
 		font:'18px Kelly Slab',
-		fontSize:'1.5em',
+		fontSize:'1.3em',
 		color:'black',
 		lineHeight:'100%',
 		backgroundColor:'whit1e',
-		maxWidth:'400px',
+		maxWidth:'600px',
+		width:'400px',
 		height:'auto',
 		textAlign:'center',
 		display:'inline-block',
@@ -209,7 +210,30 @@ Dialog.UI('optionList',{
 
 
 
-
+//Dialog.open('permPopup',{text:'heyads asd as das  dsad',css:{top:'100px',left:'100px',width:'400px',height:'400px'}});
+//Dialog.open('permPopup',{text:'heyads asd as das  dsad',css:{}});
+Dialog.UI('permPopup',{},function(html,variable,param){
+	if(!param) return false;
+	var def = {	
+		position:'absolute',
+		zIndex:Dialog.ZINDEX.HIGH,
+		font:'18px Kelly Slab',
+		fontSize:'1.3em',
+		color:'black',
+		lineHeight:'100%',
+		backgroundColor:'white',
+		//width:'auto',
+		//height:'auto',
+		textAlign:'center',
+		border:'1px solid black',
+		padding:'2px 2px',
+		display:'inline-block',
+	}
+	
+	html.css(def);
+	html.html(param.text);
+	html.css(param.css || {});
+});
 
 
 
@@ -233,29 +257,16 @@ Dialog.UI('questRating',{
 	textAlign:'center',
 	whiteSpace:'nowrap',
 	
-},function(html,variable,quest){
-	if(!quest) return false;
+},function(html,variable,param){
+	if(!param) return false;
 	var star = ' ★ ';
 	html.append($('<span>')
-		.html('Rate ' + QueryDb.getQuestName(quest) + ':<br>')
+		.html('Rate ' + QueryDb.getQuestName(param.quest) + ':<br>')
 		.css({fontSize:'1.5em'})
 	);
 	//###################
 	var STAR_CLICKED = null;
-	var array = [];
-	
-	var mouseout = function(){
-		if(STAR_CLICKED !== null) return;
-		for(var i=0;i<array.length;i++)
-			array[i].css({color:'white'})
-	}
-	
-	var click = function(i){
-		return function(){
-			STAR_CLICKED = i;
-			div.show();
-		}
-	}	
+	var array = [];		
 	for(var i = 0 ; i < 3; i++){
 		var span = $('<span>')
 			.html(star)
@@ -268,23 +279,47 @@ Dialog.UI('questRating',{
 							array[j].css({color:i >= j ? 'gold' : 'white'});
 					}
 				})(i),
-				mouseout
+				function(){
+					if(STAR_CLICKED !== null) return;
+					for(var j=0;j<array.length;j++)
+						array[j].css({color:'white'})
+				}
 			)
-			.click(click(i));
+			.click(function(i){
+				return function(){
+					STAR_CLICKED = i;
+					div.show();
+				}
+			}(i));
 		array.push(span)		
 		html.append(span);
 	}
+	
+	var aban = $('<select>')
+		.append('<option value=""></option>')
+		.append('<option value="No clue what to do">No clue what to do</option>')
+		.append('<option value="Too Hard">Too hard</option>')
+		.append('<option value="Boring quest">Boring quest</option>')
+		.append('<option value="Other">Other</option>');
+	if(param.abandon)
+		html.append('<br>Reason for abandon: ',aban);
+	
+	//Comment
 	var div = $('<div>')
 		.css({textAlign:'center'})
 		.hide();
+	var placeholder = param.abandon ? 'Tell us more about why you abandonned the quest?' : 'Comment - Your feedback is highly appreciated!';
 	var textarea = $('<textarea>')
-		.attr({rows:5,col:50,placeholder:'Comment (optional)'})	
+		.attr({rows:5,col:50,placeholder:placeholder});
+		
+	//Submit
+	var abandonReason = param.abandon ? (aban.val() || 'notSpecified') : 'N/A';
 	var button = $('<button>')
 		.html('Submit')
 		.addClass('myButton skinny')
 		.attr('title','Submit Quest Rating')
 		.click(function(){
-			Command.execute('questRating',[quest,STAR_CLICKED,textarea.val()]);
+			Command.execute('questRating',[param.quest,STAR_CLICKED,textarea.val(),abandonReason]);
 			Dialog.close('questRating');
 			Message.add(key,'Thanks for your feedback.');
 		})

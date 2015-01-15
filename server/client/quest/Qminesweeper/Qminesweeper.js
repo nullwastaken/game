@@ -4,10 +4,11 @@
 'use strict';
 var s = loadAPI('v1.0','Qminesweeper',{
 	name:"Minesweeper",
-	author:"",
-	scoreModInfo:"Depends on your time."
+	author:"rc",
+	scoreModInfo:"Depends on your time.",
+	description:"Play the puzzle game minesweeper.",
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 /* COMMENT:
 */
 s.newVariable({
@@ -30,14 +31,15 @@ s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 30 seco
 	return s.get(key,'chrono') < 25*30;
 });
 s.newChallenge('monster',"Dodge And Mine","Complete the quest while monsters attack you.",2,function(key){
-	
+	return true;
 });
 s.newChallenge('noflag',"No Flag","You can't use flag.",1.2,function(key){
-	
+	return true;
 });
 s.newEvent('_start',function(key){ //
 	if(s.isAtSpot(key,'QfirstTown-north','t5',200))
-		s.callEvent('startGame',key);
+		s.callEvent('talkYelface',key);
+	else s.addQuestMarker(key,'start','QfirstTown-north','t5');
 });
 s.newEvent('_getScoreMod',function(key){ //
 	if(s.get(key,'chrono') < 25*15) return 6;
@@ -132,6 +134,7 @@ s.newEvent('getBombAround',function(grid,i,j){ //
 	return count;
 });
 s.newEvent('startGame',function(key){ //teleport and spawn enemy
+	s.removeQuestMarker(key,'start');
 	s.startChrono(key,'timer',true);
 	s.teleport(key,'field','t1','party',true);
 	s.setRespawn(key,'QfirstTown-north','t5','main');
@@ -190,6 +193,11 @@ s.newEvent('clickRight',function(key,eid){ //
 		return s.setTag(eid,'state','flag');
 	}
 });
+
+s.newEvent('talkYelface',function(key){ //
+	s.startDialogue(key,'Yelface','intro');
+});
+
 s.newNpc('unknown',{
 	name:"",
 	nevermove:True,
@@ -230,10 +238,28 @@ s.newMap('field',{
 s.newMapAddon('QfirstTown-north',{
 	spot:{t3:{x:1728,y:48},t8:{x:880,y:208},t4:{x:3152,y:432},t7:{x:1232,y:1232},t2:{x:48,y:1264},t5:{x:3152,y:1792},t6:{x:3152,y:2448},t1:{x:1280,y:3152}},
 	load: function(spot){
-		m.spawnTeleporter(spot.t5,'startGame','zone',{
+		m.spawnActor(spot.t5,'npc',{
+			dialogue:'talkYelface',
+			sprite:s.newNpc.sprite('villager-male2',1),
 			minimapIcon:'minimapIcon.quest',
-			angle:s.newNpc.angle('right'),
+			angle:s.newNpc.angle('left'),
+			nevermove:true,
+			name:'Yelface',
 		});
 	}
 });
+
+s.newDialogue('Yelface','Yelface','villager-male.2',[ //{ 
+	s.newDialogue.node('intro',"Yo. I just made a Minesweeper game. It works great... I think...",[ 
+		s.newDialogue.option("You think?",'intro2','')
+	],''),
+	s.newDialogue.node('intro2',"Well, I'm too dumb to complete a game so I have no clue if it fully works.",[ 
+		s.newDialogue.option("Do you want me to test it?",'intro3',''),
+	],''),
+	s.newDialogue.node('intro3',"You are reading my mind! Let's go!",[ 
+		s.newDialogue.option("Okay.",'','startGame'),
+	],'')
+]); //}
+
+
 s.exports(exports);

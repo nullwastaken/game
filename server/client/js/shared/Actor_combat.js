@@ -18,8 +18,12 @@ Actor.setCombatContext = function(act,what,type,reset){
 	}
 }
 
-Actor.changeHp = function(act,amount){
+Actor.addHp = function(act,amount){
 	Actor.resource.add(act,amount);
+}
+Actor.setHp = function(act,amount){
+	var num = amount - act.hp;
+	Actor.resource.add(act,num);
 }
 
 Actor.changeResource = function(act,heal){
@@ -63,7 +67,7 @@ Actor.dodge = function(act,time,dist){
 	
 	//movement
 	Actor.movePush(act,act.angle,dist/time,time)
-	
+	Actor.setSpriteFilter(act,{filter:'dodge',time:time+5});
 }
 
 Actor.becomeInvincible = function(act,time){

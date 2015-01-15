@@ -71,7 +71,9 @@ Main.changeParty = function(main,newParty){
 Main.getParty = function(main){
 	return Party.get(main.party.id);
 }
-
+Main.getPartyId = function(main){
+	return main.party.id;
+}
 
 
 //http://puu.sh/c3bxT.txt

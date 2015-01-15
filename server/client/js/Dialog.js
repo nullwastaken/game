@@ -134,7 +134,7 @@ Dialog.init = function(){
 	}
 }
 
-Dialog.isOpened = function(name){
+Dialog.isActive = function(name){
 	return !!ACTIVE[name];
 }
 
@@ -157,6 +157,8 @@ Dialog.isMouseOverDialog = function(){
 	return false;
 	//document.querySelectorAll( ":hover" );
 }
+
+
 
 
 Dialog.ZINDEX = {

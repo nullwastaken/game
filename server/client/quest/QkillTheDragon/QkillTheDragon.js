@@ -7,7 +7,7 @@ var s = loadAPI('v1.0','QkillTheDragon',{
 	name:"Kill The Dragon",
 	author:"rc"
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 Talk with NPC who ask to kill Dragon. 

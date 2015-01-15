@@ -33,51 +33,7 @@ Preset.Equip = function(equip){
 	}
 }
 
-Preset.activate = function(preset,key,s){
-	if(!preset) return ERROR(3,'no preset with name',name);
-	var act = Actor.get(key);
-	if(preset.ability){
-		Actor.setCombatContext(act,'ability','quest',true);
-		for(var i = 0 ; i < preset.ability.length; i++){
-			if(preset.ability[i])
-				s.addAbility(act.id,preset.ability[i],i);
-		}
-		s.rechargeAbility(act.id);
-	}
-	
-	
-	if(preset.equip){
-		Actor.setCombatContext(act,'equip','quest',true);
-		for(var i in preset.equip){
-			if(preset.equip[i])
-				s.addEquip(act.id,preset.equip[i]);
-		}
-	}
-	
-	if(preset.noReputation)
-		s.enableReputation(key,false);
-	if(preset.noAbility)
-		s.enableAttack(key,false);
-	if(preset.pvp)
-		s.enablePvp(key,true);
-	if(preset.noCombat)
-		s.enableCombat(key,false);	//case quest isAlwaysActive
-	s.set(key,'_preset',preset.id)
-}
 
-Preset.desactivate = function(key,s){
-	Actor.setCombatContext(Actor.get(key),'ability','normal');
-	Actor.setCombatContext(Actor.get(key),'equip','normal');
-	s.enableAttack(key,true);
-	s.enableCombat(key,true);
-	s.enableReputation(key,true);
-	s.enablePvp(key,false);
-	s.set(key,'_preset','');
-}
-Preset.onSignIn = function(main,q,questVar){
-	if(questVar._preset)
-		Preset.activate(Preset.get(questVar._preset),main.id,q.s);
-}
 
 
 

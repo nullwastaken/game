@@ -127,12 +127,12 @@ SpriteModel.getSignInPack = function(){
 
 
 if(SERVER) return;
-var Filter = function(name,func){
-	Filter.LIST[name] = func;
+var SpriteFilter = function(name,func){
+	SpriteFilter.LIST[name] = func;
 }
-Filter.LIST = {};
+SpriteFilter.LIST = {};
 
-Filter('red',function(red,green,blue,alpha){
+SpriteFilter('red',function(red,green,blue,alpha){
 	if(red > 100) red += 100;
 	else red *= 2;
 	return [
@@ -143,7 +143,7 @@ Filter('red',function(red,green,blue,alpha){
 	];
 });
 
-Filter('green',function(red,green,blue,alpha){
+SpriteFilter('green',function(red,green,blue,alpha){
 	if(green > 100) green += 100;
 	else green *= 2;
 	return [
@@ -154,7 +154,7 @@ Filter('green',function(red,green,blue,alpha){
 	]
 });
 
-Filter('blue',function(red,green,blue,alpha){
+SpriteFilter('blue',function(red,green,blue,alpha){
 	if(blue > 100) blue += 100;
 	else blue *= 2;
 	return [
@@ -165,11 +165,21 @@ Filter('blue',function(red,green,blue,alpha){
 	]
 });
 
+SpriteFilter('dodge',function(red,green,blue,alpha){
+	return [
+		red+100,
+		green,
+		blue,
+		alpha/2
+	]
+});
+
+
 //TEST(SpriteModel.DB['warrior-male0']);
-SpriteModel.generateFilteredImg = function(spriteModel,filter){
+SpriteModel.generateSpriteFilteredImg = function(spriteModel,filter){
 	if(!filter)
-		for(var j in Filter.LIST){
-			SpriteModel.generateFilteredImg(spriteModel,j);
+		for(var j in SpriteFilter.LIST){
+			SpriteModel.generateSpriteFilteredImg(spriteModel,j);
 			return;
 		}
 	//#####################
@@ -187,7 +197,7 @@ SpriteModel.generateFilteredImg = function(spriteModel,filter){
 	var imgData = imgDataNormal.data;
 			
 	for (var i = 0; i < imgData.length; i+=4){
-		var res = Filter.LIST[filter](imgData[i+0],imgData[i+1],imgData[i+2],imgData[i+3]);
+		var res = SpriteFilter.LIST[filter](imgData[i+0],imgData[i+1],imgData[i+2],imgData[i+3]);
 		imgData[i+0] = res[0];
 		imgData[i+1] = res[1];
 		imgData[i+2] = res[2];
@@ -217,7 +227,7 @@ SpriteModel.getImage = function(model,act){	//BAD with act...
 	if(model.filteredImg[filter] && model.filteredImg[filter].complete)
 		return model.filteredImg[filter];
 	else {
-		SpriteModel.generateFilteredImg(model,filter);	
+		SpriteModel.generateSpriteFilteredImg(model,filter);	
 		return SpriteModel.getImage(model,null);	//return normal version
 	}
 	

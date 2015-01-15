@@ -26,7 +26,7 @@ var MapModel = exports.MapModel = function(Q,mapId,map,addon){
 	MapModel.MapAddon(m.id,Q,addon);	//MapAddon will add to m.addon
 	if(TEMP_ADDON[m.id])	//could be done at the end for all maps
 		for(var i in TEMP_ADDON[m.id]) 
-			MapModel.MapAddon(TEMP_ADDON[m.id][i]);
+			DB[m.id].addon[i] = TEMP_ADDON[m.id][i];
 	if(m.graphic === m.id){	//map made for this quest
 		MapModel.setGrid(m,MapModel.Grid(map.grid));
 		for(var i in TEMP_GRID[m.graphic])	//give grid to those who needed
@@ -89,8 +89,8 @@ MapModel.MapAddon = exports.MapAddon = function(mapid,addonid,extra){	//addonid 
 		a.spot[i].map = mapid;	//will be overwrite for exact map. used for questMarker tho
 	}
 	
-	
-	if(DB[mapid])	DB[mapid].addon[addonid] = a;
+	if(DB[mapid])	
+		DB[mapid].addon[addonid] = a;
 	else {
 		TEMP_ADDON[mapid] = TEMP_ADDON[mapid] || {};
 		TEMP_ADDON[mapid][addonid] = a;

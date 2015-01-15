@@ -106,7 +106,8 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 		
 		var animFromDb = model.anim[sp.anim];
 		
-		var sideAngle = Math.round(act.angle/(360/animFromDb.dir)) % animFromDb.dir;
+		var angle = Sprite.getMoveAngle(act);
+		var sideAngle = Math.round(angle/(360/animFromDb.dir)) % animFromDb.dir;
 		
 		var startX = sp.startX * animFromDb.sizeX;
 		var startY = animFromDb.startY + model.side[sideAngle] * animFromDb.sizeY;
@@ -164,4 +165,14 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 	
 }
 
-	
+Sprite.getMoveAngle = function(act){
+	if(act === player && Input.state.ability.toString() !== '0,0,0,0,0,0'){
+		return act.angle;
+	}
+	if(Math.abs(act.spdY) < 0.1 && Math.abs(act.spdX) < 0.1) 
+		return act.angle;
+	return Tk.atan2(act.spdY*1.2,act.spdX) || act.angle;	//+0.1 otherwise change all the time when moving diagonal
+}
+
+
+

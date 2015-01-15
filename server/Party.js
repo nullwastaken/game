@@ -21,7 +21,6 @@ Party.remove = function(party){
 	delete LIST[party.id];
 }
 
-
 Party.getKeyList = function(party){
 	return Object.keys(party.list);
 }
@@ -61,7 +60,7 @@ Party.changeLeader = function(party,key,message){
 }
 Party.addMessage = function(party,str,toexclude){
 	for(var i in party.list){
-		if(toexclude !== i)
+		if(toexclude && !toexclude.contains(i))
 			Main.addMessage(Main.get(i),str);
 	}
 }

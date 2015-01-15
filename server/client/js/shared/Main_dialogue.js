@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Main','Party','Collision','Actor','Dialogue']));
+eval(loadDependency(['Main','Party','Message','Collision','Actor','Dialogue']));
 
 Main.Dialogue = function(node,face,x,y){
 	return {
@@ -30,7 +30,7 @@ Main.dialogue.end = function(main){
 
 Main.dialogue.selectOption = function(main,option){
 	if(main.questActive && !Party.isLeader(main.id))
-		return Message.addPopup(key,'Only the leader can choose dialogue options.');
+		return Message.addPopup(main.id,'Only the leader can choose dialogue options.');
 	if(option.next)
 		Main.dialogue.start(main,{quest:option.quest,npc:option.npc,node:option.next});
 	else Main.dialogue.end(main);

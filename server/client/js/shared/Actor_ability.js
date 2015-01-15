@@ -268,6 +268,11 @@ Actor.ability.fullyRecharge = function(act){
 	}
 }
 
+Actor.setSpriteFilter = function(act,filter){	//dodge is hardcodded
+	act.spriteFilter = filter;
+	Actor.setFlag(act,'spriteFilter');
+}
+
 Actor.useAbility = function(act,ab,mana,reset,extra){
 	//Mana
 	if(mana !== false && !Actor.useAbility.testResource(act,ab)) return;
@@ -275,7 +280,7 @@ Actor.useAbility = function(act,ab,mana,reset,extra){
 	
 	//Anim
 	if(ab.spriteFilter && act.isActor){
-		act.spriteFilter = ab.spriteFilter;
+		Actor.setSpriteFilter(act,ab.spriteFilter);
 	}
 	
 	if(ab.preDelayAnimOverSprite)

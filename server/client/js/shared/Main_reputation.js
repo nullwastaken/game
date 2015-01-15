@@ -188,7 +188,6 @@ Main.reputation.updatePt = function(main){
 		
 	mp.lvl = Main.reputation.getLvl(main);
 	mp.usablePt = Main.reputation.getUsablePt(main);
-	mp.exp = Main.reputation.getExp(main);
 	Main.setFlag(main,'reputation');
 }
 
@@ -210,20 +209,7 @@ Main.reputation.getUsablePt = function(main){
 	return lvl + 5;
 }
 Main.reputation.getLvl = function(main){
-	return Main.reputation.getLvlViaExp(Main.reputation.getExp(main));
-}
-
-Main.reputation.getExp = function(main){	
-	var sum = 0; 
-	var mq = main.quest;
-	for(var i in mq) sum += Quest.scoreToReputationPoint(mq[i]._rewardScore,Quest.get(i).reward.reputation);
-	return sum;
-}
-
-
-Main.reputation.getLvlViaExp = function(exp){
-	if(isNaN(exp)) return ERROR(4,'exp is NaN') || 0;
-	return Tk.binarySearch(CST.exp,exp);
+	return Actor.getLevel(Main.getAct(main));
 }
 
 /*

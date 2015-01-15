@@ -1,5 +1,6 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Message','Button','OptionList','ItemModel','Main'],['ItemList']));
+eval(loadDependency(['Message','Account','Save','Sign','Button','OptionList','ItemModel','Main'],['ItemList']));
+var db;
 
 var ItemList = exports.ItemList = function(key,data){
 	var tmp = {
@@ -8,6 +9,11 @@ var ItemList = exports.ItemList = function(key,data){
 		data:data || {},	//id:amount
 	};
     return tmp;
+}
+
+
+ItemList.init = function(dbLink){
+	db = dbLink;
 }
 
 ItemList.getMain = function(inv){
@@ -51,6 +57,26 @@ ItemList.add.action = function(inv,id,amount){
 	inv.data[id] += amount;
 }
 
+ItemList.add.offlineOrOnline = function(username,id,amount){
+	var key = Account.getKeyViaUsername(username);
+	if(key){
+		ItemList.add(Main.get(key).invList,id,amount);
+	} else {
+		ItemList.add.offline(username,id,amount);
+	}
+}
+/*
+ItemList.add.offline = function(username,id,amount){
+	var key = '$%^';
+	Sign.in.loadMain(key,{username:username},function(main,questVar){
+		Main.LIST[key] = main;	//BADDDD
+		ItemList.add(main.invList,id,amount);
+		delete Main.LIST[key];	
+		
+		Save.main(main,function(){});
+	});
+}
+*/
 ItemList.setFlag = function(inv){
 	var main = ItemList.getMain(inv);
 	if(inv === main.invList) Main.setFlag(main,'invList');
@@ -85,7 +111,7 @@ ItemList.have = function (inv,id,amount){
 
 ItemList.transfer = function(originInv,destinationInv,id,amount,verifyIfOwn){
 	var list = ItemList.format(id,amount);
-	if(verifyIfOwn && !ItemList.contains(originInv,list)) return false;
+	if(verifyIfOwn && !ItemList.have(originInv,list)) return false;
 	ItemList.remove(originInv,list);
 	ItemList.add(destinationInv,list);	
 	return true;

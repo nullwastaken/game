@@ -43,7 +43,9 @@ Actor.death.MESSAGE = [
 	"You're feeling giddy!",
 	"Is that all you got?",
 	"This game is harder than it looks.",
-	"If someone asks, just say you died on purpose.",	
+	"If someone asks, just say you died on purpose.",
+	"If someone asks, just say it's RNG manipulation.",
+	"If someone asks, just say it was a planned deathwarp.",
 ];
 
 Actor.death.die.npc = function(act,killers){
@@ -59,9 +61,6 @@ Actor.death.die.npc = function(act,killers){
 	
 	ActiveList.clear(act);
 	Actor.remove(act);
-	
-	
-	
 }
 
 

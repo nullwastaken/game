@@ -158,21 +158,22 @@ Dialog.UI('hint',{
 		})
 		.attr('id','hintDiv')
 		.html(main.questHint);
-		
+	Main.hudState.applyHudState('questHint',hint);
+	
 	html.append(hint);
 	
 },function(){
-	return '' + Main.getPref(main,'mapRatio') + main.questHint + main.hudState.minimap;
+	return '' + Main.getPref(main,'mapRatio') + main.questHint + main.hudState.minimap + main.hudState.questHint;
 },3);
 
 
 Dialog.UI('quitGame',{
 	position:'absolute',
 	top:0,
-	left:CST.WIDTH-24,
+	left:CST.WIDTH-18,
 	zIndex:Dialog.ZINDEX.HIGH,
 },function(html){
-	var el = Img.drawIcon.html('system.close',24,"Shift-Left Click to safely leave the game.");
+	var el = Img.drawIcon.html('system.close',18,"Shift-Left Click to safely leave the game.",null,null,0.7);
 	el.click(function(e){
 		if(e.shiftKey)
 			Command.execute('logout');

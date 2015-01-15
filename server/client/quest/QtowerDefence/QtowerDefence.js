@@ -5,10 +5,11 @@
 'use strict';
 var s = loadAPI('v1.0','QtowerDefence',{
 	name:"Tower Defence",
-	author:"",
-	reward:{"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}}
+	author:"rc",
+	reward:{"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
+	description:"Place towers to kill waves of enemies trying to reach the bottom of the screen.",
 });
-var m = s.map; var b = s.boss;
+var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
 place towers to kill mushroom
@@ -34,7 +35,7 @@ s.newHighscore('remainingpthard',"Remaining Pts [Hard]","Most points at the end 
 });
 
 s.newChallenge('hardmode',"Hardmode!","Only 3 Lifes. Survive 20 waves.",2,function(key){
-	
+	return true;
 });
 s.newChallenge('pt400',"400+ Pts","End the quest with 400 remaining points.",2,function(key){
 	return s.get(key,'pt') > 400;
@@ -42,13 +43,14 @@ s.newChallenge('pt400',"400+ Pts","End the quest with 400 remaining points.",2,f
 
 s.newEvent('_start',function(key){ //
 	if(s.isAtSpot(key,'QfirstTown-east','t2',200))
-		s.callEvent('startGame',key);
+		s.callEvent('talkToor',key);
+	else s.addQuestMarker(key,'start','QfirstTown-east','t2');
 });
 s.newEvent('_hint',function(key){ //
 	return 'Pt: ' + s.get(key,'pt') + ' | Wave: ' + s.get(key,'wave') + '/' + s.get(key,'amountWave') + ' | Life: ' + s.get(key,'life');
 });
 s.newEvent('_debugSignIn',function(key){ //
-	s.teleport.force(key,1232,48,'QfirstTown-east');
+	s.teleport.force(key,1232,48,'QfirstTown-east','main');
 });
 s.newEvent('_signIn',function(key){ //
 	s.failQuest(key);
@@ -64,6 +66,7 @@ s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
 });
 s.newEvent('startGame',function(key){ //
+	s.removeQuestMarker(key,'start');
 	s.teleport(key,'main','t1','solo',true);
 	s.addItem(key,'basic');
 	s.addItem(key,'ice');
@@ -104,11 +107,6 @@ s.newEvent('nextWave',function(key){ //
 	
 	s.add(key,'wave',1);
 	s.setTimeout(key,'nextWave',info.time*25);	//set next wave
-});
-s.newEvent('test',function(key){ //
-	s.spawnActorGroup(key,'main','e1',false,[	//create group
-		s.spawnActorGroup.list('enemy',123)
-	]);
 });
 s.newEvent('getWaveInfo',function(num){ //
 	if(num === 0) return {amount:2,time:15,model:'enemy'};
@@ -196,6 +194,9 @@ s.newEvent('placeTowerIce',function(key){ //
 		return s.message(key,'You need ' + COST + ' points to place the tower.');
 	s.spawnActorOnTop(key,'main','tower-ice',{tag:{tower:true}});
 	s.add(key,'pt',-COST);
+});
+s.newEvent('talkToor',function(key){	//
+	s.startDialogue(key,'Toor','intro');
 });
 
 s.newItem('basic',"Basic",'element.range2',[    //{
@@ -309,6 +310,15 @@ s.newNpc('tower-aoe',{
 	])
 });
 
+s.newDialogue('Toor','Toor','villager-male.0',[ //{ 
+	s.newDialogue.node('intro',"Help me! We are getting invaded by mushrooms! By chance, they are dumb and just follow a straight path. Just make you to kill them before they reach the bottom of the screen.",[ 
+		s.newDialogue.option("Okay, I got it.",'intro2','')
+	],''),
+	s.newDialogue.node('intro2',"Oh. One more thing. They are immune to regular attacks. To kill them, you will have to place towers using a special item that I will give you. ",[ 
+		s.newDialogue.option("Okay. Let's go!",'','startGame')
+	],''),
+]); //}
+
 s.newMap('main',{
 	name:"Tower Defence",
 	lvl:0,
@@ -323,7 +333,14 @@ s.newMap('main',{
 s.newMapAddon('QfirstTown-east',{
 	spot:{t2:{x:1232,y:48}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t2,'startGame','zone','up');
+		m.spawnActor(spot.t2,'npc',{
+			dialogue:'talkToor',
+			sprite:s.newNpc.sprite('villager-male0',1),
+			minimapIcon:'minimapIcon.quest',
+			angle:s.newNpc.angle('down'),
+			nevermove:true,
+			name:'Toor',
+		});
 	}
 });
 
