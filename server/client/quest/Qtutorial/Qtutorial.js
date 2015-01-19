@@ -13,7 +13,7 @@ var s = loadAPI('v1.0','Qtutorial',{
 	autoStartQuest:false,
 	skillPlotAllowed:true,
 	thumbnail:'',
-	reward:{"exp":1,"item":1,"reputation":{"min":1,"max":1,"mod":10}},
+	reward:{"exp":1,"item":0,"reputation":{"min":1,"max":1,"mod":10}},
 	description:"Teaches you the basic of Raining Chain.",
 });
 var m = s.map; var b = s.boss; var g;
@@ -66,7 +66,6 @@ s.newEvent('_start',function(key){ //
 	s.addEquip.permanently(key,'Qsystem-start-ring');
 	s.addEquip.permanently(key,'Qsystem-start-helm');
 	s.addEquip.permanently(key,'Qsystem-start-body');
-	s.addEquip.permanently(key,'Qsystem-start-weapon');
 	
 	s.teleport(key,'QfirstTown-main','t1','main');
 	s.setRespawn(key,'QfirstTown-main','t1','main',true);
@@ -209,7 +208,7 @@ s.newEvent('killEnemy',function(key){ //
 s.newEvent('lootChest',function(key){ //
 	s.addItem(key,'ability');	
 	s.set(key,'lootChest',1);
-	s.displayPopup(key,'Sweet, a scroll!<br>Left click it in your inventory at bottom right.');
+	s.displayPopup(key,'Sweet, a scroll!<br>You can use items with left-click and right-click<br> in your inventory at bottom right.');
 	s.message(key,'Sweet, a scroll!<br>Left click it.');
 	s.setHUD(key,'inventory','flashing');
 });
@@ -226,7 +225,7 @@ s.newEvent('itemAbility',function(key){ //
 });
 s.newEvent('displayPopupHeal',function(key){ //
 	s.setTimeout(key,function(){
-		s.displayPermPopup(key,'Assign Heal ability to F Key via Ability Window (bottom-right).<br>Select Heal then click F slot to the left.',{
+		s.displayPermPopup(key,'Assign Heal ability to F Key via Ability Window (bottom-right icon).<br>Select Heal then click F slot to the left.',{
 			position:'absolute',
 			width:'200px',
 			height:'auto',
@@ -250,15 +249,16 @@ s.newEvent('displayPopupHeal',function(key){ //
 });
 s.newEvent('lootChest2',function(key){ //
 	s.addItem.permanently(key,'Qsystem-start-bow');
+	s.addItem.permanently(key,'Qsystem-start-staff');
+	s.addItem.permanently(key,'Qsystem-start-weapon');
 	s.set(key,'lootChest2',1);
-	s.displayPopup(key,'Sweet, a bow!<br>You should upgrade it before fighting the boss.');
-	s.message(key,'Sweet, a bow!<br>You should upgrade it before fighting the boss.');
+	s.displayPopup(key,'Sweet!<br>You just received a mace, a bow and a staff!<br>Equip and upgrade one of them before fighting the dragon.');
 	s.callEvent('displayPopupEquip',key);
 	s.setHUD(key,'tab-equip','flashing');
 });
 s.newEvent('displayPopupEquip',function(key){ //
 	s.setTimeout(key,function(){
-		s.displayPermPopup(key,'To upgrade gear, open Equip Window at bottom-right then either Add Exp (black icon) or Unlock Hidden Boost',{
+		s.displayPermPopup(key,'To upgrade gear, open Equip Window (bottom-right icon) then either Add Exp or Unlock Hidden Boost',{
 			position:'absolute',
 			width:'200px',
 			height:'auto',
@@ -283,6 +283,7 @@ s.newEvent('displayPopupEquip',function(key){ //
 				s.set(key,'upgradedEquip',true);
 				s.setHUD(key,'tab-equip','normal');
 				s.closePermPopup(key);
+				s.displayPopup(key,'You are now ready to fight the dragon boss.');
 			} else {
 				s.setTimeout(key,func,5*25);
 			}
@@ -336,20 +337,23 @@ s.newEvent('talkGenetosRecommend',function(key){ //
 	]});
 });
 
+s.newEvent('displayGEM',function(key){ //
+	s.setHUD(key,'aboveInventory','normal');
+});
 
 
-s.newEvent('teleGenetosTown',function(key){	//TODO
+s.newEvent('teleGenetosTown',function(key){	//
 	if(s.testQuestActive(key,'Qtutorial')){
 		return s.message(key,'Talk with Genetos first.');
 	}
 	if(s.testQuestActive(key,'')){	//aka no quest Active
 		s.displayQuestion(key,"Leave without Genetos recommended quest?",function(){
-			s.displayPopup(key,'Talk with NPCs who appears as pink stars in the minimap to start quests or go talk with Genetos.');
+			s.displayPopup(key,'Talk with NPCs who appears as pink stars in the minimap to start quests or go talk with Genetos.<br>During a quest, check minimap big red X for directions.');
 			s.teleport(key,'QfirstTown-main','t8','main');
 			s.setRespawn(key,'QfirstTown-main','t8','main',true);		
 		});
 	} else {
-		s.displayPopup(key,'Talk with Genetos at any time for advice.');
+		s.displayPopup(key,'Talk with Genetos at any time for advice.<br>Check minimap big red X for quest directions.');
 		s.teleport(key,'QfirstTown-main','t8','main');
 		s.setRespawn(key,'QfirstTown-main','t8','main',true);	
 	}
@@ -454,7 +458,7 @@ s.newDialogue('genetos','Genetos','villager-male.2',[ //{
 	s.newDialogue.node('reward',"Everytime you complete a quest (by fixing a bug), your Global Exp Modifier (GEM) increases. The higher your GEM is, the more exp you get from killing monsters and harvesting resources. You can see your GEM above your inventory.",[ 
 		s.newDialogue.option("I don't get it...",'dontgetit',''),
 		s.newDialogue.option("What's the point of getting exp?",'pointexp','')
-	],''),
+	],'displayGEM'),
 	
 	s.newDialogue.node('dontgetit',"Let say you have never completed a quest and your GEM is x1.00. Killing a certain monster will give you 10 exp. Now if you have completed 10 quests, your GEM would be x1.50 for example. Killing the same monster would grant 15 exp instead of 10.",[ 
 		s.newDialogue.option("What's the point of getting exp?",'pointexp','')
@@ -465,10 +469,14 @@ s.newDialogue('genetos','Genetos','villager-male.2',[ //{
 	s.newDialogue.node('whatrep',"Reputation Points can be used to increase a stat via the Reputation Grid. It can be opened at the bottom right of your screen.",[ 
 		s.newDialogue.option("What now?",'whatnow','')
 	],'reputationFlash'),
-	s.newDialogue.node('whatnow',"Many NPCs reported issues to me. Either you fix the ones I recommend you or you go talk with the NPCs directly.",[ 
+	
+	s.newDialogue.node('whatnow',"Go fix bugs! NPCs that appear as pink stars in your minimap will being a quest. Don't forget that you can only have one active quest at once.",[ 
+		s.newDialogue.option("Okay, any tip?",'whatnow2',''),
+	],''),	
+	s.newDialogue.node('whatnow2',"Many NPCs reported issues to me. Either you fix the ones I recommend you or you go talk with the NPCs directly.",[ 
 		s.newDialogue.option("What quest do you recommend?",'','talkGenetosRecommend'),
 		s.newDialogue.option("I'll go talk with NPCs myself.",'talkSelf','')
-	],''),
+	],''),	
 	s.newDialogue.node('talkSelf',"Go in town and talk with NPCs who appears as pink stars in the minimap to start quests. Good luck!",[ 
 		s.newDialogue.option("Great!",'','')
 	],''),	
@@ -566,8 +574,8 @@ s.newMap('main',{
 		
 		m.spawnActor(spot.n1,'npc',{
 			sprite:s.newNpc.sprite('villager-male0'),
-			move:0,
-			angle:90,
+			nevermove:true,
+			angle:s.newNpc.angle('down'),
 			name:'Ringo',
 			dialogue:'talkRingo'
 		});
@@ -629,6 +637,8 @@ s.newMap('adminZone',{
 		m.spawnActor(spot.n1,'npc',{
 			dialogue:'talkGenetos',
 			name:'Genetos',
+			nevermove:true,
+			angle:s.newNpc.angle('down'),
 			sprite:s.newNpc.sprite('villager-male2')
 		});
 		
@@ -670,7 +680,7 @@ s.newMap('genetosHouse',{
 	load:function(spot){
 		m.spawnActor(spot.n1,'npc',{
 			dialogue:'talkGenetosTown',
-			name:'Genetos',
+			name:'Genetos',	
 			sprite:s.newNpc.sprite('villager-male2')
 		});
 		m.spawnTeleporter(spot.t1,'teleGenetosTown','zone','down');

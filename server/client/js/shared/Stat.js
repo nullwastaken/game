@@ -77,10 +77,10 @@ var initStat = function(){	//global in client...
 	Stat('mana-max','Max Mana','Maximum Mana Points.','resource.mana',["manaMax"],Stat.Value({
 		base:100,
 	}),false);
-	Stat('leech-magn','Leech Life Magn.','Affect %Life recovered if the Life Leech is successful. Leech is not affected by damage dealt.','resource.hp',["bonus","leech","magn"],Stat.Value({
+	Stat('leech-magn','Leech Life Magn.','Affect %Life recovered if the Life Leech is successful. Leech is not affected by damage dealt.','attackRange.bleed',["bonus","leech","magn"],Stat.Value({
 		base:0.01,
 	}),false);
-	Stat('leech-chance','Leech Life Chance','Affect Chance to Life Leech when hitting an enemy.','resource.hp',["bonus","leech","chance"],Stat.Value({}),false);
+	Stat('leech-chance','Leech Life Chance','Affect Chance to Life Leech when hitting an enemy.','attackRange.bleed',["bonus","leech","chance"],Stat.Value({}),false);
 	Stat('pickRadius','Pick Radius','Maximum distance that you can still pick items on the ground.','defensive.pickup',["pickRadius"],Stat.Value({
 		base:250,min:5,
 	}),true);
@@ -160,7 +160,7 @@ var initStat = function(){	//global in client...
 		base:25,
 	}),false);
 	Stat('knock-magn','Knock Magn','Affect how far away the enemy will be pushed.','status.knock',["bonus","knock","magn"],Stat.Value({
-		base:10,
+		base:25,
 	}),false);
 	Stat('knock-chance','Knock Chance','Affect chance to push enemy with your attack.','status.knock',["bonus","knock","chance"],Stat.Value({
 		base:1,

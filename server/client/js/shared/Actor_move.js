@@ -98,7 +98,8 @@ Actor.move = function(act){
 		
 }
 
-Actor.move.updateAimPenalty = function (act){	
+Actor.move.updateAimPenalty = function (act){	//BAD
+	if(act.abilityChange.press === '000000') return;	
 	//penalty if looking and moving in opposite direction
 	var diffAim = Math.abs(act.angle - act.moveAngle);
 	if (diffAim > 180){ diffAim = 360 - diffAim;}

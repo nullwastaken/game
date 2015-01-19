@@ -78,23 +78,9 @@ Attack.Strike = function(s){
 	
 	
 	//after that, we place 9 points around (s.x,s.y). exact position depends on width and height of strike
-	var w = s.width; var h = s.height;
-	var startX = -w; var startY = -h;
-		
-	for(var k = 0 ; k < 9 ; k++){
-		var axeX = startX + (k % 3)*w;
-		var axeY = startY + Math.floor(k/3)*h;
-		var numX = (axeX*Tk.cos(s.angle) - axeY * Tk.sin(s.angle));
-		var numY = (axeX*Tk.sin(s.angle) + axeY * Tk.cos(s.angle));
-
-		s.point[k] = {
-			x:numX + s.x,
-			y:numY + s.y
-		};
-	}
-	s.rotatedRect = {
-		x:s.point[0].x,y:s.point[0].y,width:w,height:h,angle:s.angle,
-	};
+	s.point = Attack.Strike.getPoint(s);
+	
+	s.rotatedRect = Attack.Strike.getRotatedRect(s,s.point);
 	
 	Collision.strikeActor(s);
 	
@@ -105,6 +91,30 @@ Attack.Strike = function(s){
 	
 	return s;
 }
+Attack.Strike.getRotatedRect = function(s,point){
+	return {
+		x:point[0].x,y:point[0].y,width:s.width,height:s.height,angle:s.angle,
+	};
+}
+
+Attack.Strike.getPoint = function(s){
+	var startX = -s.width; 
+	var startY = -s.height;
+		
+	var pt = [];
+	for(var k = 0 ; k < 9 ; k++){
+		var axeX = startX + (k % 3)*s.width;
+		var axeY = startY + Math.floor(k/3)*s.height;
+		var numX = (axeX*Tk.cos(s.angle) - axeY * Tk.sin(s.angle));
+		var numY = (axeX*Tk.sin(s.angle) + axeY * Tk.cos(s.angle));
+
+		pt[k] = {
+			x:numX + s.x,
+			y:numY + s.y
+		};
+	}
+	return pt;
+}	
 
 
 Attack.loop = function(){
@@ -117,7 +127,19 @@ Attack.testInterval = function(b,num){
 	return Attack.loop.FRAME_COUNT % num === 0;
 }
 
-
-
+Attack.getInitPosition = function(atk,act){
+	var mouse = Actor.getMouse(act);
+	var diff = Math.pyt(mouse.x - CST.WIDTH2,mouse.y - CST.HEIGHT2); //difference between actor and mouse
+	diff = diff.mm(atk.initPosition.min,atk.initPosition.max);
+	
+	var goal = {x:diff * Tk.cos(act.angle) + act.x,y:diff * Tk.sin(act.angle) + act.y};
+	
+	if(!SERVER) return goal;
+	
+	var pos = atk.ghost ? goal : Collision.strikeMap(act,goal);	//get farthest possible without touching wall
+	return pos;
+}
+			
+		
 
 

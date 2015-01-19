@@ -394,7 +394,7 @@ Sign.up = function (){
 	if(pass !== confirm) return Sign.log('Passwords do not match.');
 	
 	var email = $("#lg-signUpEmail").val();
-	if(window.location.hostname.contains('rainingchain') && !escape.email(email)) 
+	if(Game.isOnRainingChainCom() && !escape.email(email)) 
 		return Sign.log('Invalid Email.<br> Keep in mind that it\'s your own way to recover your account.');
 	
 	if(!Sign.onclick()) return;

@@ -40,6 +40,9 @@ s.newChallenge('hardmode',"Hardmode!","Only 3 Lifes. Survive 20 waves.",2,functi
 s.newChallenge('pt400',"400+ Pts","End the quest with 400 remaining points.",2,function(key){
 	return s.get(key,'pt') > 400;
 });
+s.newChallenge('tempTower',"Temp Tower","Towers only last for 45 seconds before being destroyed.",2,function(key){
+	return true;
+});
 
 s.newEvent('_start',function(key){ //
 	if(s.isAtSpot(key,'QfirstTown-east','t2',200))
@@ -109,7 +112,7 @@ s.newEvent('nextWave',function(key){ //
 	s.setTimeout(key,'nextWave',info.time*25);	//set next wave
 });
 s.newEvent('getWaveInfo',function(num){ //
-	if(num === 0) return {amount:2,time:15,model:'enemy'};
+	if(num === 0) return {amount:2,time:8,model:'enemy'};
 	if(num === 1) return {amount:3,time:8,model:'enemy'};
 	if(num === 2) return {amount:3,time:8,model:'enemy'};
 	if(num === 3) return {amount:4,time:7,model:'enemy'};
@@ -174,7 +177,15 @@ s.newEvent('placeTowerRegular',function(key){ //
 		return;
 	if(s.get(key,'pt') < COST) 
 		return s.message(key,'You need ' + COST + ' points to place the tower.');
-	s.spawnActorOnTop(key,'main','tower-normal',{tag:{tower:true}});	//add tower where player is
+		
+	var eid = s.spawnActorOnTop(key,'main','tower-normal',{tag:{tower:true}});	//add tower where player is
+	if(s.isChallengeActive(key,'tempTower')){
+		s.setTimeout(key,function(){
+			s.killActor(eid);
+		},25*45);
+	}
+	
+	
 	s.add(key,'pt',-COST);
 });
 s.newEvent('placeTowerAoe',function(key){ //
@@ -183,8 +194,15 @@ s.newEvent('placeTowerAoe',function(key){ //
 		return s.message(key,"Too close from another tower.");
 	if(s.get(key,'pt') < COST) 
 		return s.message(key,'You need ' + COST + ' points to place the tower.');
-	s.spawnActorOnTop(key,'main','tower-aoe',{tag:{tower:true}});
+	var eid = s.spawnActorOnTop(key,'main','tower-aoe',{tag:{tower:true}});
 	s.add(key,'pt',-COST);
+	
+	if(s.isChallengeActive(key,'tempTower')){
+		s.setTimeout(key,function(){
+			s.killActor(eid);
+		},25*45);
+	}
+	
 });
 s.newEvent('placeTowerIce',function(key){ //
 	var COST = 50;
@@ -192,8 +210,14 @@ s.newEvent('placeTowerIce',function(key){ //
 		return s.message(key,"Too close from another tower.");
 	if(s.get(key,'pt') < COST) 
 		return s.message(key,'You need ' + COST + ' points to place the tower.');
-	s.spawnActorOnTop(key,'main','tower-ice',{tag:{tower:true}});
+	var eid = s.spawnActorOnTop(key,'main','tower-ice',{tag:{tower:true}});
 	s.add(key,'pt',-COST);
+	
+	if(s.isChallengeActive(key,'tempTower')){
+		s.setTimeout(key,function(){
+			s.killActor(eid);
+		},25*45);
+	}
 });
 s.newEvent('talkToor',function(key){	//
 	s.startDialogue(key,'Toor','intro');
@@ -260,7 +284,7 @@ s.newNpc('enemy',{
 s.newNpc('enemy2',{
 	name:"Mushroom",
 	alwaysActive:True,
-	maxSpd:s.newNpc.maxSpd(1.5),
+	maxSpd:s.newNpc.maxSpd(1.4),
 	sprite:s.newNpc.sprite('tower-enemy',1),
 	mastery:s.newNpc.mastery([1,2,1,1,1,1]),
 	hideOptionList:True,

@@ -54,7 +54,7 @@ Strike.removeFromList = function(id){
 }
 
 Strike.drawAll = function(ctx){	//unused cuz no longer send strike info to client
-	if(!Main.getPref(main,'displayAoE')) return;
+	if(!Main.getPref(main,'displayStrike')) return;
 	
 	ctx.fillStyle = 'red';
 	for(var i in LIST){

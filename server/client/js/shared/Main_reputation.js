@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Main','Actor','Server','ItemList','Save','Message','Dialogue','Boost','Drop','Quest','Collision','Command','ReputationGrid','Contribution']));
+eval(loadDependency(['Main','Actor','Server','ItemList','ReputationConverter','Save','Message','Dialogue','Boost','Drop','Quest','Collision','Command','ReputationGrid','Contribution']));
 
 /*
 0 - dont have
@@ -43,6 +43,7 @@ Main.Reputation.list = function(){
 		],
 		usedPt:0,
 		freeze:null,
+		converter:[],
 	};
 }
 
@@ -73,17 +74,34 @@ Main.reputation.getGrid = function(main,num){
 	return main.reputation.list[num].grid;	
 }
 
+Main.reputation.get = function(main,num){
+	if(num === undefined) num = main.reputation.activeGrid;
+	return main.reputation.list[num];	
+}
+
+
 Main.reputation.remove = function(main,num,i,j){
-	//when player wants to add a reputation
-	if(main.reputation.removePt < 1) 
-		return Main.addMessage(main,"You don't have any Reputation Remove Points to use.");
+	//maybe system where cost nothing if lvl less than 20
+	
+	/*if(main.reputation.removePt < 1) 
+		return Main.addMessage(main,"You don't have any Reputation Remove Points to use.");*/
 	if(Main.reputation.getValue(main,num,i,j) !== 1) 
 		return Main.addMessage(main,"You don't have this reputation.");
 	if(!Main.reputation.testRemove(Main.reputation.getGrid(main,num),i,j)) 
 		return Main.addMessage(main,"You can't remove this reputation because it would create 2 subgroups.");
 	
 	Main.reputation.modify(main,num,i,j,0);
-	main.reputation.removePt--;
+	//main.reputation.removePt--;
+}
+
+Main.reputation.clearGrid = function(main,num){
+	/*if(main.reputation.removePt < 1) 
+		return Main.addMessage(main,"You need at least 1 Remove Points to reset the grid.");
+	main.reputation.removePt--;*/
+	
+	main.reputation.list[num] = Main.Reputation.list();
+	Main.reputation.updatePt(main);
+	Main.reputation.updateBoost(main);
 }
 
 Main.reputation.getValue = function(mainORgrid,numORi,iORj,j){	//accept grid or main
@@ -170,7 +188,22 @@ Main.reputation.changeActivePage = function(main,num){
 	main.reputation.activePage = num;
 	Main.reputation.updateBoost(main);
 }
+Main.reputation.addConverter = function(main,num,name){
+	//test if player has access
+	if(!ReputationConverter.get(name)) return;
+	if(Main.reputation.get(main,num).converter.contains(name))	//already contains
+		return;
+	if(!ReputationConverter.canSelect(main,num,name)) return;	//message sending done inside
+	Main.reputation.get(main,num).converter.push(name);
+	Main.reputation.updateBoost(main);
+	Main.setFlag(main,'reputation');
 	
+}
+Main.reputation.removeConverter = function(main,num,name){
+	Main.reputation.get(main,num).converter.remove(name);
+	Main.reputation.updateBoost(main);
+	Main.setFlag(main,'reputation');
+}
 	
 /*
 Main.reputation.useRemovalOrb = function(main,num){
@@ -231,9 +264,9 @@ Skill.lvlUp = function(act,skill){
 
 //###############
 
-Main.reputation.getBoost = function(grid){	//convert the list of reputation owned by player into actual boost.
+Main.reputation.getBoost = function(main,grid){	//convert the list of reputation owned by player into actual boost.
 	var tmp = [];
-	var base = ReputationGrid.get().base;
+	var base = ReputationGrid.getConverted(main).base;
 	for(var i = 0 ; i < grid.length ; i++){
 		for(var j = 0 ; j < grid[i].length ; j++){
 			if(grid[i][j] !== '1') continue;
@@ -246,6 +279,6 @@ Main.reputation.getBoost = function(grid){	//convert the list of reputation owne
 
 Main.reputation.updateBoost = function(main){
 	var grid = Main.reputation.getGrid(main);
-	Actor.permBoost(Main.getAct(main),Main.reputation.BOOST_NAME,Main.reputation.getBoost(grid));
+	Actor.permBoost(Main.getAct(main),Main.reputation.BOOST_NAME,Main.reputation.getBoost(main,grid));
 }
 

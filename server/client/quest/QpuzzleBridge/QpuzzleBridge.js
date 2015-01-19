@@ -36,7 +36,8 @@ s.newChallenge('speedrun',"Speedrun","Complete all 5 puzzles in less than 10 min
 	return false;
 });
 s.newChallenge('pushing',"Pusher","Complete all 5 puzzles with less than 250 pushes.",2,function(key){
-	if(s.get(key,'lvl') >= 5) return s.get(key,'pushRock') < 250;
+	if(s.get(key,'lvl') >= 5) 
+		return s.get(key,'pushCount') < 250;
 	return false;
 });
 s.newChallenge('noreset',"No Reset","Complete all 5 puzzles without resetting.",2,function(key){
@@ -182,7 +183,10 @@ s.newEvent('tele34',function(key){ //
 	s.displayPopup(key,'Leaving now will complete the quest but with a big penalty.');
 });
 s.newEvent('teleQuit',function(key){ //when trying to leave, ask player first
-	s.displayQuestion(key,'Abandon the quest and leave?',function(key){
+	var str = s.get(key,'lvl') >= 3 
+		? 'Leave and complete the quest but with a penalty?' 
+		: 'Abandon the quest and leave?';
+	s.displayQuestion(key,str,function(key){
 		if(s.get(key,'lvl') < 3) s.failQuest(key);
 		else s.completeQuest(key);
 	});

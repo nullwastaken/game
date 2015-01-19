@@ -45,19 +45,19 @@ var QuestReward = function(score,item,exp){
 Quest.getScoreMod = function(q,main){
 	return q.event._getScoreMod(main.id) || 0;
 }
-Quest.getReward = function(q,bonus,scoreMod,firstTimeCompleted){
+Quest.getReward = function(q,bonus,scoreMod,firstTimeCompleted,key){
 	var finalScore = q.reward.reputation.mod * bonus.score * scoreMod;
 	if(firstTimeCompleted) 
 		finalScore += Quest.getFirstTimeBonus(q.reward.reputation);
 	
 	return QuestReward(
 		finalScore,
-		Quest.getReward.item(bonus.item*q.reward.item),
+		Quest.getReward.item(bonus.item*q.reward.item,key),
 		100 * bonus.exp*q.reward.exp
 	);
 }
 
-Quest.getReward.item = function(mod){
+Quest.getReward.item = function(mod,key){
 	var item = {};
 	for(var i = 0 ; i < 3; i++){
 		var num = Math.roundRandom(mod); 
@@ -65,7 +65,9 @@ Quest.getReward.item = function(mod){
 			item[Material.getRandom(0)] = num;
 	}
 	if(Math.random() / mod < CHANCE_EQUIP){
-		item[Equip.randomlyGenerate().id] = 1;
+		var act = Actor.get(key);
+		
+		item[Equip.randomlyGenerateFromQuestReward(act).id] = 1;
 	}
 	return item;
 }

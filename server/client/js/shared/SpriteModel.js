@@ -72,7 +72,7 @@ SpriteModel.bullet = function(id,src,sizeX,sizeY,frame,canvasRotate,extra){
 	extra.side = extra.side || [0];
 	extra.canvasRotate = canvasRotate || 0;
 	return SpriteModel(id,src,[-1,1,-1,1],extra,[
-		SpriteModel.anim('move',3,sizeX,sizeY,1,{dir:extra.side.length})
+		SpriteModel.anim('move',frame,sizeX,sizeY,1,{walk:0,dir:extra.side.length})
 	]);
 }
 SpriteModel.player = function(id,src){

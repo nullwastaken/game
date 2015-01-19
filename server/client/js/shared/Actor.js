@@ -190,7 +190,10 @@ Actor.removeFromList = function(id){
 }
 
 Actor.isPlayer = function(act){
-	if(typeof act === 'string') return Actor.LIST[act].type === 'player';
+	if(!act) return ERROR(3,'no act');
+	
+	if(typeof act === 'string') 
+		return !!Actor.LIST[act] && Actor.LIST[act].type === 'player';
 	return act.type === 'player';
 }
 
@@ -324,7 +327,7 @@ Actor.generateOptionList = function(act){
 		if(act.onclick.shiftRight) option.push(act.onclick.shiftRight);
 	}
 	
-	if(act.type === 'player') option.push(OptionList.Option(Actor.click.party,[OptionList.ACTOR,act.id],'Invite to Party'));
+	//if(act.type === 'player') option.push(OptionList.Option(Actor.click.party,[OptionList.ACTOR,act.id],'Invite to Party'));
 	if(act.dialogue) option.push(OptionList.Option(Actor.click.dialogue,[OptionList.ACTOR,act.id],'Talk'));
 	if(act.waypoint) option.push(OptionList.Option(Actor.click.waypoint,[OptionList.ACTOR,act.id],'Set Respawn'));
 	if(act.loot)	option.push(OptionList.Option(Actor.click.loot,[OptionList.ACTOR,act.id],'Loot'));
@@ -369,8 +372,9 @@ Actor.remove = function(act){
 	Actor.removeFromList(act.id);
 	ActiveList.removeFromList(act.id);
 	if(act.group) ActorGroup.removeActorFromGroup(act);
-	if(act.summoned && Actor.get(act.summoned.parent)) 
-		delete Actor.get(act.summoned.parent).summon[act.summoned.name];
+	if(act.summoned)
+		Actor.summon.removeFromParentList(act);
+
 }
 
 Actor.setWeakness = function(act){

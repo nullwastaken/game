@@ -21,6 +21,14 @@ Party.remove = function(party){
 	delete LIST[party.id];
 }
 
+Party.onSignIn = function(main){ //should be in Main.onSignIn... but need to be b4 teleport map
+	var newParty = Party.get(main.username) ? Math.randomId() : main.username;
+	Main.joinParty(main,newParty);	
+}
+
+
+	
+
 Party.getKeyList = function(party){
 	return Object.keys(party.list);
 }

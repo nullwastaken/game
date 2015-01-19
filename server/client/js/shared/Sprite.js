@@ -94,7 +94,6 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 	var sp = act.sprite;
 	var list = sp.name.split(',');
 	
-	
 	var mouseOverInterface = false;
 	for(var i in list){
 	
@@ -171,7 +170,8 @@ Sprite.getMoveAngle = function(act){
 	}
 	if(Math.abs(act.spdY) < 0.1 && Math.abs(act.spdX) < 0.1) 
 		return act.angle;
-	return Tk.atan2(act.spdY*1.2,act.spdX) || act.angle;	//+0.1 otherwise change all the time when moving diagonal
+				
+	return Tk.atan2(act.spdY*1.2,act.spdX);	//+0.1 otherwise change all the time when moving diagonal
 }
 
 

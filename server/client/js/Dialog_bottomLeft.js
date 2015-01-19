@@ -152,20 +152,24 @@ Dialog.chat.focusInput = function(){
 //##################################
 
 var PM_HEIGHT = 110;
+var PM_HTML = null;
 Dialog.UI('pm',{
 	position:'absolute',
 	left:0,
-	top:CST.HEIGHT-HEIGHT-PM_HEIGHT,
+	top:CST.HEIGHT-HEIGHT-PM_HEIGHT-30,
 	width:WIDTH,
 	height:PM_HEIGHT,
+	maxHeight:PM_HEIGHT,
 	background:'rgba(0,0,0,0)',
 	padding:'4px 4px',
 	color:'yellow',
 	font:'1.3em Kelly Slab',
 },function(html){
+	PM_HTML = html;
 	html.addClass('onlyText container shadow');
 	html.append($('<div>')
 		.attr('id','pmText')
+		.css({height:PM_HEIGHT,maxHeight:PM_HEIGHT})
 	);
 });
 
@@ -173,6 +177,7 @@ Dialog.pm = {};
 Dialog.pm.addText = function(text,time){
 	$("#pmText").append(text);
 	$("#pmText").append('<br>');
+	PM_HTML[0].scrollTop += 5000;
 }
 
 //###########################

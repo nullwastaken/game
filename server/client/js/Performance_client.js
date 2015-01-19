@@ -46,6 +46,7 @@ Performance.init = function(){
 		font:'1em Kelly Slab',
 	},function(html){
 		if(!Main.getPref(main,'displayFPS')) return false;
+		//if overwrite old one, double tooltip...
 		
 		html.addClass('shadow');
 		html.attr('title','Ping: ' + Performance.latencyTime + ' ms. FPS: ' + (1000/Performance.cycleTime).r(0) + '/25.');

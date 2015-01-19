@@ -63,7 +63,7 @@ Main.completeQuest = function(main){
 	var rawBonus = Main.quest.updateBonusVar(mq,q,challengeSuccess,dailyTaskSucess);	//format mq.bonus
 	var finalBonus = Main.quest.compileBonusVar(rawBonus);	//format Quest.RewardInfo, doesnt have scoreMod
 	var scoreMod = Quest.getScoreMod(q,main);
-	var reward = Quest.getReward(q,finalBonus,scoreMod,firstTimeCompleted);
+	var reward = Quest.getReward(q,finalBonus,scoreMod,firstTimeCompleted,main.id);
 	Main.quest.applyReward(main,reward,mq,q);
 	
 	var highscoreInfo = Highscore.setNewScore(q,main,mq);	//after reward

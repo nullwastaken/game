@@ -1,16 +1,23 @@
 (function(){ //}
-Dialog('reputation','Reputation Reward',Dialog.Size(600,600),Dialog.Refresh(function(){
+Dialog('reputation','Reputation Reward',Dialog.Size(800,600),Dialog.Refresh(function(){
 	Dialog.reputation.apply(this,arguments);
 },function(){
-	return Tk.stringify(main.reputation)
+	return Tk.stringify(main.reputation);
 }));
+
 //Dialog.open('reputation')
 Dialog.reputation = function (html,variable){
-	Dialog.reputation.left(html,variable);
-	Dialog.reputation.grid(html,variable);
+	var left = Dialog.reputation.left(html,variable);
+	var grid = Dialog.reputation.grid(html,variable);
+	var conv = Dialog.reputation.converter(html,variable);
+	
+	html.append($('<div>')
+		.append(left,grid)
+		.css({float:'left'})
+	);
+	html.append(conv.css({float:'right'}));
+	
 }
-
-
 
 Dialog.reputation.left = function(html,variable){
 	var usablePt = main.reputation.usablePt.r(2);
@@ -19,15 +26,33 @@ Dialog.reputation.left = function(html,variable){
 	var removePt = main.reputation.removePt.r(1);
 	
 	var el = $('<div>');
-		
-	var str = '<span style="font-size:30px" title="' + unusedPt + ' Available Point(s). Level-Up to get more points.">'
-		+ 'Points: ' + usedPt + '/' + usablePt + '</span>';
-	str += '<span title="Use Orb of Removal obtained from completing quests to get more Remove Points."> - Remove Pts: ' + removePt + '</span><br>';
-	str += ' - Quests grant reputation points which give bonus to a stat.';
-
-	el.append($('<span>').html(str));
+	el.append($('<span>')
+		.attr('title',unusedPt + ' Available Point(s). Level-Up to get more points.')
+		.css({fontSize:'30px'})
+		.html('Points: ' + usedPt + '/' + usablePt)
+	);
+	/*
+	el.append($('<span>')
+		.attr('title','Used to remove a boost. Orbs of Removal grant additional Remove Points.')
+		.html(' - Remove Pts: ' + removePt)
+	);
+	*/
+	el.append($('<span>')
+		.html(' - Your Lvl: ' + Actor.getLevel(player))
+	);	
+	el.append($('<button>')
+		.addClass('myButtonRed')
+		.css({margin:'10px 15px',position:'absolute',top:'-5px'})
+		.html('Clear Grid')
+		.attr('title','Remove all selected boosts')
+		.click(function(){
+			Command.execute('win,reputation,clear',[main.reputation.activeGrid]);
+		})	
+	);
 	
-	html.append(el);
+	
+	
+	return el;
 }
 
 Dialog.reputation.grid = function(html,variable){
@@ -40,12 +65,11 @@ Dialog.reputation.grid = function(html,variable){
 		.css({
 			lineHeight:iconSize/2 + 'px',
 		});
-	html.append(el);
 	
 	var grid = Main.reputation.getGrid(main);
 	
 	//Draw Stat	
-	var gridBase = ReputationGrid.get().base;
+	var gridBase = ReputationGrid.getConverted(main).base;
 	for(var i = 0 ; i < grid.length ; i++){
 		for(var j = 0 ; j < grid[i].length ; j++){
 			var base = gridBase[i][j];
@@ -62,7 +86,8 @@ Dialog.reputation.grid = function(html,variable){
 			}
 			
 			//Border
-			ctx.fillStyle = value === 1 ? 'green' : ((Main.reputation.testAdd(grid,i,j) ? '#FFFF00': 'red'));
+			var canSelect = Main.reputation.testAdd(grid,i,j);
+			ctx.fillStyle = value === 1 ? 'green' : (canSelect ? '#FFFF00': 'red');
 			ctx.fillRect(0,0,ic,ic);
 			
 			//Boost
@@ -82,8 +107,11 @@ Dialog.reputation.grid = function(html,variable){
 			if(value === 1) 
 				canvas.attr('title','Right Click: Remove ' + stat.name);
 			else {
-				if(stat.custom) canvas.attr('title','Left Click: ' + stat.description);
-				else canvas.attr('title','Left Click: Boost ' + stat.name + ' by x0.02');
+				var header = canSelect ? 'Left Click: ' : 'LOCKED: ';
+				if(stat.custom) 
+					canvas.attr('title',header + stat.description);
+				else 
+					canvas.attr('title',header + 'Boost ' + stat.name + ' by +' + Tk.round(base.value*100,1) + '%');
 			}
 				
 			
@@ -101,7 +129,60 @@ Dialog.reputation.grid = function(html,variable){
 		}
 		el.append("<br>");
 	}
+	return el;
 }
+
+
+
+Dialog.reputation.converter = function(html,variable){
+	var div = $('<div>');
+	div.append($('<h2>')
+		.html('Converter')
+		.css({textDecoration:'underline'})
+	);
+	
+	var groupList = ReputationConverter.getGroup();
+	for(var i in groupList){
+		var g = groupList[i];
+		var el = $('<div>');
+		el.append('<h3>Level ' + g.lvl + ':</h3>');
+		for(var j in g.list){
+			var conv = ReputationConverter.get(g.list[j]);
+			var isSelected = Main.reputation.get(main).converter.contains(conv.id);
+			var button = conv.getButtonAppend()
+				.attr('title',conv.description)
+				.click((function(conv,isSelected){
+					return function(){
+						if(isSelected)
+							Command.execute('win,reputation,converterRemove',[main.reputation.activeGrid,conv.id]);
+						else
+							Command.execute('win,reputation,converterAdd',[main.reputation.activeGrid,conv.id]);
+					}
+				})(conv,isSelected));
+			if(isSelected)
+				button.css({border:'4px solid red'});
+				
+			el.append(button);
+		}
+		div.append(el);
+	}
+	return div;
+}	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 })();
 

@@ -100,9 +100,11 @@ Message.receive.pm = function(msg){
 		var from = msg.from === Message.ADMIN_USERNAME ? Message.receive.public.SYMBOL_CHART[1] + Message.ADMIN_USERNAME : msg.from;
 		var text = $('<span>')
 			.html('From ' + from + ': ' +  msg.text)
-			.bind('contextmenu',function(e){
+			.attr('title','Click to reply')
+			.click(function(e){
 				e.preventDefault();
-				Message.clickUsername(msg.from);
+				Dialog.chat.setInput('@' + msg.from + ',',true);
+				//Message.clickUsername(msg.from);
 				return false;
 			});
 		Message.reply.HISTORY.unshift(msg);
@@ -110,7 +112,6 @@ Message.receive.pm = function(msg){
 
 	Dialog.pm.addText(text,25*60*5);
 }
-
 
 Message.receive.clan = function(pack){
 	var span = $('<span>')

@@ -84,6 +84,7 @@ Dialog.UI('context',{
 	width:CST.WIDTH,
 	textAlign:'center',
 	zIndex:Dialog.ZINDEX.HIGH,
+	pointerEvents:'none',
 },function(html,variable,text){	//param:{x,y,text}
 	if(!text) return false;
 	
@@ -100,7 +101,8 @@ Dialog.UI('context',{
 			width:'auto',
 			textAlign:'center',
 			whiteSpace:'nowrap',
-			display:'inline-block'
+			display:'inline-block',
+			pointerEvents:'none',
 		})
 		.html(text);
 		

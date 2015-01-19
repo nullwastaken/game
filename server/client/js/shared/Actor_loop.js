@@ -113,7 +113,6 @@ Actor.summon.loop = function(act){
 			Actor.death.die(act);
 		}
 		
-		
 		act.summoned.time -= INTERVAL_SUMMON;
 		if(act.summoned.time < 0){
 			Actor.remove(act);
@@ -121,6 +120,11 @@ Actor.summon.loop = function(act){
 	}
 }
 
+Actor.summon.removeFromParentList = function(act){	
+	var parent = Actor.get(act.summoned.parent);
+	if(parent && parent.summon[act.summoned.name]) 
+		delete parent.summon[act.summoned.name].child[act.id];
+}
 
 Actor.attackReceived = {};
 Actor.attackReceived.loop = function(act){

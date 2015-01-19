@@ -55,23 +55,10 @@ var Line = function(category,name,title,icon,func){
 }
 Line.LIST = {offensive:[],defensive:[]};
 
-Line.getElementFunc = function(type,name){
+Line.getElementFunc = function(type,name){	//BADD hardcoded
 	return function(r,b){
-		var el = type + '-' + name + '-';
-		
-		var b0 = r(el + 'x',2,2);
-		var b1 = r(el + '*',2,2);
-		var b2 = r(el + '^',2,2);
-		var b3 = r(el + '+',2,2);
-		var sum = (Math.pow(b0*b1,b2) + b3).r(3,3);
-		b0 = $('<span>').html(b0).attr('title','Sum of all ' + Stat.get(el + 'x').name + ' boosts')[0].outerHTML;
-		b1 = $('<span>').html(b1).attr('title','Sum of all ' + Stat.get(el + '*').name + ' boosts')[0].outerHTML;
-		b2 = $('<span>').html(b2).attr('title','Sum of all ' + Stat.get(el + '^').name + ' boosts')[0].outerHTML;
-		b3 = $('<span>').html(b3).attr('title','Sum of all ' + Stat.get(el + '+').name + ' boosts')[0].outerHTML;
-		sum = $('<span>').html(sum).attr('title','Value used for damage calculations.')[0].outerHTML;
-		
-		var string = '( ' + b0 + ' * ' + b1 + ' ) ^ ' + b2 + ' + ' + b3 + ' = ' + sum;
-		return string;
+		var el = type + '-' + name + '-+';
+		return 'x' + Tk.round(1+(+player.boost.list[el].base),2,2);
 	}
 }
 

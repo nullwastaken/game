@@ -228,6 +228,17 @@ Command('win,reputation,add',"Select a Reputation",false,[ //{
 		return Message.add(key,'Finish the quest you\'re doing before modifying your Reputation.');
 	Main.reputation.add(Main.get(key),num,i,j);
 }); //}
+Command('win,reputation,clear',"Clear Reputation Grid",false,[ //{
+	Command.Param('number','Page',false,{max:1}),
+],function(key,num,i,j){
+	var main = Main.get(key);
+	if(Main.getQuestActive(main) !== null) 
+		return Message.add(key,'Finish the quest you\'re doing before modifying your Reputation.');
+	Main.question(main,function(){
+		Main.reputation.clearGrid(main,num);
+	},'Are you sure you want to clear the grid?','boolean');
+	
+}); //}
 Command('win,reputation,remove',"Remove a Reputation",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
 	Command.Param('number','Y',false,{max:14}),
@@ -244,6 +255,21 @@ Command('win,reputation,page',"Change Active Reputation Page",false,[ //{
 		return Message.add(key,'Finish the quest you\'re doing before modifying your Reputation.');
 	Main.reputation.changeActivePage(Main.get(key),num);
 }); //}
+
+Command('win,reputation,converterAdd',"Add Converter",false,[ //{
+	Command.Param('number','Page',false,{max:1}),
+	Command.Param('string','Converter Name',false),
+],function(key,num,name){
+	Main.reputation.addConverter(Main.get(key),num,name);	
+}); //}
+Command('win,reputation,converterRemove',"Add Converter",false,[ //{
+	Command.Param('number','Page',false,{max:1}),
+	Command.Param('string','Converter Name',false),
+],function(key,num,name){
+	Main.reputation.removeConverter(Main.get(key),num,name);	
+}); //}
+
+
 Command('win,ability,swap',"Set an Ability to a Key",false,[ //{
 	Command.Param('string','Ability Id',false),
 	Command.Param('number','Key Position',false,{max:5}),
@@ -288,7 +314,15 @@ Command('equipBound',"Bound an equip to you.",false,[ //{
 Command('equipUpgrade',"Upgrade an equip.",false,[ //{
 	Command.Param('string','Equip Id',false),
 ],function(key,id){
-	Main.question(Main.get(key),function(){
+	var main = Main.get(key);
+	var equip = Equip.get(id);
+	if(!equip) return;
+	
+	if(!Main.haveItem(main,equip.upgradeInfo.item)){
+		return Message.addPopup(key,'You don\'t have the materials required:<br> ' + ItemList.stringify(equip.upgradeInfo.item));
+	}
+	
+	Main.question(main,function(){
 		Equip.upgrade.click(key,id);
 	},'Are you sure you want to upgrade the equip?','boolean');
 	

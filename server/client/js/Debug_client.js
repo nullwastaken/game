@@ -19,7 +19,7 @@ ts.help = function(){
 	'all: everything nearby' + '\n' +
 	'########################' + '\n' +
 	'pa: Player online' + '\n' +
-	'name: return player object with that name' + '\n' + 
+	'get: return player object with that name' + '\n' + 
 	'ts.list: Account.USERNAME_TO_ID' + '\n'
 	);	
 }
@@ -27,12 +27,11 @@ ts.npc = function(){ ts('npc'); }
 ts.combat = function(){ ts('combat'); }
 ts.human = function(){ ts('human'); }
 ts.bullet = function(){ ts('bullet'); }
-ts.get = function(name){ ts('name("' + name + '");'); }
-
+ts.get = function(name){ ts('name("' + name + '").id;'); }
 
 ts.init = function(){
 	Socket.on('testing', function (d) { 
-		if(d && d.data){ 
+		if(d && d.data){
 			try { ts.a = JSON.parse(d.data); INFO(ts.a); } 
 			catch (err){ ERROR.err(3,err); }	
 		}

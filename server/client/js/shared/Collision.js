@@ -153,6 +153,7 @@ Collision.strikeActor = function(atk){
 	}
 }
 
+
 Collision.strikeActor.test = Collision.bulletActor.test;
 
 Collision.strikeActor.collision = function(atk,player){

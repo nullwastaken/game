@@ -180,9 +180,6 @@ Bullet.verifyCollision = function(b){
 }
 
 
-
-
-
 if(!SERVER){ //}
 	Bullet.loop = function(){
 		for(var i in LIST){

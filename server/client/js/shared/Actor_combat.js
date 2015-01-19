@@ -71,14 +71,21 @@ Actor.dodge = function(act,time,dist){
 }
 
 Actor.becomeInvincible = function(act,time){
+	if(!time) return;
+	
 	//invincibility
-	var oldtouch = act.damagedIf;
+	if(!Actor.becomeInvincible.HISTORY[act.id])
+		Actor.becomeInvincible.HISTORY[act.id] = act.damagedIf;
+	
 	act.damagedIf = 'false';
-	Actor.setTimeout(act,function(key){
-		Actor.get(key).damagedIf = oldtouch;	
+	
+	Actor.setTimeout(act,function(){
+		act.damagedIf = Actor.becomeInvincible.HISTORY[act.id];
+		delete Actor.becomeInvincible.HISTORY[act.id];
 	},time,'actor.invincible');
-
 }
+Actor.becomeInvincible.HISTORY = {};	//BADDDDD
+
 
 Actor.rechargeAbility = function(act){
 	Actor.ability.fullyRecharge(act);

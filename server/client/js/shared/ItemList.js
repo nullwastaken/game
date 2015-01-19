@@ -119,13 +119,22 @@ ItemList.transfer = function(originInv,destinationInv,id,amount,verifyIfOwn){
 
 
 ItemList.stringify = function(list,cb){
-	var str = '';
-	for(var i in list){
-		var item = QueryDb.get('item',i,cb);
-		if(!item) return false;
-		str += 'x' + list[i] + ' ' + item.name + ',';
+	if(!SERVER){
+		var str = '';
+		for(var i in list){
+			var item = QueryDb.get('item',i,cb);
+			if(!item) return false;
+			str += 'x' + list[i] + ' ' + item.name + ',';
+		}
+		return str.slice(0,-1);
+	} else {
+		var str = '';
+		for(var i in list){
+			str += 'x' + list[i] + ' ' + ItemModel.get(i).name + ',';		
+		}		
+		
+		return str.slice(0,-1);
 	}
-	return str.slice(0,-1);
 }
 
 

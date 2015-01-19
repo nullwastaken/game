@@ -106,7 +106,7 @@ s.newEvent('endCourse',function(key){	//
 		if(time < 25*18)
 			return s.completeQuest(key);
 		else {
-			s.display(key,'Try harder to get sub 18',25*2);
+			s.displayPopup(key,'Try harder to get sub 18 seconds.',25*2);
 			s.callEvent('resetCourse',key);
 			return;
 		}
@@ -203,7 +203,7 @@ s.newPreset('target',s.newPreset.ability(['simple','boomerang','5ways','','reset
 s.newPreset('fireonly',s.newPreset.ability(['5ways','','','','reset','']),null,False,False,False,False);
 
 s.newDialogue('Matthe','Matthe','villager-male.5',[ //{ 
-	s.newDialogue.node('intro',"Hey! There is a weird bug in the map ahead. There are 10 targets that spawned out of nowhere and I can get rid of them fast enough. Can you help me out?",[ 
+	s.newDialogue.node('intro',"Hey! There is a weird bug in the map ahead. There are 10 targets that spawned out of nowhere and I can\'t get rid of them fast enough. Can you help me out?",[ 
 		s.newDialogue.option("Sure",'','startGame')
 	],''),
 ]); //}

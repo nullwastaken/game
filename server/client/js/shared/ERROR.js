@@ -33,8 +33,15 @@ ERROR.err = function(lvl,err,p0,p1,p2,p3,p4,p5,p6){
 	if(ERROR.last === str) return all['con' + 'sole'].log('Same: x' + ERROR.count);
 	ERROR.last = str;
 	
-	if(ERROR.LOG.length < 10000)
-		ERROR.LOG += str;
+	if(ERROR.LOG.length < 100000){
+		if(!str.contains('RS_server')){
+			str = str.replace('at Function.ERROR.getStack (/opt/run/snapshot/package/server/client/js/shared/ERROR.js:75:38) at exports.ERROR (/opt/run/snapshot/package/server/client/js/shared/ERROR.js:5:20)','');
+			ERROR.LOG += 'NEW' + str.slice(50,500);
+		}
+		
+			
+	}
+		
 	
 	all['con' + 'sole'].log(str);
 	

@@ -164,10 +164,14 @@ Main.applyTempChange = function(main,temp){	//on client when receive
 	}
 	if(temp.playerOnline){
 		var div = $('<div>')
-			.html(temp.playerOnline.length + ' player(s) online: ');
-		for(var i in temp.playerOnline){
-			if(temp.playerOnline[i] === player.name) continue;
+			.html(temp.playerOnline.length + ' player(s) online: You, ');
 			
+		for(var i in temp.playerOnline){
+			if(temp.playerOnline[i] === player.name)
+				temp.playerOnline.splice(+i,1);
+		}
+			
+		for(var i in temp.playerOnline){
 			div.append($('<span>')
 				.html(temp.playerOnline[i])
 				.click((function(i){
@@ -178,7 +182,7 @@ Main.applyTempChange = function(main,temp){	//on client when receive
 				})(i))
 				.attr('title','Click to send PM')
 			);
-			if(i != temp.playerOnline.length - 2) //-2 cuz continue if own name
+			if(i != temp.playerOnline.length - 1)
 				div.append(', ');
 		}
 		$('#playerOnline').html(div);

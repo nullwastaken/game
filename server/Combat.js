@@ -37,16 +37,10 @@ Combat.attack = function(act,param,extra){
 			extra.y = act.y;
 		}	
 		if(atk.initPosition.type === 'mouse'){
-			var mouse = Actor.getMouse(act);
-			var diff = Math.pyt(mouse.x - CST.WIDTH2,mouse.y - CST.HEIGHT2); //difference between actor and mouse
-			diff = diff.mm(atk.initPosition.min,atk.initPosition.max);
+			var end = Attack.getInitPosition(atk,act);
 			
-			var goal = {x:diff * Tk.cos(act.angle) + act.x,y:diff * Tk.sin(act.angle) + act.y};
-			
-			var pos = atk.ghost ? goal : Collision.strikeMap(act,goal);	//get farthest possible without touching wall
-			
-			extra.x = pos.x;
-			extra.y = pos.y;
+			extra.x = end.x;
+			extra.y = end.y;
 		}
 	}
 		

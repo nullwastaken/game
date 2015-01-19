@@ -199,49 +199,52 @@ s.newItem('orb-removal','Orb of Removal','orb.removal',[
 
 //{ Equip
 s.newEquip('unarmed','weapon','mace','Mace',1);
-s.newEquip('start-body','body','metal','Body',1,[
+s.newEquip('start-body','body','metal','Body',1,[ //{
 	s.newEquip.boost('hp-regen',0.05,'*'),
-],{
+],{ //}
 	upgradable:true,
 	maxAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
-s.newEquip('start-helm','helm','wood','Helm',1,[
+s.newEquip('start-helm','helm','wood','Helm',1,[ //{
 	s.newEquip.boost('def-melee-+',0.05,'*'),
-],{
+],{ //}
 	upgradable:true,
 	maxAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
-s.newEquip('start-amulet','amulet','ruby','Amulet',1,[
+s.newEquip('start-amulet','amulet','ruby','Amulet',1,[ //{
 	s.newEquip.boost('maxSpd',0.05,'*'),
-],{
+],{ //}
 	upgradable:true,
 	maxAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
-s.newEquip('start-ring','ring','sapphire','Ring',1,[
+s.newEquip('start-ring','ring','sapphire','Ring',1,[ //{
 	s.newEquip.boost('magicFind-quantity',0.15,'*'),
-],{
+],{ //}
 	upgradable:true,
 	maxAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
-s.newEquip('start-weapon','weapon','mace','Mace',1,[
+s.newEquip('start-weapon','weapon','mace','Mace',1,[ //{
 	s.newEquip.boost('dmg-melee-+',0.15,'*'),
-],{
+],{ //}
 	upgradable:true,
 	maxAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
-s.newEquip('start-bow','weapon','bow','Bow',1,[
+
+s.newEquip('start-bow','weapon','bow','Bow',1,[ //{
 	s.newEquip.boost('dmg-range-+',0.15,'*'),
-],{
+],{ //}
 	upgradable:true,
 	maxAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
-s.newEquip('start-staff','weapon','staff','Staff',1,[],{
+s.newEquip('start-staff','weapon','staff','Staff',1,[
+	s.newEquip.boost('dmg-magic-+',0.15,'*'),	
+],{ //}
 	upgradable:true,
 	maxAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
@@ -267,13 +270,13 @@ s.newAbility('dodge','dodge',{},{});
 s.newAbility('start-melee','attack',{
 	name:'Strike',icon:'attackMelee.cube',
 	description:'Regular Melee Strike',
-	periodOwn:25,periodGlobal:20,
+	periodOwn:15,periodGlobal:15,
 },{
 	type:"strike",width:40,height:40,delay:0,
 	initPosition:s.newAbility.initPosition(0,50),
 	preDelayAnim:s.newAbility.anim("slashMelee",1),
 	hitAnim:s.newAbility.anim("strikeHit",0.2),
-	dmg:s.newAbility.dmg(500,'melee'),
+	dmg:s.newAbility.dmg(550,'melee'),
 	knock:s.newAbility.status(1,3,0.1),
 });
 s.newAbility('player-meleeBig','attack',{
@@ -292,7 +295,7 @@ s.newAbility('player-meleeBig','attack',{
 s.newAbility('start-bullet','attack',{
 	name:'Basic Bullet',icon:'attackRange.steady',
 	description:'Very fast arrow shooting.',
-	periodOwn:15,periodGlobal:15,
+	periodOwn:12,periodGlobal:12,
 },{
 	type:"bullet",
 	amount:1,angleRange:5,
@@ -314,7 +317,7 @@ s.newAbility('player-windKnock','attack',{
 	description:'Defensive wind that pushes enemies away.',
 	periodOwn:25,periodGlobal:25,costMana:50,
 },{
-	type:"bullet",angleRange:100,amount:3,
+	type:"bullet",angleRange:30,amount:3,
 	sprite:s.newAbility.sprite("tornado",1),
 	hitAnim:s.newAbility.anim("strikeHit",0.5),
 	dmg:s.newAbility.dmg(150,'range'),

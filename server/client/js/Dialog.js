@@ -46,30 +46,32 @@ Dialog.Refresh = function(create,getOld,interval,loop,close){
 	}
 }
 
+
 Dialog.open = function(name,param){
 	var dialog = LIST[name];
 	dialog.param = param || null;
 	dialog.html.html('');	//reset
-	var ret = dialog.refresh.create(dialog.html,dialog.variable,dialog.param);	
-	if(ret === false) return Dialog.close(name);
 	
-	/*
-	if($.contains(dialog[0],$('.toolTipDetails')[0])){
-		$('.toolTipDetails').remove();
-	}
-	*/
+	var ret = dialog.refresh.create(dialog.html,dialog.variable,dialog.param);
+	
+	if(ret === false) 
+		return Dialog.close(name);
 	
 	dialog.param = ret || dialog.param;
 	
 	dialog.refresh.oldValue = dialog.refresh.getOld(dialog.html,dialog.variable,dialog.param);
 	
-	if(dialog.isDialog)
+	if(dialog.isDialog){
 		dialog.html.dialog('open');
-	else {
+		$('.toolTipDetails').remove();
+	} else {
 		$('#gameDiv').append(dialog.html);
 		if(ret !== null)
 			dialog.html.show();
 	}
+	//$('#gameDiv').focus();
+	//$(dialog.html).blur();
+	
 	/* cant use fuck everytime hp changes...
 	$(".ui-tooltip-content").parents('div').remove();
 	setTimeout(function(){	//bad... bug fix
@@ -147,11 +149,18 @@ Dialog.UI = function(id,css,create,getOld,interval,loop,close,variable){
 	return myDialog;
 }
 
-Dialog.isMouseOverDialog = function(){
+Dialog.isMouseOverDialog = function(){	//BAD but working good
+	var off = $('#gameDiv').offset();
+	var offX = off.left - window.pageXOffset;
+	var offY = off.top - window.pageYOffset;
+	
 	for(var i in ACTIVE){
 		if(!LIST[i].isDialog) continue;
-		var html = LIST[i].html;
-		if($(html).is(":hover"))
+		var html = LIST[i].html.parent();
+		var rect = html[0].getBoundingClientRect();
+		var rect2 = {width:rect.width,height:rect.height,x:rect.left-offX,y:rect.top-offY};
+		
+		if(Collision.testMouseRect(key,rect2))
 			return true;		
 	}
 	return false;

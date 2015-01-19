@@ -72,6 +72,11 @@ Equip.init = function(dbLink,cb){
 
 //#######################
 
+Equip.randomlyGenerateFromQuestReward = function(act){
+	return Equip.randomlyGenerate(null,Actor.getLevel(act),null,null,null,null,act.username);
+}
+
+
 Equip.randomlyGenerate = function(pieceType,lvl,quality,rarity,min,max,creator){
 	pieceType = pieceType || Equip.PieceType();
 	
@@ -166,7 +171,7 @@ Equip.UpgradeInfo.item = function(array){
 }
 
 Equip.generateUpgradeInfo = function(piece,type,lvl){
-	var matLvl = Math.floor(lvl/20);
+	var matLvl = Material.roundLevel(lvl);
 	var expRewarded = 500;
 	
 	//armor

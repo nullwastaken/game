@@ -127,12 +127,11 @@ Competition.getCurrent = function(){
 
 Competition.getNext = function(){
 	var list = [
-		'QlureKill-killCount',
 		'QlureKill-timeEasy',
-		'QlureKill-timeHard',
-		'QbaseDefence-remainingpthard',
 		'QbaseDefence-remainingpteasy',
-		'QbaseDefence-remainingpt4',
+		'Qbtt000-speedrun',
+		'Qminesweeper-speedrun',
+		'QtowerDefence-remainingpteasy',
 	];
 	return list.random();
 }

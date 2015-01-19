@@ -72,8 +72,8 @@ s.newEvent('_signIn',function(key){ //
 		s.failQuest(key);
 	}
 	
-	
-	s.addTorchEffect(key,"red",1000000,"rgba(255,0,0,0.3)",10);
+	if(s.get(key,'toggleRed'))
+		s.addTorchEffect(key,"red",1000000,"rgba(255,0,0,0.3)",10);
 	
 	if(s.get(key,'toggleBlue')){
 		s.addTorchEffect(key,"blue",1000000,"rgba(0,0,255,0.3)",10);

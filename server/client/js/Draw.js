@@ -50,7 +50,6 @@ Draw.init = function(){
 	});
 
 }
-
 Draw.loop = function(ctx){
 	ctx.clearRect(0, 0, CST.WIDTH, CST.HEIGHT);
 	

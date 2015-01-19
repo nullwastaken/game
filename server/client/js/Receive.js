@@ -68,8 +68,10 @@ Receive.loop = function(){
 }
 
 
-Receive.init = function(){
-	Socket.on('change', Receive);
+Receive.init = function(){	//socket on
+	Socket.on('change', function(data){
+		Receive(data);
+	});
 }
 
 Receive.SHOW_TIME = false;

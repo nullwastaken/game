@@ -2,7 +2,7 @@
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 
-'use strict';
+//'use strict';
 var s = loadAPI('v1.0','Qdarkness',{
 	name:"Darkness",
 	author:"rc",
@@ -259,12 +259,13 @@ s.newAbility('curse','attack',{
 });
 s.newAbility('bat','summon',{
 },{
-		model:s.newAbility.model('bat'),
-		amount:2,
-		maxChild:100,
-		time:0
-	
+	model:s.newAbility.model('bat'),
+	amount:1,
+	maxChild:8,
+	time:0,	
 });
+
+
 
 s.newDialogue('bimmy','Bimmy','villager-male.5',[ //{ 
 	s.newDialogue.node('ringdone',"OMG! You found my ring! Thanks a lot.",[ 
@@ -406,6 +407,9 @@ s.newMapAddon('QfirstTown-north',{
 		m.spawnTeleporter(spot.a,'teleSouthCave','cave');
 	}
 });
+
+
+
 
 s.newBoss('bigbat',s.newBoss.variable({}),function(boss){
 	s.newBoss.phase(boss,'phase0',{

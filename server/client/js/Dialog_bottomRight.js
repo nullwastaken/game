@@ -36,17 +36,18 @@ Dialog.UI('tabButton',{
 			Main.hudState.applyHudState('tab-quest',Img.drawIcon.html('tab.quest',24,'Open Quest List Window',function(){
 				Dialog.open('questList');
 			})),
+			
+		],
+		[
 			Main.hudState.applyHudState('tab-reputation',Img.drawIcon.html('tab.reputation',24,'Open Reputation Grid',function(){
 				Dialog.open('reputation');
 			})),
-		],
-		[
 			Main.hudState.applyHudState('tab-highscore',Img.drawIcon.html('tab.quest',24,'Open Highscore Window',function(){
 				Dialog.open('highscore');
 			})),
-			Main.hudState.applyHudState('tab-friend',Img.drawIcon.html('tab.friend',24,'Open Friend List',function(){
+			/*Main.hudState.applyHudState('tab-friend',Img.drawIcon.html('tab.friend',24,'Open Friend List',function(){
 				Dialog.open('friend');
-			})),
+			})),*/
 			/*Main.hudState.applyHudState('tab-feedback',Img.drawIcon.html('system.flag',24,'Leave Feedback',function(){
 				Message.addPopup(main.id,'Click the Display/Hide Comments button below the game box.');
 			})),*/
@@ -239,7 +240,7 @@ Dialog.UI('reputationBar',{
 		.html(', Exp: ' + exp)
 	);
 	html.append(' ',$(Img.drawIcon.html('system1.more',18))
-		.attr('title','Level Up Cost: ' + Actor.getLevelUpCost(player) + ' Exp')
+		.attr('title','Current Level: ' + player.skill.lvl + '. Level Up Cost: ' + Actor.getLevelUpCost(player) + ' Exp')
 		.click(function(){
 			Command.execute('lvlup',[]);
 		})

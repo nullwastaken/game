@@ -249,6 +249,7 @@ Actor.click.party = function(act,eid){
 	if(Main.getPartyId(main) === Main.getPartyId(main2))
 		return Message.add(act.id,"This player is already in your party.");
 	Main.question(main2,function(){
+		if(!Main.get(main.id)) return;	//aka dc
 		Main.changeParty(main2,Main.getPartyId(main));
 	},'Do you want to join "' + act.name + '" party?','boolean');
 }	

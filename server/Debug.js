@@ -64,8 +64,11 @@ Debug.ghost = function(key){
 	}
 }
 
-Debug.giveRandomEquip = function(key){
-	Main.addItem(Main.get(key),Equip.randomlyGenerate().id);
+Debug.giveRandomEquip = function(key,type){
+	if(type === 'weapon')
+		Main.addItem(Main.get(key),Equip.randomlyGenerate(Equip.PieceType('weapon')).id);
+	else
+		Main.addItem(Main.get(key),Equip.randomlyGenerate().id);
 }
 
 Debug.onSignIn = function(key,name){
@@ -149,7 +152,7 @@ Debug.ts = function(socket,d){
 		var bullet = {};
 		
 		var name = function(name){
-			return Actor.get(Account.getViaUserName(name));
+			return Actor.getViaUserName(name);
 		}
 		
 		for(var i in p.activeList){	
@@ -193,6 +196,8 @@ Debug.changeDeveloperMessage = function(version,text){
 Debug.addItemViaQuestion = function(key){
 	Main.question(Main.get(key),function(key,item,amount){
 		if(item === 'equip') return Debug.giveRandomEquip(key);
+		if(item === 'weapon') return Debug.giveRandomEquip(key,'weapon');		
+		
 		if(ItemModel.get(item))	Main.addItem(Main.get(key),item,+amount || 1);
 		else Message.add(key,'wrong');
 	},"item,amount",'string');	
@@ -350,6 +355,8 @@ Debug.onStartQuest = function(key,qid){
 
 Debug.skipTutorial = function(key){
 	var act = Actor.get(key);
+	
+	Main.addItem(Main.get(key),{'Qsystem-start-bow':1,'Qsystem-start-staff':1,'Qsystem-start-weapon':1});
 	Actor.ability.add(act,'Qsystem-start-melee',false);
 	Actor.ability.swap(act,'Qsystem-start-melee',0);
 	

@@ -23,6 +23,7 @@ Pref.get = function(id){
 	return DB[id] || null;
 }
 
+Pref('displayStrike','Display AoE',1,0,1,'Display Damage Zone For Strikes. 0=false, 1=true');
 Pref('displayFPS','Display FPS',1,0,1,'Display FPS Performance. 0=false, 1=true');
 Pref('overheadHp','Overhead Hp',0,0,1,'Display HP Bar and Status Effect over player head.');
 Pref('highlightHover','Highlight Hover',0,0,1,'Highlight actor sprite under mouse.');
@@ -32,7 +33,6 @@ Pref('volumeSfx','Volume Effects',20,0,100,'Volume Sound Effects.');
 Pref('signNotification','Notify Log In',1,0,2,'Notify you if someone logs in or out of the game. 0=none, 1=text, 2=sound');
 Pref('puush','Allow Puush Link',2,0,2,'Allow Puush Link in chat. 0=never, 1=friend only, 2=always');
 Pref('chatTimePublic','Chat Time',120,15,999,'Time in seconds before chat box messages disappear.');
-Pref('displayAoE','Display AoE',0,0,1,'Display Damage Zone For Strikes. 0=false, 1=true');
 Pref('mapRatio','Map Ratio',6,4,7,'Minimap Size');
 Pref('bankTransferAmount','X- Bank',1000,1,9999999999,'Amount of items transfered with Shift + Left Click');
 Pref('orbAmount','X- Orb',1000,1,9999999999,'Amount of orbs used with X- option');

@@ -10,6 +10,7 @@ var Game = {
 	lastTickTime:0,
 }
 Game.init = function (data) {
+	Socket.init();
 	Game.init.other(data);
 	Game.init.main(data);	//after, cuz need quest info
 	Command.init();	//Dialog...
@@ -100,6 +101,11 @@ Game.init.other = function(data){
 	
 	
 }
+
+Game.isOnRainingChainCom = function(){
+	return window.location.hostname.contains('rainingchain')
+}
+
 
 Game.loop = function(){
 	Actor.loop();

@@ -1,4 +1,5 @@
 Actor.drawAll = function (ctx){
+	Actor.drawStrikeZone(player,ctx);
 	var array = Actor.drawAll.getSortedList();
 	var context = null;
 	for(var i = 0 ; i < array.length ; i++){
@@ -8,6 +9,7 @@ Actor.drawAll = function (ctx){
 			Actor.drawStatus(act,ctx); 
 		}
 	}
+	
 	return context;
 }	
 
@@ -140,6 +142,57 @@ Actor.drawAll.getMinimapList = function(){	//bad...
 	return toReturn;
 }
 
+Actor.drawStrikeZone = function(act,ctx){
+	if(!Main.getPref(main,'displayStrike')) return;
+	
+	var ab = Actor.drawStrikeZone.getMeleeAbility(act);
+	if(!ab) return;
+	//x,y mouseX mouseY
+	var pos = Attack.getInitPosition(ab.param,player);
+	
+	var fakeStrike = {x:pos.x,y:pos.y,width:ab.param.width,height:ab.param.height,angle:act.angle};
+	
+	var point = Attack.Strike.getPoint(fakeStrike);
+	var rotatedRect = Attack.Strike.getPoint(fakeStrike,point);
+	
+	//9 dots
+	//for(var i in point)	ctx.fillRect(point[i].x-act.x+CST.WIDTH2,point[i].y-act.y+CST.HEIGHT2,10,10);
+	
+	ctx.save();
+	var x = fakeStrike.x-act.x+CST.WIDTH2;
+	var y = fakeStrike.y-act.y+CST.HEIGHT2;
+	ctx.translate(x,y);
+	ctx.rotate(fakeStrike.angle/180*Math.PI);
+	ctx.fillStyle = 'red';
+	ctx.globalAlpha = 0.25;
+	ctx.strokeStyle = 'black';
+	ctx.strokeRect(-fakeStrike.width,-fakeStrike.height,fakeStrike.width*2,fakeStrike.height*2);
+	ctx.fillRect(-fakeStrike.width,-fakeStrike.height,fakeStrike.width*2,fakeStrike.height*2);
+	ctx.restore();
+	
+	/*for(var i in Actor.LIST){
+		if(Collision.strikeActor.collision(fakeStrike,Actor.LIST[i])
+	}*/
 	
 	
+}
+Actor.drawStrikeZone.getMeleeAbility = function(act){
+	var list = Actor.getAbility(act);	//[id,id,id]
+	for(var i in list){
+		var ab = QueryDb.get('ability',list[i]);
+		if(ab && ab.type === 'attack' && ab.param.type === 'strike')
+			return ab;
+	}
+	return null;
+}
+
+
+
+
+
+
+
+
+
+
 	

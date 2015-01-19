@@ -20,7 +20,7 @@ Send.loop = function(){		// 1/2 times
 			if(watcherSocket)
 				watcherSocket.emit('change', info );
 			else {
-				Send.activeBotwatch.WATCHER = null;
+				Send.activeBotwatch.WATCHER = null;	//logout
 				Send.activeBotwatch.WATCHED = null;
 			}
 		} 
@@ -31,7 +31,6 @@ Send.loop = function(){		// 1/2 times
 	Send.reset();
 }
 Send.loop.FRAME_COUNT = 0;
-
 
 //send 31k string = 2 ms, send small = 0.02 ms
 Send.sendUpdate = function(key,socket){
@@ -102,7 +101,6 @@ Send.template = function(){
 	*/
 }
 
-
 Send.testIncludeAnim = function(player,anim){
 	if(anim.target.type === 'id'){	//aka target is an obj
 		var targ = Actor.get(anim.target.id);
@@ -118,8 +116,6 @@ Send.testIncludeAnim = function(player,anim){
 	}
 	return false;
 }
-
-
 
 Send.reset = function(){
 	Anim.removeAll();
@@ -138,8 +134,6 @@ Send.init = function(obj){ //create object that has all info for the client to i
 
 
 //########################################
-
-
 
 Send.activeBotwatch = function(key,towatch){
 	Main.get(key).old = {};

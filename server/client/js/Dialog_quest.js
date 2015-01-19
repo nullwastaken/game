@@ -19,7 +19,15 @@ Dialog.quest = function (html,variable,param){
 	
 	var top = $('<div>');
 	html.append('<h2 style="text-decoration:underline;width:100%">Quest:' + q.name + '</h2>');
+	if(main.questActive && main.questActive !== q.id)
+		html.append($('<span>')
+			.addClass('shadow')
+			.css({fontSize:'1.5em',color:'red'})
+			.html('Warning! You can only have 1 active quest at a time.<br> Abandon your active quest if you want to start "' + q.name + '".')
+		);
+		
 	html.append(top);
+	
 	Dialog.quest.challenge(top,q,mq);
 	Dialog.quest.bonus(top,q,mq);
 	Dialog.quest.start(top,q,mq);

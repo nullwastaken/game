@@ -18,7 +18,7 @@ s.newVariable({
 	interval:125,
 	started:false,
 	time:0,
-	timeToSurvive:25*5,//1500
+	timeToSurvive:1500
 });
 
 s.newChallenge('hardmode',"I want MORE!","More enemies! More villagers!",2,function(key){

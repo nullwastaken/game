@@ -1,7 +1,6 @@
 (function(){ //}
 
 Dialog('equip','Equip',Dialog.Size(1000,600),Dialog.Refresh(function(html,variable){
-	
 	html.append($('<span>')
 		.html('Current Exp: ' + Actor.getExp(player).r(0) + '<br>')
 		.attr('title','Obtained by killing monsters, harvesting resources and creating equips.')
@@ -12,8 +11,10 @@ Dialog('equip','Equip',Dialog.Size(1000,600),Dialog.Refresh(function(html,variab
 	//
 	var array = [
 		[0,1,2],
-		[3,4]
+		[3,4,5]
 	];
+	
+	var haveAllInfo = true;
 	
 	for(var i = 0 ; i < CST.equip.piece.length ; i++){	//1 => skip weapon
 		var row = i <= 2 ? 0 : 1;
@@ -31,22 +32,71 @@ Dialog('equip','Equip',Dialog.Size(1000,600),Dialog.Refresh(function(html,variab
 		}
 		var equip = QueryDb.get('equip',id,function(){
 			Dialog.open('equip');	//refresh if wasnt there
+			setTimeout(function(){
+				Dialog.open('equip');
+			},1000);
 		});
-		if(!equip) return false;
+		if(!equip){
+			haveAllInfo = false;
+			continue;
+		}
 		
 		var div = $('<div>').css(Dialog.equipPopup.globalDivCss);
 		array[row][column] = Dialog.equipPopup.func(div,{},equip,true);		
 	}	
+	if(!haveAllInfo){
+		return false;
+	}
+	
+	
+	var inventory = $('<div>')
+		.html('<h3>In inventory:</h3>');
+	
+	var count = 0;
+	for(var i in main.invList.data){	//BADD
+		if(Dialog.equipPopup.isItemEquip(i)){
+			var item = QueryDb.get('item',i);
+			var icon = Img.drawIcon.html(item.icon,48,'Click to equip ' + item.name);
+			icon.click((function(i){
+				return function(){			
+					Command.execute('useItem',[i,1]);	//1 cuz second option is wear
+				}
+			})(i));
+			icon.bind('contextmenu',(function(i){
+				return function(){			
+					Command.execute('useItem',[i,0]);	//1 cuz second option is wear
+				}
+			})(i));
+			
+			inventory.append(icon);
+			if(++count % 6 === 0)
+				inventory.append('<br>');
+		}
+	}
+	array[1][2] = inventory;
+	
 	
 	html.append(Tk.arrayToTable(array,false,false,false,'2px 2px').addClass('tableAlignTop'));
 	
+	
 },function(){
-	return Tk.stringify(Actor.getEquip(player).piece);
+	return Tk.stringify(Actor.getEquip(player).piece) + player.skill.exp + Tk.stringify(main.invList.data);
 }));
 //Dialog.open('equip')
 
+
+
 //#####################
 Dialog.equipPopup = {};
+Dialog.equipPopup.isItemEquip = function(id){ //BADDDD
+	var item = QueryDb.get('item',id);
+	if(!item) return false;
+	if(item.option[0].name === 'Examine Equip' && item.option[1].name === 'Wear Equip')
+		return true;
+	return false;	
+}
+
+
 Dialog.equipPopup.globalDivCss = {	
 	border:'4px solid black',
 	padding:'0px 0px',
@@ -72,9 +122,7 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 			.attr('title','Unequip')
 			.mousedown(function(){
 				Command.execute('tab,removeEquip',[equip.piece]);
-			})
-			.css({float:'right'});
-			
+			});
 		html.append(unequip);
 	}
 	
@@ -82,9 +130,9 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 	var isWeapon = equip.piece === 'weapon';
 	
 	var top = $('<div>')
-		.css({width:'auto',height:'auto',zIndex:-1});
+		.css({width:'auto',height:'auto',pointerEvents:'none'});
 	html.append(top);
-	var icon = Img.drawIcon.html(equip.icon,48,equip.piece + ' ' + equip.type)
+	var icon = Img.drawIcon.html(equip.icon,48)
 			.addClass('inline')
 	var topRight = $('<div>')
 		.addClass('inline')
@@ -95,12 +143,13 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 				fontSize:'1.5em',
 				textDecoration:'underline',
 				textAlign:'center',
+				pointerEvents:'none',
 			})
 			.addClass('shadow')
 			.html(equip.name + '<br>')
 		)
 		.append($('<span>')
-			.html('Lv:' + equip.lvl + ' ')
+			.html('Lv:' + equip.lvl + ', ')
 			.attr('title','Level required to use this.')
 		);/*
 		.append($('<span>')
@@ -117,19 +166,20 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 		);
 		var title = isWeapon ? 'Spend Exp to improve the Power of this equip.' : 'Spend Exp to improve the Defence of this equip.';
 		topRight.append($(Img.drawIcon.html('system1.more',20,title))
+			.css({pointerEvents:'all'})
 			.mousedown(function(){
 				Command.execute('equipMastery',[equip.id]);
 			})
 		);
 	}
-	
+	/*
 	if(equip.creator)
 		topRight.append($('<span>')
 			.html('Creator:' + equip.creator)
 			.attr('title','Player who found this equip.')
 		);
-		
-		
+	*/	
+	
 	top.append(icon,topRight);
 	
 	//var buttonDiv = $('<div>');
@@ -259,7 +309,7 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 			unlockDiv.append($('<button>')
 				.addClass('myButton')
 				.html('Unlock hidden boost')
-				.attr('title','Use ' + itemNeeded + ' to unlock a new boost.')
+				.attr('title','Unlock a new boost. Cost: ' + itemNeeded + '.')
 				.mousedown(function(){
 					Command.execute('equipUpgrade',[equip.id]);
 				})

@@ -80,7 +80,7 @@ ActorModel.init = function(){
 		minimapIcon:'color.yellow',
 		pickRadius:250,
 		useUpdateInput:false,
-		maxSpd:CST.NPCSPD*2,
+		maxSpd:CST.NPCSPD*1.8,
 		friction:CST.FRICTION,
 	});
 }
