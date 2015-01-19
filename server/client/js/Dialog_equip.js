@@ -260,6 +260,7 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 				.addClass('myButton')
 				.html('Unlock hidden boost')
 				.attr('title','Use ' + itemNeeded + ' to unlock a new boost.')
+				.attr('tabindex', -1)
 				.mousedown(function(){
 					Command.execute('equipUpgrade',[equip.id]);
 				})
