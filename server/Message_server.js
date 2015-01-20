@@ -62,9 +62,10 @@ Message.receive.public = function(key,msg){
 		act.chatHead = Actor.ChatHead(msg.text);
 	
 	var newMsg = Message('public',msg.text,msg.from,Message.Public(main.social.customChat));
+	Message.add(key,newMsg);
 	
 	//Send info
-	var alreadySentTo = [];
+	var alreadySentTo = [key];
 	for(var i in act.activeList){
 		if(!Actor.isPlayer(i)) continue;	//aka non player
 		alreadySentTo.push(i);

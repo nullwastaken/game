@@ -88,8 +88,8 @@ Equip.randomlyGenerate = function(pieceType,lvl,quality,rarity,min,max,creator){
 	var piece = pieceType.piece;
 	var type = pieceType.type;
 	lvl = Equip.Lvl(lvl || 0);
-	var maxAmount = max !== undefined ? max : Equip.generateMaxAmount(rarity);
-	var minAmount = min !== undefined ? min : Equip.generateMinAmount(rarity,maxAmount);
+	var maxAmount = typeof max === 'number' ? max : Equip.generateMaxAmount(rarity);
+	var minAmount = typeof min === 'number' ? min : Equip.generateMinAmount(rarity,maxAmount);
 	var boost = Equip.generateBoost(minAmount,piece,type);
 	
 	var valueMod = Equip.generateValueMod(quality);
@@ -290,8 +290,8 @@ Equip.generateRatio = function(piece,type){
 	else if(type === 'spear') return {melee:1.5,range:1,magic:1,fire:1,cold:1.5,lightning:1};
 	else if(type === 'sword') return {melee:1.5,range:1,magic:1,fire:1,cold:1,lightning:1.5};
 	else if(type === 'bow') return {melee:1,range:1.5,magic:1,fire:1.5,cold:1,lightning:1};
-	else if(type === 'boomerang') return {melee:1,range:1.5,magic:1,fire:1,cold:1,lightning:1.5};
 	else if(type === 'crossbow') return {melee:1,range:1.5,magic:1,fire:1,cold:1.5,lightning:1};
+	else if(type === 'boomerang') return {melee:1,range:1.5,magic:1,fire:1,cold:1,lightning:1.5};
 	else if(type === 'wand') return {melee:1,range:1,magic:1.5,fire:1.5,cold:1,lightning:1};
 	else if(type === 'staff') return {melee:1,range:1,magic:1.5,fire:1,cold:1.5,lightning:1};
 	else if(type === 'orb') return {melee:1,range:1,magic:1.5,fire:1,cold:1,lightning:1.5};

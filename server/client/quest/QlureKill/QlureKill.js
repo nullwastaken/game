@@ -177,10 +177,19 @@ s.newMapAddon('QfirstTown-north',{
 			m.spawnActorGroup.list("taurus",1),
 			m.spawnActorGroup.list("mummy",1),
 		]);
+		
 		m.spawnActorGroup(spot.e2,[
 			m.spawnActorGroup.list("bird",1),
 			m.spawnActorGroup.list("dragon",1),
 		]);
+		/*
+		m.spawnActor(spot.e2,'npc',{
+			nevermove:true,
+			nevercombat:false,
+			combat:true,
+			hpMax:10000000
+		});
+		*/
 		m.spawnActorGroup(spot.e3,[
 			m.spawnActorGroup.list("salamander",1),
 			m.spawnActorGroup.list("larva",1),

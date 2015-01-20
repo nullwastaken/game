@@ -166,7 +166,6 @@ CraftBoost('weaponFirstBoost',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('bleed-chance'),30,1),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-range-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
 	]),
@@ -175,7 +174,6 @@ CraftBoost('weaponFirstBoost',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg-range-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
 	]),
 	sword:CraftBoost.Type([
@@ -184,21 +182,11 @@ CraftBoost('weaponFirstBoost',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
 	]),
 	bow:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('knock-chance'),30,1),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
-	]),
-	boomerang:CraftBoost.Type([
-		CraftBoost.Sub(CraftBoost.Stat('knock-chance'),30,1),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
 	]),
@@ -207,14 +195,19 @@ CraftBoost('weaponFirstBoost',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
+	]),
+	boomerang:CraftBoost.Type([
+		CraftBoost.Sub(CraftBoost.Stat('knock-chance'),30,1),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
 	]),
 	wand:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('drain-chance'),30,1),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-range-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
 	]),
@@ -223,7 +216,6 @@ CraftBoost('weaponFirstBoost',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-range-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
 	]),
 	orb:CraftBoost.Type([
@@ -232,7 +224,6 @@ CraftBoost('weaponFirstBoost',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg-range-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
 	])	
 }); //}
 	
@@ -244,8 +235,8 @@ CraftBoost('weapon',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('def'),10,1),
 	]),
 	spear:CraftBoost.Type([ //aoe
+		//CraftBoost.Sub(CraftBoost.Stat('strike-maxHit'),5,1),	
 		CraftBoost.Sub(CraftBoost.Stat('strike-size'),5,1),
-		CraftBoost.Sub(CraftBoost.Stat('strike-maxHit'),5,1),	
 		CraftBoost.Sub(CraftBoost.Stat('strike-range'),5,1),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-melee'),2,1),
 	]),
@@ -272,7 +263,7 @@ CraftBoost('weapon',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg-magic'),2,1),
 	]),
 	staff:CraftBoost.Type([ //aoe onHit
-		CraftBoost.Sub(CraftBoost.Stat('strike-maxHit'),10,1),
+		//CraftBoost.Sub(CraftBoost.Stat('strike-maxHit'),10,1),
 		CraftBoost.Sub(CraftBoost.Stat('strike-range'),10,1),
 		CraftBoost.Sub(CraftBoost.Stat('strike-size'),10,1),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-magic'),2,1),

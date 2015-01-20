@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 eval(loadDependency(['Actor','Main','Boss','Combat','ActiveList','Map','Collision','Sprite','Anim','Boost']));
 
-Actor.loop = function(){	//static
+Actor.loop = function(){	//server static
 	Actor.loop.FRAME_COUNT++;
 	for (var i in Actor.LIST)   
 	    Actor.loop.forEach(Actor.LIST[i]);
@@ -178,8 +178,14 @@ if(!SERVER){ //}
 		Actor.loop.updatePosition(act);
 
 		Sprite.updateAnim(act);
+		
+		if(act.spriteFilter)
+			if(--act.spriteFilter.time < 0)
+				act.spriteFilter = null;
+				
 		if(!act.chatHead) return;
-		if(--act.chatHead.timer <= 0)	act.chatHead = null;	
+		if(--act.chatHead.timer <= 0)	
+			act.chatHead = null;	
 	}
 	
 	Actor.loop.player = function(){
@@ -211,6 +217,7 @@ if(!SERVER){ //}
 			act.spdY = diffY;
 		}
 	}	
+
 }
 
 

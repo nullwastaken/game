@@ -72,6 +72,7 @@ Actor.undoInitPack = function(draw,id){
 	act.spd = 0;
 	act.spdX = 0;
 	act.spdY = 0;
+	act.withinStrikeRange = false;
 	Sprite.updateBumper(act);	//bad, idk if needed
 	
 

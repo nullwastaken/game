@@ -14,10 +14,10 @@ ActorModel = exports.ActorModel = function(id,info){
 		awareNpc:0,
 		hp:1000,	
 		hpMax:1000,
-		hpRegen:1,
+		hpRegen:25/25,
 		mana:100,
 		manaMax:100,
-		manaRegen:10/25,
+		manaRegen:20/25,
 		abilityList:Actor.AbilityList(),
 		friction:CST.FRICTIONNPC,
 		bounce:1,			//mod

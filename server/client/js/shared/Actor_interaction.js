@@ -142,12 +142,19 @@ Actor.click.skillPlot = function(act,eid){
 	
 	var amount = 1;
 	var exp = plot.exp;
-	/*	if(plot.useQuestBonus){
+	
+	if(plot.useQuestBonus){
 		var bonus = Main.getSimpleQuestBonus(main,quest);
+		if(bonus.exp === 0 && bonus.item === 0){
+			return Message.addPopup(key,'You have harvested that resource plot enough for today.');
+		}
+		/*
 		amount = Math.roundRandom(bonus.item);
 		Message.add(key,Quest.get(quest).name.q() + ' Quest Modifier: x' + bonus.item.r(2) + ' Item, x' + bonus.exp.r(2) + ' Exp');
 		exp *= bonus.exp;
-	} */
+		*/
+	}
+	
 	if(amount === 0)
 		Message.add(key,'You harvested the plot but there was no enough resource for a whole item.');
 	else {

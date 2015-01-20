@@ -2,7 +2,7 @@
 
 NODEJITSU = typeof process.env.NODEJITSU !== 'undefined';
 SERVER = true;
-PUBLIC_VERSION = false;
+PUBLIC_VERSION = true;
 
 MINIFY = NODEJITSU ? false : PUBLIC_VERSION;
 GAME_VERSION = 'v1.3';

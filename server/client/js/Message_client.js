@@ -77,7 +77,8 @@ Message.setInputForPM = function(key,name){
 //###############
 
 Message.add = function(key,msg){
-	if(typeof msg === 'string') msg = Message('game',msg,Message.CLIENT);
+	if(typeof msg === 'string') 
+		msg = Message('game',msg,Message.CLIENT);
 	Message.receive(msg);
 }
 Message.addPopup = function(key,text,time){

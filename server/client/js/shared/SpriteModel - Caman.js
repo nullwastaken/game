@@ -137,101 +137,99 @@ var SpriteFilter = function(id,func,advanced){
 }
 SpriteFilter.LIST = {};
 
-SpriteFilter('red',function(red,green,blue,alpha){
-	if(red > 100) red += 100;
-	else red *= 2;
-	return [
-		red.mm(10),
-		green,
-		blue,
-		alpha
-	];
+SpriteFilter('red',function(){
+	this.contrast(5).render();
 });
 
-SpriteFilter('green',function(red,green,blue,alpha){
-	if(green > 100) green += 100;
-	else green *= 2;
-	return [
-		red,
-		green.mm(10),
-		blue,
-		alpha
-	]
+SpriteFilter('green',function(){
+	this.contrast(5).render();
 });
 
-SpriteFilter('blue',function(red,green,blue,alpha){
-	if(blue > 100) blue += 100;
-	else blue *= 2;
-	return [
-		red,
-		green,
-		blue.mm(10),
-		alpha
-	]
+SpriteFilter('blue',function(){
+	this.contrast(5).render();
 });
 
-SpriteFilter('allBlack',function(red,green,blue,alpha){
-	return [
-		0,
-		0,
-		0,
-		alpha
-	]
+SpriteFilter('allBlack',function(){
+	this.contrast(5).render();
 },true);
 
 
-SpriteFilter('dodge',function(red,green,blue,alpha){
-	return [
-		red+100,
-		green,
-		blue,
-		alpha/2
-	]
+SpriteFilter('dodge',function(){
+	this.contrast(5).render();
 });
 
 
 
 //TEST(SpriteModel.DB['warrior-male0']);
 SpriteModel.generateSpriteFilteredImg = function(spriteModel,filter){
-	var canvas = $('<canvas>')
+	var canvas = $('<canvas>')[0];/*
+		.attr({
+			width:spriteModel.img.width,
+			height:spriteModel.img.height
+		})[0];*/
+	
+	
+	if(filter === 'allBlack'){	//need optimization cuz called often
+		$(canvas).attr({
+			width:spriteModel.img.width,
+			height:spriteModel.img.height
+		});
+		
+		var ctx = canvas.getContext("2d");
+		ctx.drawImage(spriteModel.img,0,0);
+		SpriteModel.generateSpriteFilteredImg.allBlack(spriteModel.img,ctx);
+		spriteModel.filteredImg[filter] = new Image();
+		spriteModel.filteredImg[filter].src = canvas.toDataURL();
+		return;
+	}
+	
+	spriteModel.filteredImg[filter] = new Image();
+	
+	Caman(canvas,spriteModel.img.src,function(){
+		this.resize({
+			width: spriteModel.img.width,
+			height: spriteModel.img.height
+		 });
+		this.contrast(10);
+		this.render();
+		SpriteFilter.LIST[filter].func.apply(this,[]);
+		spriteModel.filteredImg[filter] = new Image();
+		spriteModel.filteredImg[filter].src = canvas.toDataURL();
+	});	
+}
+/*
+CANVAS = null;
+CAMAN = null;
+CTX = null;
+IMG = null;
+TEST = function(){
+	var spriteModel = SpriteModel.get(player.sprite.name);
+	var canvas = CANVAS = $('<canvas>')
 		.attr({
 			width:spriteModel.img.width,
 			height:spriteModel.img.height
 		})[0];
-	var ctx = canvas.getContext("2d");
+	var ctx = CTX = canvas.getContext("2d");
+	
+	IMG = spriteModel.img;
+	
+	$('body').append(canvas);
 	ctx.drawImage(spriteModel.img,0,0);
 	
-	if(filter === 'allBlack'){	//need optimization cuz called often
-		SpriteModel.generateSpriteFilteredImg.allColor('black',spriteModel.img,ctx);
-		spriteModel.filteredImg[filter] = new Image();
-		spriteModel.filteredImg[filter].src = canvas.toDataURL();
-		return;
-	}
-	if(filter === 'allRed'){
-		SpriteModel.generateSpriteFilteredImg.allColor('red',spriteModel.img,ctx);
-		spriteModel.filteredImg[filter] = new Image();
-		spriteModel.filteredImg[filter].src = canvas.toDataURL();
-		return;
-	}
 	
-	var imgDataNormal = ctx.getImageData(0,0,canvas.width,canvas.height);
-	var imgData = imgDataNormal.data;
-	
-	for (var i = 0; i < imgData.length; i+=4){
-		var res = SpriteFilter.LIST[filter].func(imgData[i+0],imgData[i+1],imgData[i+2],imgData[i+3]);
-		imgData[i+0] = res[0];
-		imgData[i+1] = res[1];
-		imgData[i+2] = res[2];
-		imgData[i+3] = res[3];
-	}
-	
-	ctx.putImageData(imgDataNormal,0,0);
-	spriteModel.filteredImg[filter] = new Image();
-	spriteModel.filteredImg[filter].src = canvas.toDataURL();
+	CAMAN = Caman(canvas,spriteModel.img.src,function(){
+		//this.canvas.getContext('2d').drawImage(spriteModel.img,0,0);
+		//this.contrast(5).render();
+		//SpriteFilter.LIST[filter].func.apply(this,[]);
+		//spriteModel.filteredImg[filter] = new Image();
+		//spriteModel.filteredImg[filter].src = canvas.toDataURL();
+	});	
 }
-SpriteModel.generateSpriteFilteredImg.allColor = function(color,img,ctx){
+*/
+
+SpriteModel.generateSpriteFilteredImg.allBlack = function(img,ctx){
 	ctx.globalCompositeOperation = 'source-atop';
-	ctx.fillStyle = color;
+	ctx.fillStyle = 'black';
 	ctx.fillRect(0,0,10000,10000);
 }
 

@@ -89,31 +89,27 @@ Sprite.resizeBumper = function(bumperBox,size){
 	return bumperBox;
 }
 
+Sprite.draw = function(ctx,act){	//also does position update calc, client prediction //BAD hardcoded border
+	var list = act.sprite.name.split(',');
 
-Sprite.draw = function(ctx,act){	//also does position update calc, client prediction
-	var sp = act.sprite;
-	var list = sp.name.split(',');
-	
-	var mouseOverInterface = false;
 	for(var i in list){
-	
 		var model = SpriteModel.get(list[i]);
 		
-		var image = SpriteModel.getImage(model,act);
+		var image = SpriteModel.getImage(model,act.spriteFilter);
 		if(!image) continue;
 		
 		
-		var animFromDb = model.anim[sp.anim];
+		var animFromDb = model.anim[act.sprite.anim];
 		
 		var angle = Sprite.getMoveAngle(act);
 		var sideAngle = Math.round(angle/(360/animFromDb.dir)) % animFromDb.dir;
 		
-		var startX = sp.startX * animFromDb.sizeX;
+		var startX = act.sprite.startX * animFromDb.sizeX;
 		var startY = animFromDb.startY + model.side[sideAngle] * animFromDb.sizeY;
 			
-		var sizeMod = model.size * sp.sizeMod;
+		var sizeMod = model.size * act.sprite.sizeMod;
 		
-		ctx.globalAlpha = sp.alpha;
+		ctx.globalAlpha = act.sprite.alpha;
 		var sizeOffX = animFromDb.sizeX/2*sizeMod;
 		var sizeOffY = animFromDb.sizeY/2*sizeMod;
 		var offsetX = model.offsetX*sizeMod;
@@ -121,7 +117,28 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 		var posX = (CST.WIDTH2 - player.x) + act.x + offsetX;
 		var posY = (CST.HEIGHT2 - player.y) + act.y + offsetY;
 		
+		var underMouse = false;
+		if(act.type !== 'bullet' && act !== player){
+			if(Collision.testMouseRect(key,{x:posX- sizeOffX,y:posY- sizeOffY,width:sizeOffX*2,height:sizeOffY*2}))
+				underMouse = true;
+		}
+		
 		if(!model.canvasRotate){
+			if(model.showBorder && (underMouse || act.withinStrikeRange)){	//BAD hardocded...
+				var filter = Main.getPref(main,'strikeTarget') === 0 && act.withinStrikeRange ? 'allRed' : 'allBlack';
+				var black = SpriteModel.getImage(model,{filter:filter});
+				if(!black) continue;
+				var border = 2 + Math.floor(animFromDb.sizeX/10);
+				
+				ctx.drawImage(black, 
+					startX,Math.floor(startY+1),	//bad way to fix random line on top of player
+					animFromDb.sizeX,Math.floor(animFromDb.sizeY-1),
+					posX - sizeOffX - 3,posY - sizeOffY - 3,
+					animFromDb.sizeX * sizeMod + 6,animFromDb.sizeY * sizeMod + 6
+				);
+			}
+			
+			
 			ctx.drawImage(image, 
 				startX,Math.floor(startY+1),	//bad way to fix random line on top of player
 				animFromDb.sizeX,Math.floor(animFromDb.sizeY-1),
@@ -149,16 +166,10 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 			ctx.fillStyle = 'black';
 		}
 	}
-	if(mouseOverInterface || act.type === 'bullet' || act === player) return;
 	
-	if(Collision.testMouseRect(key,{x:posX- sizeOffX,y:posY- sizeOffY,width:sizeOffX*2,height:sizeOffY*2})){
-		if(Main.getPref(main,'highlightHover')){
-			ctx.globalAlpha = 0.2;
-			ctx.fillRect(posX- sizeOffX,posY- sizeOffY,sizeOffX*2,sizeOffY*2);
-			ctx.globalAlpha = 1;
-		}
-		if(act.context)
-			return act.context;
+	
+	if(underMouse && act.context){
+		return act.context;
 	}
 	
 	

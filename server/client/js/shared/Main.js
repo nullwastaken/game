@@ -84,7 +84,8 @@ Main.getAct = function(main){
 //#############
 
 Main.addMessage = function(main,msg){
-	if(typeof msg === 'string') msg = Message('game',msg,Message.SERVER);
+	if(typeof msg === 'string') 	
+		msg = Message('game',msg,Message.SERVER);
 	main.temp.message = main.temp.message || [];
 	main.temp.message.push(msg);
 }

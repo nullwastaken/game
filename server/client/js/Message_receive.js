@@ -11,7 +11,6 @@ Message.receive = function(msg){
 	
 	/*
 	else if(msg.type === 'clan') 	Message.receive.clan(msg);
-	
 	else if(msg.type === 'contribution') Message.receive.contribution(msg);
 	*/
 

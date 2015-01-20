@@ -67,7 +67,7 @@ Actor.dodge = function(act,time,dist){
 	
 	//movement
 	Actor.movePush(act,act.angle,dist/time,time)
-	Actor.setSpriteFilter(act,{filter:'dodge',time:time+5});
+	Actor.setSpriteFilter(act,Actor.SpriteFilter('dodge',time+5));
 }
 
 Actor.becomeInvincible = function(act,time){

@@ -202,18 +202,11 @@ SpriteModel.generateSpriteFilteredImg = function(spriteModel,filter){
 	ctx.drawImage(spriteModel.img,0,0);
 	
 	if(filter === 'allBlack'){	//need optimization cuz called often
-		SpriteModel.generateSpriteFilteredImg.allColor('black',spriteModel.img,ctx);
+		SpriteModel.generateSpriteFilteredImg.allBlack(spriteModel.img,ctx);
 		spriteModel.filteredImg[filter] = new Image();
 		spriteModel.filteredImg[filter].src = canvas.toDataURL();
 		return;
 	}
-	if(filter === 'allRed'){
-		SpriteModel.generateSpriteFilteredImg.allColor('red',spriteModel.img,ctx);
-		spriteModel.filteredImg[filter] = new Image();
-		spriteModel.filteredImg[filter].src = canvas.toDataURL();
-		return;
-	}
-	
 	var imgDataNormal = ctx.getImageData(0,0,canvas.width,canvas.height);
 	var imgData = imgDataNormal.data;
 	
@@ -229,9 +222,9 @@ SpriteModel.generateSpriteFilteredImg = function(spriteModel,filter){
 	spriteModel.filteredImg[filter] = new Image();
 	spriteModel.filteredImg[filter].src = canvas.toDataURL();
 }
-SpriteModel.generateSpriteFilteredImg.allColor = function(color,img,ctx){
+SpriteModel.generateSpriteFilteredImg.allBlack = function(img,ctx){
 	ctx.globalCompositeOperation = 'source-atop';
-	ctx.fillStyle = color;
+	ctx.fillStyle = 'black';
 	ctx.fillRect(0,0,10000,10000);
 }
 

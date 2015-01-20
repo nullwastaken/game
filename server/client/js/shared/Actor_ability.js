@@ -270,7 +270,14 @@ Actor.ability.fullyRecharge = function(act){
 
 Actor.setSpriteFilter = function(act,filter){	//dodge is hardcodded
 	act.spriteFilter = filter;
-	Actor.setFlag(act,'spriteFilter');
+	if(SERVER) Actor.setFlag(act,'spriteFilter');
+}
+
+Actor.SpriteFilter = function(filter,time){ //BAD name
+	return {
+		filter:filter,
+		time:time || 5,
+	}
 }
 
 Actor.useAbility = function(act,ab,mana,reset,extra){
