@@ -4,7 +4,7 @@ eval(loadDependency(["Actor","Debug"]));
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 
 var s = loadAPI('v1.0','Qtutorial',{
-	name:"GPS Startup",
+	name:"GPS Tutorial",
 	author:"rc",
 	alwaysActive:true,
 	admin:true,
@@ -12,6 +12,7 @@ var s = loadAPI('v1.0','Qtutorial',{
 	showWindowComplete:false,
 	autoStartQuest:false,
 	skillPlotAllowed:true,
+	showInTab:false,
 	thumbnail:'',
 	reward:{"exp":1,"item":0,"reputation":{"min":1,"max":1,"mod":10}},
 	description:"Teaches you the basic of Raining Chain.",
@@ -273,7 +274,7 @@ s.newEvent('displayPopupEquip',function(key){ //
 			for(var i in equip.piece){
 				if(equip.piece[i]){
 					allDestroyed = false;
-					if(!equip.piece[i].contains('Qsystem-',true)){
+					if(!equip.piece[i].$contains('Qsystem-',true)){
 						upgraded = true;
 						break;
 					}
@@ -298,15 +299,16 @@ s.newEvent('viewChest2',function(key){ //
 	return !s.get(key,'lootChest2');
 });
 s.newEvent('killBoss',function(key){ //
+	if(!s.get(key,'killBoss')){
+		s.displayPopup(key,'You just learned 3 new abilities.<span style="text-align:left"><br>-Shift-Left Clk: Freeze<br>-Shift-Right Clk: Fire<br>-Space Bar: Invincibility dodge</span>');
+		
+		s.addAbility.permanently(key,'Qsystem-start-freeze',2);
+		s.addAbility.permanently(key,'Qsystem-start-fireball',3);
+		s.addAbility.permanently(key,'Qsystem-start-dodge',5);
+		
+		s.setHUD(key,'mana','normal');
+	}
 	s.set(key,'killBoss',1);
-	
-	s.displayPopup(key,'You just learned 3 new abilities.<span style="text-align:left"><br>-Shift-Left Clk: Freeze<br>-Shift-Right Clk: Fire<br>-Space Bar: Invincibility dodge</span>');
-	
-	s.addAbility.permanently(key,'Qsystem-start-freeze',2);
-	s.addAbility.permanently(key,'Qsystem-start-fireball',3);
-	s.addAbility.permanently(key,'Qsystem-start-dodge',5);
-	
-	s.setHUD(key,'mana','normal');
 });
 s.newEvent('resourceExamine',function(key){ //
 	s.message(key,'Useful material to craft weapons.');

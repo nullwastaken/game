@@ -84,6 +84,7 @@ Send.sendUpdate = function(key,socket){
 	
 	//Send
 	if(BISON.active) sa = BISON.encode(sa);
+	sa.timestamp = Date.now();
 	socket.emit('change', sa );
 	return sa;
 }

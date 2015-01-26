@@ -21,7 +21,8 @@ Main.chrono.start = function(main,id,visible,text){
 	Main.setFlag(main,'chrono');
 }
 Main.chrono.stop = function(main,id){
-	if(!main.chrono[id]) return ERROR(3,'no chrono',id);
+	if(!main.chrono[id])
+		return ERROR(3,'no chrono',id);
 	main.chrono[id].active = 0;
 	Main.setFlag(main,'chrono');
 	return main.chrono[id].time;	//send # frames 

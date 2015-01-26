@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Main']));
+eval(loadDependency(['Actor','Main','Server']));
 
 var db = null; //Highscore.init
 
@@ -77,8 +77,7 @@ Highscore.fetchScore = function(category,username,cb){
 }
 
 Highscore.fetchValue = function(category,username,cb){
-	var proj = {value:1};
-	db.highscore.findOne({username:username,category:category},proj,function(err,res){ if(err) throw err;
+	db.highscore.findOne({username:username,category:category},{value:1},function(err,res){ if(err) ERROR.err(3,err);
 		cb(res ? res.value || null : null);
 	});
 }
@@ -153,9 +152,13 @@ Highscore.saveAllScore = function(main,cb){
 	var count = 0;
 	for(var i in main.quest){
 		for(var j in main.quest[i]._highscore){
-			maxcount++
+			maxcount++;	//need own loop otherwise fuck ++count === maxcount cuz cb can be sync if value === null
+		}
+	}
+	for(var i in main.quest){
+		for(var j in main.quest[i]._highscore){
 			Highscore.saveScore(j,main.quest[i]._highscore[j],main.username,function(err){
-				if(err) throw err;
+				if(err) ERROR.err(3,err);
 				if(++count === maxcount){
 					if(cb) cb();
 				}
@@ -169,6 +172,10 @@ Highscore.saveAllScore = function(main,cb){
 }
 
 Highscore.saveScore = function(category,value,username,cb){
+	if(value === null || Server.isAdmin(null,username,true)){	//BAD
+		if(cb) cb();
+		return;
+	}
 	db.highscore.upsert(
 		{username:username,category:category},
 		Highscore.compressDb(category,value,username),

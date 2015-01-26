@@ -1,5 +1,7 @@
 (function(){ //}
 
+//Message.parseText.item rely on this
+
 Dialog('equip','Equip',Dialog.Size(1000,600),Dialog.Refresh(function(html,variable){
 	html.append($('<span>')
 		.html('Current Exp: ' + Actor.getExp(player).r(0) + '<br>')
@@ -110,7 +112,7 @@ Dialog.equipPopup.globalDivCss = {
 	whiteSpace:'nowrap',
 	//display:'inline-block'
 }
-Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important part
+Dialog.equipPopup.func = function(html,variable,equip,equipWin,notOwning){	//important part
 	if(equipWin){/*
 		var randomDiv = $('<div>')
 			.css({width:'100%',height:'100%',left:0,top:0})
@@ -133,7 +135,17 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 		.css({width:'auto',height:'auto',pointerEvents:'none'});
 	html.append(top);
 	var icon = Img.drawIcon.html(equip.icon,48)
-			.addClass('inline')
+			.addClass('inline');
+	
+	if(!notOwning){
+		icon.css({pointerEvents:'all'});
+		icon.attr('title','Click to display in chat. Also done by Shift-Right click in inventory.');
+		icon.click(function(){
+			ItemModel.displayInChat(equip,key);
+		});
+	}	
+			
+			
 	var topRight = $('<div>')
 		.addClass('inline')
 		.css({position:'relative',margin:'0px 0px 0 0'})
@@ -163,14 +175,17 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 		topRight.append($('<span>')
 			.html('Exp Spent: ' + equip.masteryExp + ' ')
 			.attr('title','Grant bonus of x' + bonus + ' to ' + to)
-		);
-		var title = isWeapon ? 'Spend Exp to improve the Power of this equip.' : 'Spend Exp to improve the Defence of this equip.';
-		topRight.append($(Img.drawIcon.html('system1.more',20,title))
 			.css({pointerEvents:'all'})
-			.mousedown(function(){
-				Command.execute('equipMastery',[equip.id]);
-			})
 		);
+		if(!notOwning){
+			var title = isWeapon ? 'Spend Exp to improve the Power of this equip.' : 'Spend Exp to improve the Defence of this equip.';
+			topRight.append($(Img.drawIcon.html('system1.more',20,title))
+				.css({pointerEvents:'all'})
+				.mousedown(function(){
+					Command.execute('equipMastery',[equip.id]);
+				})
+			);
+		}
 	}
 	/*
 	if(equip.creator)
@@ -223,7 +238,7 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 		
 	html.append(ratio);
 	if(isWeapon){
-		var dmg = (Math.pow(equip.dmg.main*Combat.WEAPON_MAIN_MOD,10)*100).r(1);
+		var dmg = Combat.getVisiblePower(equip.dmg.main);
 		var elements = [];
 		for(var element in equip.dmg.ratio){
 			if(equip.dmg.ratio[element] === 1.5)
@@ -240,7 +255,7 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 			ratio.append(Img.drawIcon.html('element.'+elements[i],24,'x1.5 Damage if using ' + elements[i].capitalize() + ' ability.'));	
 		}
 	} else {
-		var def = (Math.pow(equip.def.main*Combat.ARMOR_MAIN_MOD,10)*100).r(1);
+		var def = Combat.getVisiblePower(equip.def.main);
 		var elementMain = '';
 		var elementSub = [];
 		
@@ -254,7 +269,7 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 		
 		if(elementMain)
 			ratio.append($('<span>')
-				.append((def*1.5).r(1) + ' ')
+				.append((def*1.5).r(0) + ' ')
 				.append(Img.drawIcon.html('element.'+elementMain,24))
 				.attr('title','Defence against ' + elementMain.capitalize() + '.')
 			);
@@ -300,21 +315,26 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 	//#########
 	if(equip.upgradable){
 		var itemNeeded = ItemList.stringify(equip.upgradeInfo.item,function(){
-			Dialog.refresh('equipPopup',equip.id)
+			Dialog.refresh('equipPopup',Dialog.EquipPopup(equip.id))
 		});
 		if(!itemNeeded) return false;
 		var unlockDiv = $('<div>');
 				
 		for(var i = equip.boost.length; equip.upgradable && i < equip.maxAmount; i++){
-			unlockDiv.append($('<button>')
-				.addClass('myButton')
-				.html('Unlock hidden boost')
+			var btn = $('<button>')
+				.addClass('myButton');
+			
+			if(!notOwning)
+				btn.html('Unlock hidden boost')
 				.attr('title','Unlock a new boost. Cost: ' + itemNeeded + '.')
-				.attr('tabindex', -1)
 				.mousedown(function(){
-					Command.execute('equipUpgrade',[equip.id]);
-				})
-			);
+					if(!notOwning)
+						Command.execute('equipUpgrade',[equip.id]);
+				});
+			else 
+				btn.html('Locked Boost')
+			
+			unlockDiv.append(btn);
 			unlockDiv.append('<br>');
 		}
 		boostDiv.append(unlockDiv);
@@ -336,16 +356,25 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin){	//important par
 	return html;
 };
 
-//Dialog.open('equipPopup','8v_tfE')
-Dialog.UI('equipPopup',Dialog.equipPopup.globalDivCss,function(html,variable,param){
+//Dialog.open('equipPopup',Dialog.EquipPopup('8v_tfE'))
+Dialog.UI('equipPopup',Dialog.equipPopup.globalDivCss,function(html,variable,param){	//{notOwning,id}
 	if(!param) return false;
 	
-	var equip = QueryDb.get('equip',param,function(){
+	var equip = QueryDb.get('equip',param.id,function(){
 		Dialog.open('equipPopup',param);
 	});	
 	if(!equip) return false;
-	Dialog.equipPopup.func(html,variable,equip);
+	Dialog.equipPopup.func(html,variable,equip,false,param.notOwning);
 });
+
+
+Dialog.EquipPopup = function(id,notOwning){
+	return {
+		notOwning:notOwning||false,
+		id:id||'',	
+	}
+}
+
 
 })();
 

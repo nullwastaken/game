@@ -76,8 +76,8 @@ Button.onclick = function(side){	//called when clicking
 
 Button.getBtnUnderMouse = function(){	//server
 	var btn = null;
-	btn = Button.getBtnUnderMouse.drop(btn);
 	btn = Button.getBtnUnderMouse.actor(btn);
+	btn = Button.getBtnUnderMouse.drop(btn);
 	return btn;
 }
 

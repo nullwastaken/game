@@ -21,17 +21,7 @@ var DB = Preset.DB = {};
 Preset.get = function(id){
 	return DB[id];
 }
-Preset.Ability = function(ability){
-	for(var i = ability.length; i < 6; i++)
-		ability.push('');
-	return ability;
-}
-Preset.Equip = function(equip){
-	for(var i in CST.equip.piece){
-		var p = CST.equip.piece[i];
-		equip[p] = equip[p] || '';
-	}
-}
+//for ability and equip constructor, check QuestAPI_new
 
 
 

@@ -92,8 +92,8 @@ ReputationConverter.canSelect = function(main,num,converterId){
 	
 	var convList = Main.reputation.get(main,num).converter;
 	for(var i in group.list){
-		if(convList.contains(group.list[i]))
-			convList.remove(group.list[i]);
+		if(convList.$contains(group.list[i]))
+			convList.$remove(group.list[i]);
 		//return Message.addPopup(main.id,"Incompatiblity. You already have a converter of that group (" +  ReputationConverter.get(group.list[i]).name + ").");
 	}
 	return true;	
@@ -101,7 +101,7 @@ ReputationConverter.canSelect = function(main,num,converterId){
 
 ReputationConverter.findGroup = function(conv){
 	for(var i in GROUP)
-		if(GROUP[i].list.contains(conv.id))
+		if(GROUP[i].list.$contains(conv.id))
 			return GROUP[i];
 	return null;
 }	

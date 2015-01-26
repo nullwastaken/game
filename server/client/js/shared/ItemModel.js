@@ -39,15 +39,16 @@ ItemModel.Option = function(func,name,description,param){
 	return OptionList.Option(func,param,name,description);
 }	
 
-ItemModel.get = function(id){
-	return DB[ItemModel.getId(id)] || null;
+ItemModel.get = function(id,noError){
+	return DB[ItemModel.getId(id,noError)] || null;
 }
 
-ItemModel.getId = function(id){
+ItemModel.getId = function(id,noError){
 	if(DB[id]) return id;
 	id = 'Qsystem-' + id;
 	if(DB[id]) return id;
-	return ERROR(4,'invalid id',id);
+	if(!noError) ERROR(4,'invalid id',id);
+	return;
 }
 
 ItemModel.use = function(item,key,opPos,notDrop){
@@ -59,7 +60,7 @@ ItemModel.use = function(item,key,opPos,notDrop){
 }
 
 ItemModel.displayInChat = function(item,key){	//client
-	Message.add(key,Message('input','[[' + item.id + ']]'));
+	Message.add(key,Message.Input('[[' + item.id + ']]',true));
 }
 
 ItemModel.compressClient = function(item){
@@ -69,6 +70,22 @@ ItemModel.compressClient = function(item){
 ItemModel.uncompressClient = function(item){
 	return OptionList.uncompressClient(item,'useItem',item.id);	
 }
+
+ItemModel.removeFromRAM = function(id){
+	delete DB[id];
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 })();

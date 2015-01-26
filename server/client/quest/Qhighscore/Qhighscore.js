@@ -37,16 +37,21 @@ s.newHighscore('challengeCount',"Challenge Count","Most Challenges Completed",'d
 	
 	return sum;
 });
-s.newHighscore('reputationCount',"Reputation Count","Most Reputation Points",'descending',function(key){
-	return s.getReputationPt(key).r(2);
+s.newHighscore('level',"Level","Highest Level",'descending',function(key){
+	return s.getLevel(key);
 });
 s.newHighscore('questScoreSum',"Sum Quest Score","Sum of All Quest Scores",'descending',function(key){
 	var mq = Main.get(key).quest;
 	var sum = 0;
 	for(var i in mq)
-		sum += mq[i]._rewardScore || 0;
+		sum += Math.min(mq[i]._rewardScore || 0,10000);
 		
 	return sum;
 });
+
+
+
+
+
 
 s.exports(exports);

@@ -7,6 +7,7 @@ var s = loadAPI('v1.0','QfirstTown',{
 	name:"",
 	author:"rc",
 	admin:true,
+	showInTab:false,
 	dailyTask:false,
 	showWindowComplete:false,
 	skillPlotAllowed:true,

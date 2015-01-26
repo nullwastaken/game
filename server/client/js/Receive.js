@@ -4,6 +4,8 @@ var Receive = function(data,unfreeze){
 try {
 	Receive.START_TIME = Date.now();
 	if(BISON.active) data = BISON.decode(data);
+	Receive.SERVER_TIMESTAMP = data.timestamp;
+	
 	Receive.showData(data);
 	
 	if(!Receive.freeze.onReceive(data)) return Receive.loop();	//cuz still need to run game
@@ -88,8 +90,10 @@ Receive.showData.ACTIVE = false;
 Receive.showData.LOG = false;
 Receive.showData.DELAY = false;
 
-
-
+Receive.SERVER_TIMESTAMP = Date.now();
+Receive.getServerTimestamp = function(){
+	return Receive.SERVER_TIMESTAMP;
+}
 
 Receive.initEntity = function(obj,id){
 	if(obj[0] === 'b') return Receive.initEntity.bullet(obj,id);

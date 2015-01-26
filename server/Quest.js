@@ -31,6 +31,7 @@ Quest.getAPItemplate = function(extra){	//todo touse
 		skillPlotAllowed:false,
 		admin:false,		//allow extra in item, ability
 		autoStartQuest:true,
+		maxParty:2,
 		author:'rc',
 		description:'A super awesome quest!',
 		thumbnail:'',
@@ -98,7 +99,7 @@ Quest.init = function(dbLink){	//init Module
 	
 	if(NODEJITSU){
 		for(var i in QUEST_EXCLUDE){
-			QUEST_ID_LIST.remove(QUEST_EXCLUDE[i]);
+			QUEST_ID_LIST.$remove(QUEST_EXCLUDE[i]);
 		}
 	}
 	
@@ -109,7 +110,7 @@ Quest.init = function(dbLink){	//init Module
 		try {
 			var req = require(QUEST_FOLDER+qid + "/" + qid);
 		} catch(err){ 
-			ERROR(2,'error with quest file ' + qid + '. Note: NEVER delete a quest folder manually. Use Quest creator.');
+			ERROR(2,'error with quest file ' + qid + '. Note: NEVER delete a quest folder manually. Use Quest creator.\r\n' + err.stack);
 			return;
 		}
 		
@@ -117,7 +118,13 @@ Quest.init = function(dbLink){	//init Module
 		if(q.id !== qid) 
 			return ERROR(2,'quest filename doesnt match quest id',q.id,qid);
 	}
+	setInterval(function(){
+		Quest.updateStatistic();
+	},CST.HOUR*4);
+	Quest.updateStatistic();	
 }
+
+
 
 Quest.get = function(id){
 	return DB[id] || null;
@@ -132,6 +139,7 @@ Quest.getSignInPack = function(){
 }
 	
 Quest.compressClient = function(quest,full){
+	full = true;	//not being cheap bandwidth...
 	if(!full){
 		return {
 			name:quest.name,
@@ -247,7 +255,7 @@ Quest.rate = function(main,quest,rating,text,abandonReason){
 	if(!main.quest[quest]) return;
 	db.questRating.insert({
 		quest:quest,
-		rating:rating || 0,
+		rating:rating || 1,
 		text:(text || '').slice(0,1000),
 		username:main.username,
 		timestamp:Date.now(),
@@ -268,8 +276,9 @@ Quest.updateRating = function(force){
 		
 	   ],
 	   function(err,res){
-			for(var i = 0 ; i < res.length; i++)
+			for(var i = 0 ; i < res.length; i++){
 				DB[res[i]._id].rating = res[i].avgRating;
+			}
 	   }
 	);
 	
@@ -298,16 +307,23 @@ Quest.updateRating = function(force){
 	//}
 }
 
+
+
+
 //ts("Quest.updateStatistic('QlureKill')")
 Quest.updateStatistic = function(i){
-	if(!i) for(var i in DB) Quest.updateStatistic(i);
+	if(!i){
+		for(var quest in DB)
+			Quest.updateStatistic(quest);
+		return;
+	}
 	
 	var countCompleted = 0;
 	var countStarted = 0;
 	var countCompletedAtLeastOnce = 0;
 	
 	db.mainQuest.find({quest:i},{_id:0,_complete:1,_started:1}).forEach(function(err,res){
-		if(!res){
+		if(!res){	//aka search done
 			DB[i].statistic = Quest.Statistic(countCompletedAtLeastOnce,countStarted,countCompleted/countCompletedAtLeastOnce);
 			return;
 		}

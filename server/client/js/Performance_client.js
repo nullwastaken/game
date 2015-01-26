@@ -3,16 +3,22 @@
 var FRAME_COUNT = 0;
 
 Performance = {
-	frequence:5*1000/40,
+	frequence:3*25,	//aka 5 sec
 	oldtime:Date.now(),
 	clientPerformance:'100%',
 	latencyTime:0,
 	cycleTime:0,
 
 };
-
+Performance.getLatency = function(){
+	return Performance.latencyTime; 
+}
 
 Performance.loop = function(){
+	if(FRAME_COUNT % 25*30 === 0){
+		if(Input.isWindowActive())
+			Command.execute('sendPing',[Performance.getLatency()]);
+	}
 	Performance.delay = Date.now() - Receive.START_TIME;
     if(FRAME_COUNT++ % Performance.frequence !== 0) return;
 	
@@ -23,11 +29,11 @@ Performance.loop = function(){
 	Performance.clientPerformance = (timeSupposedToTake/timeTaken*100).r(0) + '%';
 	
 	Performance.oldtime = Date.now();
-	Performance.latency();
+	Performance.testLatency();
 };
 	
 
-Performance.latency = function(){
+Performance.testLatency = function(){
 	Socket.emit('ping', {'send':Date.now()});
 }
 
@@ -57,6 +63,7 @@ Performance.init = function(){
 	
 	
 }
+
 
 /*
 	$("#performanceDiv").css({

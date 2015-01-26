@@ -1,6 +1,20 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 eval(loadDependency(['Message','Account','Save','Sign','Button','OptionList','ItemModel','Main'],['ItemList']));
-var db;
+
+/*
+
+player has tradeList
+if tradeList opened and click in inventory, it transfer item to tradeList
+
+if tradelist close, transfer back item to inventory
+if server crash, transfer tradelist to inventory
+
+player has tradeWith:keyOther
+loop and check if Actor.get(keyOther).tradeWith = something
+
+when player close win, it sends message to server
+
+*/
 
 var ItemList = exports.ItemList = function(key,data){
 	var tmp = {
@@ -11,21 +25,8 @@ var ItemList = exports.ItemList = function(key,data){
     return tmp;
 }
 
-
-ItemList.init = function(dbLink){
-	db = dbLink;
-}
-
 ItemList.getMain = function(inv){
 	return Main.get(inv.id);
-}
-
-ItemList._item = function(name,amount,icon){
-	return {
-		name:name,
-		amount:amount || 1,
-		icon:icon || '',
-	};
 }
 
 ItemList.format = function(id,amount,calledFromQuest){	//if calledFromQuest, ItemList.format will be called another time, check itemFormat
@@ -65,22 +66,12 @@ ItemList.add.offlineOrOnline = function(username,id,amount){
 		ItemList.add.offline(username,id,amount);
 	}
 }
-/*
-ItemList.add.offline = function(username,id,amount){
-	var key = '$%^';
-	Sign.in.loadMain(key,{username:username},function(main,questVar){
-		Main.LIST[key] = main;	//BADDDD
-		ItemList.add(main.invList,id,amount);
-		delete Main.LIST[key];	
-		
-		Save.main(main,function(){});
-	});
-}
-*/
+
 ItemList.setFlag = function(inv){
 	var main = ItemList.getMain(inv);
 	if(inv === main.invList) Main.setFlag(main,'invList');
 	else if(inv === main.bankList) Main.setFlag(main,'bankList');
+	else if(inv === main.tradeList) Main.setFlag(main,'tradeList');
 }
 
 ItemList.remove = function (inv,id,amount){
@@ -109,14 +100,15 @@ ItemList.have = function (inv,id,amount){
 
 //############################
 
+
 ItemList.transfer = function(originInv,destinationInv,id,amount,verifyIfOwn){
 	var list = ItemList.format(id,amount);
 	if(verifyIfOwn && !ItemList.have(originInv,list)) return false;
 	ItemList.remove(originInv,list);
 	ItemList.add(destinationInv,list);	
+	
 	return true;
 }
-
 
 ItemList.stringify = function(list,cb){
 	if(!SERVER){
@@ -136,5 +128,24 @@ ItemList.stringify = function(list,cb){
 		return str.slice(0,-1);
 	}
 }
+
+ItemList.combine = function(inv,inv2){
+	var res = Tk.deepClone(inv);
+	
+	for(var i in inv2.data){
+		res.data[i] = res.data[i] || 0;
+		res.data[i] += inv2.data[i];
+	}
+	return res;
+}
+
+
+
+
+
+
+
+
+
 
 

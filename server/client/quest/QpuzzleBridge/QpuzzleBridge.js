@@ -6,6 +6,8 @@
 var s = loadAPI('v1.0','QpuzzleBridge',{
 	name:"Puzzle & Bridge",
 	author:"rc",
+	maxParty:1,
+	thumbnail:true,
 	scoreModInfo:"Depends on amount of puzzles done.",
 	description:"Puzzle where you need to move blocks to form a bridge.",
 });
@@ -67,7 +69,10 @@ s.newEvent('_debugSignIn',function(key){ //
 	s.teleport(key,'QfirstTown-east','t5','main',false);
 });
 s.newEvent('_hint',function(key){ //
-	return "Move the bridge parts to form bridge then activate switch. If stuck, use item.";
+	if(!s.isChallengeActive(key,'pushing'))
+		return "Move the bridge parts to form bridge then activate switch. If stuck, use item.";
+	else
+		return 'Push Count: ' + s.get(key,'pushCount');
 });
 s.newEvent('_signIn',function(key){ //
 	var lvl = s.get(key,'lvl');
@@ -77,6 +82,9 @@ s.newEvent('_signIn',function(key){ //
 	else if(lvl === 3) s.teleport(key,'g2','t1','solo',true); //s.teleport(key,'g3','t1','solo',true);
 	else if(lvl === 4) s.teleport(key,'g4','t1','solo',true);
 });
+
+
+
 s.newEvent('_death',function(key){ //
 	s.failQuest(key);
 });

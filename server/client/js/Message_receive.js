@@ -5,13 +5,12 @@ Message.receive = function(msg){
 	
 	if(msg.type === 'game')	Dialog.chat.addText(msg.text,msg.timer || 25*60); 
 	else if(msg.type === 'public') Message.receive.public(msg);
-	else if(msg.type === 'input')	Dialog.chat.setInput(msg.text);
+	else if(msg.type === 'input')	Dialog.chat.setInput(msg.text,undefined,msg.add);
 	else if(msg.type === 'signNotification') Message.receive.signNotification(msg);
 	else if(msg.type === 'pm')	Message.receive.pm(msg);
 	
 	/*
 	else if(msg.type === 'clan') 	Message.receive.clan(msg);
-	
 	else if(msg.type === 'contribution') Message.receive.contribution(msg);
 	*/
 
@@ -19,22 +18,31 @@ Message.receive = function(msg){
 }
 
 Message.receive.parseInput = function(text){	//replace [$1] with Input 1 keycode
-	if(!text || !text.contains('[$')) return text;
+	if(!text || !text.$contains('[$')) return text;
 	for(var i = 0 ; i <= 6; i++){
 		var str = '[$' + i + ']';
-		while(text.contains(str))
+		while(text.$contains(str))
 			text = text.replace(str,Input.getKeyName('ability',i,true));	//replaceall with $ is pain
 	}
 	return text;
 }	
 
 Message.receive.public = function(msg){
-	var text = 
-	'<span oncontextmenu="Message.clickUsername(\'' + msg.from + '\')">' 
-	+ (Message.receive.public.SYMBOL_CHART[msg.symbol] || '')
-	+ msg.from 
-	+ "</span>" + ': ' 
-	+ Message.receive.public.getText(msg);
+	var text = $('<span>')
+		.append($('<span>')
+			.html(
+				(Message.receive.public.SYMBOL_CHART[msg.symbol] || '')
+				+ msg.from + ': '
+			)
+			.attr('title',player.name !== msg.from ? 'Shift-Right to mute' : '')
+			.bind('contextmenu',function(ev){
+				if(player.name !== msg.from && ev.shiftKey)
+					Command.execute('mute',[msg.from]);
+			})
+		)
+		.append($('<span>')
+			.html(Message.receive.public.getText(msg))
+		);
 	
 	Dialog.chat.addText(text); 
 }
@@ -69,7 +77,7 @@ Message.receive.public.getText.rainbow = function(text){
 	var lastcolor = '';
 	var limit = 0;
 	for(var i in t){
-		do { var color = list.random();
+		do { var color = list.$random();
 		} while(lastcolor === color && limit++ < 1000);
 		lastcolor = color;
 		str += '<span style="color:' + color + ';">' + t[i] + ' ' + '</span>';
@@ -129,7 +137,7 @@ Message.receive.contribution = function(pack){
 
 Message.receive.signNotification = function(msg){
 	if(Main.getPref(main,'signNotification') === 0) return;
-	Message.receive(Message('game',msg.text));	
+	Message.receive(Message.Game(msg.text));	
 	if(Main.getPref(main,'signNotification') === 2) Sfx.play('train');
 }
 

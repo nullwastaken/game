@@ -61,14 +61,17 @@ MapModel.Grid = function(rawgrid){
 	}
 		
 	var strGrid = Tk.stringify(rawgrid);
-	var goodgrid = {};
-	goodgrid.astar = new astar.Graph(astargrid);
-	
 	//PRE: 0 => can walk, 1 => cant; 2 => bullet only can walk; 3 => fall close; 4 => fall
 	//POST: 0 => cant walk, 1 => can walk; 3 => fall close 4=> fall
-	goodgrid.player = JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','0').replaceAll('a','1'));
-	goodgrid.npc = JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','0').replaceAll('a','1').replaceAll('4','0'));
-	goodgrid.bullet = JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','1').replaceAll('a','1'));
+	
+	var goodgrid = {
+		astar:new astar.Graph(astargrid),
+		player:JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','0').replaceAll('a','1')),
+		npc:JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','0').replaceAll('a','1').replaceAll('4','0')),
+		bullet:JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','1').replaceAll('a','1')),	
+	};
+	
+	
 	return goodgrid;
 }
 
@@ -105,7 +108,8 @@ MapModel.getSignInPack = function(){
 			name:DB[i].name,
 			graphic:DB[i].graphic,
 			width:DB[i].width,
-			height:DB[i].height
+			height:DB[i].height,
+			gridPlayer:MapModel.Grid.compress(DB[i].grid),
 		};
 	return m;
 }
@@ -143,6 +147,24 @@ MapModel.Path.Spot.raw = function(letter,wait,event,spdMod,timeLimit){
 		timeLimit:timeLimit || 30*25,	
 	}
 }
+
+
+MapModel.Grid.compress = function(grid){	//uncompress in MapModel_client
+	var p = grid.player;	//2d array
+	var oneD = grid.player.join('');
+	oneD = oneD.replaceAll('2','1').replaceAll('3','1').replaceAll('4','1');
+	return Tk.ABC.toAscii(oneD);	
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

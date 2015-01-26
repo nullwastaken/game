@@ -41,6 +41,7 @@
 		<script src="/js/shared/Stat.js"></script>
 		<script src="/js/shared/Combat_shared.js"></script>
 		<script src="/js/shared/Combat_balance.js"></script>
+		<script src="/js/ClientPrediction.js"></script>
 		
 		<script src="/js/Draw.js"></script>
 		
@@ -104,6 +105,9 @@
 		<script src="/js/Dialog_topLeft.js"></script>
 		<script src="/js/Dialog_topRight.js"></script>
 		
+		
+		
+		
 		<script src="/js/shared/Main.js"></script>
 		<script src="/js/shared/Main_loop.js"></script>
 		<script src="/js/shared/Main_chrono.js"></script>
@@ -132,8 +136,6 @@
 		<script src="/js/shared/ReputationGrid.js"></script>
 		<script src="/js/shared/ReputationConverter.js"></script>
 		
-		
-		
 		<script src="/js/shared/Contribution.js"></script>
 		
 		<script src="/js/main.js"></script>
@@ -146,12 +148,12 @@
 				<a href="/rs"><font size="5">Runescape Calculators</font></a><br>
 				<a href="/zelda"><font size="5">Zelda Glitch Database</font></a>
 			</div>
-			<!-- Sign_client.js  - Sign.html() -->
+			<!-- Sign_client.js  - Sign.init() -->
 			<!-- General Info -->
 		</div>
 		
-		<div id="mainDiv" style="display:none; width: 1280px;  height:720px; margin: 0px auto;">
-			<div  id="gameDiv" style="position:absolute; width:1280px; height:720px; overflow:hidden;"></div>
+		<div id="mainDiv" style="display:none; top:0px; width: 1280px;  height:720px; margin: 0px auto;">
+			<div  id="gameDiv" style="position:absolute; top:0px; width:1280px; height:720px; "></div> <!--overflow:hidden;-->
 			
 			<div id="gameBottom" style="position:absolute; white-space:normal; width:1280px; top:720px; font:30px Kelly Slab; color:white;">
 				<div id="testOutput" style="display:none;font-size:2em;color:white"></div>
@@ -164,11 +166,7 @@
 			</div>
 		</div>
 		<br>
-		
-		
-		
-		
-		
+				
 		<script>
 		$(document).ready(function() {
 			Sign.init();

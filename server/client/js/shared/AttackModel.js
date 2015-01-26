@@ -1,13 +1,11 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 eval(loadDependency(['Sprite']));
 
-
-
 var AttackModel = exports.AttackModel = function(info,addDefaultStatus){
 	var tmp = {
 		//All
 		type:'bullet',
-		dmg:AttackModel.Dmg(0,'melee'),
+		dmg:AttackModel.Dmg(0,1,0,0,0,0,0),
 		hitAnim:null,	//when enemy get hits, use anim on him {name,sizeMod}
 		damageIfMod:0, //if 1, hit allies
 		amount:1,	//# bullets shot
@@ -75,6 +73,8 @@ AttackModel.Boomerang = function(comeBackTime,spd,spdBack,newId){
 	}
 }
 AttackModel.Dmg = function(main,me,ra,ma,fi,co,li){
+	if(typeof me === 'string')
+		return ERROR(3,'me should be number');
 	return {
 		main:main || 0,
 		ratio:CST.element.template(me,ra,ma,fi,co,li)
@@ -128,8 +128,12 @@ AttackModel.OnHitHeal = function(hp,mana){
 AttackModel.addDefaultStatus = function(model){	//select 1st element, if no status, add 5% status default
 	var el = AttackModel.getElement(model);
 	var status = CST.element.toStatus[el];
-	if(model[status]) return;	//do not overwrite
-	model[status] = AttackModel.Status(0.05,1,1);
+	/*if(!model.knock || model.knock.chance === 0){
+		model.knock = AttackModel.Status(1,2,0.1);
+	}*/
+	if(!model[status] || model[status].chance === 0)
+		model[status] = AttackModel.Status(0.05,1,1);
+		
 }
 
 AttackModel.getElement = function(model){
@@ -144,5 +148,4 @@ AttackModel.InitPosition = function(min,max,type){
 		max:max === undefined ? 50 : max,
 	}
 }
-
 

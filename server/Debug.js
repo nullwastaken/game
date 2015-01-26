@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Quest','OfflineAction','Send','Competition','ActorModel','MapModel','Highscore','QuestVar','Party','SpriteModel','ItemModel','Account','ItemList','Combat','Message','OptionList','Boss','Server', 'Boost',  'Cycle', 'Actor',  'Main', 'Attack', 'Strike', 'Bullet',  'ActiveList', 'ItemList','Sign', 'Save',  'Combat', 'Map', 'Input', 'Message', 'Dialogue',  'Drop', 'Performance', 'Ability',  'Equip', 'Quest', 'Clan', 'Collision', 'Button', 'Sprite', 'Anim', 'Command', 'ReputationGrid', 'Contribution'],['Debug']));
+eval(loadDependency(['Quest','OfflineAction','Preset','Send','Competition','ActorModel','MapModel','Highscore','QuestVar','Party','SpriteModel','ItemModel','Account','ItemList','Combat','Message','OptionList','Boss','Server', 'Boost',  'Cycle', 'Actor',  'Main', 'Attack', 'Strike', 'Bullet',  'ActiveList', 'ItemList','Sign', 'Save',  'Combat', 'Map', 'Input', 'Message', 'Dialogue',  'Drop', 'Performance', 'Ability',  'Equip', 'Quest', 'Clan', 'Collision', 'Button', 'Sprite', 'Anim', 'Command', 'ReputationGrid', 'Contribution'],['Debug']));
 
 var db = null; //Debug.init
 var DEV_TOOL = 'DEV_TOOL';
@@ -65,10 +65,11 @@ Debug.ghost = function(key){
 }
 
 Debug.giveRandomEquip = function(key,type){
+	var username = Actor.get(key).username;
 	if(type === 'weapon')
-		Main.addItem(Main.get(key),Equip.randomlyGenerate(Equip.PieceType('weapon')).id);
+		Main.addItem(Main.get(key),Equip.randomlyGenerate(username,Equip.PieceType('weapon')).id);
 	else
-		Main.addItem(Main.get(key),Equip.randomlyGenerate().id);
+		Main.addItem(Main.get(key),Equip.randomlyGenerate(username).id);
 }
 
 Debug.onSignIn = function(key,name){
@@ -80,27 +81,6 @@ Debug.onSignIn = function(key,name){
 	if(main.questActive)
 		Debug.giveQuestTool(key,main.questActive);
 	
-	if(!Quest.TESTING.name) return;
-	
-	//Quest.get(BADDD).event._debugSignIn(key);
-	
-	
-	
-	/*
-	if(name.contains('rc',true) || Quest.TESTING.everyone){	//put true when uploading for ppl to create quest
-		setTimeout(function(){	//otherwise fucks thing
-			var main = Main.get(key);
-			Quest.get('Qtutorial').event.skipTutorial(key);
-			Quest.get(Quest.TESTING.name).event._debugSignIn(key);
-			Debug.giveQuestTool(key,Quest.TESTING.name);
-			Message.add(key,'Game engine set to create the quest: \"' + Quest.TESTING.name + '\".');
-			if(main.questActive !== Quest.TESTING.name){
-				Main.abandonQuest(Main.get(key));
-				Main.startQuest(main,Quest.TESTING.name);
-			}
-		},1000);
-	}
-	*/
 }
 
 Debug.giveDefaultAbility = function(key){
@@ -188,7 +168,6 @@ Debug.ts = function(socket,d){
 	}			
 }
 
-
 Debug.changeDeveloperMessage = function(version,text){
 	db.report.upsert({version:version},{'$set':{version:version,message:text}},db.err);
 };
@@ -231,7 +210,7 @@ Debug.createQuestTool = function(q){
 		INFO('########### ' + Date.now() + ' ###########');
 		var mq = QuestVar.getViaMain(Main.get(key));
 		for(var i in mq){
-			if(['quest','username','key'].contains(i)) continue;
+			if(['quest','username','key'].$contains(i)) continue;
 			var attr = i;
 			for(var j = attr.length; j < 15; j++)
 				attr += ' ';

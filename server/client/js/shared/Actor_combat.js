@@ -1,12 +1,12 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor']));
+eval(loadDependency(['Actor','Preset']));
 
 Actor.setCombatContext = function(act,what,type,reset){
 	act.combatContext[what] = type;
 	if(what === 'ability'){
 		if(reset){
 			act.abilityList[type] = {};
-			act.ability[type] = [];
+			act.ability[type] = Actor.Ability.Part();
 		}
 		act.abilityChange = Actor.AbilityChange(act.abilityList[type]);
 		Actor.setFlag(act,'ability');
@@ -67,7 +67,7 @@ Actor.dodge = function(act,time,dist){
 	
 	//movement
 	Actor.movePush(act,act.angle,dist/time,time)
-	Actor.setSpriteFilter(act,{filter:'dodge',time:time+5});
+	Actor.setSpriteFilter(act,Actor.SpriteFilter('dodge',time+5));
 }
 
 Actor.becomeInvincible = function(act,time){
@@ -86,10 +86,109 @@ Actor.becomeInvincible = function(act,time){
 }
 Actor.becomeInvincible.HISTORY = {};	//BADDDDD
 
+Actor.enablePvp = function(act,enable){
+	if(enable){
+		act.damageIf = 'true';
+		act.damagedIf = 'true';
+		act.pvpEnabled = true;
+	} else {
+		act.damageIf = 'npc';
+		act.damagedIf = 'npc';
+		act.pvpEnabled = false;
+	}
+	Actor.setFlag(act,'pvpEnabled');
+}
+
 
 Actor.rechargeAbility = function(act){
 	Actor.ability.fullyRecharge(act);
 }
+
+
+//Preset
+Actor.addPreset = function(act,name,s){
+	act.preset[name] = Preset.get(name);
+	Actor.updatePreset(act,s);
+}
+
+Actor.removePreset = function(act,name,s){
+	delete act.preset[name];
+	Actor.updatePreset(act,s);
+}
+
+Actor.updatePreset = function(act,s){
+	var key = act.id;
+	
+	var reputation = true;
+	var ability = true;
+	var pvp = act.pvpEnabled;
+	var combat = true;
+	
+	for(var i in act.preset){
+		if(act.preset[i].noReputation)
+			reputation = false;
+		if(act.preset[i].noAbility)
+			ability = false;
+		if(act.preset[i].pvp)
+			pvp = true;
+		if(act.preset[i].noCombat)
+			combat = false;
+	}
+	s.enableReputation.one(key,reputation); 
+	s.enableAttack.one(key,ability); 	
+	s.enablePvp.one(key,pvp); 
+	s.enableCombat.one(key,combat); //case quest isAlwaysActive???
+	
+	var ability = false;	
+	for(var i in act.preset){
+		var preset = act.preset[i];
+		if(preset.ability){
+			Actor.setCombatContext(act,'ability','quest',true);
+			for(var i = 0 ; i < preset.ability.length; i++){
+				if(preset.ability[i]){
+					Actor.ability.add(act,preset.ability[i],false); 	//based on s.addAbility.one
+					Actor.ability.swap(act,preset.ability[i],i);
+				}
+			}
+			s.rechargeAbility(act.id);
+			ability = true;
+			break;
+		}
+	}
+	if(!ability)
+		Actor.setCombatContext(Actor.get(key),'ability','normal');
+	
+	
+	var equip = false;	
+	for(var i in act.preset){
+		var preset = act.preset[i];
+		if(preset.equip){
+			Actor.setCombatContext(act,'equip','quest',true);
+			for(var i in preset.equip){
+				if(preset.equip[i])
+					Actor.changeEquip(act,preset.equip[i]);	//based on s.addEquip.one
+			}
+			equip = true;
+			break;
+		}
+	}
+	if(!equip)
+		Actor.setCombatContext(Actor.get(key),'equip','normal');
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

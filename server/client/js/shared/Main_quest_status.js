@@ -18,13 +18,34 @@ Main.startQuest = function(main,qid){
 	if(!mq) return Main.addMessage(main,'Wrong Input.');
 	
 	if(main.questActive) 
-		return Main.addMessage(main,'You can only have 1 active quest at once. Finish or abandon the quest "' + Quest.get(main.questActive).name + '" before starting a new one.');
+		return Message.addPopup(main.id,'You can only have 1 active quest at once. Finish or abandon the quest "' + Quest.get(main.questActive).name + '" before starting a new one.');
 	
-	for(var i in mq._challenge) 
-		if(mq._challenge[i]) 
-			if(!Challenge.toggle.test(Challenge.get(i),main)) return false;
+	//if(!Party.isLeader(main.id))
+	//	return Message.addPopup(main.id,'Only the leader can start a quest.');
 	
-	Main.startQuest.action(main,qid);
+	var chal = mq._challenge;
+	var q = Quest.get(qid);
+	
+	if(Party.getSize(Main.getParty(main)) > q.maxParty)
+		return Message.addPopup(main.id,'Maximum party size: ' + q.maxParty + '.');
+	
+	Party.forEach(Main.getParty(main),function(key2){
+		var main2 = Main.get(key2);
+		main2.quest[qid]._challenge = Tk.deepClone(chal);
+		
+		/* comment => guy never compelted quest but can do chal if leader has done quest
+		for(var i in chal) 
+			if(chal[i]) 
+				if(!Challenge.toggle.test(Challenge.get(i),main2)) return false;
+		*/	
+		Quest.addQuestVar(q,main2);
+		Main.startQuest.action(main2,qid);
+	});
+	Quest.onStart(q,main);
+	
+	
+	
+	
 	return true;
 }
 Main.startQuest.action = function(main,qid){
@@ -34,9 +55,9 @@ Main.startQuest.action = function(main,qid){
 	mq._startTime = Date.now();
 	main.questActive = qid;
 	
-	Quest.onStart(q,main);
 	Party.setQuest(Main.getParty(main),qid);
 	Debug.onStartQuest(main.id,qid);
+	Actor.enablePvp(Main.getAct(main),false);
 	
 	Main.closeDialogAll(main);
 	Main.setFlag(main,'questActive');
@@ -53,8 +74,7 @@ Main.completeQuest = function(main){
 	var firstTimeCompleted = mq._complete === 0;
 	mq._complete++;
 	Main.setFlag(main,'quest',qid);
-	if(!Main.quest.hasRatedQuest(main,qid)) 
-		Main.displayQuestRating(main,qid);
+	Main.displayQuestRating(main,qid);
 		
 	q.event._complete(main.id);
 	
@@ -74,9 +94,12 @@ Main.completeQuest = function(main){
 	//Tk.deepClone needed cuz asyn highscore and updateCycle change mq
 	
 	Main.quest.updateCycle(mq);
-	Main.quest.grantRemovalOrb(main);
+	//Main.quest.grantRemovalOrb(main);	//no longer used
 	
 	Main.resetQuest(main);
+	
+	if(q.id !== 'Qtutorial' && Math.random() < 1/20)
+		Actor.teleport.town(Main.getAct(main));
 }
 Main.completeQuest.updateGlobalHighscore = function(main){
 	for(var i in Quest.DB){
@@ -145,7 +168,7 @@ Main.quest.compileBonusVar = function(bonus,includeChallenge){
 
 Main.abandonQuest = function(main){
 	if(!main.questActive) return;
-	if(!Party.isLeader(main.id)) return Main.addMessage(main,"Only the leader can abandon a quest.");
+	//if(!Party.isLeader(main.id)) return Main.addMessage(main,"Only the leader can abandon a quest.");
 	Party.forEach(Main.getParty(main),function(key2){
 		Main.abandonQuest.action(Main.get(key2));
 	});

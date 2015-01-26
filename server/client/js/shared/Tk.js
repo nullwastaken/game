@@ -145,48 +145,26 @@ Object.defineProperty(Number.prototype, "mm", {
 	}
 });	
 
-Object.defineProperty(Number.prototype, "toPercent", {
-    enumerable: false,
-    value: function(num) {
-		return Tk.round(this*100,num || 0) + '%';
-	}
-});	
+Tk.frameToChrono = function(num){
+	return Tk.msToChrono(num*40);
+}
+Tk.msToChrono = function(time){
+	time = time || 0;
+	var hour = Math.floor(time / CST.HOUR);
+	time %= CST.HOUR;
+	var min = Math.floor(time / CST.MIN);
+	min = min < 10 ? '0' + min : min;
+	time %= CST.MIN;
+	var sec = Math.floor(time / CST.SEC);
+	sec = sec < 10 ? '0' + sec : sec;
+	var milli = time % CST.SEC;
+	if(milli < 10) milli = '00' + milli;
+	else if(milli < 100) milli = '0' + milli;
 	
-Object.defineProperty(Number.prototype, "toChrono", {
-    enumerable: false,
-    value: function() {
-		var time = this;
-		var hour = Math.floor(time / CST.HOUR);
-		time %= CST.HOUR;
-		var min = Math.floor(time / CST.MIN);
-		min = min < 10 ? '0' + min : min;
-		time %= CST.MIN;
-		var sec = Math.floor(time / CST.SEC);
-		sec = sec < 10 ? '0' + sec : sec;
-		var milli = time % CST.SEC;
-		if(milli < 10) milli = '00' + milli;
-		else if(milli < 100) milli = '0' + milli;
-		
-		if(+hour) return hour + ':' + min + ':' + sec + '.' + milli;	
-		if(+min) return min + ':' + sec + '.' + milli;	
-		return sec + '.' + milli;		
-	}
-});	
-
-Object.defineProperty(Number.prototype, "interval", {
-    enumerable: false,
-    value: function(num) {
-		return this % num === 0;
-	}
-});	
-
-Object.defineProperty(Number.prototype, "frameToChrono", {
-    enumerable: false,
-    value: function() {
-		return (this*40).toChrono();
-	}
-});	
-
+	if(+hour) return hour + ':' + min + ':' + sec + '.' + milli;	
+	if(+min) return min + ':' + sec + '.' + milli;	
+	return sec + '.' + milli;
+}
 
 Object.defineProperty(Number.prototype, "r", {
     enumerable: false,
@@ -378,9 +356,6 @@ Tk.arrayToTable = function(array,top,left,CSSTableGenerator,spacing){
 	return table;
 }
 
-
-
-
 Tk.arrayfy = function(a){
 	return (a instanceof Array) ? a : [a];
 }
@@ -392,7 +367,6 @@ Tk.convertRatio = function(ratio){	//normalize vector
 	return ratio;
 }
 
-
 Tk.rotatePt = function(pt,angle,anchor){
 	anchor = anchor || {};
 	anchor.x = anchor.x || 0;
@@ -403,9 +377,8 @@ Tk.rotatePt = function(pt,angle,anchor){
 	}	
 }
 
-
 //Prototype
-Object.defineProperty(Array.prototype, "random", {	// !name: return random element || name:  [{name:10},{name:1}] and return obj
+Object.defineProperty(Array.prototype, "$random", {	// !name: return random element || name:  [{name:10},{name:1}] and return obj
     enumerable: false,
     value: function(name){
 		if(!this.length) return null;
@@ -413,23 +386,12 @@ Object.defineProperty(Array.prototype, "random", {	// !name: return random eleme
 		
 		var obj = {};	
 		for(var i in this) obj[i] = this[i][name];
-		var choosen = obj.random();
+		var choosen = obj.$random();
 		return choosen !== null ? this[choosen] : null
 	}
 });
 
-Object.defineProperty(Array.prototype, "normalize", {	// Tk.convertRatio for array
-    enumerable: false,
-    value: function(){
-		var sum = 0;
-		for(var i in this)
-			sum += this[i];
-		for(var i in this)
-			this[i] /= sum;
-	}
-});
-
-Object.defineProperty(Object.prototype, "random", {	//return attribute, must be {attribute:NUMBER}, chance of being picked depends on NUMBER
+Object.defineProperty(Object.prototype, "$random", {	//return attribute, must be {attribute:NUMBER}, chance of being picked depends on NUMBER
     enumerable: false,
     value: function(name){
 		if(!Object.keys(this).length) return null;
@@ -453,10 +415,10 @@ Object.defineProperty(Object.prototype, "random", {	//return attribute, must be 
 	}
 });
 
-Object.defineProperty(Object.prototype, "randomAttribute", {	//return random attribute
+Object.defineProperty(Object.prototype, "$randomAttribute", {	//return random attribute
     enumerable: false,
     value: function(){
-		return Object.keys(this).random();
+		return Object.keys(this).$random();
 	}
 });	
 	
@@ -477,7 +439,6 @@ Object.defineProperty(Object.prototype, "$isEmpty", {
 		return true;
 	}
 });
-
 
 Object.defineProperty(Object.prototype, "$sum", {
 	enumerable: false,
@@ -512,7 +473,7 @@ Object.defineProperty(Object.prototype, "$keys", {
 	}
 });	
 
-Object.defineProperty(Array.prototype, "contains", {
+Object.defineProperty(Array.prototype, "$contains", {
     enumerable: false,
     value: function(name,begin){
 		if(begin) return this.indexOf(name) === 0;
@@ -520,14 +481,14 @@ Object.defineProperty(Array.prototype, "contains", {
 	}
 });	
 
-Object.defineProperty(Array.prototype, "insert", {
+Object.defineProperty(Array.prototype, "$insertAt", {
     enumerable: false,
     value: function (index, item) {
 	  this.splice(index, 0, item);
 	}
 });
 
-Object.defineProperty(Array.prototype, "remove", {
+Object.defineProperty(Array.prototype, "$remove", {
     enumerable: false,
     value: function (element,all) {
 		for(var i = this.length-1; i >= 0; i--){
@@ -539,7 +500,8 @@ Object.defineProperty(Array.prototype, "remove", {
 		return this;
 	}
 });
-Object.defineProperty(Array.prototype, "removeAt", {
+
+Object.defineProperty(Array.prototype, "$removeAt", {
     enumerable: false,
     value: function (i) {
 		this.splice(i,1);
@@ -580,6 +542,25 @@ Object.defineProperty(Object.prototype, "$getMin", {
 });
 
 
+Tk.ABC = {	//https://gist.github.com/eyecatchup/6742657
+  toAscii: function(bin) {
+    return bin.replace(/\s*[01]{8}\s*/g, function(bin) {
+      return String.fromCharCode(parseInt(bin, 2))
+    })
+  },
+  toBinary: function(str, spaceSeparatedOctets) {
+    return str.replace(/[\s\S]/g, function(str) {
+      str = Tk.ABC.zeroPad(str.charCodeAt().toString(2));
+      return !1 == spaceSeparatedOctets ? str : str + " "
+    })
+  },
+  zeroPad: function(num) {
+    return "00000000".slice(String(num).length) + num
+  }
+};
+
+
+
 //String
 String.prototype.replaceAll = function (find, replace) {
     return this.replace(new RegExp(find, 'g'), replace);
@@ -601,7 +582,7 @@ String.prototype.keyCodeToName = function(full){	//TOFIX fusion bothfunctions
 	else if (charCode == 8) var m = "backspace"; //  backspace
 	else if (charCode == 9) var m = "tab"; //  tab
 	else if (charCode == 13) var m = "enter"; //  enter
-	else if (charCode == 16) var m = "shelse ift"; //  shelse ift
+	else if (charCode == 16) var m = "shift left"; //shift left (shelse ift)
 	else if (charCode == 17) var m = "ctrl"; //  ctrl
 	else if (charCode == 18) var m = "alt"; //  alt
 	else if (charCode == 19) var m = "pause/break"; //  pause/break
@@ -679,7 +660,7 @@ String.prototype.keyFullName = function(){
 }
 
 String.prototype.capitalize = function() {
-	if(!this.contains(' '))    return this.charAt(0).toUpperCase() + this.slice(1);
+	if(!this.$contains(' '))    return this.charAt(0).toUpperCase() + this.slice(1);
 	
 	var array = this.split(' ');
 	for(var i in array) array[i] = array[i].capitalize();
@@ -694,7 +675,7 @@ String.prototype.numberOnly = function(num){
 	return a;
 }
 
-String.prototype.contains = function(name,first){
+String.prototype.$contains = function(name,first){
 	if(!first)
 		return this.indexOf(name) !== -1;
 	return this.indexOf(name) === 0;
@@ -704,7 +685,7 @@ String.prototype.set = function(pos,value){
 	return this.slice(0,pos) + value + this.slice(pos+1);
 }
 
-String.prototype.replacePattern = function(func){	//only works like [[sdadsa]]
+String.prototype.replaceBracketPattern = function(func){	//only works like [[sdadsa]]
 	var data = this;
 	for(var i = 0; i < 100; i++){
 		var data2 = data.replace(/(.*?)\[\[(.*?)\]\](.*)/, function(match, p1, p2, p3) {
@@ -729,7 +710,6 @@ String.prototype.replaceCustomPattern = function(begin,ending,func){	//only work
 	
 	return data + '';
 }
-
 
 String.prototype.chronoToTime = function(func){	//1:04:10.10
 	var array = this.split(":");

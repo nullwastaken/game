@@ -40,7 +40,7 @@ Dialog.friend = function(html,variable){
 		.addClass('myButton')
 		.html('Add a friend.')
 		.click(function(){
-			Dialog.chat.setInput('$fl,add,');
+			Dialog.chat.setInput('$fl,add,');	//TOFIX
 		})
 	);
 	html.append('<br>');
@@ -48,7 +48,7 @@ Dialog.friend = function(html,variable){
 		.addClass('myButton')
 		.html('Remove a friend.')
 		.click(function(){
-			Dialog.chat.setInput('$fl,remove,');
+			Dialog.chat.setInput('$fl,remove,'); //TOFIX
 		})
 	);
 	html.append('<br>');
@@ -56,7 +56,7 @@ Dialog.friend = function(html,variable){
 		.addClass('myButton')
 		.html('Mute a player.')
 		.click(function(){
-			Dialog.chat.setInput('$mute,');
+			Dialog.chat.setInput('$mute,'); //TOFIX
 		})
 	);
 

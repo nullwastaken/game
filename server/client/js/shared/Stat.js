@@ -85,8 +85,8 @@ var initStat = function(){	//global in client...
 		base:250,min:5,
 	}),true);
 	Stat('magicFind-quantity','Item Quantity','Chance to receive more drops from enemies. Quantity impacts chance that an enemy will drop something.','defensive.magicFind',["magicFind","quantity"],Stat.Value({}),true);
-	Stat('magicFind-quality','Item Quality','Chance to receive higher quality plans from enemies. Quality impacts chance to roll top-bracket stats.','defensive.magicFind',["magicFind","quality"],Stat.Value({}),true);
-	Stat('magicFind-rarity','Item Rarity','Chance to receive higher rarity plans from enemies. Rarity impacts chance to have additional boost on crafted equip.','defensive.magicFind',["magicFind","rarity"],Stat.Value({}),true);
+	Stat('magicFind-quality','Item Quality','Chance to receive higher quality equip from enemies. Quality impacts chance to roll top-bracket stats.','defensive.magicFind',["magicFind","quality"],Stat.Value({}),true);
+	Stat('magicFind-rarity','Item Rarity','Chance to receive higher rarity equip from enemies. Rarity impacts amount of hidden boost of equips.','defensive.magicFind',["magicFind","rarity"],Stat.Value({}),true);
 	Stat('atkSpd','Atk Speed','Affect how fast your character can use abilities.','offensive.atkSpd',["atkSpd"],Stat.Value({
 		base:1,
 	}),false);
@@ -157,10 +157,10 @@ var initStat = function(){	//global in client...
 		base:1,
 	}),false);
 	Stat('knock-time','Knock Time','Affect how long the enemy will be pushed back.','status.knock',["bonus","knock","time"],Stat.Value({
-		base:25,
+		base:15,
 	}),false);
 	Stat('knock-magn','Knock Magn','Affect how far away the enemy will be pushed.','status.knock',["bonus","knock","magn"],Stat.Value({
-		base:25,
+		base:10,
 	}),false);
 	Stat('knock-chance','Knock Chance','Affect chance to push enemy with your attack.','status.knock',["bonus","knock","chance"],Stat.Value({
 		base:1,
@@ -269,7 +269,6 @@ initStat.actorBoostList = function(){
 	}
 	
 	Stat.actorBoostList = new Function('type', 'return type === "player" ? ' + Tk.stringify(p) + ' : ' + Tk.stringify(e));
-	
 }
 	
 	
@@ -294,7 +293,7 @@ var funcGenerator = function(name){ //for custom ability
 		if(!SERVER) return;
 		if(act.combatContext.ability !== 'normal') return;
 		if(value && !Actor.getAbilityList(act)[name]){
-			Actor.ability.add(act,name,true);			
+			Actor.ability.add(act,name);			
 		}
 		if(!value && Actor.getAbilityList(act)[name]){
 			Actor.ability.remove(act,name);		

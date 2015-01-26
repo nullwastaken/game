@@ -4,6 +4,7 @@ eval(loadDependency(['Map','Input','Message','Collision','Button','OptionList','
 var Draw = {};
 (function(){ //}
 
+
 Draw.init = function(){
 	Dialog.UI('stage',{
 		position:'absolute',

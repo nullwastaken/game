@@ -98,13 +98,13 @@ Attack.Strike.getRotatedRect = function(s,point){
 }
 
 Attack.Strike.getPoint = function(s){
-	var startX = -s.width; 
-	var startY = -s.height;
+	var startX = -s.width/2; 
+	var startY = -s.height/2;
 		
 	var pt = [];
 	for(var k = 0 ; k < 9 ; k++){
-		var axeX = startX + (k % 3)*s.width;
-		var axeY = startY + Math.floor(k/3)*s.height;
+		var axeX = startX + (k % 3)*s.width/2;
+		var axeY = startY + Math.floor(k/3)*s.height/2;
 		var numX = (axeX*Tk.cos(s.angle) - axeY * Tk.sin(s.angle));
 		var numY = (axeX*Tk.sin(s.angle) + axeY * Tk.cos(s.angle));
 
@@ -137,6 +137,10 @@ Attack.getInitPosition = function(atk,act){
 	if(!SERVER) return goal;
 	
 	var pos = atk.ghost ? goal : Collision.strikeMap(act,goal);	//get farthest possible without touching wall
+	if(pos.collision){	//check Collision.strikeMap
+		atk.dmg = AttackModel.Dmg(0,1,0,0,0,0,0);
+		atk.hitAnim = null;
+	}
 	return pos;
 }
 			

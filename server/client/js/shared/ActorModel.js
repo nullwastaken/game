@@ -14,10 +14,10 @@ ActorModel = exports.ActorModel = function(id,info){
 		awareNpc:0,
 		hp:1000,	
 		hpMax:1000,
-		hpRegen:1,
+		hpRegen:25/25,
 		mana:100,
 		manaMax:100,
-		manaRegen:10/25,
+		manaRegen:20/25,
 		abilityList:Actor.AbilityList(),
 		friction:CST.FRICTIONNPC,
 		bounce:1,			//mod
@@ -30,7 +30,6 @@ ActorModel = exports.ActorModel = function(id,info){
 		sprite:Sprite(Actor.DEFAULT_SPRITENAME,1),
 		moveRange:Actor.MoveRange(),
 		useUpdateInput:1, 		//generate its own input	(ex: pushable dont but still move)
-		reflect:CST.element.template(0), //% reflected
 		nevercombat:0,
 		boss:'',
 		ability:Actor.Ability(),
@@ -42,7 +41,7 @@ ActorModel = exports.ActorModel = function(id,info){
 		ghost:0,
 		nevermove:0,
 		maxSpd:CST.NPCSPD,	
-		acc:12,
+		acc:9,
 		immune:{},
 		abilityAi:Actor.AbilityAi(),	
 		
@@ -52,6 +51,7 @@ ActorModel = exports.ActorModel = function(id,info){
 		damagedIf:'true',
 		targetIf:'player',  //condition used by monsters to find their target. check targetIfList
 		statusResist:Actor.StatusResist(),
+		pvpEnabled:false,
 		
 		//BAD
 		combatContext:Actor.CombatContext(),		//only there cuz need it to access ability... -.-
@@ -74,6 +74,7 @@ ActorModel.init = function(){
 		type:"player",
 		combatType:'player',
 		damageIf:'npc',
+		damagedIf:'npc',
 		targetIf:'npc',	//important for summon
 		awareNpc:1,
 		alwaysActive:1,

@@ -10,7 +10,7 @@ var HIDE_SOCIALMEDIA = true;
 
 var temp = null;
 
-		//	height:'auto',width:'auto',
+//	height:'auto',width:'auto',
 
 Sign.init = function(){
 	var startDiv = $('#startDiv');
@@ -103,6 +103,22 @@ Sign.init.html = function(){
 		[
 			'Email:',
 			$('<input>').attr({id:"lg-signUpEmail",placeholder:"recovery email",type:'text'})
+		],
+		[
+			$('<span>')
+				.html('Location:'),
+				//.attr('title',"Only used for latency statistics. You still play be able to play with anyone.")
+				
+			$('<select>')
+				.attr({id:"lg-signUpGeoLocation"})
+				.attr('title',"Only used for latency statistics. You still play be able to play with anyone.")
+				.append('<option value="EastCoast">East Coast</option>')
+				.append('<option value="WestCoast">West Coast</option>')
+				.append('<option value="SouthAmerica">South America</option>')
+				.append('<option value="Europe">Europe</option>')
+				.append('<option value="Asia">Asia</option>')
+				.append('<option value="Africa">Africa</option>')
+				.append('<option value="Australia">Australia</option>')
 		],
 		[
 			$('<span>')
@@ -365,7 +381,7 @@ Sign.onclick = function(){
 	
 	if(Game.loading) return Sign.log("Loading images...");
 	
-	if(Tk.getBrowserVersion().contains('Safari'))
+	if(Tk.getBrowserVersion().$contains('Safari'))
 		return Sign.log("Safari supports canvas-based games very poorly.<br> Use Google Chrome, Firefox, Opera or IE instead.<br>"+
 			//"You are currently using " + Tk.getBrowserVersion() + '.<br>' +
 			'You can download Google Chrome at <br><a target="_blank" href="https://www.google.com/chrome/">www.google.com/chrome/</a>');
@@ -403,6 +419,7 @@ Sign.up = function (){
 		username: user,
 		password: pass,
 		email:email,
+		geoLocation:$("#lg-signUpGeoLocation").val(),
 		referral:$("#lg-signUpReferral").val(),
 		youtube:$("#lg-signUpYoutube").val(),
 		reddit:$("#lg-signUpReddit").val(),

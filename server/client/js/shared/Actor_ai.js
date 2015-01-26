@@ -189,7 +189,7 @@ Actor.ai.resetSub = function(act){
 }
 
 Actor.ai.updateInput.ability = function(act){
-	act.abilityChange.press = '0000000000000000000000';
+	Actor.ai.resetAbilityChangePress(act);
 	if(act.targetMain.type !== 'actor') return;
 	var target = Actor.ai.setTarget.getMainPos(act);
 	if(!target) return;
@@ -197,11 +197,11 @@ Actor.ai.updateInput.ability = function(act){
 	var diff = Collision.getDistancePtPt(act,target);
 	
 	var range = 'close';
-	if(diff > act.abilityAi.range[0]) range = 'middle';	//bad...
+	if(diff > act.abilityAi.range[0]) range = 'middle';	//BAD...
 	if(diff > act.abilityAi.range[1]) range = 'far';
 	
 	
-	var id = act.abilityAi[range].random();
+	var id = act.abilityAi[range].$random();
 	if(!id || id === 'idle') return;
 	
 	var ab = Actor.getAbility(act);
@@ -209,9 +209,13 @@ Actor.ai.updateInput.ability = function(act){
 		if(ab[i] && ab[i].id === id){
 			act.abilityChange.press = act.abilityChange.press.set(+i,'1');
 		}
-	}	
-	
+	}
 }
+Actor.ai.resetAbilityChangePress = function(act){
+	act.abilityChange.press = '0000000000000000000000';
+}
+
+
 
 Actor.ai.setTarget = function(act){
 	if(act.type !== 'npc') return;
@@ -250,9 +254,12 @@ Actor.ai.setTarget.updateMain = function(act){
 		
 		targetList[i] = 1/(dist+100);
 	}
-	var chosen = targetList.randomAttribute();
-	if(!chosen)	act.targetMain = Actor.TargetMain(null,act.x,act.y);
-	else {
+	var chosen = targetList.$randomAttribute();
+	if(!chosen){
+		act.targetMain = Actor.TargetMain(null,act.x,act.y);
+		Actor.ai.resetAbilityChangePress(act);
+			
+	} else {
 		act.targetMain = Actor.TargetMain(chosen);
 		Actor.boost(act,Combat.getEnemyPower(act,playerCount));
 	}

@@ -93,6 +93,7 @@ Actor.status.afflict.knock = function(act,b){
 	knock.time = info.time*(1-resist); 
 	knock.magn = info.magn*(1-resist);	
 	knock.angle = b.moveAngle || 0;
+	Actor.boost(act,Boost('knock','acc',0,knock.time,'*'));
 }
 
 Actor.status.afflict.drain = function(act,b){

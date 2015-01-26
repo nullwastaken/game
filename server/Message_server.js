@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Server','Save','Party','Social','Account','Actor','Clan','ItemList','Main','Contribution','Message']));
+eval(loadDependency(['Server','Save','Party','Social','Account','ItemModel','Actor','Clan','ItemList','Main','Contribution','Message']));
 
 var db;
 
@@ -10,6 +10,7 @@ Message.init = function(dblink){
 Message.add = function(key,textOrMsg){
 	Main.addMessage(Main.get(key),textOrMsg);
 }
+
 Message.addPopup = function(key,text,time){
 	Main.openDialog(Main.get(key),'questPopup',{text:text,time:time || 25*60});
 }
@@ -27,8 +28,8 @@ Message.receive = function(key,msg){
 	if(!Message.receive.test(key,msg)) return;
 	
 	var parse = Message.parseText(msg.text);     	//text
-	msg.hasItem = parse.item;
-	msg.hasPuush = parse.puush;
+	msg.hasItem = parse.hasItem;
+	msg.hasPuush = parse.hasPuush;
 	msg.text = parse.text;
 	
 	
@@ -36,9 +37,8 @@ Message.receive = function(key,msg){
 	else if(msg.type === 'pm') Message.receive.pm(key,msg); 
 	else if(msg.type === 'questionAnswer') Message.receive.question(key,msg); 
 	else if(msg.type === 'report') Message.receive.report(key,msg); 
-	/*
-	else if(msg.type === 'clan') Message.receive.clan(key,msg); 
-	*/	
+	
+	//else if(msg.type === 'clan') Message.receive.clan(key,msg); 
 };
 
 Message.receive.test = function(key,msg){
@@ -61,10 +61,11 @@ Message.receive.public = function(key,msg){
     if(!msg.hasItem && !msg.hasPuush)
 		act.chatHead = Actor.ChatHead(msg.text);
 	
-	var newMsg = Message('public',msg.text,msg.from,Message.Public(main.social.customChat));
+	var newMsg = Message.Public(msg.text,msg.from,main.social.customChat);
+	Message.add(key,newMsg);
 	
 	//Send info
-	var alreadySentTo = [];
+	var alreadySentTo = [key];
 	for(var i in act.activeList){
 		if(!Actor.isPlayer(i)) continue;	//aka non player
 		alreadySentTo.push(i);
@@ -82,17 +83,18 @@ Message.receive.pm = function(key,msg){
 }
 
 Message.receive.clan = function(key,msg){
+	return;/*
     var clanName = Main.get(key).social.clanList[msg.clan];
     if(!clanName) return Message.add(key,'You typed too many \"/\".');
 	var clan = Clan.get(clanName);
     if(!clan) return Message.add(key,'This clan doesn\'t exist. Strange...');
     
-	var newMsg = Message('clan',msg.text,msg.from,Message.Clan(clan.nick));
+	var newMsg = Message.Clan(msg.text,msg.from,clan.nick);
 	
     for(var i in clan.memberList){	//including speaker
     	if(Actor.isOnline(i))	//is online
 			Message.add(Account.getKeyViaUserName(i),newMsg);
-    }
+    }*/
 }    
 
 
@@ -118,8 +120,30 @@ Message.receive.question = function(key,msg){
 
 
 Message.parseText = function(data){	//TODO
-	return {text:data};
+	var rawData = data;
+	data = data.replaceBracketPattern(Message.parseText.item);
+	
+	return {
+		text:data,
+		hasItem:rawData !== data,
+	};	
 }
+
+Message.parseText.item = function(id){
+	var item = ItemModel.get(id,true);
+	if(!item) return '[[' + id + ']]';
+	if(item.type !== 'equip') 
+		return '[' + item.name + ']';
+	
+	return '<span ' + 
+	'style="color:cyan;cursor:pointer;" ' +
+	'onclick="Dialog.open(\'equipPopup\',{id:\'' + item.id + '\',notOwning:true});" ' +
+	'>[' + item.name + 
+	']</span>';
+}
+
+
+
 
 /*
 Message.parseText = function(data){
@@ -129,7 +153,7 @@ Message.parseText = function(data){
 	data = data.replaceCustomPattern('http://puu.sh/','.jpg',Message.parseText.puush);
 	data = data.replaceCustomPattern('http://puu.sh/','.txt',Message.parseText.puush);
 	var item = data;
-	data = data.replacePattern(Message.parseText.item);
+	
 	return {text:data,item:data !== item,puush:puush !== item};
 }
 
@@ -140,17 +164,7 @@ Message.parseText.puush = function(link){
  
 
 //'http://puu.sh/8H2H1.png'.slice(-9,-4)
-Message.parseText.item = function(id){
-	var item = ItemModel.get(id);
-	if(!item || item.type !== 'equip') return '[' + id + ']';
-	
-	return '<span ' + 
-	'style="color:green" ' +
-	'onclick="Dialog.open(\'equipPopup\',\'' + item.id + '\');" ' + 
-	'onmouseout="Dialog.close(\'equipPopup\');' + '" ' + 
-	'>[' + item.name + 
-	']</span>';
-}.('',id);
+
 */
 
 

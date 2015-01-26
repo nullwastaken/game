@@ -6,7 +6,8 @@
 var s = loadAPI('v1.0','QlureKill',{
 	name:"Lure & Kill",
 	author:"rc",
-	thumbnail:"",
+	maxParty:2,
+	thumbnail:true,
 	description:"Kill monsters by first luring them.",
 	scoreModInfo:"Depends on amount of kills. [Only for Infinite Challenge]."
 });
@@ -81,7 +82,7 @@ s.newEvent('startGame',function(key){ //teleport and spawn enemy
 	s.removeQuestMarker(key,'start');
 	var chronoVisible = !!s.isChallengeActive(key,'speedrun');
 	s.startChrono(key,'timer',chronoVisible);
-	s.teleport(key,'main','t1','solo',true);
+	s.teleport(key,'main','t1','party',true);
 	s.setRespawn(key,'QfirstTown-north','t7','main');
 	s.message(key,'The strange shape on the ground weakens enemies.');
 	s.message(key,'Kill ' + s.get(key,'enemyToKill') + ' enemies to complete the quest.');
@@ -100,8 +101,8 @@ s.newEvent('startGame',function(key){ //teleport and spawn enemy
 	}
 });
 s.newEvent('spawnEnemy',function(key){ //
-	var spot = ['e1','e2','e3','e4','e5','e6','e7','e8'].random();
-	var monster = ['plant','bat','bee','mushroom','skeleton','ghost','taurus','mummy'].random();
+	var spot = ['e1','e2','e3','e4','e5','e6','e7','e8'].$random();
+	var monster = ['plant','bat','bee','mushroom','skeleton','ghost','taurus','mummy'].$random();
 	s.spawnActor(key,'main',spot,monster,{
 		hp:5000,
 		globalDmg:0.5,
@@ -177,10 +178,19 @@ s.newMapAddon('QfirstTown-north',{
 			m.spawnActorGroup.list("taurus",1),
 			m.spawnActorGroup.list("mummy",1),
 		]);
+		
 		m.spawnActorGroup(spot.e2,[
 			m.spawnActorGroup.list("bird",1),
 			m.spawnActorGroup.list("dragon",1),
 		]);
+		/*
+		m.spawnActor(spot.e2,'npc',{
+			nevermove:true,
+			nevercombat:false,
+			combat:true,
+			hpMax:10000000
+		});
+		*/
 		m.spawnActorGroup(spot.e3,[
 			m.spawnActorGroup.list("salamander",1),
 			m.spawnActorGroup.list("larva",1),

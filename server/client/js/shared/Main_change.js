@@ -36,7 +36,7 @@ Main.setChange = function(act,frame){
 
 Main.compressDb = function(main){ //Main.Quest.compressDb separated
 	return {
-		invList:Main.ItemList.compressDb(main.invList),
+		invList:Main.ItemList.compressDb(ItemList.combine(main.invList,main.tradeList)),
 		bankList:Main.ItemList.compressDb(main.bankList),
 		social:Main.Social.compressDb(main.social),
 		chrono:Main.Chrono.compressDb(main.chrono),
@@ -53,6 +53,7 @@ Main.compressDb = function(main){ //Main.Quest.compressDb separated
 Main.uncompressDb = function(main,key){
 	main.invList = Main.ItemList.uncompressDb(main.invList,key);
 	main.bankList = Main.ItemList.uncompressDb(main.bankList,key);
+	main.tradeList = Main.ItemList(key);
 	
 	main.social = Main.Social.uncompressDb(main.social);
 	main.chrono = Main.Chrono.uncompressDb(main.chrono);
@@ -71,6 +72,8 @@ Main.uncompressChange = function(change){
 	
 	if(change.invList) change.invList = Main.ItemList.uncompressClient(change.invList);
 	if(change.bankList) change.bankList = Main.ItemList.uncompressClient(change.bankList);
+	if(change.tradeList) change.tradeList = Main.ItemList.uncompressClient(change.tradeList);
+
 	if(change.party) change.party = Main.Party.uncompressClient(change.party);
 	
 	if(change.questHint){	//bad
@@ -100,7 +103,8 @@ Main.applyChange = function(main,change){
 	change = Main.uncompressChange(change);
 	//if(change.contribution) Contribution.init(false);	//bad...
 	
-	if(change.temp)	Main.applyTempChange(main,change.temp);
+	if(change.temp)	
+		Main.applyTempChange(main,change.temp);
 	
 	for(var i in change)
 		Tk.viaArray.set({'origin':main,'array':i.split(','),'value':change[i]});	
@@ -123,8 +127,11 @@ Main.initFlag = function(act){	//return true if not empty
 		else if(what === 'social,friendList')	act.flag[what] = act.social.friendList;
 		else if(what === 'social,clanList')	act.flag[what] = act.social.clanList;
 		else if(what === 'questActive') act.flag[what] = act.questActive; 
+		else if(what === 'acceptPartyInvite') act.flag[what] = act.acceptPartyInvite;
 		else if(what === 'dialogue') act.flag[what] = act.dialogue;
 		else if(what === 'bankList') act.flag[what] = Main.ItemList.compressClient(act.bankList);
+		else if(what === 'tradeList') act.flag[what] = Main.ItemList.compressClient(act.tradeList);
+		else if(what === 'tradeInfo') act.flag[what] = Main.getUpdatedTradeInfo(act);
 		else if(what === 'currentTab') act.flag[what] = act.currentTab; 
 		else if(what === 'dailyTask') act.flag[what] = act.dailyTask;
 		else if(what === 'contribution')	act.flag[what] = act.contribution;

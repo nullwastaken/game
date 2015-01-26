@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Equip','OptionList','Server','Contribution','ItemList','Highscore','Clan','Challenge','Sign','Social','Message','Main','Dialogue','Quest'],['Command']));
+eval(loadDependency(['Actor','Account','Equip','Socket','OptionList','Server','Combat','Contribution','ItemList','Highscore','Clan','Challenge','Sign','Social','Message','Main','Dialogue','Quest'],['Command']));
 if(!SERVER) eval('var Command');
 
 //quests needed to be loaded first via D b.quest.$keys() for Command.Param.quest
@@ -69,7 +69,7 @@ Command.init = function(){
 		
 		var txt = text.slice(1);
 		for(var i in DB){
-			if(!txt.contains(i)) continue;
+			if(!txt.$contains(i)) continue;
 			var cmd = DB[i];	//a match!
 			var str = cmd.description;
 			for(var j in cmd.param){
@@ -80,6 +80,8 @@ Command.init = function(){
 			return;	
 		}
 		return false;	//no command matches $command
+	},function(){
+		return Dialog.chat.getInput();
 	});
 }
 
@@ -110,7 +112,7 @@ Command.receive.verifyInput = function(d){
 		if(p[i] !== undefined && doc[i].type === 'string'){
 			if(typeof p[i] !== 'string') return 'param' + i + ' is not string'; 
 			
-			if(doc[i].whiteList && !doc[i].whiteList.contains(p[i])) return 'param' + i + ' not part of whiteList';
+			if(doc[i].whiteList && !doc[i].whiteList.$contains(p[i])) return 'param' + i + ' not part of whiteList';
 		}
 	}
 	for(++i;i < doc.length; i++){
@@ -145,6 +147,15 @@ Command.execute = function(func,param){
 
 //############
 //############
+
+Command('invite','Invite player to party.',true,[ //{
+	Command.Param('string','Username',false),
+],function(key,user){
+	var act = Actor.get(key);
+	var eid = Account.getKeyViaUsername(user);
+	if(!eid) return Message.add(key,'This player doesn\'t exist.');
+	Actor.click.party(act,eid);
+}); //}
 
 //Fl
 Command('fl,add','Add a new Friend to your Friend List',true,[ //{
@@ -181,7 +192,10 @@ Command('fl,pm','Change who can PM you right now.',true,[ //{
 Command('mute',"Mute a player.",true,[ //{
 	Command.Param('string','Username',false),
 ],function(key,user){
-	Main.mutePlayer(Main.get(key),user);
+	Main.question(Main.get(key),function(){
+		Main.mutePlayer(Main.get(key),user);
+		Message.add(key,'To unmute, type $unmute,' + user + '.');
+	},'Are you sure you want to mute "' + user + '"?','boolean');
 }); //}
 Command('unmute',"Unmute a player.",true,[ //{
 	Command.Param('string','Username',false),
@@ -190,15 +204,6 @@ Command('unmute',"Unmute a player.",true,[ //{
 }); //}
 
 //Window
-Command('win,bank,click',"Withdraw Items from Bank.",false,[ //{
-	Command.Param.mouse(),
-	Command.Param('number','Slot',false,{max:255}),
-	Command.Param('number','Amount to withdraw',true,{default:1}),
-],function(key,side,slot,amount){
-	var m = Main.get(key);
-	Main.clickBank(m,side,slot,amount);
-}); //}
-
 Command('win,quest,toggleChallenge',"Toggle a Quest Challenge. Only possible before starting the quest.",false,[ //{
 	Command.Param('string','Challenge Id',false),
 ],function(key,challenge){
@@ -214,8 +219,7 @@ Command('win,quest,abandon',"Abandon a quest.",false,[ //{
 ],function(key,qid){
 	var main = Main.get(key);
 	if(main.quest[qid] && Date.now() - main.quest[qid]._startTime > CST.MIN)
-		if(!Main.quest.hasRatedQuest(main,qid)) 
-			Main.displayQuestRating(main,qid,true);
+		Main.displayQuestRating(main,qid,true);
 			
 	Main.abandonQuest(main);
 }); //}
@@ -225,7 +229,7 @@ Command('win,reputation,add',"Select a Reputation",false,[ //{
 	Command.Param('number','X',false,{max:14}),
 ],function(key,num,i,j){	
 	if(Main.getQuestActive(Main.get(key)) !== null) 
-		return Message.add(key,'Finish the quest you\'re doing before modifying your Reputation.');
+		return Message.addPopup(key,'Finish the quest you\'re doing before modifying your Reputation.');
 	Main.reputation.add(Main.get(key),num,i,j);
 }); //}
 Command('win,reputation,clear',"Clear Reputation Grid",false,[ //{
@@ -233,7 +237,7 @@ Command('win,reputation,clear',"Clear Reputation Grid",false,[ //{
 ],function(key,num,i,j){
 	var main = Main.get(key);
 	if(Main.getQuestActive(main) !== null) 
-		return Message.add(key,'Finish the quest you\'re doing before modifying your Reputation.');
+		return Message.addPopup(key,'Finish the quest you\'re doing before modifying your Reputation.');
 	Main.question(main,function(){
 		Main.reputation.clearGrid(main,num);
 	},'Are you sure you want to clear the grid?','boolean');
@@ -245,14 +249,14 @@ Command('win,reputation,remove',"Remove a Reputation",false,[ //{
 	Command.Param('number','X',false,{max:14}),
 ],function(key,num,i,j){
 	if(Main.getQuestActive(Main.get(key)) !== null) 
-		return Message.add(key,'Finish the quest you\'re doing before modifying your Reputation.');
+		return Message.addPopup(key,'Finish the quest you\'re doing before modifying your Reputation.');
 	Main.reputation.remove(Main.get(key),num,i,j);
 }); //}
 Command('win,reputation,page',"Change Active Reputation Page",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
 ],function(key,num){
 	if(Main.getQuestActive(Main.get(key)) !== null) 
-		return Message.add(key,'Finish the quest you\'re doing before modifying your Reputation.');
+		return Message.addPopup(key,'Finish the quest you\'re doing before modifying your Reputation.');
 	Main.reputation.changeActivePage(Main.get(key),num);
 }); //}
 
@@ -278,6 +282,21 @@ Command('win,ability,swap',"Set an Ability to a Key",false,[ //{
 }); //}
 
 
+Command('sendPing','Send Ping',false,[ //{
+	Command.Param('number','Ping',false),
+],function(key,ping){
+	Socket.addPingData(Socket.get(key),ping);
+}); //}
+
+Command('setAcceptPartyInvite','Change if you accept party invite or not',false,[ //{
+	Command.Param('boolean','Value',false),
+],function(key,val){
+	Main.get(key).acceptPartyInvite = val;
+	Main.setFlag(Main.get(key),'acceptPartyInvite');
+	Message.add(key,val ? 'You can receive party invitations.' : 'You cannot receive party invitations.');
+}); //}
+
+
 //Tab
 Command('useItem',"Select an option from the Right-Click Option List of an item.",false,[ //{
 	Command.Param('string','Id',false),
@@ -299,6 +318,34 @@ Command('transferBankInv',"Transfer items from Bank to Inventory.",false,[ //{
 ],function(key,id,amount){
 	Main.transferBankInv(Main.get(key),id,amount);
 }); //}
+
+
+Command('transferInvTrade',"Transfer items from Inventory to Trade.",false,[ //{
+	Command.Param('string','Item Id',false),
+	Command.Param('number','Amount',true,{default:1,min:1}),
+],function(key,id,amount){
+	Main.transferInvTrade(Main.get(key),id,amount);
+}); //}
+
+Command('transferTradeInv',"Transfer items from Bank to Inventory.",false,[ //{
+	Command.Param('string','Item Id',false),
+	Command.Param('number','Amount',true,{default:1,min:1}),
+],function(key,id,amount){
+	Main.transferTradeInv(Main.get(key),id,amount);
+}); //}
+
+Command('tradeAcceptSelf',"Change if you accept the trade.",false,[ //{
+	Command.Param('boolean','New State',false),
+],function(key,val){
+	Main.setTradeAcceptSelf(Main.get(key),val);
+}); //}
+
+Command('tradeCloseWin',"Close trade window.",false,[ //{
+],function(key,val){
+	Main.stopTrade(Main.get(key));
+}); //}
+
+
 
 //############
 
@@ -330,13 +377,8 @@ Command('equipUpgrade',"Upgrade an equip.",false,[ //{
 
 Command('equipMastery',"Improve an equip.",false,[ //{
 	Command.Param('string','Equip Id',false),
-],function(key,id){
-	Main.question(Main.get(key),function(key,num){
-		num = +num;
-		if(isNaN(num)) return Message.add(key,'Not a number');
-		Equip.addMasteryExp(key,id,num);
-	},'How many points do you want to invest?','number');
-	
+],function(key,eid){
+	Equip.addMasteryExp.click(key,eid);	
 }); //}
 
 Command('equipSalvage',"Salvage an equip.",false,[ //{
@@ -346,7 +388,6 @@ Command('equipSalvage',"Salvage an equip.",false,[ //{
 }); //}
 
 
-
 //############
 
 Command('lvlup',"Level Up",false,[ //{
@@ -354,6 +395,13 @@ Command('lvlup',"Level Up",false,[ //{
 	Actor.levelUp(Actor.get(key));
 }); //}
 
+Command('enablePvp',"Toggle PvP",false,[ //{
+	Command.Param('boolean','Enable',false),
+],function(key,bool){
+	if(Main.getQuestActive(Main.get(key)))
+		return Message.addPopup(key,'You can\'t toggle PvP while doing a quest.');
+	Actor.enablePvp(Actor.get(key),bool);
+}); //}
 
 Command('tab,removeEquip',"Remove a piece of equipment",false,[ //{
 	Command.Param('string','Equipement Piece',false,{whiteList:CST.equip.piece}),
@@ -405,11 +453,15 @@ Command('logout',"Safe way to log out of the game",false,[ //{
 
 Command('hometele',"Abandon active quest and teleport to Town. Useful if stuck.",false,[ //{
 ],function(key){
-	Main.question(Main.get(key),function(){
+	var main = Main.get(key);
+	var str = Main.getQuestActive(main) 
+		? 'Are you sure you want to abandon active quest and teleport to town?'
+		: 'Teleport to town?';
+	Main.question(main,function(){
 		if(Actor.teleport.town(Actor.get(key),true,false) !== true) return;
-		Main.abandonQuest(Main.get(key));
+		Main.abandonQuest(main);
 		Message.add(key,'You were teleported to first town.');		
-	},'Are you sure you want to abandon active quest and teleport to town?','boolean');
+	},str,'boolean');
 }); //}
 
 Command('dialogue,option',"Choose a dialogue option.",false,[ //{
@@ -430,11 +482,16 @@ Command('actorOptionList',"Select an option from the Right-Click Option List of 
 }); //}
 
 Command('party,join',"Join a party.",true,[ //{
-	Command.Param('string','Party Name (Usually Username)',false),
+
 ],function(key,name){
-	if(name.contains('@') || name.contains('!')) 
-		return Message.add(key,"You can't join this party.");	//reserved
-	Main.changeParty(Main.get(key),name);
+	if(Main.getQuestActive(Main.get(key)))
+		return Message.addPopup(key,"You can't change your party while doing a quest.");
+	
+	Main.question(Main.get(key),function(key,name){
+		if(name.$contains('@') || name.$contains('!') || name.$contains('$')) 
+			return Message.addPopup(key,"You can't join this party.");	//reserved
+		Main.changeParty(Main.get(key),name);
+	},'What party would you like to join?','string');	
 }); //}
 
 Command('party,leave',"Leave your party.",true,[ //{
@@ -448,7 +505,7 @@ Command('pvp',"Teleport/Quit to PvP Zone.",true,[ //{
 	return;
 	/*
 	var act = Actor.get(key);
-	if(act.map.contains('pvpF4A')){	//TOFIX
+	if(act.map.$contains('pvpF4A')){	//TOFIX
 		Actor.teleport(act,act.respawnLoc.safe);
 		Message.add(key,"You can no longer attack or be attacked by other players.");
 	}

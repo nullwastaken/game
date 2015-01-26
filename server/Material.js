@@ -13,7 +13,7 @@ var Material = exports.Material = function(id,name,icon,skill,lvl){
 	}
 	ItemModel('Qsystem',Quest.addPrefix('Qsystem',id),tmp.name,tmp.icon,[],'Crafting Material',{
 		type:'material',
-		examine:'A material used to create equip with plans.'
+		examine:'A material used to improve equipment.'
 	});
 
 	DB[id] = tmp;
@@ -21,7 +21,7 @@ var Material = exports.Material = function(id,name,icon,skill,lvl){
 
 Material.getRandom = function(lvl){
 	lvl = Material.roundLevel(lvl);
-	var random = Material.DROP_RATE.random();
+	var random = Material.DROP_RATE.$random();
 	return random + '-' + lvl;
 }
 
@@ -35,6 +35,7 @@ Material.getMaterialRelatedToSkill = function(skill,lvl){
 }
 
 Material.roundLevel = function(lvl){
+	lvl = Math.min(lvl,80);
 	return Math.round((lvl ||0)/20)*20;
 }	
 

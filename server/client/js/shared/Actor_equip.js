@@ -28,10 +28,8 @@ Actor.Equip.compressDb = function(equip){
 
 Actor.Equip.uncompressDb = function(equip){
 	var equip = Actor.Equip(Actor.Equip.part.apply(this,equip),null);
-	if(!Actor.Equip.testIntegrity(equip)) return Actor.Equip.fixIntegrity(equip);
-	return equip;
+	return Actor.Equip.fixIntegrity(equip);	//assume Actor.Equip.fetch was called earlier
 	//Message.add(key,'Sorry, we can\'t find the data about one or multiples equips you own... :('); 
-	
 }
 
 Actor.Equip.compressClient = function(equip,act){
@@ -42,21 +40,21 @@ Actor.Equip.uncompressClient = function(equip){
 	return Actor.Equip(equip);
 }
 
-Actor.Equip.testIntegrity = function(equip){
-	return Actor.Equip.fixIntegrity(equip,true);
+Actor.Equip.fetch = function(equip,username,cb){
+	//equip compress is just array [ids]
+	Equip.fetchList(equip,username,function(){
+		cb();
+	});
 }
-
-Actor.Equip.fixIntegrity = function(equip,isOnlyTesting){
+Actor.Equip.fixIntegrity = function(equip){
 	for(var j in equip){
 		for(var i in equip[j].piece){
 			if(equip[j].piece[i] && !Equip.get(equip[j].piece[i])){
-				if(isOnlyTesting) return false;
 				ERROR(2,'cant find equip',equip[j].piece[i]);
 				equip[j].piece[i] = '';
 			}
 		}
 	}
-	if(isOnlyTesting) return true;
 	return equip;	
 }
 
@@ -73,6 +71,8 @@ Actor.equip.click = function(act,eid){	//called when clicking in inventory
 	
 	if(act.combatContext.equip === 'quest' && Actor.getMain(act).questActive !== equip.quest)
 		return Message.add(act.id,"You can only use equips you received from the quest you're doing.");
+	if(Actor.getLevel(act) < equip.lvl)
+		return Message.add(act.id,"You need to be at least level " + equip.lvl + " to use that equipment.");	
 	
 	Actor.changeEquip(act,eid);
 }

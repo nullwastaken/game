@@ -49,7 +49,7 @@ Main.social.update = function(main){	//should only be for safety, Main.onSignInO
 Main.social.onSignInOff = function(main,direction){
 	var name = main.username;
 	var text = name.q() + ' just logged ' + direction + '.';
-	var msg = Message('signNotification',text,name);
+	var msg = Message.SignNotification(text);
 	for(var i in Main.LIST){
 		var otherMain = Main.LIST[i];
 		if(otherMain.username === name) continue;

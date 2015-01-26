@@ -4,22 +4,32 @@ Dialog('reputation','Reputation Reward',Dialog.Size(800,600),Dialog.Refresh(func
 },function(){
 	return Tk.stringify(main.reputation);
 }));
+var GRID = null;
 
 //Dialog.open('reputation')
-Dialog.reputation = function (html,variable){
-	var left = Dialog.reputation.left(html,variable);
-	var grid = Dialog.reputation.grid(html,variable);
-	var conv = Dialog.reputation.converter(html,variable);
+Dialog.reputation = function (html){
+	var top = Dialog.reputation.top();
+	var grid = GRID = Dialog.reputation.grid();
+	var conv = Dialog.reputation.converter();
 	
 	html.append($('<div>')
-		.append(left,grid)
+		.append(top,grid)
 		.css({float:'left'})
 	);
 	html.append(conv.css({float:'right'}));
 	
 }
+Dialog.reputation.converterPreview = function(id,mouseout){
+	return function(){
+		GRID.html('');
+		if(!mouseout)
+			GRID.append(Dialog.reputation.grid([id]));
+		else
+			GRID.append(Dialog.reputation.grid());
+	}
+}
 
-Dialog.reputation.left = function(html,variable){
+Dialog.reputation.top = function(){
 	var usablePt = main.reputation.usablePt.r(2);
 	var usedPt = main.reputation.list[main.reputation.activeGrid].usedPt;	//bad
 	var unusedPt = (usablePt-usedPt).r(0);
@@ -55,7 +65,7 @@ Dialog.reputation.left = function(html,variable){
 	return el;
 }
 
-Dialog.reputation.grid = function(html,variable){
+Dialog.reputation.grid = function(extraConv){
 	var iconSize = 24;
 	var border = iconSize/3;
 	var border2 = border/2;
@@ -69,7 +79,7 @@ Dialog.reputation.grid = function(html,variable){
 	var grid = Main.reputation.getGrid(main);
 	
 	//Draw Stat	
-	var gridBase = ReputationGrid.getConverted(main).base;
+	var gridBase = ReputationGrid.getConverted(main,extraConv).base;
 	for(var i = 0 ; i < grid.length ; i++){
 		for(var j = 0 ; j < grid[i].length ; j++){
 			var base = gridBase[i][j];
@@ -134,7 +144,7 @@ Dialog.reputation.grid = function(html,variable){
 
 
 
-Dialog.reputation.converter = function(html,variable){
+Dialog.reputation.converter = function(){
 	var div = $('<div>');
 	div.append($('<h2>')
 		.html('Converter')
@@ -148,7 +158,7 @@ Dialog.reputation.converter = function(html,variable){
 		el.append('<h3>Level ' + g.lvl + ':</h3>');
 		for(var j in g.list){
 			var conv = ReputationConverter.get(g.list[j]);
-			var isSelected = Main.reputation.get(main).converter.contains(conv.id);
+			var isSelected = Main.reputation.get(main).converter.$contains(conv.id);
 			var button = conv.getButtonAppend()
 				.attr('title',conv.description)
 				.click((function(conv,isSelected){
@@ -158,10 +168,16 @@ Dialog.reputation.converter = function(html,variable){
 						else
 							Command.execute('win,reputation,converterAdd',[main.reputation.activeGrid,conv.id]);
 					}
-				})(conv,isSelected));
+				})(conv,isSelected))
+				
 			if(isSelected)
 				button.css({border:'4px solid red'});
-				
+			else {
+				button.hover(
+					Dialog.reputation.converterPreview(conv.id,false),
+					Dialog.reputation.converterPreview(conv.id,true)
+				);
+			}
 			el.append(button);
 		}
 		div.append(el);

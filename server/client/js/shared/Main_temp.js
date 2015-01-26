@@ -162,31 +162,9 @@ Main.applyTempChange = function(main,temp){	//on client when receive
 		else
 			Dialog.open(i,temp.dialog[i]);
 	}
-	if(temp.playerOnline){
-		var div = $('<div>')
-			.html(temp.playerOnline.length + ' player(s) online: You, ');
-			
-		for(var i in temp.playerOnline){
-			if(temp.playerOnline[i] === player.name)
-				temp.playerOnline.splice(+i,1);
-		}
-			
-		for(var i in temp.playerOnline){
-			div.append($('<span>')
-				.html(temp.playerOnline[i])
-				.click((function(i){
-					return function(){
-						Message.setInputForPM(key,temp.playerOnline[i]);
-						//reply to temp.playerOnline[i]
-					}
-				})(i))
-				.attr('title','Click to send PM')
-			);
-			if(i != temp.playerOnline.length - 1)
-				div.append(', ');
-		}
-		$('#playerOnline').html(div);
-	}
+	if(temp.playerOnline)
+		Dialog.open('playerOnline',temp);
+	
 	
 	if(temp.questRating)
 		Dialog.open('questRating',temp.questRating);
@@ -197,5 +175,4 @@ Main.applyTempChange = function(main,temp){	//on client when receive
 	for(var i in temp.screenEffectRemove)
 		Main.screenEffect.remove(main,temp.screenEffectRemove[i]);	
 }
-
 

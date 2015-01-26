@@ -1,6 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 eval(loadDependency(['Actor','Main','Boss','Combat','ActiveList','Map','Collision','Sprite','Anim','Boost']));
 
+
 Actor.bumper = {};
 Actor.Bumper = Actor.MoveInput = function(){
 	return {
@@ -12,7 +13,6 @@ Actor.Bumper = Actor.MoveInput = function(){
 }
 Actor.bumper.update = function(act){	//HOTSPOT
 	if(act.ghost) return;
-	
 	/*
 	if(!Actor.testInterval(act,3) && act.type !== 'player'){	//only update if spd is high, but still update every 3 frames no matter what
 		if(!(act.spdX > 7 || act.spdX < -7 || act.spdY > 7 || act.spdY < -7)) return;	//bit faster than Math.abs
@@ -37,9 +37,15 @@ Actor.bumper.update = function(act){	//HOTSPOT
 	if(act.spdX > 7) act.bumper.right = Collision.actorMap(Math.floor((act.x + act.sprite.bumperBox.right.x)/32),Math.floor((act.y + act.sprite.bumperBox.right.y)/32),act.map,act);
 	else if(act.spdX < -7) act.bumper.left = Collision.actorMap(Math.floor((act.x + act.sprite.bumperBox.left.x)/32),Math.floor((act.y + act.sprite.bumperBox.left.y)/32),act.map,act);
 	if(act.spdY > 7) act.bumper.down = Collision.actorMap(Math.floor((act.x + act.sprite.bumperBox.down.x)/32),Math.floor((act.y + act.sprite.bumperBox.down.y)/32),act.map,act);
-	else if(act.spdY < -7) act.bumper.up = Collision.actorMap(Math.floor((act.x + act.sprite.bumperBox.up.x)/32),Math.floor((act.y + act.sprite.bumperBox.up.y)/32),act.map,act);
-		
+	else if(act.spdY < -7) act.bumper.up = Collision.actorMap(Math.floor((act.x + act.sprite.bumperBox.up.x)/32),Math.floor((act.y + act.sprite.bumperBox.up.y)/32),act.map,act);	
 }
+Actor.moveBy = function(act,x,y){	//not testing collision
+	if(Math.abs(x) > 25 || Math.abs(y) > 25) 
+		return ERROR(3,'this is only meant for small variation');
+	act.x += x;
+	act.y += y;
+}
+
 
 Actor.bumper.testDeath = function(act){	//quick fix if manage to past thru wall
 	for(var i in act.bumper) if(!act.bumper[i]) return;	//bumper, not bumperBox
@@ -52,7 +58,7 @@ Actor.fall = function(act){	//default fall
 	else act.hp = -1;
 }
 
-Actor.move = function(act){
+Actor.move = function(act){	//if shaking, cuz add acc vs not adding acc is too big
 	if(act.pushable) return Actor.pushable.update(act);
 	
 	Actor.bumper.update(act);   //test if collision with map    
@@ -61,12 +67,11 @@ Actor.move = function(act){
 	if(act.bumper.down){act.spdY = -Math.abs(act.spdY*0.5)*act.bounce - act.bounce;}
 	if(act.bumper.left){act.spdX = Math.abs(act.spdX*0.5)*act.bounce + act.bounce;} 
 	if(act.bumper.up){act.spdY = Math.abs(act.spdY*0.5)*act.bounce + act.bounce;} 
-
+	
 	if(act.moveInput.right && !act.bumper.right && act.spdX < act.maxSpd){act.spdX += act.acc;}
 	if(act.moveInput.down && !act.bumper.down && act.spdY < act.maxSpd){act.spdY += act.acc;}
 	if(act.moveInput.left && !act.bumper.left && act.spdX > -act.maxSpd){act.spdX -= act.acc;}
 	if(act.moveInput.up && !act.bumper.up && act.spdY > -act.maxSpd){act.spdY -= act.acc;}	
-	
 	
 	//Friction + Min Spd
 	if (Math.abs(act.spdX) < 0.1){act.spdX = 0;}	
@@ -95,8 +100,47 @@ Actor.move = function(act){
 		Actor.move.updateAimPenalty(act);
 		Actor.move.testFall(act);
 	}
-		
 }
+
+Actor.move.client = function(act){
+	if(!ClientPrediction.isActive()) return;
+	
+	Actor.bumper.update.client(act);   //test if collision with map    
+		
+	act.clientSpdX = act.clientSpdX || 0;	//TEMP
+	act.clientSpdY = act.clientSpdY || 0;
+		
+	if(act.bumper.right){act.clientSpdX = -Math.abs(act.clientSpdX*0.5)*act.bounce - act.bounce;} 
+	if(act.bumper.down){act.clientSpdY = -Math.abs(act.clientSpdY*0.5)*act.bounce - act.bounce;}
+	if(act.bumper.left){act.clientSpdX = Math.abs(act.clientSpdX*0.5)*act.bounce + act.bounce;} 
+	if(act.bumper.up){act.clientSpdY = Math.abs(act.clientSpdY*0.5)*act.bounce + act.bounce;} 
+
+	if(act.moveInput.right && !act.bumper.right && act.clientSpdX < act.maxSpd){act.clientSpdX += act.acc;}
+	if(act.moveInput.down && !act.bumper.down && act.clientSpdY < act.maxSpd){act.clientSpdY += act.acc;}
+	if(act.moveInput.left && !act.bumper.left && act.clientSpdX > -act.maxSpd){act.clientSpdX -= act.acc;}
+	if(act.moveInput.up && !act.bumper.up && act.clientSpdY > -act.maxSpd){act.clientSpdY -= act.acc;}	
+		
+		
+	//Friction + Min Spd
+	if (Math.abs(act.clientSpdX) < 0.1){act.clientSpdX = 0;}	
+	if (Math.abs(act.clientSpdY) < 0.1){act.clientSpdY = 0;}
+	
+	act.x += act.clientSpdX;
+	act.y += act.clientSpdY;
+	act.clientSpdX *= act.friction;	
+	act.clientSpdY *= act.friction;
+}
+//bumperBox is NaN
+Actor.bumper.update.client = function(act){
+	for(var i in Actor.bumper.update.client.TEMP)
+		act.bumper[i] = Collision.actorMap(
+			Math.floor((act.x + Actor.bumper.update.client.TEMP[i].x)/32),
+			Math.floor((act.y + Actor.bumper.update.client.TEMP[i].y)/32),
+			act.map,
+			act
+		);
+}
+Actor.bumper.update.client.TEMP = {"right":{"x":32,"y":23},"down":{"x":0,"y":54},"left":{"x":-32,"y":23},"up":{"x":0,"y":-8}};	//hardcoded
 
 Actor.move.updateAimPenalty = function (act){	//BAD
 	if(act.abilityChange.press === '000000') return;	

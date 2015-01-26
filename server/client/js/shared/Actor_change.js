@@ -55,12 +55,14 @@ Actor.undoInitPack = function(draw,id){
 		act.type = 'npc';
 		act.preventAbility = true;
 		act.hp = 1;
+		act.hpOld = 1;
 		act.hpMax = 1;
 		act.combat = 0;
 	} else {
 		act.type = draw[0];
 		act.preventAbility = false;
 		act.hp = draw[10];
+		act.hpOld = draw[10];
 		act.hpMax = draw[11];
 		act.weakness = Actor.Weakness(draw[12],draw[13]);
 		act.context = Actor.undoInitPack.generateContext(act);
@@ -72,6 +74,10 @@ Actor.undoInitPack = function(draw,id){
 	act.spd = 0;
 	act.spdX = 0;
 	act.spdY = 0;
+	act.withinStrikeRange = false;
+	act.hitHistory = [];
+	act.hitHistoryToDraw = [];	//BADD
+	
 	Sprite.updateBumper(act);	//bad, idk if needed
 	
 
@@ -143,6 +149,7 @@ Actor.setChange.npc = function(act,frame){
 		}
 		if(frame % 4 === 0){
 			var angle = Math.floor(act.angle/15)*15+1;	if(act.old.a !== angle) act.change.a = act.old.a = angle;
+			if(act.flag.hitHistory){ act.flag.hitHistory = 0; act.change.hitHistory = act.hitHistory; act.hitHistory = []; }
 		}
 	}
 	if(!act.nevercombat){
@@ -167,7 +174,7 @@ Actor.setChange.npc = function(act,frame){
 	}	
 }
 
-Actor.setChange.player = function(act,frame){	//BOB
+Actor.setChange.player = function(act,frame){
 	if(frame % 2 === 0){
 		var x = Math.floor(act.x);	if(act.old.x !== x) act.change.x = act.old.x = x; 
 		var y = Math.floor(act.y);	if(act.old.y !== y) act.change.y = act.old.y = y;
@@ -176,6 +183,7 @@ Actor.setChange.player = function(act,frame){	//BOB
 	}
 	if(frame % 4 === 0){
 		var angle = Math.floor(act.angle);	if(act.old.a !== angle) act.change.a = act.old.a = angle;	//
+		if(act.flag.hitHistory){ act.flag.hitHistory = 0; act.change.hitHistory = act.hitHistory; act.hitHistory = []; }
 	}
 	if(frame % 6 === 0){
 		//var x = Math.floor((Math.abs(act.spdX)+Math.abs(act.spdY))/2);	if(act.old.spd !== x) act.change.spd = act.old.spd = x;
@@ -223,15 +231,18 @@ Actor.Flag = function(){
 }
 
 Actor.setFlag = function(act,what){
-	act.flag[what] = 1;
+	act.flag[what] = 'use need to edit Actor.initFlag';
 }
 
-Actor.initFlag = function(act){	//return true if not empty
+Actor.initFlag = function(act){	//return true if not empty.  note: data for yourself only
 	for(var what in act.flag){
+		//comment cuz check Actor.setFlag
 		if(what === 'curseClient') act.flag[what] = act.curseClient;		//must be first cuz public and npc
+		else if(what === 'hitHistory'){ act.flag[what] = act.hitHistory; }
 		else if(what === 'spriteFilter') act.flag[what] = act.spriteFilter;
 		else if(what === 'permBoost') act.flag[what] = act.permBoost;
 		else if(what === 'equip')	act.flag[what] = Actor.Equip.compressClient(act.equip,act);
+		else if(what === 'pvpEnabled') act.flag[what] = act.pvpEnabled;
 		else if(what === 'questMarker') act.flag[what] = act.questMarker;
 		else if(what === 'ability') act.flag[what] = Actor.Ability.compressClient(act.ability,act);
 		else if(what === 'abilityList')	act.flag[what] = Actor.AbilityList.compressClient(act.abilityList,act);
@@ -259,18 +270,16 @@ Actor.resetChangeForAll = function(){
 
 //#############
 
-Actor.uncompressChange = function(change){
+Actor.uncompressChange = function(change,act){
 	if(change.flag){
 		for(var i in change.flag){
 			change[i] = change.flag[i];
 		}
 		delete change.flag;
 	}
-	
 	change = Actor.uncompressXYA(change);
 	change = Actor.uncompressChange.chargeClient(change);
 	change = Actor.uncompressChange.serverXY(change);
-	
 	
 	if(change.ability) change.ability = Actor.Ability.uncompressClient(change.ability);
 	if(change.equip) change.equip = Actor.Equip.uncompressClient(change.equip);
@@ -280,6 +289,8 @@ Actor.uncompressChange = function(change){
 	if(change.skill){
 		Dialog.open('expPopup',change.skill.exp - Actor.getExp(player))
 	}
+	
+	
 	
 	return change;
 }
@@ -352,8 +363,12 @@ Actor.uncompressXYA = function(info){
 
 Actor.applyChange = function(act,change){
 	if(!change) return;
-	change = Actor.uncompressChange(change);
+	change = Actor.uncompressChange(change,act);
 	
+	for(var i in change.hitHistory){
+		console.log(change.hitHistory[i]);
+		act.hitHistoryToDraw.push(Actor.HitHistoryToDraw(change.hitHistory[i]));	//BAD	
+	}
 	for(var j in change)
 		Tk.viaArray.set({'origin':act,'array':j.split(','),'value':change[j]});	
 }
@@ -399,7 +414,6 @@ Actor.uncompressDb = function(act,key){
 		act.skill = Actor.Skill(act.skill.exp,act.skill.lvl);
 		act.context = act.name;
 		act.id = key;
-
 		return act;
 	} catch(err){ 
 		ERROR.err(3,err,'error with uncompress Db');

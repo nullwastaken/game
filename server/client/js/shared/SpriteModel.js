@@ -25,7 +25,8 @@ SpriteModel = exports.SpriteModel = function(id,src,bumperBox,extra,anim){
 		canvasRotate:0,
 		mirror:0,			//UNUSED: if 90 < angle < 270, symetry
 		offsetY:0,
-		offsetX:0
+		offsetX:0,
+		showBorder:true,
 	};
 	
 	a.id = id;
@@ -70,6 +71,7 @@ SpriteModel.hitBox = SpriteModel.bumperBox = function(minX,maxX,minY,maxY){
 SpriteModel.bullet = function(id,src,sizeX,sizeY,frame,canvasRotate,extra){
 	extra = extra || {};
 	extra.side = extra.side || [0];
+	extra.showBorder = false;
 	extra.canvasRotate = canvasRotate || 0;
 	return SpriteModel(id,src,[-1,1,-1,1],extra,[
 		SpriteModel.anim('move',frame,sizeX,sizeY,1,{walk:0,dir:extra.side.length})
@@ -127,8 +129,11 @@ SpriteModel.getSignInPack = function(){
 
 
 if(SERVER) return;
-var SpriteFilter = function(name,func){
-	SpriteFilter.LIST[name] = func;
+var SpriteFilter = function(id,func,advanced){
+	SpriteFilter.LIST[id] = {
+		func:func,
+		advanced:advanced || false,
+	}
 }
 SpriteFilter.LIST = {};
 
@@ -165,6 +170,16 @@ SpriteFilter('blue',function(red,green,blue,alpha){
 	]
 });
 
+SpriteFilter('allBlack',function(red,green,blue,alpha){
+	return [
+		0,
+		0,
+		0,
+		alpha
+	]
+},true);
+
+
 SpriteFilter('dodge',function(red,green,blue,alpha){
 	return [
 		red+100,
@@ -175,15 +190,9 @@ SpriteFilter('dodge',function(red,green,blue,alpha){
 });
 
 
+
 //TEST(SpriteModel.DB['warrior-male0']);
 SpriteModel.generateSpriteFilteredImg = function(spriteModel,filter){
-	if(!filter)
-		for(var j in SpriteFilter.LIST){
-			SpriteModel.generateSpriteFilteredImg(spriteModel,j);
-			return;
-		}
-	//#####################
-	
 	var canvas = $('<canvas>')
 		.attr({
 			width:spriteModel.img.width,
@@ -192,27 +201,58 @@ SpriteModel.generateSpriteFilteredImg = function(spriteModel,filter){
 	var ctx = canvas.getContext("2d");
 	ctx.drawImage(spriteModel.img,0,0);
 	
+	if(filter === 'allBlack'){	//need optimization cuz called often
+		SpriteModel.generateSpriteFilteredImg.allColor('black',spriteModel.img,ctx);
+		spriteModel.filteredImg[filter] = new Image();
+		spriteModel.filteredImg[filter].src = canvas.toDataURL();
+		return;
+	}
+	if(filter === 'allRed'){
+		SpriteModel.generateSpriteFilteredImg.allColor('red',spriteModel.img,ctx);
+		spriteModel.filteredImg[filter] = new Image();
+		spriteModel.filteredImg[filter].src = canvas.toDataURL();
+		return;
+	}
+	
 	var imgDataNormal = ctx.getImageData(0,0,canvas.width,canvas.height);
-		
 	var imgData = imgDataNormal.data;
-			
+	
 	for (var i = 0; i < imgData.length; i+=4){
-		var res = SpriteFilter.LIST[filter](imgData[i+0],imgData[i+1],imgData[i+2],imgData[i+3]);
+		var res = SpriteFilter.LIST[filter].func(imgData[i+0],imgData[i+1],imgData[i+2],imgData[i+3]);
 		imgData[i+0] = res[0];
 		imgData[i+1] = res[1];
 		imgData[i+2] = res[2];
 		imgData[i+3] = res[3];
 	}
+	
 	ctx.putImageData(imgDataNormal,0,0);
 	spriteModel.filteredImg[filter] = new Image();
 	spriteModel.filteredImg[filter].src = canvas.toDataURL();
-	
 }
-	
-	
+SpriteModel.generateSpriteFilteredImg.allColor = function(color,img,ctx){
+	ctx.globalCompositeOperation = 'source-atop';
+	ctx.fillStyle = color;
+	ctx.fillRect(0,0,10000,10000);
+}
 
-SpriteModel.getImage = function(model,act){	//BAD with act...
-	if(!act || !act.spriteFilter){
+SpriteModel.get2DArray = function(imgData,height,width){	//no clue if works...
+	var tmp = [];
+	for (var j = 0; j < height; j++){
+		tmp.push([]);
+		for (var i = 0; i < width; i++){
+			tmp[j][i] = {
+				red:imgData[j*width*4+i*4],
+				green:imgData[j*width*4+i*4+1],
+				blue:imgData[j*width*4+i*4+2],
+				alpha:imgData[j*width*4+i*4+3]
+			}
+		}
+	}
+	return tmp;
+}
+
+SpriteModel.getImage = function(model,spriteFilter){	//BAD with act... HARDCODED for border
+	if(!spriteFilter){
 		if(model.img && model.img.complete) 
 			return model.img;	//idk if complete is good...
 		else {
@@ -222,12 +262,11 @@ SpriteModel.getImage = function(model,act){	//BAD with act...
 		}
 	}
 	
-	var filter = act.spriteFilter.filter;
-	if(act.spriteFilter.time-- < 0) act.spriteFilter = null;
-	if(model.filteredImg[filter] && model.filteredImg[filter].complete)
-		return model.filteredImg[filter];
+	var filterId = spriteFilter.filter;
+	if(model.filteredImg[filterId] && model.filteredImg[filterId].complete)
+		return model.filteredImg[filterId];
 	else {
-		SpriteModel.generateSpriteFilteredImg(model,filter);	
+		SpriteModel.generateSpriteFilteredImg(model,filterId);
 		return SpriteModel.getImage(model,null);	//return normal version
 	}
 	

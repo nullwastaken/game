@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Server','ActorGroup','Main','Quest','Map','ActiveList','Message','Drop','Material','Combat']));
+eval(loadDependency(['Actor','Server','Ability','ActorGroup','Main','Quest','Map','ActiveList','Message','Drop','Material','Combat']));
 
 Actor.death = {};
 
@@ -9,7 +9,6 @@ Actor.death.die = function(act){
 	if(act.type === 'npc') Actor.death.die.npc(act,killers);
 	else Actor.death.die.player(act,killers);
 }
-
 
 Actor.death.die.player = function(act,killers){
 	Server.log(3,act.id,'death');
@@ -21,11 +20,7 @@ Actor.death.die.player = function(act,killers){
 	//Quest
 	Main.quest.onDeath(main,killers);
 	
-	//Message
-	var string = 'You are dead... ';
-	string += Actor.death.MESSAGE.random();
-	Message.add(key,string);
-	
+	Message.add(key,'You are dead... ' + Actor.death.MESSAGE.$random());
 	
 	act.dead = 1;
 	act.respawnTimer = 25;
@@ -36,7 +31,7 @@ Actor.death.die.player = function(act,killers){
 		act.deathEvent(act.id,killers[0]);	
 	
 }
-Actor.death.MESSAGE = [
+Actor.death.MESSAGE = [ //{
 	"Please don't ragequit.",
 	"You just got a free teleport! Lucky you.",
 	"Try harder next time.",
@@ -46,7 +41,7 @@ Actor.death.MESSAGE = [
 	"If someone asks, just say you died on purpose.",
 	"If someone asks, just say it's RNG manipulation.",
 	"If someone asks, just say it was a planned deathwarp.",
-];
+]; //}
 
 Actor.death.die.npc = function(act,killers){
 	act.dead = 1;
@@ -63,14 +58,12 @@ Actor.death.die.npc = function(act,killers){
 	Actor.remove(act);
 }
 
-
 Actor.death.loop = function(act){
 	if(act.type === 'npc'){ ERROR(2,'dead npc should already have been removed'); Actor.remove(act); return }
 	
 	if(--act.respawnTimer < 0)	
 		Actor.death.respawn(act);
 }
-
 
 Actor.death.removeSummonChild = function(act){
 	for(var i in act.summon){
@@ -79,7 +72,6 @@ Actor.death.removeSummonChild = function(act){
 		}		
 	}
 }
-
 
 Actor.death.getKillers = function(act){
 	for(var i in act.damagedBy) 
@@ -95,8 +87,10 @@ Actor.death.getKillers = function(act){
 }
 
 Actor.death.useAbility = function(act){
+	return;
+	//doesnt work...
 	for(var i in act.deathAbility){
-		Actor.useAbility(act,Actor.getAbility(act)[act.deathAbility[i]],false,false);
+		Actor.useAbility(act,Ability.functionVersion(act.deathAbility[i]),false,false);
 	}
 }
 
@@ -108,6 +102,8 @@ Actor.death.generateDrop = function(act,killers){
 		if(!Actor.isPlayer(killer)) return;
 		
 		var amount = Main.get(key).quest[act.quest]._enemyKilled++;
+		if(amount > 150) continue; //prevent bot
+		
 		var baseChance = Math.min(1,10 / amount);
 		baseChance *= 1/10;		//constant.
 		var chanceMod = Quest.get(act.quest).reward.item * (1+killer.magicFind.quantity);
@@ -150,6 +146,7 @@ Actor.death.grantExp = function(act,killers){
 		var killer = Actor.get(key);
 		
 		var amount = Main.get(key).quest[act.quest]._enemyKilled;
+		if(amount > 150) continue; //prevent bot
 		var baseExp = 10;	//constant
 		baseExp *= Math.min(1,10 / amount);
 		baseExp *= expMod;

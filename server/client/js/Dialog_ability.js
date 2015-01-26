@@ -200,7 +200,7 @@ Dialog.ability.attack = function(html,variable,ab,right){
 	//###
 	Actor.mastery.update(player);
 	array.push([
-		'Mastery: ',
+		'Boost: ',
 		Img.drawIcon.html('element.' + element,30,element.capitalize()),
 		$('<span>')
 			.html(' x' + player.mastery.dmg[element].sum.r(3))
@@ -253,7 +253,7 @@ Dialog.ability.attack = function(html,variable,ab,right){
 		var s = r(a.chance*100,2) + '% chance to Stun, draining ' + r(a.magn*100,0) + '% Ability Charge for ' + r(a.time/25,2) + 's.';
 		mod.append(s + '<br>');
 	}
-	if(atk.stun.chance > 0){
+	if(atk.bleed.chance > 0){
 		var a = atk.bleed;
 		var s = r(a.chance*100,2) + '% chance to Bleed for ' + r(a.magn*a.time,2) + ' Dmg over ' + r(a.time/25,2) + 's.';
 		mod.append(s + '<br>');

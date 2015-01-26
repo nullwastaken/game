@@ -6,6 +6,8 @@
 var s = loadAPI('v1.0','Qrgb',{
 	name:"RGB",
 	author:"rc",
+	maxParty:4,
+	thumbnail:true,
 	description:"You must restore the RBG setting by activating 2 switches guarded by enemies.",
 });
 var m = s.map; var b = s.boss; var g;
@@ -267,7 +269,7 @@ s.newMapAddon('QfirstTown-north',{
 			if(!s.get(key,'toggleRed'))
 				return s.message(key,'You have no reason to go there.');
 			s.teleport(key,'blueSwitchCave','t1','party',true);	
-			s.setRespawn(key,'QfirstTown-north','t1','main');
+			s.setRespawn(key,'blueSwitchCave','t1','party');
 		},'cave');
 	}
 });
@@ -277,8 +279,8 @@ s.newEvent('teleSouthGreen',function(key){ //
 	if(!s.get(key,'toggleRed'))
 		return s.message(key,'You have no reason to go there.');
 	s.teleport(key,'greenSwitchForest','t1','party',true);	
-	s.setRespawn(key,'QfirstTown-south','t1','main');
-	s.displayPopup(key,'Those red towers seem to strengthen the monster.');
+	s.setRespawn(key,'greenSwitchForest','t1','party');
+	s.displayPopup(key,'Those red towers seem to strengthen monsters.');
 	
 	var model = s.isChallengeActive(key,'deathlytower')? 'totemBoss' : 'totem';
 	s.spawnActor(key,'greenSwitchForest','e1',model,{tag:{totem:true}});

@@ -48,9 +48,9 @@ Map.getVersion = function(name){
 }
 
 Map.getInstanceType = function(name){
-	if(name.contains('@MAIN')) return 'public';
-	if(name.contains('@@')) return 'solo';
-	if(name.contains('@')) return 'party';
+	if(name.$contains('@MAIN')) return 'public';
+	if(name.$contains('@@')) return 'solo';
+	if(name.$contains('@')) return 'party';
 	else return 'public';
 }
 

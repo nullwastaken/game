@@ -80,7 +80,7 @@ Dialog.UI('inventory',{
 	position:'absolute',
 	left:CST.WIDTH-200,
 	top:CST.HEIGHT-HEIGHT_INV-HEIGHT_BTN,
-	width:250,	//BAD.. but if 200, 2nd table goes down cuz wrap
+	width:200,	//BAD.. but if 200, 2nd table goes down cuz wrap
 	height:HEIGHT_INV,
 	background:'rgba(0,0,0,0.2)',
 	padding:'0px 0px',
@@ -99,7 +99,7 @@ Dialog.UI('inventory',{
 	var nonquest = {};
 	var quest = {};
 	for(var i in main.invList.data)
-		if(main.questActive && i.contains(main.questActive))
+		if(main.questActive && i.$contains(main.questActive))
 			quest[i] = main.invList.data[i];
 		else 
 			nonquest[i] = main.invList.data[i];
@@ -111,15 +111,16 @@ Dialog.UI('inventory',{
 		table.addClass('inline').css({
 			margin:'0px 0px 0px 0px',
 			padding:'0px 0px 0px 0px',
-			width:100,
+			width:90,
 			overflowY:"scroll",
+			overflowX:"hidden",
 			height:HEIGHT_INV,
 		});
 		full.append(table);
 	}
 	var amountPerRow = quest.$isEmpty() ? 4 : 2;
-	var width = quest.$isEmpty() ? 200 : 100;
-		
+	var width = quest.$isEmpty() ? 190 : 95;
+	
 	var array = convertItemListToArray(nonquest,amountPerRow);
 	var table = Tk.arrayToTable(array,false,false,false,'4px');
 	table.addClass('inline').css({
@@ -127,6 +128,7 @@ Dialog.UI('inventory',{
 		padding:'0px 0px 0px 0px',
 		width:width,
 		overflowY:"scroll",
+		overflowX:"hidden",
 		height:HEIGHT_INV,
 	});
 	full.append(table);
@@ -135,7 +137,7 @@ Dialog.UI('inventory',{
 	Main.hudState.applyHudState('inventory',full);
 	
 },function(){
-	return Tk.stringify(main.invList.data) + Dialog.isActive('bank') + main.questActive + main.hudState.inventory;
+	return Tk.stringify(main.invList.data) + Dialog.isActive('bank') + main.questActive + main.hudState.inventory + Dialog.isActive('trade');
 });
 
 Dialog.isMouseOverInventory = function(){
@@ -146,6 +148,7 @@ Dialog.isMouseOverInventory = function(){
 		height:HEIGHT_INV+HEIGHT_BTN
 	}); 
 }
+
 var convertItemListToArray = function(list,amountPerRow){
 	var array = [[]];
 	var arrayPosition = 0;
@@ -160,7 +163,7 @@ var convertItemListToArray = function(list,amountPerRow){
 		});
 		if(!item) continue;
 		
-		var word = Dialog.isActive('bank') ? 'Transfer ' : 'Use ';
+		var word = Dialog.isActive('bank') || Dialog.isActive('trade') ? 'Transfer ' : 'Use ';
 		var itemHtml = Img.drawItem(item.icon,36,word + item.name,amount);
 				
 		if(Dialog.isActive('bank')){
@@ -175,6 +178,20 @@ var convertItemListToArray = function(list,amountPerRow){
 				return function(e){
 					if(!e.shiftKey) Command.execute('transferInvBank',[i,25]);
 					else Command.execute('transferInvBank',[i,99999999999]);
+				}
+			})(i));
+		} else if(Dialog.isActive('trade')){
+			//TRADE
+			itemHtml.click((function(i){
+				return function(e){
+					if(!e.shiftKey) Command.execute('transferInvTrade',[i,1]);
+					else Command.execute('transferInvTrade',[i,Main.getPref(main,'bankTransferAmount')]);
+				}
+			})(i))
+			.bind('contextmenu',(function(i){
+				return function(e){
+					if(!e.shiftKey) Command.execute('transferInvTrade',[i,25]);
+					else Command.execute('transferInvTrade',[i,99999999999]);
 				}
 			})(i));
 		} else {
@@ -216,9 +233,7 @@ Dialog.UI('reputationBar',{
 	}
 	
 	html.show();
-	
 	html.html('');
-	
 	var questCount = 0;
 	for(var i in main.quest) if(main.quest[i]._complete) questCount++;
 	
@@ -249,7 +264,6 @@ Dialog.UI('reputationBar',{
 },function(){
 	return '' + main.hudState.aboveInventory + player.skill.exp;
 });
-TRUUUE = true;
 
 
 

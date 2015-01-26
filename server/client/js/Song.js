@@ -1,5 +1,6 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 
+
 (function(){ //}
 Song = function(id,src,author,link,name,volume){
 	var tmp = {
@@ -44,7 +45,7 @@ Song.play = function(id,volume){
 
 
 Song.ended = function(){
-	do { var next = Object.keys(DB).random();
+	do { var next = Object.keys(DB).$random();
 	} while(next === Song.BEING_PLAYED.id)
 	Song.play(next);	
 }
@@ -63,7 +64,7 @@ Song.getCurrentSongInfo = function(){
 }
 
 Song.playRandom = function(){
-	Song.play(Object.keys(DB).random());
+	Song.play(Object.keys(DB).$random());
 }
 
 })();

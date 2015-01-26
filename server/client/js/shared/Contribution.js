@@ -6,7 +6,7 @@ if(SERVER) eval('var Contribution');
 Contribution = exports.Contribution = {};
 
 var chat = function(key,text){
-	Message.add(key,Message('contribution',text));
+	Message.add(key,Message.Contribution(text));
 }
 
 Contribution.template = function(){
@@ -142,7 +142,7 @@ Contribution.globalMessage.approve = function(num){	//no clue if work
 		
 	}
 	db.main.findOne({username:a.username},{},function(err,res){
-		if(err) throw err; if(!res) return;
+		if(err) ERROR.err(2,err); if(!res) return;
 		res.contribution.reward.point.usable = cost;
 		res.contribution.reward.point.used = cost;
 		res.contribution.reward.globalMessage.status = 'Approved';

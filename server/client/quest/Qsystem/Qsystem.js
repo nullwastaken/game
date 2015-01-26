@@ -117,10 +117,10 @@ var m = s.map; var b = s.boss; var g;
 	s.newSprite.bullet("dart","bullet/dart.png",16,16,1,1,{size:2});
 	s.newSprite.bullet("boomerang","bullet/boomerang.png",52,52,8);
 	s.newSprite.bullet("bone","bullet/bone.png",48,48,8);
-	s.newSprite.bullet("spore","bullet/spore.png",48,48,{size:0.8});
-	s.newSprite.bullet("rock","bullet/rock.png",48,48,{size:0.8});
+	s.newSprite.bullet("spore","bullet/spore.png",48,48,1,0,{size:0.8});
+	s.newSprite.bullet("rock","bullet/rock.png",48,48,1,0,{size:0.8});
 	s.newSprite.bullet("shadowball","bullet/shadowball.png",48,48,1,0,{size:0.8,link:'http://mohsin-kun.deviantart.com/art/Shadow-Ball-73303663'});
-	s.newSprite.bullet("tornado","bullet/tornado.png",48,48,5,{size:0.8});
+	s.newSprite.bullet("tornado","bullet/tornado.png",48,48,5,0,{size:0.8});
 
 
 	for(var i = 0 ; i <= 15; i++)
@@ -160,15 +160,15 @@ var m = s.map; var b = s.boss; var g;
 	s.newSprite.picture("block-rock1x1","picture/block-rock2x2.png",63,63,0.5);	//size and bumperbox not same
 	s.newSprite.picture("block-barrier","picture/block-barrier.png",127,64,1,{hpBar:-40});	//size and bumperbox not same
 			
-	s.newSprite.picture("block-spike","picture/block-spike1x1.png",16,32,2);
-	s.newSprite.picture("block-spike1x1","picture/block-spike1x1.png",16,32,2);
-	s.newSprite.picture("block-spike1x3","picture/block-spike1x3.png",16,64,2,{offsetY:16});
-	s.newSprite.picture("block-spike1x5","picture/block-spike1x5.png",16,96,2,{offsetY:32});
-	s.newSprite.picture("block-spike1x9","picture/block-spike1x9.png",16,160,2,{offsetY:64});	
+	s.newSprite.picture("block-spike","picture/block-spike1x1.png",16,32,2,{showBorder:false});
+	s.newSprite.picture("block-spike1x1","picture/block-spike1x1.png",16,32,2,{showBorder:false});
+	s.newSprite.picture("block-spike1x3","picture/block-spike1x3.png",16,64,2,{showBorder:false,offsetY:16});
+	s.newSprite.picture("block-spike1x5","picture/block-spike1x5.png",16,96,2,{showBorder:false,offsetY:32});
+	s.newSprite.picture("block-spike1x9","picture/block-spike1x9.png",16,160,2,{showBorder:false,offsetY:64});	
 	
-	s.newSprite.picture("block-spike3x1","picture/block-spike3x1.png",48,32,2,{offsetX:16});
-	s.newSprite.picture("block-spike5x1","picture/block-spike5x1.png",80,32,2,{offsetX:32});
-	s.newSprite.picture("block-spike9x1","picture/block-spike9x1.png",144,32,2,{offsetX:64});
+	s.newSprite.picture("block-spike3x1","picture/block-spike3x1.png",48,32,2,{showBorder:false,offsetX:16});
+	s.newSprite.picture("block-spike5x1","picture/block-spike5x1.png",80,32,2,{showBorder:false,offsetX:32});
+	s.newSprite.picture("block-spike9x1","picture/block-spike9x1.png",144,32,2,{showBorder:false,offsetX:64});
 
 	s.newSprite.picture("block-bridgeH","picture/block-bridgeH.png",32,32,2,{legs:-50});
 	s.newSprite.picture("block-bridgeV","picture/block-bridgeV.png",32,32,2,{legs:-50});
@@ -270,21 +270,21 @@ s.newAbility('dodge','dodge',{},{});
 s.newAbility('start-melee','attack',{
 	name:'Strike',icon:'attackMelee.cube',
 	description:'Regular Melee Strike',
-	periodOwn:15,periodGlobal:15,
+	periodOwn:10,periodGlobal:10,
 },{
-	type:"strike",width:40,height:40,delay:0,
+	type:"strike",width:80,height:80,delay:0,
 	initPosition:s.newAbility.initPosition(0,50),
 	preDelayAnim:s.newAbility.anim("slashMelee",1),
 	hitAnim:s.newAbility.anim("strikeHit",0.2),
-	dmg:s.newAbility.dmg(550,'melee'),
+	dmg:s.newAbility.dmg(500,'melee'),
 	knock:s.newAbility.status(1,3,0.1),
 });
 s.newAbility('player-meleeBig','attack',{
 	name:'Bleeding Blow',icon:'attackMelee.cube',
 	description:'Powerful Melee Strike with increased bleed chance. Cost life.',
-	periodOwn:25,periodGlobal:20,costHp:100,
+	periodOwn:20,periodGlobal:20,costHp:100,
 },{
-	type:"strike",width:40,height:40,delay:0,
+	type:"strike",width:80,height:80,delay:0,
 	initPosition:s.newAbility.initPosition(0,50),
 	preDelayAnim:s.newAbility.anim("splashMelee",1),
 	hitAnim:s.newAbility.anim("strikeHit",0.2),
@@ -295,66 +295,82 @@ s.newAbility('player-meleeBig','attack',{
 s.newAbility('start-bullet','attack',{
 	name:'Basic Bullet',icon:'attackRange.steady',
 	description:'Very fast arrow shooting.',
-	periodOwn:12,periodGlobal:12,
+	periodOwn:10,periodGlobal:10,
+},{
+	type:"bullet",
+	amount:3,angleRange:5,
+	sprite:s.newAbility.sprite("arrow",1),
+	hitAnim:s.newAbility.anim("strikeHit",0.5),
+	dmg:s.newAbility.dmg(100,'range'),	
+});
+
+s.newAbility('superCoolNiceLooking','attack',{
+	name:'Basic Bullet',icon:'attackRange.steady',
+	description:'Very fast arrow shooting.',
+	periodOwn:10,periodGlobal:10,
 },{
 	type:"bullet",
 	amount:1,angleRange:5,
-	sprite:s.newAbility.sprite("arrow",1),
+	sprite:s.newAbility.sprite("fireball",1.5),
 	hitAnim:s.newAbility.anim("strikeHit",0.5),
-	dmg:s.newAbility.dmg(400,'range'),
-	
-	/*onMove:s.newAbility.onMove(4,3,{
-		sprite:s.newAbility.sprite("arrow",0.5),
+	dmg:s.newAbility.dmg(300,'range'),
+	spd:2,
+	onMove:s.newAbility.onMove(2,3,{
+		sprite:s.newAbility.sprite("fireball",1),
 		type:"bullet",
-		amount:4,
+		amount:8,
+		spd:5,
 		angleRange:360,	
 		dmg:s.newAbility.dmg(300,'range'),
-	}),*/
+	}),
 	
 });
+
+
+
 s.newAbility('player-windKnock','attack',{
 	name:'Wind',icon:'attackRange.steady',
 	description:'Defensive wind that pushes enemies away.',
-	periodOwn:25,periodGlobal:25,costMana:50,
+	periodOwn:20,periodGlobal:20,costMana:50,
 },{
 	type:"bullet",angleRange:30,amount:3,
 	sprite:s.newAbility.sprite("tornado",1),
 	hitAnim:s.newAbility.anim("strikeHit",0.5),
-	dmg:s.newAbility.dmg(150,'range'),
+	dmg:s.newAbility.dmg(200,'range'),
 	knock:s.newAbility.status(1,1.5,1.5),
 });
 s.newAbility('player-magicBullet','attack',{
 	name:'Magic Bullet',icon:'attackMagic.ball',
 	description:'Powerful magic spell with increased chance to drain mana.',
-	periodOwn:25,periodGlobal:25,
+	periodOwn:12,periodGlobal:12,
 },{
 	type:"bullet",
 	sprite:s.newAbility.sprite("shadowball",1),
 	hitAnim:s.newAbility.anim("lightningHit",0.5),
-	dmg:s.newAbility.dmg(600,'magic'),
+	dmg:s.newAbility.dmg(300,'magic'),
 	drain:s.newAbility.status(0.25,1,1),
 });
 s.newAbility('player-magicBomb','attack',{
 	name:'Magic Explosion',icon:'attackMagic.ball',
 	description:'Explosive spell that can leech life.',
-	periodOwn:30,periodGlobal:20,costMana:75,
+	periodOwn:20,periodGlobal:20,costMana:75,
 },{
-	type:"strike",width:100,height:100,delay:4,
+	type:"strike",width:200,height:200,delay:4,
 	initPosition:s.newAbility.initPosition(0,200),
 	preDelayAnim:s.newAbility.anim("magicBomb",1),
 	hitAnim:s.newAbility.anim("lightningHit",0.5),
-	dmg:s.newAbility.dmg(1500,'magic'),
+	dmg:s.newAbility.dmg(1200,'magic'),
 	leech:s.newAbility.status(0.25,1,1),
 });
 s.newAbility('start-fireball','attack',{
 	name:'Fireball Boom',icon:'attackMagic.meteor',
 	description:'Shoot multiple fireballs.',
-	periodOwn:25,periodGlobal:25,costMana:50,
+	periodOwn:20,periodGlobal:20,costMana:50,
 },{
-	type:"bullet",angleRange:45,amount:9,
+	type:"bullet",angleRange:35,amount:7,
 	sprite:s.newAbility.sprite("fireball",1.2),
 	hitAnim:s.newAbility.anim("fireHit",0.5),
-	dmg:s.newAbility.dmg(125,'fire'),
+	dmg:s.newAbility.dmg(150,'fire'),
 });
 
 s.newAbility('player-fireBullet','attack',{
@@ -367,7 +383,7 @@ s.newAbility('player-fireBullet','attack',{
 	hitAnim:s.newAbility.anim("fireHit",0.5),
 	dmg:s.newAbility.dmg(400,'fire'),
 	onHit:s.newAbility.onHit(1,{
-		type:"strike",width:100,height:100,delay:0,
+		type:"strike",width:200,height:200,delay:0,
 		preDelayAnim:s.newAbility.anim("fireBomb",1),
 		dmg:s.newAbility.dmg(100,'fire'),
 	}),
@@ -380,7 +396,7 @@ s.newAbility('start-freeze','attack',{
 	type:"bullet",angleRange:25,amount:5,
 	sprite:s.newAbility.sprite("iceshard",1),
 	hitAnim:s.newAbility.anim("coldHit",0.5),
-	dmg:s.newAbility.dmg(100,'cold'),
+	dmg:s.newAbility.dmg(200,'cold'),
 	chill:s.newAbility.status(0.5,4,1),
 });
 
@@ -397,20 +413,20 @@ s.newAbility('player-coldBullet','attack',{
 s.newAbility('player-lightningBullet','attack',{
 	name:'Lightning Bullet',icon:'attackMagic.static',
 	description:'Shoot piercing lightning balls at the speed of light.',
-	periodOwn:5,periodGlobal:5,
+	periodOwn:3,periodGlobal:3,
 },{
 	type:"bullet",
 	sprite:s.newAbility.sprite("lightningball",0.7),
 	hitAnim:s.newAbility.anim("lightningHit",0.5),
-	dmg:s.newAbility.dmg(150,'lightning'),
+	dmg:s.newAbility.dmg(125,'lightning'),
 	pierce:s.newAbility.pierce(0.5,0.5,5),
 });
 s.newAbility('player-lightningBomb','attack',{
 	name:'Lightning Explosion',icon:'attackMagic.static',
 	description:'Explodes in all directions, piercing through enemies.',
-	periodOwn:25,periodGlobal:25,costMana:75,
+	periodOwn:20,periodGlobal:20,costMana:75,
 },{
-	type:"strike",width:50,height:50,delay:5,
+	type:"strike",width:100,height:100,delay:5,
 	initPosition:s.newAbility.initPosition(100,150),
 	preDelayAnim:s.newAbility.anim("lightningBomb",1),
 	dmg:s.newAbility.dmg(400,'lightning'),
@@ -455,7 +471,7 @@ s.newAbility('healZone','attack',{
 	name:'Heal Zone',icon:'heal.plus',
 	periodOwn:50,periodGlobal:50,
 },{
-	type:"strike",width:200,height:200,delay:0,
+	type:"strike",width:400,height:400,delay:0,
 	initPosition:s.newAbility.initPosition(0,0),
 	postDelayAnim:s.newAbility.anim("aura",2),
 	dmg:s.newAbility.dmg(0,'lightning'),
@@ -554,7 +570,7 @@ s.newAbility('meleeBomb','attack',{
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
-	type:"strike",width:50,height:50,delay:5,
+	type:"strike",width:100,height:100,delay:5,
 	initPosition:s.newAbility.initPosition(0,200),
 	preDelayAnim:s.newAbility.anim("boostWhite",1),
 	dmg:s.newAbility.dmg(250,'melee'),
@@ -564,7 +580,7 @@ s.newAbility('rangeBomb','attack',{
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
-	type:"strike",width:50,height:50,delay:5,
+	type:"strike",width:100,height:100,delay:5,
 	initPosition:s.newAbility.initPosition(0,200),
 	preDelayAnim:s.newAbility.anim("rangeBomb",1),
 	dmg:s.newAbility.dmg(250,'range'),
@@ -574,7 +590,7 @@ s.newAbility('magicBomb','attack',{
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
-	type:"strike",width:50,height:50,delay:5,
+	type:"strike",width:100,height:100,delay:5,
 	initPosition:s.newAbility.initPosition(0,200),
 	preDelayAnim:s.newAbility.anim("magicBomb",1),
 	dmg:s.newAbility.dmg(250,'magic'),
@@ -584,7 +600,7 @@ s.newAbility('fireBomb','attack',{
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
-	type:"strike",width:50,height:50,delay:5,
+	type:"strike",width:100,height:100,delay:5,
 	initPosition:s.newAbility.initPosition(0,200),
 	preDelayAnim:s.newAbility.anim("fireBomb",1),
 	dmg:s.newAbility.dmg(250,'fire'),
@@ -594,7 +610,7 @@ s.newAbility('coldBomb','attack',{
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
-	type:"strike",width:50,height:50,delay:5,
+	type:"strike",width:100,height:100,delay:5,
 	initPosition:s.newAbility.initPosition(0,200),
 	preDelayAnim:s.newAbility.anim("coldBomb",1),
 	dmg:s.newAbility.dmg(250,'cold'),
@@ -604,7 +620,7 @@ s.newAbility('lightningBomb','attack',{
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
-	type:"strike",width:50,height:50,delay:5,
+	type:"strike",width:100,height:100,delay:5,
 	initPosition:s.newAbility.initPosition(0,200),
 	preDelayAnim:s.newAbility.anim("lightningBomb",1),
 	dmg:s.newAbility.dmg(250,'lightning'),
@@ -657,7 +673,7 @@ s.newAbility('lightningNova','attack',{
 	dmg:s.newAbility.dmg(150,'lightning'),
 	maxTimer:80,
 	onMove:s.newAbility.onMove(6,0,{
-		type:"strike",width:75,height:75,delay:0,
+		type:"strike",width:150,height:150,delay:0,
 		initPosition:s.newAbility.initPosition(0,0),
 		postDelayAnim:s.newAbility.anim("lightningHit",0.5),
 		hitAnim:s.newAbility.anim("lightningHit",0.25),
@@ -670,7 +686,7 @@ s.newAbility('scratch','attack',{
 	periodOwn:25,periodGlobal:25,
 	spriteFilter:s.newAbility.spriteFilter('red',5),delay:10,
 },{
-	type:"strike",width:50,height:50,
+	type:"strike",width:100,height:100,
 	initPosition:s.newAbility.initPosition(0,50),
 	preDelayAnim:s.newAbility.anim("scratch",0.5),
 	dmg:s.newAbility.dmg(150,'melee'),
@@ -680,7 +696,7 @@ s.newAbility('scratchBig','attack',{
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('red',5),delay:10,
 },{
-	type:"strike",width:50,height:50,
+	type:"strike",width:100,height:100,
 	initPosition:s.newAbility.initPosition(0,50),
 	preDelayAnim:s.newAbility.anim("scratch2",0.5),
 	hitAnim:s.newAbility.anim("strikeHit",0.25),
@@ -722,7 +738,7 @@ s.newAbility('bind','attack',{
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('red',5),delay:10,
 },{
-	type:"strike",width:25,height:25,delay:5,
+	type:"strike",width:50,height:50,delay:5,
 	initPosition:s.newAbility.initPosition(0,100),
 	preDelayAnim:s.newAbility.anim("bind",1),
 	hitAnim:s.newAbility.anim("bind",0.25),
@@ -827,7 +843,6 @@ s.newNpc("bee",{
 		}),[0,0.2,0.4]),
 		s.newNpc.abilityAi.ability('idle',[0.4,0.4,1]),
 	]),
-	deathAbility:[1],
 	mastery:s.newNpc.mastery([1,1,2,0.5,1,1]),
 	moveRange:s.newNpc.moveRange(0.5,1),
 });
@@ -878,10 +893,9 @@ s.newNpc("larva",{
 		s.newNpc.abilityAi.ability(s.newAbility(null,'fireBomb',{},{
 			initPosition:s.newAbility.initPosition(0,50),
 			dmg:s.newAbility.dmg(500,'fire'),
-		}),[0,0,0]),	//death
-		s.newNpc.abilityAi.ability('idle',[0.4,0.2,0.2]),	
+		}),[0.1,0.1,0.1]),
+		s.newNpc.abilityAi.ability('idle',[0.9,0.9,0.9]),	
 	]),
-	deathAbility:[0],
 	mastery:s.newNpc.mastery([1,1,1,1,1,1]),
 	maxSpd:s.newNpc.maxSpd(0.5),
 	hp:10,
@@ -931,7 +945,6 @@ s.newNpc("slime",{
 		s.newNpc.abilityAi.ability('healZone',[0.1,0.1,0.2]),
 		s.newNpc.abilityAi.ability('idle',[0.4,0.2,0.2]),	
 	]),
-	deathAbility:[0],
 	mastery:s.newNpc.mastery([1,1,0.5,2,1,1]),
 	moveRange:s.newNpc.moveRange(1,1),	
 }); 
@@ -1218,7 +1231,6 @@ s.newNpc("spirit",{
 		s.newNpc.abilityAi.ability('fireNova',[0,0.4,0.4]),
 		s.newNpc.abilityAi.ability('idle',[0.5,0.5,0.5]),
 	]),
-	//'reflect':{'fire':2},
 	mastery:s.newNpc.mastery([1,1,1,2,1,0.5]),
 	moveRange:s.newNpc.moveRange(2,1),
 });

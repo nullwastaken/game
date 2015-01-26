@@ -16,7 +16,7 @@ ts("OfflineAction('aaa','removeItem',OfflineAction.Data.removeItem('Qsystem-wood
 
 
 var OfflineAction = exports.OfflineAction = function(username,type,data){
-	if(!OfflineAction.TYPE.contains(type)) 
+	if(!OfflineAction.TYPE.$contains(type)) 
 		return ERROR(3,'wrong type ' + type);
 	var oa = {
 		id:Math.randomId(),

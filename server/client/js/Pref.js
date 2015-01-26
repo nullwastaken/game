@@ -2,6 +2,7 @@
 
 (function(){ //}
 
+var VOL_MASTER = 0; //30
 
 Pref = function(id,name,initValue,min,max,description,func){
 	var tmp = {
@@ -23,11 +24,14 @@ Pref.get = function(id){
 	return DB[id] || null;
 }
 
-Pref('displayStrike','Display AoE',1,0,1,'Display Damage Zone For Strikes. 0=false, 1=true');
+
+Pref('clientPredictionThreshold','Lantecy Threshold',200,75,10000,'BETA. Activate Client Prediction if latency (in ms) is above this value.');
+Pref('displayStrike','Display AoE',0,0,1,'Display Damage Zone For Strikes. 0=no, 1=yes');
+Pref('strikeTarget','Highlight Target',0,0,3,'Display Damage Zone For Strikes. 0=Red Border, 1=Red Rect 2=Red Skin 3=None');
 Pref('displayFPS','Display FPS',1,0,1,'Display FPS Performance. 0=false, 1=true');
 Pref('overheadHp','Overhead Hp',0,0,1,'Display HP Bar and Status Effect over player head.');
 Pref('highlightHover','Highlight Hover',0,0,1,'Highlight actor sprite under mouse.');
-Pref('volumeMaster','Volume Master',30,0,100,'Volume Master. 0:Mute',function(){ Song.updateVolume(); });	//cant direct cuz id need song to be loaded
+Pref('volumeMaster','Volume Master',VOL_MASTER,0,100,'Volume Master. 0:Mute',function(){ Song.updateVolume(); });	//cant direct cuz id need song to be loaded
 Pref('volumeSong','Volume Song',10,0,100,'Volume Song.',function(){ Song.updateVolume(); });
 Pref('volumeSfx','Volume Effects',20,0,100,'Volume Sound Effects.');
 Pref('signNotification','Notify Log In',1,0,2,'Notify you if someone logs in or out of the game. 0=none, 1=text, 2=sound');
@@ -39,6 +43,12 @@ Pref('orbAmount','X- Orb',1000,1,9999999999,'Amount of orbs used with X- option'
 Pref('controller','Enable Controller',0,0,1,'Play the game with a Xbox 360 Controller.');
 Pref('displayMiddleSprite','Display Middle Sprite',0,0,1,'Display Middle Sprite. 0=false, 1=true');
 
+Pref.strikeTarget = {
+	RED_BORDER:0,
+	RED_RECT:1,
+	RED_SKIN:2,
+	NONE:3
+}
 
 
 Pref.RESET = 'reset';
@@ -56,7 +66,8 @@ Pref.getDefaultValue = function(pref){
 	for(var i in DB)
 		a[i] = DB[i].initValue;
 	for(var i in pref)
-		if(a[i] !== undefined) a[i] = pref[i];
+		if(a[i] !== undefined) 
+			a[i] = pref[i];
 	return a;
 }
 

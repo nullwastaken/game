@@ -5,13 +5,15 @@
 var s = loadAPI('v1.0','Qbtt000',{
 	name:'Break Targets',
 	author:'',
+	maxParty:1,
+	thumbnail:true,
 	reward:{"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
 	description:"Find the fastest way to break 10 targets.",
 });
 var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
-
+	
 */
 
 s.newVariable({
@@ -101,7 +103,7 @@ s.newEvent('killTarget',function(key){	//
 s.newEvent('endCourse',function(key){	//
 	var time = s.stopChrono(key,'timer');
 	s.set(key,'chrono',time);
-	s.message(key,'Your time: ' + time.frameToChrono());
+	s.message(key,'Your time: ' + s.frameToChrono(time));
 	if(!s.isChallengeActive(key,'fivetimes')){
 		if(time < 25*18)
 			return s.completeQuest(key);

@@ -46,19 +46,14 @@ Dialog.UI('chat',{
 		.append($('<input>')
 			.attr('id','chatBoxInput')
 			.addClass('onlyText')
-			.css({width:400})
+			.css({width:500})
 		)			
 		.submit(function(e) {
 			e.preventDefault();
+			Dialog.chat.blurInput(true);
 			if(Dialog.chat.getInput()){
 				Message.sendChatToServer(Dialog.chat.getInput());
-				setTimeout(function(){
-					Dialog.chat.blurInput(true);
-				},50);
 			}
-			else
-				Dialog.chat.blurInput(true);
-				
 			return false;
 		})
 		.click(function(){
@@ -138,7 +133,7 @@ Dialog.chat.isInputActive = function(text){
 };
 
 Dialog.chat.blurInput = function(blurInput){
-	$('#gameDiv').focus();
+	//$('#gameDiv').focus();
 	if(blurInput)
 		$('#chatBoxInput').blur();
 };
@@ -259,11 +254,34 @@ Dialog.UI('partyClan',{
 	if(main.hudState.party === Main.hudState.INVISIBLE) return;
 	
 	var party = $('<span>');
-	var icon = Img.drawIcon.html('tab.friend',18,'Right-Click to change Party')
-		.contextmenu(function(){
-			Dialog.chat.setInput('$party,join,');
-		});
-	party.append(icon);
+	
+	var button = $('<button>')
+		.addClass('skinny');
+		
+	if(main.acceptPartyInvite){
+		button.addClass('myButtonGreen')
+			.html('On')
+			.attr('title','Currently accepting party request. Click to refuse them.')
+			.click(function(){
+				Command.execute('setAcceptPartyInvite',[false]);
+			});	
+	} else {
+		button.addClass('myButtonRed')
+			.html('Off')
+			.attr('title','Currently refusing party request. Click to accept them.')
+			.click(function(){
+				Command.execute('setAcceptPartyInvite',[true]);
+			});
+	}
+		
+	
+	party.append(button);	
+	
+	party.append(Img.drawIcon.html('tab.friend',20,'Click to change Party')
+		.click(function(){
+			Command.execute('party,join',[]);
+		}
+	));
 	party.append(' Party "' + (main.party.id || '') + '": ');
 	party.append($('<u>')
 		.attr('title','Leader')
@@ -280,7 +298,7 @@ Dialog.UI('partyClan',{
 	html.append(party);
 	
 },function(){
-	return Tk.stringify(main.party) + Tk.stringify(main.social.clanList) + main.hudState.party;
+	return Tk.stringify(main.party) + Tk.stringify(main.social.clanList) + main.acceptPartyInvite + main.hudState.party;
 });
 
 

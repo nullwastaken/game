@@ -8,8 +8,6 @@ var Challenge = exports.Challenge = function(quest,id,name,desc,bonus,testSucces
 		id:id,
 		name:name || 'name',
 		description:desc || 'description',
-		start:CST.func,
-		signIn:CST.func,
 		testSuccess:testSuccess || function(){ return true; },
 		bonus:Challenge.Bonus(bonus || 2),
 	};
@@ -76,25 +74,6 @@ Challenge.toggle.test = function(challenge,main){
 	return true;
 }
 
-Challenge.onSignIn = function(main){
-	var mq = main.quest;
-	var qa = main.questActive;
-	if(!qa) return;
-	for(var i in mq[qa]._challenge){
-		if(mq[qa]._challenge[i])	
-			DB[i].signIn(main.id,qa);
-	}
-}
-
-Challenge.onStart = function(main){
-	var mq = main.quest;
-	var qa = main.questActive;
-	if(!qa) return;
-	for(var i in mq[qa]._challenge){
-		if(mq[qa]._challenge[i])	
-			DB[i].start(main.id,qa);
-	}
-}
 
 Challenge.testSuccess = function(challenge,key){
 	var res = challenge.testSuccess(key); 

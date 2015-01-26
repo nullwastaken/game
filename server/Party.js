@@ -68,7 +68,7 @@ Party.changeLeader = function(party,key,message){
 }
 Party.addMessage = function(party,str,toexclude){
 	for(var i in party.list){
-		if(toexclude && !toexclude.contains(i))
+		if(toexclude && !toexclude.$contains(i))
 			Main.addMessage(Main.get(i),str);
 	}
 }

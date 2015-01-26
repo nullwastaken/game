@@ -138,16 +138,23 @@ Actor.click.skillPlot = function(act,eid){
 	
 	main.quest[quest]._skillPlot[e.skillPlot.num] = 1;
 	
-	var item = plot.item.random();
+	var item = plot.item.$random();
 	
 	var amount = 1;
 	var exp = plot.exp;
-	/*	if(plot.useQuestBonus){
+	
+	if(plot.useQuestBonus){
 		var bonus = Main.getSimpleQuestBonus(main,quest);
+		if(bonus.exp === 0 && bonus.item === 0){
+			return Message.addPopup(key,'You have harvested that resource plot enough for today.');
+		}
+		/*
 		amount = Math.roundRandom(bonus.item);
 		Message.add(key,Quest.get(quest).name.q() + ' Quest Modifier: x' + bonus.item.r(2) + ' Item, x' + bonus.exp.r(2) + ' Exp');
 		exp *= bonus.exp;
-	} */
+		*/
+	}
+	
 	if(amount === 0)
 		Message.add(key,'You harvested the plot but there was no enough resource for a whole item.');
 	else {
@@ -248,11 +255,26 @@ Actor.click.party = function(act,eid){
 		return Message.add(act.id,"The player you are trying to invite is currently has an active quest and therefore can't join your party.");
 	if(Main.getPartyId(main) === Main.getPartyId(main2))
 		return Message.add(act.id,"This player is already in your party.");
+	if(!main2.acceptPartyInvite)
+		return Message.add(act.id,"This player is not accepting party requests right now.");
+	
+		
 	Main.question(main2,function(){
 		if(!Main.get(main.id)) return;	//aka dc
 		Main.changeParty(main2,Main.getPartyId(main));
 	},'Do you want to join "' + act.name + '" party?','boolean');
 }	
+
+Actor.click.trade = function(act,eid){
+	var main = Actor.getMain(act);
+	var main2 = Main.get(eid);
+	
+	Main.question(main2,function(){
+		if(!Main.get(main.id)) return;	//aka dc
+		Main.startTrade(main,main2);
+	},'Do you want to trade with "' + act.name + '"?','boolean');
+}	
+
 
 Actor.movePush = function(act,angle,magn,time){	//push that isnt pushable, ex: player fall
 	if(act.timeout.movePush) return false;	//only 1 push at a time
@@ -280,8 +302,14 @@ Actor.stickToGrid = function(act){
 	act.y = Math.round(act.y/16)*16-1; 
 }
 
-Actor.click.trade = function(act,eid){
-	
-}
+
+
+
+
+
+
+
+
+
 
 })();

@@ -59,7 +59,7 @@ Actor.boost.removeAll = function(act,stringToMatch){
 	stringToMatch = stringToMatch || '';	//'' = match all
 	for(var i in act.boost.list){
 		for(var j in act.boost.list[i].name){
-			if(act.boost.list[i].name[j].name.contains(stringToMatch))
+			if(act.boost.list[i].name[j].name.$contains(stringToMatch))
 				Actor.boost.remove(act,act.boost.list[i].name[j]);
 		}
 	}

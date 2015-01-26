@@ -1,3 +1,5 @@
+(function(){ //}
+
 Actor.drawAll = function (ctx){
 	Actor.drawStrikeZone(player,ctx);
 	var array = Actor.drawAll.getSortedList();
@@ -10,8 +12,21 @@ Actor.drawAll = function (ctx){
 		}
 	}
 	
+	Actor.drawServerPlayer(ctx);
+	
 	return context;
 }	
+
+Actor.drawServerPlayer = function(ctx){
+	if(!ClientPrediction.isActive()) return;
+	
+	
+	ctx.beginPath();
+	var x = player.serverX-player.x+CST.WIDTH2;
+	var y = player.serverY-player.y+CST.HEIGHT2;
+	ctx.arc(x,y,12,0,2*Math.PI);
+	ctx.fill();
+}
 
 Actor.drawAll.getSortedList = function(){
 	var drawSortList = [];
@@ -42,7 +57,8 @@ Actor.drawChatHead = function(ctx){
 }	
 Actor.drawChatHead.func = function(act,ctx){
 	if(!act.chatHead) return;
-		
+	if(act.type === 'player' && main.social.muteList[act.context]) return; //BAD assume context === username
+	
 	var spriteServer = act.sprite;
 	var spriteFromDb = SpriteModel.get(Actor.getSpriteName(act));
 	var sizeMod = spriteFromDb.size* spriteServer.sizeMod;
@@ -56,7 +72,7 @@ Actor.drawChatHead.func = function(act,ctx){
 	
 	var safe = 0;
 	do {
-		bad = false;
+		var bad = false;
 		for(var i in Actor.drawChatHead.list){
 			if(Collision.testRectRect(rect,Actor.drawChatHead.list[i])){
 				numY += 10; 
@@ -121,6 +137,30 @@ Actor.drawStatus = function(act,ctx){	//hp + status
 		}
 	}
 	ctx.globalAlpha = 1;
+	
+	//##############
+	ctx.save();
+	ctx.setFont(18);
+	for(var i in act.hitHistoryToDraw){
+		var numX2 = numX + 105;
+		var numY2 = numY + (+i) * 22; 
+		/*ctx.fillStyle = 'white'
+		ctx.fillText(act.hitHistoryToDraw[i].num.r(0),numX2,numY2);
+		ctx.fillText(act.hitHistoryToDraw[i].num.r(0),numX2-1,numY2-1);*/
+		
+		
+		ctx.fillStyle = act.hitHistoryToDraw[i].num < 0 ? 'red' : 'green';
+		ctx.fillText(act.hitHistoryToDraw[i].num.r(0),numX2-0.5,numY2-0.5);
+		ctx.lineWidth = 0.25;
+		ctx.strokeStyle = 'white'
+		ctx.strokeText(act.hitHistoryToDraw[i].num.r(0),numX2-0.5,numY2-0.5);
+		
+		
+	}
+	ctx.restore();
+	
+	
+	
 }
 
 Actor.drawAll.getMinimapList = function(){	//bad...
@@ -143,53 +183,82 @@ Actor.drawAll.getMinimapList = function(){	//bad...
 }
 
 Actor.drawStrikeZone = function(act,ctx){
-	if(!Main.getPref(main,'displayStrike')) return;
 	
-	var ab = Actor.drawStrikeZone.getMeleeAbility(act);
-	if(!ab) return;
-	//x,y mouseX mouseY
-	var pos = Attack.getInitPosition(ab.param,player);
-	
-	var fakeStrike = {x:pos.x,y:pos.y,width:ab.param.width,height:ab.param.height,angle:act.angle};
-	
-	var point = Attack.Strike.getPoint(fakeStrike);
-	var rotatedRect = Attack.Strike.getPoint(fakeStrike,point);
-	
-	//9 dots
-	//for(var i in point)	ctx.fillRect(point[i].x-act.x+CST.WIDTH2,point[i].y-act.y+CST.HEIGHT2,10,10);
-	
-	ctx.save();
-	var x = fakeStrike.x-act.x+CST.WIDTH2;
-	var y = fakeStrike.y-act.y+CST.HEIGHT2;
-	ctx.translate(x,y);
-	ctx.rotate(fakeStrike.angle/180*Math.PI);
-	ctx.fillStyle = 'red';
-	ctx.globalAlpha = 0.25;
-	ctx.strokeStyle = 'black';
-	ctx.strokeRect(-fakeStrike.width,-fakeStrike.height,fakeStrike.width*2,fakeStrike.height*2);
-	ctx.fillRect(-fakeStrike.width,-fakeStrike.height,fakeStrike.width*2,fakeStrike.height*2);
-	ctx.restore();
-	
-	/*for(var i in Actor.LIST){
-		if(Collision.strikeActor.collision(fakeStrike,Actor.LIST[i])
-	}*/
-	
-	
-}
-Actor.drawStrikeZone.getMeleeAbility = function(act){
 	var list = Actor.getAbility(act);	//[id,id,id]
-	for(var i in list){
-		var ab = QueryDb.get('ability',list[i]);
-		if(ab && ab.type === 'attack' && ab.param.type === 'strike')
-			return ab;
+	var strikeTarget = Main.getPref(main,'strikeTarget');
+	var displayStrike = Main.getPref(main,'displayStrike');
+	if(strikeTarget !== Pref.strikeTarget.NONE){
+		for(var i in Actor.LIST)
+			Actor.LIST[i].withinStrikeRange = false;
 	}
-	return null;
+	
+	for(var j in list){
+		var ab = QueryDb.get('ability',list[j]);
+		if(!(ab && ab.type === 'attack' && ab.param.type === 'strike'))
+			continue;
+
+		//x,y mouseX mouseY
+		var pos = Attack.getInitPosition(ab.param,player);
+		
+		var fakeStrike = {x:pos.x,y:pos.y,width:ab.param.width,height:ab.param.height,angle:act.angle};
+		
+		var point = Attack.Strike.getPoint(fakeStrike);
+		var rotatedRect = Attack.Strike.getRotatedRect(fakeStrike,point);
+		fakeStrike.rotatedRect = rotatedRect;
+		fakeStrike.point = point;
+		
+		//9 dots
+		//for(var i in point)	ctx.fillRect(point[i].x-5-act.x+CST.WIDTH2,point[i].y-5-act.y+CST.HEIGHT2,10,10);
+		
+		if(displayStrike && Input.state.ability[j]){
+			ctx.save();
+			var x = fakeStrike.x-act.x+CST.WIDTH2;
+			var y = fakeStrike.y-act.y+CST.HEIGHT2;
+			ctx.translate(x,y);
+			ctx.rotate(fakeStrike.angle/180*Math.PI);
+			ctx.fillStyle = 'red';
+			ctx.globalAlpha = 0.25;
+			ctx.strokeStyle = 'black';
+			ctx.strokeRect(-fakeStrike.width/2,-fakeStrike.height/2,fakeStrike.width,fakeStrike.height);
+			ctx.fillRect(-fakeStrike.width/2,-fakeStrike.height/2,fakeStrike.width,fakeStrike.height);
+			ctx.restore();
+		}
+		if(strikeTarget !== Pref.strikeTarget.NONE){
+			ctx.save();
+			for(var i in Actor.LIST){
+				var target = Actor.LIST[i];
+				if(!target.combat) continue;
+				if(Collision.strikeActor.collision(fakeStrike,Actor.LIST[i]))
+					target.withinStrikeRange = true;
+					
+				if(target.withinStrikeRange && strikeTarget === Pref.strikeTarget.RED_RECT){
+					var posX = target.x - player.x + CST.WIDTH2;
+					var posY = target.y - player.y + CST.HEIGHT2;
+					var model = SpriteModel.get(target.sprite.name.split(',')[0]);
+					var sizeMod = model.size * target.sprite.sizeMod;
+					
+					var anim = model.anim[target.sprite.anim];
+					var sizeOffX = anim.sizeX/2*sizeMod;
+					var sizeOffY = anim.sizeY/2*sizeMod;
+					
+					ctx.fillStyle = 'red';
+					ctx.globalAlpha = 0.25;
+					ctx.fillRect(posX- sizeOffX,posY- sizeOffY,sizeOffX*2,sizeOffY*2);
+					ctx.strokeRect(posX- sizeOffX,posY- sizeOffY,sizeOffX*2,sizeOffY*2);
+				}
+				if(target.withinStrikeRange && strikeTarget === Pref.strikeTarget.RED_SKIN)
+					Actor.setSpriteFilter(target,Actor.SpriteFilter('red',2));
+						
+			}
+			ctx.restore();
+		}
+	}
 }
 
 
 
 
-
+})(); //{
 
 
 

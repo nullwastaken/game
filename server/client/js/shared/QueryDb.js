@@ -26,19 +26,27 @@ QueryDb.respond = function(key,query,cb){
 		return QueryDb.respond.highscore(key,query,cb);
 	}	
 	if(query.db === 'equip'){
-		var value = Equip.compressClient(Tk.deepClone(Equip.get(query.id)) || null);
+		var el = Equip.get(query.id);
+		if(!el) return;
+		var value = Equip.compressClient(Tk.deepClone(el));
 		return cb(QueryResponse(query.db,query.id,value));
 	}
 	if(query.db === 'ability'){
-		var value = Ability.compressClient(Tk.deepClone(Ability.get(query.id)) || null);
+		var el = Ability.get(query.id);
+		if(!el) return;
+		var value = Ability.compressClient(Tk.deepClone(el));
 		return cb(QueryResponse(query.db,query.id,value));
 	}
 	if(query.db === 'quest'){
-		var value = Quest.compressClient(Tk.deepClone(Quest.get(query.id)) || null,true);
+		var el = Quest.get(query.id);
+		if(!el) return;
+		var value = Quest.compressClient(Tk.deepClone(el),true);
 		return cb(QueryResponse(query.db,query.id,value));
 	}
 	if(query.db === 'item'){
-		var value = ItemModel.compressClient(Tk.deepClone(ItemModel.get(query.id)) || null,true);
+		var el = ItemModel.get(query.id);
+		if(!el) return;
+		var value = ItemModel.compressClient(Tk.deepClone(el),true);
 		return cb(QueryResponse(query.db,query.id,value));
 	}
 	//invalid query
@@ -122,6 +130,7 @@ QueryDb.respond.highscore = function(key,query,cb){
 		return DB.quest.data[id].name || '';
 	}
 	QueryDb.getQuestShowInTab = function(id){
+		if(id === 'Qtutorial') return false;	//BAD hardcoded
 		return DB.quest.data[id].showInTab || false;
 	}
 	QueryDb.getPartialQuest = function(id){
@@ -130,7 +139,7 @@ QueryDb.respond.highscore = function(key,query,cb){
 	QueryDb.getHighscoreForQuest = function(id){
 		var list = {};
 		for(var i in DB.highscore.data)
-			if(i.contains(id)) list[i] = 1;
+			if(i.$contains(id)) list[i] = 1;
 		return list;
 	}
 	QueryDb.getHighscoreQuestList = function(){

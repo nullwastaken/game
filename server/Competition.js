@@ -1,7 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 eval(loadDependency(['Quest','OfflineAction','Highscore','Material','Main'],['Competition']));
+var db;
 
-var Competition = exports.Competition = function(highscore,end,reward){
+var Competition = exports.Competition = function(highscore,end,reward){	//rename highscore to category?
 	var high = Highscore.get(highscore);
 	var a = {
 		id:Math.randomId(),
@@ -41,11 +42,11 @@ Competition.Reward.randomlyGenerate = function(){
 		Competition.Reward({'wood-0':12},1200),
 		Competition.Reward({'wood-0':8},800),
 		Competition.Reward({'wood-0':4},400),	
-	]
+	];
 }
 
 Competition.CURRENT = null;
-var db;
+
 Competition.init = function(dbLink,app){
 	db = dbLink;
 	db.competition.findOne({},{_id:0},function(err,res){
@@ -78,7 +79,6 @@ Competition.save = function(){
 	db.competition.upsert({id:comp.id},comp);
 }
 
-
 Competition.onQuestComplete = function(key,highscoreInfo){
 	var comp = Competition.getCurrent();
 	if(!comp) return;
@@ -109,17 +109,28 @@ Competition.onQuestComplete = function(key,highscoreInfo){
 	}	
 }
 
+Competition.removePlayer = function(comp,username){
+	for(var i in comp.rank){
+		if(comp.rank[i].username === username){
+			comp.rank.splice(i,1);
+			INFO('Player removed from competition');
+			Competition.save();
+			return;
+		}
+	}
+	INFO('No player with username ' + username + ' found in competition.');
+};
+
 Competition.updateRank = function(comp){
 	if(comp.order === 'ascending')
 		comp.rank.sort(function(a,b){
-			return a-b;
+			return a.score-b.score;
 		});
 	else 
 		comp.rank.sort(function(a,b){
-			return b-a;
+			return b.score-a.score;
 		});
 }
-
 
 Competition.getCurrent = function(){
 	return Competition.CURRENT;
@@ -133,7 +144,7 @@ Competition.getNext = function(){
 		'Qminesweeper-speedrun',
 		'QtowerDefence-remainingpteasy',
 	];
-	return list.random();
+	return list.$random();
 }
 
 Competition.end = function(comp){

@@ -15,7 +15,7 @@ Main.question = function(main,func,text,answerType,option){
 	if(answerType === 'boolean') 
 		option = [Main.Question.YES,Main.Question.NO];
 	
-	if(!Main.Question.ANSWER_TYPE.contains(answerType)) 
+	if(!Main.Question.ANSWER_TYPE.$contains(answerType)) 
 		return ERROR(3,'invalid answerType',answerType);
 	
 	Main.openDialog(main,'question',Main.Question.Dialog(text,option));
@@ -48,12 +48,12 @@ Main.handleQuestionAnswer = function(main,msg){	//both
 }
 
 Main.question.init = function(){
-	Dialog('question','Question',Dialog.Size(300,200),Dialog.Refresh(function(html,variable,msg){
+	Dialog('question','Question',Dialog.Size('auto','auto'),Dialog.Refresh(function(html,variable,msg){
 		html.css({textAlign:'center'});
 		
-		html.append($('<span>')
+		html.append($('<div>')
 			.html(msg.text + '<br>')
-			.css({fontSize:'1.5em'})
+			.css({fontSize:'1.5em',marginLeft:'auto',marginRight:'auto'})
 		);
 			
 		//#####################
@@ -62,7 +62,7 @@ Main.question.init = function(){
 			if(main.question) //means question was asked on client
 				return Main.handleQuestionAnswer(main,answer);
 			
-			Message.sendToServer(Message('questionAnswer',answer,player.name));
+			Message.sendToServer(Message.QuestionAnswer(answer));
 		}
 		
 		if(msg.option.length){

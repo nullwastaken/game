@@ -47,7 +47,7 @@ var DailyTask = exports.DailyTask = function(quest,challenge){
 
 DailyTask.generateRandom = function(){
 	var quest = Quest.getRandomDaily();		
-	var challenge = quest.challenge.randomAttribute() || '';
+	var challenge = quest.challenge.$randomAttribute() || '';
 	return DailyTask(quest.id,challenge);
 }
 

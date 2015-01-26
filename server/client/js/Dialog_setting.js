@@ -1,8 +1,8 @@
 (function(){ //}
-Dialog('setting','Settings',Dialog.Size(350,550),Dialog.Refresh(function(){
+Dialog('setting','Settings',Dialog.Size(450,550),Dialog.Refresh(function(){
 	Dialog.setting.apply(this,arguments);
 },function(){
-	return Tk.stringify(main.pref);
+	return Tk.stringify(main.pref) + ClientPrediction.MODE;
 }));
 //Dialog.open('setting')
 
@@ -12,7 +12,10 @@ Dialog.setting = function(html,variable){
 	var list = Pref.get();
 	html.append('<h2>Preferences</h2>');
 	
-	html.append($('<button>')
+	var divTop = $('<div>');
+	html.append(divTop);
+	
+	divTop.append($('<button>')
 		.addClass('myButton')
 		.click(function(){
 			Dialog.open('binding');
@@ -20,8 +23,8 @@ Dialog.setting = function(html,variable){
 		.html('Key Bindings')
 		.attr('title','Change Key Bindings')
 	);
-	html.append('<br>');
-	html.append($('<button>')
+	divTop.append('<br>');
+	divTop.append($('<button>')
 		.addClass('myButton')
 		.click(function(){
 			Dialog.open('account',true);
@@ -29,10 +32,11 @@ Dialog.setting = function(html,variable){
 		.html('Account Management')
 		.attr('title','Open Account Management Window')
 	);
+	divTop.append('<br>');
 	
-	html.append('<br>');
-	html.append('Volume:');
-	html.append($('<button>')
+	//Volume
+	divTop.append('Volume:');
+	divTop.append($('<button>')
 		.click(function(){
 			Command.execute('pref',['volumeMaster',(Main.getPref(main,'volumeMaster+10')).mm(0,100)]);
 			Command.execute('pref',['volumeSong',(Main.getPref(main,'volumeSong')+10).mm(0,100)]);
@@ -41,7 +45,7 @@ Dialog.setting = function(html,variable){
 		.html('+')
 		.attr('title','Increase volume')
 	);
-	html.append($('<button>')
+	divTop.append($('<button>')
 		.click(function(){
 			Command.execute('pref',['volumeMaster',(Main.getPref(main,'volumeMaster')-10).mm(0,100)]);
 			Command.execute('pref',['volumeSong',(Main.getPref(main,'volumeSong')-10).mm(0,100)]);
@@ -50,15 +54,48 @@ Dialog.setting = function(html,variable){
 		.html('-')
 		.attr('title','Decrease volume')
 	);
-	html.append($('<button>')
+	divTop.append($('<button>')
 		.click(function(){
 			Command.execute('pref',['volumeMaster',0]);
 		})
 		.html('Mute')
 		.attr('title','Mute volume')
 	);
-	html.append('<br>');
-		
+	divTop.append('<br>');
+	
+	//Client Prediction	
+	divTop.append('Client Prediction: ');
+	divTop.append($('<button>')
+		.html('Yes')
+		.addClass('myButton skinny')
+		.css({border:ClientPrediction.MODE === ClientPrediction.YES ? '4px solid black' : ''})
+		.click(function(){
+			ClientPrediction.MODE = ClientPrediction.YES;
+			ClientPrediction.activate();
+		})
+	);
+	divTop.append($('<button>')
+		.html('Auto')
+		.addClass('myButton skinny')
+		.css({border:ClientPrediction.MODE === ClientPrediction.AUTO ? '4px solid black' : ''})
+		.click(function(){
+			ClientPrediction.MODE = ClientPrediction.AUTO;
+		})
+	);
+	divTop.append($('<button>')
+		.html('No')
+		.addClass('myButton skinny')
+		.css({border:ClientPrediction.MODE === ClientPrediction.NO ? '4px solid black' : ''})
+		.click(function(){
+			ClientPrediction.MODE = ClientPrediction.NO;
+			ClientPrediction.deactivate();
+		})
+	);
+	divTop.append('<br>');
+	divTop.append('<br>');
+	
+	
+	
 	//Regular Pref
 	var array = [];
 	for(var i in list){

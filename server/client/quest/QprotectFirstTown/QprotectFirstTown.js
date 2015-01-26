@@ -6,6 +6,8 @@
 var s = loadAPI('v1.0','QprotectFirstTown',{
 	name:"Protect Town",
 	author:"rc",
+	maxParty:4,
+	thumbnail:true,
 	description:"Protect villagers from waves of monsters.",
 });
 var m = s.map; var b = s.boss; var g;
@@ -41,7 +43,7 @@ s.newEvent('_start',function(key){ //
 });
 s.newEvent('_hint',function(key){ //
 	if(!s.get(key,'started')) return 'Talk with Cyber north of Town.';
-	return 'Protect the villagers for ' + s.get(key,'timeToSurvive').frameToChrono() + '.';
+	return 'Protect the villagers for ' + s.frameToChrono(s.get(key,'timeToSurvive')) + '.';
 });
 s.newEvent('_signIn',function(key){ //
 	s.failQuest(key);
@@ -64,7 +66,7 @@ s.newEvent('startGame',function(key){ //
 	s.removeQuestMarker(key,'start');
 	var LIFE = 1000;
 	
-	s.teleport(key,'main','n3','solo',true);
+	s.teleport(key,'main','n3','party',true);
 	s.setRespawn(key,'QfirstTown-main','n3','main',true);
 	s.startChrono(key,'timer');	//only used to show time to player
 	
@@ -153,8 +155,8 @@ s.newMap('main',{
 		
 		var possibleSpot = ['e1','e2','e3','e4'];
 		var possibleEnemy = ['mummy','spirit','skeleton','death','ghost','orc-melee'];
-		var randomSpot = spot[possibleSpot.random()];
-		var randomEnemy = possibleEnemy.random();
+		var randomSpot = spot[possibleSpot.$random()];
+		var randomEnemy = possibleEnemy.$random();
 		m.spawnActor(randomSpot,randomEnemy,{globalDmg:0.7});	//spawn enemy
 	}
 });

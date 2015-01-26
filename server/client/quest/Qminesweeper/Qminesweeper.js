@@ -5,6 +5,8 @@
 var s = loadAPI('v1.0','Qminesweeper',{
 	name:"Minesweeper",
 	author:"rc",
+	maxParty:4,
+	thumbnail:true,
 	scoreModInfo:"Depends on your time.",
 	description:"Play the puzzle game minesweeper.",
 });
@@ -89,7 +91,7 @@ s.newEvent('generateBombGrid',function(){ //
 	for(var i = 0 ; i < s.callEvent('getCst','BOMBAMOUNT'); i++){
 		do {
 			var num = Math.floor(Math.random()*100);
-		} while(bombPosition.contains(num))	//prevent duplicate
+		} while(bombPosition.$contains(num))	//prevent duplicate
 			
 		bombPosition.push(num);
 	}
@@ -99,7 +101,7 @@ s.newEvent('generateBombGrid',function(){ //
 		grid[i] = [];
 		for(var j = 0 ; j < SIZE; j++){
 			var num = i + j*10;
-			grid[i][j] = bombPosition.contains(num) ? s.callEvent('getCst','BOMB') : 0;
+			grid[i][j] = bombPosition.$contains(num) ? s.callEvent('getCst','BOMB') : 0;
 		}
 	}
 	return grid;

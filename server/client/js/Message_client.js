@@ -4,7 +4,7 @@ eval(loadDependency(['Input','Button','OptionList','Command','Message']));
 Message.sendChatToServer = function(text){
 	if(!text.trim()) return;
 	
-	Dialog.chat.setInput('');
+	Dialog.chat.setInput('',false);
 	if(text[0] === '$'){
 		Command.execute(Command.textToCommand(text.slice(1)));
 		return;
@@ -15,13 +15,13 @@ Message.sendChatToServer = function(text){
 
 Message.sendChatToServer.textToMessage = function(txt){
 	//Clan Chat
-	if(txt[0] === '/'){ 
+	/*if(txt[0] === '/'){ 
 		var count = 0;
 		while(txt[count] === '/') count++;
 		var text = txt.slice(count);
 		
-		return Message('clan',text,player.name,Message.Clan(--count));
-	}
+		return Message.Clan(text,player.name,--count);
+	}*/
 		
 	//Strict Pm
 	if(txt.indexOf('@@') == 0){ 
@@ -30,7 +30,7 @@ Message.sendChatToServer.textToMessage = function(txt){
 		var to = txt.slice(0,txt.indexOf(','));
 		var text = txt.slice(txt.indexOf(',') + 1);
 		
-		return Message('pm',text,player.name,Message.Pm(to));
+		return Message.Pm(text,player.name,to);
 	}
 	
 	//Pm with possible nickname
@@ -47,11 +47,11 @@ Message.sendChatToServer.textToMessage = function(txt){
 				to = i;
 		}
 				
-		return Message('pm',text,player.name,Message.Pm(to));
+		return Message.Pm(text,player.name,to);
 	}
 	
 	//Public
-	return Message('public',txt,player.name);
+	return Message.Public(txt,player.name);
 }
 
 Message.sendToServer = function(msg){
@@ -77,7 +77,8 @@ Message.setInputForPM = function(key,name){
 //###############
 
 Message.add = function(key,msg){
-	if(typeof msg === 'string') msg = Message('game',msg,Message.CLIENT);
+	if(typeof msg === 'string') 
+		msg = Message.Game(msg,Message.CLIENT);
 	Message.receive(msg);
 }
 Message.addPopup = function(key,text,time){

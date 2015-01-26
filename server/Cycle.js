@@ -23,6 +23,8 @@ Cycle.onSignIn = function(key,account){
 	}
 }
 
+
+
 Cycle.day = function(){
 	Quest.updateRating();
 	

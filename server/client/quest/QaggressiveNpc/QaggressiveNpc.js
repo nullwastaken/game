@@ -6,6 +6,8 @@
 var s = loadAPI('v1.0','QaggressiveNpc',{
 	name:"Bipolarity",
 	author:"rc",
+	maxParty:2,
+	thumbnail:true,
 	description:"Activating a switch can have weird effects on villagers.",
 });
 var m = s.map; var b = s.boss; var g;
@@ -55,8 +57,6 @@ s.newChallenge('secretOrder','Secret Order','Kill the villagers in the correct o
 });
 
 
-
-
 s.newEvent('_signIn',function(key){ //
 	s.failQuest(key);
 });
@@ -72,9 +72,6 @@ s.newEvent('_start',function(key){ //
 s.newEvent('_hint',function(key){ //
 	if(!s.get(key,'toggleSwitch')) return 'I wonder what that switch does...';
 	return 'KILL THEM ALL!';
-});
-s.newEvent('_death',function(key){ //
-	s.failQuest(key);
 });
 s.newEvent('killNpc',function(key,eid){ //
 	if(s.isChallengeActive(key,'secretOrder')){
@@ -98,6 +95,7 @@ s.newEvent('toggleSwitch',function(key){ //
 	},'npc',null,{toKill:true});
 	
 	s.set(key,'toggleSwitch',true);
+	s.setRespawn(key,'fight','t2','party');
 	s.displayPopup(key,'Kill them all to turn them back to normal.');
 	s.startChrono(key,'timeToKill');
 });
@@ -119,8 +117,6 @@ s.newEvent('startGame',function(key){ //
 	s.removeQuestMarker(key,'start');
 	s.teleport(key,'fight','t1');
 });
-
-s.newPreset('preset1',s.newPreset.ability(['simple3','simple','simple2','','','']),null,False,False,False,False);
 
 s.newAbility('simple','attack',{
 	name:'Lightning',
@@ -161,6 +157,9 @@ s.newAbility('simple3','attack',{
 	dmg:s.newAbility.dmg(500,'lightning'),
 	preDelayAnim:s.newAbility.anim('lightningHit',1),
 });
+
+s.newPreset('preset1',s.newPreset.ability(['simple3','simple','simple2','','','']),null,False,False,False,False);
+
 
 s.newDialogue('switch','Switch','',[ //{ 
 	s.newDialogue.node('click',"for(var i in npcList)<br> npcList[i].aggressive = true;<br>Are you sure you want to activate this?",[ 

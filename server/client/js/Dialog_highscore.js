@@ -9,10 +9,11 @@ Dialog('highscore','Highscore',Dialog.Size(700,700),Dialog.Refresh(function(){
 //QueryDb.get('highscore','QlureKill-_score')
 
 Dialog.highscore = function(html,variable,param){
-	if(typeof param === 'string') param = {quest:param.split('-')[0],category:param};
+	if(typeof param === 'string') 
+		param = {quest:param.split('-')[0],category:param};
 	param = param || {};
-	param.quest = param.quest || QueryDb.getHighscoreQuestList().randomAttribute();
-	param.category = param.category || QueryDb.getHighscoreForQuest(param.quest).randomAttribute();
+	param.quest = param.quest || QueryDb.getHighscoreQuestList().$randomAttribute();
+	param.category = param.category || QueryDb.getHighscoreForQuest(param.quest).$randomAttribute();
 	
 	variable.param = param;
 	
@@ -77,7 +78,7 @@ Dialog.highscore.table = function(html,variable,highscore){
 		]);
 	}
 	
-	html.append(Tk.arrayToTable(array,true,false,true));
+	html.append(Tk.arrayToTable(array,true,false,true).css({marginLeft:'auto',marginRight:'auto'}));
 }
 
 

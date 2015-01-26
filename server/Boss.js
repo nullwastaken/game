@@ -26,7 +26,7 @@ Boss.Variable = function(list){
 		_noattack:0,	//time if above 0 => cant attack
 	}	
 	for(var i in list){
-		if(i.contains('_',true)) return ERROR(3,'cant have boss variable starting with _');
+		if(i.$contains('_',true)) return ERROR(3,'cant have boss variable starting with _');
 		tmp[i] = list[i];
 	}
 	return tmp;		

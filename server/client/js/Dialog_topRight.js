@@ -174,6 +174,10 @@ Dialog.UI('quitGame',{
 	zIndex:Dialog.ZINDEX.HIGH,
 },function(html){
 	var el = Img.drawIcon.html('system.close',18,"Shift-Left Click to safely leave the game.",null,null,0.7);
+	var ctx = el[0].getContext('2d');
+	ctx.fillStyle = 'red';
+	ctx.globalAlpha = 0.2;
+	ctx.fillRect(0,0,18,18);
 	el.click(function(e){
 		if(e.shiftKey)
 			Command.execute('logout');

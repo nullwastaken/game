@@ -23,7 +23,7 @@ Img.icon = [];
 Img.getMinimapIconSize = function(name){
 	if(name === 'minimapIcon.quest') return 24;
 	if(name === 'minimapIcon.questMarker') return 24;
-	if(name.contains('color')) return 6;
+	if(name.$contains('color')) return 6;
 	return 16;
 }
 
@@ -205,6 +205,10 @@ Img.drawArrow = function(side,size){
 	return $('<img>')
 		.attr({src:src})
 		.css({zIndex:Img.drawItem.zIndex,width:size,height:size});
+}
+
+Img.getStar = function(color){
+	return $('<span>').html('★').css({color:'yellow' || color});
 }
 
 

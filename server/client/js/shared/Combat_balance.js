@@ -44,7 +44,7 @@ Combat.WEAPON_MAIN_MOD = 1.5;
 Combat.ARMOR_MAIN_MOD = 2.25;
 
 Combat.getMasteryExpMod = function(mastery){
-	return Math.log10(mastery + 100) * 0.1 + 0.8;	//1.1 at 900, 1.2 at 9900
+	return Math.log10(mastery + 100) * 0.1 + 0.8;	//1.1 at 900, 1.2 at 9900, 1.3 at 99900
 }
 Combat.getMainDmgDefByLvl = function(lvl){	//in average, has 1.25 * main. in def cuz of ratio
 	return 1 + 0.01*lvl;				//but ok cuz weapon boost by 1.5 certain attack
@@ -59,6 +59,11 @@ Combat.getEnemyPower = function(act,num){
 		Boost('enemypower','globalDef',def || 1,60*1000,"*"),
 	];
 }
+
+Combat.getVisiblePower = function(main){
+	return (Math.pow(main*Combat.WEAPON_MAIN_MOD,10)*100).r(0);
+}
+
 /*
 def: 
 ring:1.5,	

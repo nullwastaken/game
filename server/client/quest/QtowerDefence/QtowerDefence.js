@@ -6,6 +6,8 @@
 var s = loadAPI('v1.0','QtowerDefence',{
 	name:"Tower Defence",
 	author:"rc",
+	maxParty:1,
+	thumbnail:true,
 	reward:{"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
 	description:"Place towers to kill waves of enemies trying to reach the bottom of the screen.",
 });
@@ -70,7 +72,7 @@ s.newEvent('_complete',function(key){ //
 });
 s.newEvent('startGame',function(key){ //
 	s.removeQuestMarker(key,'start');
-	s.teleport(key,'main','t1','solo',true);
+	s.teleport(key,'main','t1','party',true);
 	s.addItem(key,'basic');
 	s.addItem(key,'ice');
 	s.addItem(key,'aoe');

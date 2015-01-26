@@ -1,7 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 eval(loadDependency(['Actor','Main','Boss','Combat','ActiveList','Map','Collision','Sprite','Anim','Boost']));
 
-Actor.loop = function(){	//static
+(function(){ //}
+Actor.loop = function(){	//server, for client check below
 	Actor.loop.FRAME_COUNT++;
 	for (var i in Actor.LIST)   
 	    Actor.loop.forEach(Actor.LIST[i]);
@@ -167,6 +168,8 @@ Actor.testInterval.get = function(){	//required cuz goal of testing xya every 2 
 }
 
 
+
+
 if(!SERVER){ //}
 	Actor.loop = function(){
 		for(var i in Actor.LIST){
@@ -177,12 +180,18 @@ if(!SERVER){ //}
 	Actor.loop.forEach = function(act){
 		Actor.loop.updatePosition(act);
 
+		Actor.HitHistoryToDraw.loop(act);
 		Sprite.updateAnim(act);
-		if(!act.chatHead) return;
-		if(--act.chatHead.timer <= 0)	act.chatHead = null;	
+		
+		if(act.spriteFilter && --act.spriteFilter.time < 0)
+			act.spriteFilter = null;
+				
+		if(act.chatHead && --act.chatHead.timer <= 0)	
+			act.chatHead = null;	
 	}
 	
 	Actor.loop.player = function(){
+		Actor.move.client(player);
 		Actor.loop.forEach(player);		
 		if(Actor.loop.player.OLD.permBoost !== player.permBoost){
 			Actor.loop.player.OLD.permBoost = player.permBoost;
@@ -192,10 +201,14 @@ if(!SERVER){ //}
 		if(!MapModel.getCurrent().imageLoaded)
 			MapModel.initImage(MapModel.getCurrent());
 		
+		
 	}
 	Actor.loop.player.OLD = {};
 	
 	Actor.loop.updatePosition = function(act){	//
+		if(ClientPrediction.isActive() && act === player) 
+			return ClientPrediction.updatePosition(act);
+			
 		var diffX = act.serverX - act.x;
 		var diffY = act.serverY - act.y;
 		
@@ -211,6 +224,16 @@ if(!SERVER){ //}
 			act.spdY = diffY;
 		}
 	}	
-}
 
+	
+	
+	
+
+	
+	
+	
+	
+
+}
+})(); //{
 

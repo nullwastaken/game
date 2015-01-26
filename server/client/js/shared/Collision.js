@@ -24,11 +24,24 @@ Collision.testPtRect = function(pt,rect){
 		&& pt.y <= rect.y+rect.height;
 }
 
-
-Collision.testPtRRect = function(pt,rotRect){	//Collision Pt and Rotated Rect
-	//IF WANT REVAMP: local function isPointInsideRectangle(rectangle, x, y)$$$			local c = math.cos(-rectangle.rotation*math.pi/180)$$$			local s = math.sin(-rectangle.rotation*math.pi/180)$$$			$$$			-- UNrotate the point depending on the rotation of the rectangle$$$			local rotatedX = rectangle.x + c * (x - rectangle.x) - s * (y - rectangle.y)$$$			local rotatedY = rectangle.y + s * (x - rectangle.x) + c * (y - rectangle.y)$$$			$$$			-- perform a normal check if the new point is inside the $$$			-- bounds of the UNrotated rectangle$$$			local leftX = rectangle.x - rectangle.width / 2$$$			local rightX = rectangle.x + rectangle.width / 2$$$			local topY = rectangle.y - rectangle.height / 2$$$			local bottomY = rectangle.y + rectangle.height / 2$$$			$$$			return leftX <= rotatedX and rotatedX <= rightX and$$$					topY <= rotatedY and rotatedY <= bottomY$$$	end
-	var ptInRectReferencial = Tk.rotatePt(pt,-rotRect.angle);
-	return Collision.testPtRect(ptInRectReferencial,rotRect);
+Collision.testPtRRect = function(pt,rectangle){	//Collision Pt and Rotated Rect
+	var c = Math.cos(-rectangle.angle*Math.PI/180);
+	var s = Math.sin(-rectangle.angle*Math.PI/180);
+	
+	// UNrotate the point depending on the rotation of the rectangle
+	var rotatedX = rectangle.x + c * (pt.x - rectangle.x) - s * (pt.y - rectangle.y);
+	var rotatedY = rectangle.y + s * (pt.x - rectangle.x) + c * (pt.y - rectangle.y);
+	
+	// perform a normal check if the new point is inside the 
+	// bounds of the UNrotated rectangle
+	var leftX = rectangle.x;
+	var rightX = rectangle.x + rectangle.width;
+	var topY = rectangle.y;
+	var bottomY = rectangle.y + rectangle.height;
+	
+	var res = leftX <= rotatedX && rotatedX <= rightX &&
+			topY <= rotatedY && rotatedY <= bottomY;
+	return res;
 }
 
 Collision.getDistancePtPt = function(pt1,pt2){
@@ -42,6 +55,7 @@ Collision.getAnglePtPt = function(pt1,pt2){	//pt1 looking towards pt2
 Collision.testPosGrid = function(pos,grid){	
 	return Collision.testXYMap(pos.x,pos.y,grid);
 }
+
 Collision.testXYMap = function(x,y,grid){ //return 1 if collision
 	return !grid[y] || !+grid[y][x];
 }
@@ -121,7 +135,7 @@ Collision.bulletActor.test = function(atk,def){
 	
 	if(def.damagedIf === 'false') return false;
 	if(normal && def.damagedIf !== 'true'){
-		if(Array.isArray(def.damagedIf)) normal = def.damagedIf.contains(atk.parent);
+		if(Array.isArray(def.damagedIf)) normal = def.damagedIf.$contains(atk.parent);
 		if(def.damagedIf === 'player') normal = parent.type === 'player';
 		if(def.damagedIf === 'npc') normal = parent.type === 'npc';
 		if(typeof def.damagedIf === 'function') normal = def.damagedIf(parent);
@@ -176,12 +190,11 @@ Collision.strikeMap = function(strike,target){	//gets farthest position with no 
 	var grid = MapModel.get(strike.map).grid['bullet'];
 	for(var i in path){
 		if(Collision.testPosGrid(path[i],grid)) 
-			return {x:path[i].x*32,y:path[i].y*32};	
+			return {x:path[i].x*32,y:path[i].y*32,collision:true};	
 	}
 
 	return target;
 }
-
 
 Collision.testLineMap = function(map,start,end){
 	var path = Collision.getPath(Collision.getPos(start),Collision.getPos(end));

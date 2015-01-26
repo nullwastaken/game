@@ -6,6 +6,8 @@
 var s = loadAPI('v1.0','QbaseDefence',{
 	name:"Defend The Base",
 	author:"rc",
+	maxParty:2,
+	thumbnail:true,
 	reward:{"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
 	description:"Kill waves of monsters before they reach your base using the right ability.",
 });
@@ -16,6 +18,7 @@ kill zombies by using the right ability
 get pt by killing them, use pt to upgrade self
 if survive all waves, win
 */
+
 
 s.newVariable({
 	wave:0,
@@ -142,9 +145,9 @@ s.newEvent('getWaveInfo',function(num){ //
 });
 s.newEvent('spawnEnemy',function(key){ //
 	var color = s.isChallengeActive(key,'color4') 
-		? ['red','blue','yellow','green'].random() 
-		: ['red','blue','yellow'].random();
-	var spot = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s'].random();
+		? ['red','blue','yellow','green'].$random() 
+		: ['red','blue','yellow'].$random();
+	var spot = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s'].$random();
 	var eid = s.spawnActor(key,'base',spot,color,{deathEvent:'killEnemy',v:32});
 	
 	s.followPath(eid,'myPath',function(){	//no key in param cuz using key of nextWave

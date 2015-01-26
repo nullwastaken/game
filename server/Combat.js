@@ -160,6 +160,12 @@ Combat.collision = function(b,act){
 	if(act.attackReceived[b.hitId]) return;    //for pierce
     act.attackReceived[b.hitId] = 20*25;	//last for 20 sec
 	
+	if(act.type === 'npc'){	//TEMP
+		act.spdX = act.spdX/4;
+		act.spdY = act.spdY/4;		
+		Actor.moveBy(act,Tk.cos(b.moveAngle)*15,Tk.sin(b.moveAngle)*15);
+	}
+	
 	if(b.hitAnim) 
 		Anim(b.hitAnim,Anim.Target(act.id));
 	if(b.onHitHeal)
@@ -169,8 +175,7 @@ Combat.collision = function(b,act){
 		Combat.collision.crit(b)
 	
 	var dmg = Combat.collision.damage(b,act); if(typeof dmg === 'undefined') return;
-	Combat.collision.reflect(dmg,b,act);
-	
+
 	//Mods
 	if(b.leech && b.leech.chance >= Math.random())
 		Combat.collision.leech(act,b);
@@ -215,40 +220,31 @@ Combat.collision.leech = function(act,b){
 	
 }
 
-Combat.collision.reflect = function(dmg,b,def){
-	var atker = Actor.get(b.parent);
-	if(!atker || !atker.hp) return;
-	
-	var sum = 0;
-	for(var i in def.reflect)
-		sum += (def.reflect[i]*dmg[i]) || 0;
-
-	sum /= atker.globalDef;
-	sum = sum || 0;
-	Actor.addHp(atker,-sum);
-}
-	
 Combat.collision.crit = function(b){
 	b.dmg.main *= b.crit.magn;
 }
 
 //Damage
-Combat.collision.damage = function(atk,player){
-	var def = Actor.getDef(player);
+Combat.collision.damage = function(atk,act){
+	var def = Actor.getDef(act);
 	var dmgInfo = Combat.collision.damage.calculate(atk.dmg,def);
 	if(dmgInfo.sum === 0) return;
-	if(!dmgInfo.sum) return ERROR(4,'dmg sum is NaN',atk.dmg,def);
-	
-	if(player.type === 'player' && Actor.isPlayer(atk.parent)) 
+	if(!dmgInfo.sum){
+		var puser = (Actor.get(atk.parent) && Actor.get(atk.parent).name) || 'unable to get parent name';
+		return ERROR(4,'dmg sum is NaN',atk.dmg,def,'atk: ' + puser,'def:' + act.def);
+	}
+	if(Actor.isPlayer(act) && Actor.isPlayer(atk.parent)) 
 		dmgInfo.sum *= Debug.DMG_MOD.pvp;
 		
-	dmgInfo.sum *= Debug.DMG_MOD[player.type];	//TOFIX
+	dmgInfo.sum *= Debug.DMG_MOD[act.type];	//TOFIX
 	
-	Actor.addHp(player,-dmgInfo.sum);
-	player.lastAbilitySkill = dmgInfo.mainType;
+	Actor.addHitHistory(act,-dmgInfo.sum);
+	Actor.addHp(act,-dmgInfo.sum);
+		
+	act.lastAbilitySkill = dmgInfo.mainType;
 	
-	player.damagedBy[atk.parent] = player.damagedBy[atk.parent] || 0;
-	player.damagedBy[atk.parent] += dmgInfo.sum;
+	act.damagedBy[atk.parent] = act.damagedBy[atk.parent] || 0;
+	act.damagedBy[atk.parent] += dmgInfo.sum;
 	
 	return dmgInfo;
 }

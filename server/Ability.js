@@ -35,6 +35,18 @@ var Ability = exports.Ability = function(quest,id,ability){
 	return tmp;
 }
 
+Ability.verifyDmg = function(ab){
+	if(ab.type === 'attack'){
+		var dmg = ab.param.attack.dmg;
+		if(isNaN(dmg.main))
+			ERROR(3,'dmg ratio not a number ability:' + ab.id);
+		for(var i in dmg.ratio){
+			if(isNaN(dmg.ratio[i]))
+				ERROR(3,'dmg ratio not a number ability:' + ab.id);
+		}
+	}
+}
+
 var DB = Ability.DB = {};
 
 Ability.get = function(id){

@@ -1,8 +1,9 @@
 (function(){ //}
-
+//latency
 var socket = io();
-var FAKE_LATENCY = false;
+
 var FAKE_LATENCY_VALUE = 0;
+var FAKE_LATENCY = false;
 
 Socket = {};
 Socket.emit = function(what,data){
@@ -34,7 +35,6 @@ Socket.init = function(){
 	
 
 }
-
 
 })();
 

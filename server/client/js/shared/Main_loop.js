@@ -13,6 +13,7 @@ Main.loop.forEach = function(main){	//server
 	Save.loop(main.id);
 	Main.chrono.loop(main); 
 	Main.social.update(main);   				//check if any change in friend list
+	Main.ItemList.loop(main);
 }
 Main.loop.FRAME_COUNT = 0;
 

@@ -10,7 +10,6 @@ var s = loadAPI('v1.0','Qdebug',{
 });
 var m = s.map; var b = s.boss; var g;
 
-
 //0,0,Qdebug-testCutscene
 
 s.newVariable({

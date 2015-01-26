@@ -1,11 +1,16 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 eval(loadDependency(['ItemList','Message','Boost','OptionList','Combat','Material','CraftBoost','ItemModel','Main','Actor'],['Equip']));
 var db = null; 	//Equip.init
+var START_ITEM_ID = 'E';
+
+var FETCH_ALL_DB_INIT = true;
+var DELETE_EQUIP_DB_WHEN_UPGRADE = false;
+
 
 var Equip = exports.Equip = function(quest,id,piece,type,name,lvl,valueMod,boost,extra,addDb){	//called directly when creating quest equip
-	if(!CST.equip.piece.contains(piece || extra.piece)) return ERROR(3,'invalid piece',piece|| extra.piece);
-	if(!CST.equip[piece|| extra.piece].contains(type|| extra.type)) return ERROR(3,'piece and type doesnt match',piece|| extra.piece,type|| extra.type);
-		
+	if(!CST.equip.piece.$contains(piece || extra.piece)) return ERROR(3,'invalid piece',piece|| extra.piece);
+	if(!CST.equip[piece|| extra.piece].$contains(type|| extra.type)) return ERROR(3,'piece and type doesnt match',piece|| extra.piece,type|| extra.type);
+			
 	var equip = {
 		version:'v1.0',
 		quest:quest || '',
@@ -28,6 +33,7 @@ var Equip = exports.Equip = function(quest,id,piece,type,name,lvl,valueMod,boost
 		quality:0,
 		rarity:0,
 		maxAmount:0,
+		creationDate:Date.now(),
 		/**/
 		upgradable:0,
 		upgradeInfo:null,/**/
@@ -62,34 +68,39 @@ Equip.get = function(id){
 
 Equip.init = function(dbLink,cb){
 	db = dbLink;
-	db.equip.find({},{'_id':0},function(err, results) { if(err) throw err
-		for(var i in results)	
-			Equip.uncompressDbAndAdd(results[i]);
+	//now, we fetch needed equip when player logs
+	if(FETCH_ALL_DB_INIT){
+		db.equip.find({},{'_id':0},function(err, results) { if(err) throw err
+			for(var i in results)	
+				Equip.uncompressDbAndAdd(results[i]);
 
-		cb.call();
-	});
+			cb.call();
+		});
+	} else {
+		cb.call();	
+	}
 }
+
 
 //#######################
 
 Equip.randomlyGenerateFromQuestReward = function(act){
-	return Equip.randomlyGenerate(null,Actor.getLevel(act),null,null,null,null,act.username);
+	return Equip.randomlyGenerate(act.username,null,Actor.getLevel(act),null,null,null,null);
 }
 
-
-Equip.randomlyGenerate = function(pieceType,lvl,quality,rarity,min,max,creator){
+Equip.randomlyGenerate = function(creator,pieceType,lvl,quality,rarity,min,max){
 	pieceType = pieceType || Equip.PieceType();
 	
 	quality = quality !== undefined ? quality : Equip.generateQuality(quality);
 	rarity = rarity !== undefined ? rarity : Equip.generateRarity(rarity);
 	
 	var name = Equip.Name(pieceType);
-	var id = Math.randomId();
+	var id = START_ITEM_ID + Math.randomId();
 	var piece = pieceType.piece;
 	var type = pieceType.type;
 	lvl = Equip.Lvl(lvl || 0);
-	var maxAmount = max !== undefined ? max : Equip.generateMaxAmount(rarity);
-	var minAmount = min !== undefined ? min : Equip.generateMinAmount(rarity,maxAmount);
+	var maxAmount = typeof max === 'number' ? max : Equip.generateMaxAmount(rarity);
+	var minAmount = typeof min === 'number' ? min : Equip.generateMinAmount(rarity,maxAmount);
 	var boost = Equip.generateBoost(minAmount,piece,type);
 	
 	var valueMod = Equip.generateValueMod(quality);
@@ -110,13 +121,13 @@ Equip.randomlyGenerate = function(pieceType,lvl,quality,rarity,min,max,creator){
 Equip.PieceType = function(piece,type){
 	if(piece && type) return {piece:piece,type:type};
 	
-	if(!piece) piece = CST.equip.piece.random();
-	if(piece === 'armor') piece = ['amulet','ring','body','helm'].random();
-	if(piece === 'weapon') return {piece:'weapon',type:CST.equip.weapon.random()};
-	if(piece === 'amulet') return {piece:'amulet',type:CST.equip.amulet.random()};
-	if(piece === 'ring') return {piece:'ring',type:CST.equip.ring.random()};
-	if(piece === 'body') return {piece:'body',type:CST.equip.body.random()};
-	if(piece === 'helm') return {piece:'helm',type:CST.equip.helm.random()};
+	if(!piece) piece = CST.equip.piece.$random();
+	if(piece === 'armor') piece = ['amulet','ring','body','helm'].$random();
+	if(piece === 'weapon') return {piece:'weapon',type:CST.equip.weapon.$random()};
+	if(piece === 'amulet') return {piece:'amulet',type:CST.equip.amulet.$random()};
+	if(piece === 'ring') return {piece:'ring',type:CST.equip.ring.$random()};
+	if(piece === 'body') return {piece:'body',type:CST.equip.body.$random()};
+	if(piece === 'helm') return {piece:'helm',type:CST.equip.helm.$random()};
 	return ERROR(3,'invalid piece',piece);
 }
 
@@ -183,7 +194,7 @@ Equip.generateUpgradeInfo = function(piece,type,lvl){
 		return Equip.UpgradeInfo(expRewarded,Equip.UpgradeInfo.item([['bone-'+matLvl,10]]));
 
 	if(type === 'ruby' || type === 'sapphire' || type === 'topaz'){
-		var random = ['metal-','wood-','bone-'].random();
+		var random = ['metal-','wood-','bone-'].$random();
 		var item = [
 			[type + '-'+ matLvl,2],
 			[random+matLvl,1]
@@ -290,8 +301,8 @@ Equip.generateRatio = function(piece,type){
 	else if(type === 'spear') return {melee:1.5,range:1,magic:1,fire:1,cold:1.5,lightning:1};
 	else if(type === 'sword') return {melee:1.5,range:1,magic:1,fire:1,cold:1,lightning:1.5};
 	else if(type === 'bow') return {melee:1,range:1.5,magic:1,fire:1.5,cold:1,lightning:1};
-	else if(type === 'boomerang') return {melee:1,range:1.5,magic:1,fire:1,cold:1,lightning:1.5};
 	else if(type === 'crossbow') return {melee:1,range:1.5,magic:1,fire:1,cold:1.5,lightning:1};
+	else if(type === 'boomerang') return {melee:1,range:1.5,magic:1,fire:1,cold:1,lightning:1.5};
 	else if(type === 'wand') return {melee:1,range:1,magic:1.5,fire:1.5,cold:1,lightning:1};
 	else if(type === 'staff') return {melee:1,range:1,magic:1.5,fire:1,cold:1.5,lightning:1};
 	else if(type === 'orb') return {melee:1,range:1,magic:1.5,fire:1,cold:1,lightning:1.5};
@@ -312,7 +323,7 @@ Equip.generateRatio = function(piece,type){
 
 Equip.createItemVersion = function(equip){
 	var option = [
-		ItemModel.Option(Main.openDialog,'Examine Equip',null,[OptionList.MAIN,'equipPopup',equip.id]),
+		ItemModel.Option(Main.openDialog,'Examine Equip',null,[OptionList.MAIN,'equipPopup',{id:equip.id}]),	//based on Dialog.EquipPopup
 		ItemModel.Option(Actor.equip.click,'Wear Equip',null,[OptionList.ACTOR,equip.id]),
 	];
 	var extra = {type:'equip',drop:0};
@@ -372,6 +383,7 @@ Equip.boundToAccount = function(key,eid){
 Equip.removeFromDb = function(eid){
 	if(!DB[eid]) return ERROR(3,'equip dont exist',eid);
 	if(DB[eid].quest) return;
+	if(!DELETE_EQUIP_DB_WHEN_UPGRADE) return;
 	delete DB[eid];
 	db.equip.remove({'id':eid});
 }
@@ -388,7 +400,7 @@ Equip.salvage = function(key,id){
 		
 		//add item
 		var item = {};
-		item[Material.getRandom()] = equip.boost.length + 1;
+		item[Material.getRandom(Actor.getLevel(Actor.get(key)))] = equip.boost.length + 1;
 		Main.addItem(main,item);
 		
 		//give exp
@@ -410,6 +422,43 @@ Equip.destroy = function(key,id){
 		Main.removeItem(main,id);
 		Equip.removeFromDb(id);
 	},'Destroy this equip permanently?','boolean');
+}
+
+Equip.fetchList = function(list,username,cb){
+	if(FETCH_ALL_DB_INIT) return cb();
+	db.equip.find({id:{$in:list}},{_id:0},function(err,results){
+		if(err) ERROR.err(3,err);
+		for(var i in results)	
+			var equip = Equip.uncompressDbAndAdd(results[i]);
+			//if(equip.creator !== username)	//added trading...
+			//	ERROR(2,'equip ' + equip.id + ' owned by ' + username + ' but created by ' +  equip.creator);
+		cb();
+	})	
+}
+
+Equip.onSignOff = function(inv,bank,equip){
+	if(FETCH_ALL_DB_INIT) return;
+	
+	// !quest => randomly generated
+	for(var i in inv){
+		if(Equip.get(i) && !Equip.get(i).quest)	//i[0] === START_ITEM_ID
+			Equip.removeFromRAM(i);
+	}
+	for(var i in bank){
+		if(Equip.get(i) && !Equip.get(i).quest)
+			Equip.removeFromRAM(i);
+	}
+	for(var i in equip){
+		if(equip[i] && !Equip.get(equip[i]).quest)
+			Equip.removeFromRAM(equip[i]);
+	}
+		
+}
+
+Equip.removeFromRAM = function(id){
+	if(FETCH_ALL_DB_INIT) return;
+	delete DB[id];
+	ItemModel.removeFromRAM(id);
 }
 
 
@@ -501,5 +550,30 @@ Equip.addMasteryExp = function(key,eid,amount){
 	Message.add(key,'Your equip is now more powerful.');	
 }
 
-
+Equip.addMasteryExp.click = function(key,eid,num){
+	var main = Main.get(key);
+	Main.question(main,function(key,num){
+		num = Math.floor(+num);
+		num = Math.min(num,Actor.getExp(Actor.get(key)));
+		if(isNaN(num) || num < 1) return Message.add(key,'Not a number');
+		
+		var equip = Equip.get(eid);
+		if(!equip) return;
+		
+		var boostOld = Combat.getMasteryExpMod(equip.masteryExp);
+		var boostNew = Combat.getMasteryExpMod(equip.masteryExp + num);
+		if(equip.piece === 'weapon'){
+			var powerOld = Combat.getVisiblePower(equip.dmg.main);
+			var powerNew = Combat.getVisiblePower(equip.dmg.main / boostOld * boostNew);
+		} else {
+			var powerOld = Combat.getVisiblePower(equip.def.main);
+			var powerNew = Combat.getVisiblePower(equip.def.main / boostOld * boostNew);
+		}
+			
+		var str = 'Spend ' + num.r(0) + ' Exp to upgrade from <br>' + powerOld.r(2) + ' to ' + powerNew.r(2) + ' Power?';
+		Main.question(main,function(key){
+			Equip.addMasteryExp(key,eid,num);
+		},str,'boolean');
+	},'How many points do you want to invest?','number');
+}
 

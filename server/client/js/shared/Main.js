@@ -1,5 +1,5 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Server','Debug','QuestVar','ItemList','ActorGroup','Message','Boost','Drop','Quest','Collision','Command','Contribution'],['Main']));
+eval(loadDependency(['Actor','Server','Debug','QuestVar','Equip','ItemList','ActorGroup','Message','Boost','Drop','Quest','Collision','Command','Contribution'],['Main']));
 
 var Main = exports.Main = function(key,extra){
 	var main = {
@@ -15,17 +15,19 @@ var Main = exports.Main = function(key,extra){
 		quest:Main.Quest(),
 		questHint:'',
 		contribution:Contribution.template(),	//check Sign.enterGame
-		tradeInfo:{otherId:'',data:null,acceptSelf:false,acceptOther:false},
 		change:{},
 		old:{},
 		flag:Main.Flag(),
-		invList:Main.ItemList(),
+		invList:Main.ItemList(),	//bad... cuz need init with key
 		bankList:Main.ItemList(),
+		tradeList:Main.ItemList(),
+		tradeInfo:Main.TradeInfo(),
 		pref:Main.Pref(),
 		hudState:Main.HudState(),
 		currentTab:"inventory",
 		question:null,
 		party:Main.Party(),
+		acceptPartyInvite:true,
 		//part of temp
 		temp:{},
 		questRating:'',	//name of quest
@@ -40,6 +42,15 @@ var Main = exports.Main = function(key,extra){
 }
 
 Main.LIST = {}; //supposed to be only accesable by file starting with Main_
+
+Main.TradeInfo = function(){
+	return {
+		otherId:'',
+		data:{},
+		acceptSelf:false,
+		acceptOther:false
+	};
+}
 
 Main.get = function(id){
 	return Main.LIST[id] || null;
@@ -61,6 +72,7 @@ Main.forEach = function(func){
 Main.onSignIn = function(main){	//require act to be inited
 	Main.reputation.updateBoost(main);
 	Main.social.onSignInOff(main,'in');
+	Main.updatePlayerOnline(main,Server.getPlayerInfo());
 }
 
 Main.onSignOff = function(main){	//require act to be inited
@@ -84,7 +96,8 @@ Main.getAct = function(main){
 //#############
 
 Main.addMessage = function(main,msg){
-	if(typeof msg === 'string') msg = Message('game',msg,Message.SERVER);
+	if(typeof msg === 'string') 	
+		msg = Message.Game(msg,Message.SERVER);
 	main.temp.message = main.temp.message || [];
 	main.temp.message.push(msg);
 }
@@ -148,6 +161,12 @@ Main.hudState.NORMAL = 0;
 Main.hudState.INVISIBLE = 1;
 Main.hudState.FLASHING = 2;
 
+Main.hudState.toggleAll = function(val){	//for client ONLY
+	for(var i in main.hudState)
+		main.hudState[i] = +!main.hudState[i];
+}
+
+
 Main.hudState.applyHudState = function(name,html){
 	if(main.hudState[name] === Main.hudState.NORMAL) return html;
 	else if(main.hudState[name] === Main.hudState.INVISIBLE) return '';
@@ -174,7 +193,7 @@ Main.hudState.BORDER = {};
 Main.hudState.HTML = {};
 Main.hudState.clearInterval = function(list){
 	for(var i in Main.hudState.FLASHING_INTERVAL){
-		if(Main.hudState.FLASHING_INTERVAL[i] && list.contains(i)){
+		if(Main.hudState.FLASHING_INTERVAL[i] && list.$contains(i)){
 			delete Main.hudState.FLASHING_INTERVAL[i];
 			clearInterval(Main.hudState.FLASHING_INTERVAL[i]);
 			if(Main.hudState.HTML[i])

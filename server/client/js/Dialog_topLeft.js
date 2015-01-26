@@ -1,5 +1,12 @@
 (function(){ //}
 
+var RED_BAR = null;
+var BLUE_BAR = null;
+var RED_BAR_BIG = null;
+var BLUE_BAR_BIG = null;
+var LAST_HP = 0;
+var LAST_MANA = 0;
+
 Dialog.UI('resourceBar',{
 	position:'absolute',
 	left:2,
@@ -11,32 +18,49 @@ Dialog.UI('resourceBar',{
 	if(main.hudState.hp !== Main.hudState.INVISIBLE){
 		var hp = Math.min(player.hp,player.hpMax);
 		var pct = Math.round(hp/player.hpMax*100)+"%";
-		var title = 'Hp: ' + hp + ' / ' + player.hpMax;
-		var bar = $("<div>")
+		var title = 'Max Hp: ' + player.hpMax;
+		RED_BAR_BIG = $("<div>")
 		.css({background:'rgba(0,0,0,1)',border:'1px solid black',borderRadius:'3px',padding:'2px'})
-		.attr('title',title)
-		.append($("<div>")
-			.css({backgroundColor:'red',width:pct,height:'15px',borderRadius:'2px'})
-			.attr('title',title)
-		);
-		html.append(bar);
+		.attr('title',title);
+		
+		RED_BAR = $("<div>")
+			.css({pointerEvents:'none',backgroundColor:'red',width:pct,height:'15px',borderRadius:'2px'})
+			
+		RED_BAR_BIG.append(RED_BAR);
+		html.append(RED_BAR_BIG);
 	}
 	//######################
 	if(main.hudState.mana !== Main.hudState.INVISIBLE){
 		var pct = Math.round(player.mana/player.manaMax*100)+"%";
-		var title = 'Mana: ' + player.mana + ' / ' + player.manaMax;
-		var bar = $("<div>")
+		var title = 'Max Mana: ' + player.manaMax;
+		BLUE_BAR_BIG = $("<div>")
 		.css({background:'rgba(0,0,0,1)',border:'1px solid black',borderRadius:'3px',padding:'2px'})
-		.attr('title',title)
-		.append($("<div>")
-			.css({backgroundColor:'#2222FF',width:pct,height:'8px',borderRadius:'2px'})
-			.attr('title',title)
-		);
-		html.append(bar);
+		.attr('title',title);
+		
+		BLUE_BAR = $("<div>")
+			.css({pointerEvents:'none',backgroundColor:'#2222FF',width:pct,height:'8px',borderRadius:'2px'})
+			
+		BLUE_BAR_BIG.append(BLUE_BAR);
+		html.append(BLUE_BAR_BIG);
 	}
 },function(){
-	return '' + player.hp + player.hpMax + player.mana + player.manaMax + main.hudState.hp + main.hudState.mana;
-},2);
+	return '' + player.hpMax + player.manaMax + main.hudState.hp + main.hudState.mana;	//player.hp + player.hpMax + player.mana + player.manaMax + 
+},2,function(){
+	if(RED_BAR && LAST_HP !== player.hp){
+		LAST_HP = player.hp;
+		var hp = Math.min(player.hp,player.hpMax);
+		var pct = Math.round(hp/player.hpMax*100)+"%";
+		RED_BAR.css({width:pct});
+		//RED_BAR_BIG.attr({title:pct});
+	}
+	
+	if(BLUE_BAR && LAST_MANA !== player.mana){
+		LAST_MANA = player.mana;
+		var pct = Math.round(player.mana/player.manaMax*100)+"%";
+		BLUE_BAR.css({width:pct});
+		//BLUE_BAR_BIG.attr({title:pct});
+	}
+});
 
 //####################
 
@@ -129,7 +153,7 @@ Dialog.UI('chrono',{
 		if(main.chrono[i].visible === false) continue;
 				
 		html.append($('<span>')
-			.html(main.chrono[i].time.frameToChrono())
+			.html(Tk.frameToChrono(main.chrono[i].time))
 			.css({color:main.chrono[i].active ? 'white' : 'red',font:'1.5em Kelly Slab'})
 			.attr('title',main.chrono[i].text + (main.chrono[i].active ? '' : ' - Click to remove'))
 			.bind('contextmenu',(function(i){

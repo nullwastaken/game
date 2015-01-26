@@ -1,4 +1,8 @@
 (function(){ //}
+
+
+
+
 Dialog = function(id,title,size,refresh,variable,notDialog){
 	var html = $('<div>')
 		.attr('title',title||'')
@@ -15,7 +19,8 @@ Dialog = function(id,title,size,refresh,variable,notDialog){
 	
 	LIST[id] = {
 		html:html,
-		refresh:refresh || CST.func,
+		parentDiv:'#gameDiv',
+		refresh:refresh || Dialog.Refresh(),
 		variable:variable || {},
 		param:null,
 		isDialog:!notDialog,
@@ -35,6 +40,7 @@ Dialog.Size = function(width,height){
 		height:height || 400,
 	}
 }	
+
 Dialog.Refresh = function(create,getOld,interval,loop,close){
 	return {
 		create:create,	//if return value, it will become dialog.param
@@ -45,7 +51,6 @@ Dialog.Refresh = function(create,getOld,interval,loop,close){
 		close:close || CST.func
 	}
 }
-
 
 Dialog.open = function(name,param){
 	var dialog = LIST[name];
@@ -65,7 +70,7 @@ Dialog.open = function(name,param){
 		dialog.html.dialog('open');
 		$('.toolTipDetails').remove();
 	} else {
-		$('#gameDiv').append(dialog.html);
+		$(dialog.parentDiv).append(dialog.html);
 		if(ret !== null)
 			dialog.html.show();
 	}
@@ -121,7 +126,6 @@ Dialog.loop = function(){
 }
 
 Dialog.refresh = function(name,param){
-	Dialog.close(name);
 	Dialog.open(name,param);
 }
 

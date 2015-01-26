@@ -21,7 +21,6 @@ Main.Quest.part = function(quest,overwrite){
 		_challenge:Quest.getChallengeList(quest),
 		_challengeDone:Quest.getChallengeList(quest),
 		_highscore:Quest.getHighscoreList(quest),
-		_rating:0,
 		_skillPlot:[0,0,0,0,0,0,0],
 		_enemyKilled:0,
 	};
@@ -72,10 +71,11 @@ Main.Quest.uncompressDb.verifyIntegrity = function(quest){	//quest= main.quest
 	}
 	
 	for(var i in allQuest){
-		if(!Quest.get(i).inMain) continue;	//not part of
+		var q = Quest.get(i);
+		if(!q.inMain) continue;	//not part of
 	
 		if(!quest[i]){ 	//aka new quest
-			quest[i] = Main.Quest.part(i);
+			quest[i] = Main.Quest.part(q);
 			continue; 
 		}	
 		
@@ -169,9 +169,6 @@ Main.quest.updateChallengeDoneBonus = function(main,qid){
 	}
 }
 
-Main.quest.hasRatedQuest = function(main,qid){
-	return !!main.quest[qid]._rating;
-}	
 
 Main.quest.updateCycleBonus = function(main){
 	var mq = main.quest;

@@ -55,7 +55,7 @@ Dialog('contactAdmin','Contact Admin',Dialog.Size(600,400),Dialog.Refresh(functi
 		.addClass('myButton')
 		.html('Submit')
 		.click(function(){
-			Message.sendToServer(Message('report',text.val(),player.name,Message.Report(title.val())));
+			Message.sendToServer(Message.Report(text.val(),player.name,title.val()));
 			Message.add(key,"Your message has been sent.");
 			Dialog.close('contactAdmin');
 		})
@@ -321,7 +321,7 @@ Dialog.UI('questRating',{
 		.addClass('myButton skinny')
 		.attr('title','Submit Quest Rating')
 		.click(function(){
-			Command.execute('questRating',[param.quest,STAR_CLICKED,textarea.val(),abandonReason]);
+			Command.execute('questRating',[param.quest,STAR_CLICKED+1,textarea.val(),abandonReason]);	//+1 cuz 1-3 stars
 			Dialog.close('questRating');
 			Message.add(key,'Thanks for your feedback.');
 		})
@@ -353,10 +353,79 @@ Dialog.UI('expPopup',{
 	variable.timeout = setTimeout(function(){
 		Dialog.close('expPopup');
 	},2000);
-},function(){
-	return '' + Performance.latencyTime + Performance.clientPerformance + Main.getPref(main,'displayFPS');
 });
 
+Dialog.UI('playerOnline',{
+	position:'absolute',
+	top:CST.HEIGHT,
+	width:CST.WIDTH,
+	height:'auto',
+	color:'white',
+	font:'1.6em Kelly Slab',
+},function(html,variable,temp){
+	
+	if(!temp)
+		temp = variable.whatever;
+	if(!temp) 
+		return false;
+	variable.whatever = temp;
+	
+	var div = $('<div>')
+		.html(temp.playerOnline.length + ' player(s) online: You ');
+	html.append(div);
+		
+	if(player.pvpEnabled){
+		var pvpButton = $('<button>')
+			.html('PvP On')
+			.css({top:-3,fontSize:'12px',padding:'2px 3px'})
+			.addClass('myButtonGreen')
+			.attr('title','Turn PvP Off')
+			.click(function(){
+				Command.execute('enablePvp',[false]);
+			});
+	} else {
+		var pvpButton = $('<button>')
+			.html('PvP Off')
+			.css({top:-3,fontSize:'12px',padding:'2px 3px'})
+			.addClass('myButtonRed')
+			.attr('title','Turn PvP On')
+			.click(function(){
+				Command.execute('enablePvp',[true]);
+			});
+	}
+	div.append(pvpButton);
+	div.append(' | ');
+	
+		
+	for(var i in temp.playerOnline){
+		if(temp.playerOnline[i].username === player.name)
+			continue;
+		div.append($('<span>')
+			.html(temp.playerOnline[i].username)
+			.click((function(i){
+				return function(){
+					Message.setInputForPM(key,temp.playerOnline[i].username);
+				}
+			})(i))
+			.attr('title','Click to send PM')
+		);
+		if(temp.playerOnline[i].pvp){
+			div.append($('<span>')
+				.html(' (PvP)')
+				.attr('title','This player has enabled PvP.')
+				.css({fontSize:'0.5em'})
+			);
+		}
+		
+		if(i != temp.playerOnline.length - 1)
+			div.append(', ');
+	}
+	//$('#playerOnline').html(div);
+	
+	
+},function(){
+	return '' + player.pvpEnabled;
+});
 
 
 

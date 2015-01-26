@@ -54,9 +54,12 @@ Actor.AbilityList.uncompressClient = function(abilityList,act){
 //################
 Actor.Ability = function(normal,quest){
 	return {
-		normal:normal || [null,null,null,null,null,null],	//array of Ability.functionVersion
-		quest:quest || [null,null,null,null,null,null],
+		normal:normal || Actor.Ability.Part(),	//array of Ability.functionVersion
+		quest:quest || Actor.Ability.Part(),
 	}
+}
+Actor.Ability.Part = function(){
+	return [null,null,null,null,null,null];
 }
 
 Actor.Ability.compressDb = function(ability){
@@ -189,10 +192,10 @@ Actor.ability.swap.test = function(act,name,position){
 	return true;
 }
 
-
 Actor.ability.add = function(act,name,message){
 	if(!Ability.get(name)) return ERROR(3,'ability not exist',name);
-	if(message !== false) Message.add(act.id,"You have learnt a new ability: \"" + Ability.get(name).name + '".');
+	//if(message !== false) Message.addPopup(act.id,"You have learnt a new ability: \"" + Ability.get(name).name + '".');
+	//cant display mes for grid cuz signin = spam
 	Actor.getAbilityList(act)[name] = 1;
 	Server.log(1,act.id,'learnAbility',name);
 	
@@ -247,6 +250,7 @@ Actor.ability.loop.clickVerify = function(act){
 	if(act.noAbility) return;
 	var ab = Actor.getAbility(act);
 	var ma = act.abilityChange;
+	
 	for(var i in ab){
 		var s = ab[i]; if(!s) continue;	//cuz can have hole if player
 		
@@ -270,7 +274,14 @@ Actor.ability.fullyRecharge = function(act){
 
 Actor.setSpriteFilter = function(act,filter){	//dodge is hardcodded
 	act.spriteFilter = filter;
-	Actor.setFlag(act,'spriteFilter');
+	if(SERVER) Actor.setFlag(act,'spriteFilter');
+}
+
+Actor.SpriteFilter = function(filter,time){ //BAD name
+	return {
+		filter:filter,
+		time:time || 5,
+	}
 }
 
 Actor.useAbility = function(act,ab,mana,reset,extra){

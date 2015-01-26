@@ -5,11 +5,13 @@ var CHANCE_EQUIP = 1;
 
 //## START ##################
 Quest.onStart = function(quest,main){
-	var mq = main.quest[quest.id];
-	QuestVar.addToList(QuestVar(quest.id,main));
-	Challenge.onStart(main);
 	quest.event._start(main.id);
 }
+
+Quest.addQuestVar = function(quest,main){
+	QuestVar.addToList(QuestVar(quest.id,main));
+}	
+
 
 Quest.onSignIn = function(main,questVar,account){
 	if(account.lastSignIn === null)
@@ -22,8 +24,6 @@ Quest.onSignIn = function(main,questVar,account){
 		var q = Quest.get(questVar.quest);
 		q.event._signIn(main.id);	//after preset cuz
 		if(!main.questActive) return;	//cuz signIn can failQuest
-		Challenge.onSignIn(main);
-		if(!main.questActive) return;
 		//QuestVar.addToList done in QuestVar.onSignIn
 		
 		Main.updateQuestHint(main);
@@ -58,15 +58,14 @@ Quest.getReward = function(q,bonus,scoreMod,firstTimeCompleted,key){
 }
 
 Quest.getReward.item = function(mod,key){
+	var act = Actor.get(key);
 	var item = {};
 	for(var i = 0 ; i < 3; i++){
 		var num = Math.roundRandom(mod); 
 		if(num !== 0) 
-			item[Material.getRandom(0)] = num;
+			item[Material.getRandom(Actor.getLevel(act))] = num;
 	}
 	if(Math.random() / mod < CHANCE_EQUIP){
-		var act = Actor.get(key);
-		
 		item[Equip.randomlyGenerateFromQuestReward(act).id] = 1;
 	}
 	return item;
@@ -118,19 +117,19 @@ Quest.onReset = function(q,main){	//undo what the quest could have done
 		s.removeItem(key,i,CST.bigInt);
 		
 	for(var i in act.timeout){
-		if(i.contains(q.id,true)) 
+		if(i.$contains(q.id,true)) 
 			Actor.timeout.remove(act,i);
 	}
 	for(var i in main.chrono){
-		if(i.contains(q.id,true)) 
+		if(i.$contains(q.id,true)) 
 			Main.chrono.stop(main,i);
 	}
 	for(var i in act.permBoost){
-		if(i.contains(q.id,true)) 
+		if(i.$contains(q.id,true)) 
 			Actor.permBoost(act,i);
 	}
 	for(var i in act.preset){
-		if(i.contains(q.id,true)) 
+		if(i.$contains(q.id,true)) 
 			Actor.removePreset(act,i,s);
 	}	
 	for(var i in q.ability)	
@@ -158,13 +157,13 @@ Quest.onReset = function(q,main){	//undo what the quest could have done
 //############
 
 Quest.getRandomDaily = function(){
-	do var quest = Quest.DB.randomAttribute();
+	do var quest = Quest.DB.$randomAttribute();
 	while(!Quest.DB[quest].dailyTask)
 	return Quest.DB[quest];
 }
 
 Quest.addPrefix = function(Q,name){
-	if(name.contains(Q + '-',true)) return name;
+	if(name.$contains(Q + '-',true)) return name;
 	else return Q + '-' + name;
 }
 
