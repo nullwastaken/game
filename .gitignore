@@ -8,7 +8,6 @@ node_modules/gulp-jshint
 node_modules/jshint-stylish
 node_modules/pako
 server/client/rs
-server/client/zelda
 server/client/pokemon
 .npmignore
 gulpfile.js
