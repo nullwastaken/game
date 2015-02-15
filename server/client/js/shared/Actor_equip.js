@@ -1,16 +1,17 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Message','Equip','Combat','ItemList','Quest','Main']));
-
+"use strict";
 (function(){ //}
+var Message = require2('Message'), Equip = require2('Equip'), Combat = require2('Combat'), Main = require2('Main');
+var Actor = require3('Actor');
 
 Actor.Equip = function(normal,quest){
 	return {
-		normal:normal || Actor.Equip.part(),
-		quest:quest || Actor.Equip.part(),
+		normal:normal || Actor.Equip.Part(),
+		quest:quest || Actor.Equip.Part(),
 	}
 };
 
-Actor.Equip.part = function(weapon,amulet,ring,helm,body){
+Actor.Equip.Part = function(weapon,amulet,ring,helm,body){
 	var equip = {
 		piece:{helm:helm||'',amulet:amulet || '',ring:ring||'',body:body||'',weapon:weapon || ''},
 		def:CST.element.template(1),
@@ -27,11 +28,9 @@ Actor.Equip.compressDb = function(equip){
 }
 
 Actor.Equip.uncompressDb = function(equip){
-	var equip = Actor.Equip(Actor.Equip.part.apply(this,equip),null);
-	if(!Actor.Equip.testIntegrity(equip)) return Actor.Equip.fixIntegrity(equip);
-	return equip;
+	var equip = Actor.Equip(Actor.Equip.Part.apply(this,equip),null);
+	return Actor.Equip.fixIntegrity(equip);	//assume Actor.Equip.fetch was called earlier
 	//Message.add(key,'Sorry, we can\'t find the data about one or multiples equips you own... :('); 
-	
 }
 
 Actor.Equip.compressClient = function(equip,act){
@@ -42,21 +41,21 @@ Actor.Equip.uncompressClient = function(equip){
 	return Actor.Equip(equip);
 }
 
-Actor.Equip.testIntegrity = function(equip){
-	return Actor.Equip.fixIntegrity(equip,true);
+Actor.Equip.fetch = function(equip,username,cb){
+	//equip compress is just array [ids]
+	Equip.fetchList(equip,username,function(){
+		cb();
+	});
 }
-
-Actor.Equip.fixIntegrity = function(equip,isOnlyTesting){
+Actor.Equip.fixIntegrity = function(equip){
 	for(var j in equip){
 		for(var i in equip[j].piece){
 			if(equip[j].piece[i] && !Equip.get(equip[j].piece[i])){
-				if(isOnlyTesting) return false;
 				ERROR(2,'cant find equip',equip[j].piece[i]);
 				equip[j].piece[i] = '';
 			}
 		}
 	}
-	if(isOnlyTesting) return true;
 	return equip;	
 }
 
@@ -73,6 +72,8 @@ Actor.equip.click = function(act,eid){	//called when clicking in inventory
 	
 	if(act.combatContext.equip === 'quest' && Actor.getMain(act).questActive !== equip.quest)
 		return Message.add(act.id,"You can only use equips you received from the quest you're doing.");
+	if(Actor.getLevel(act) < equip.lvl)
+		return Message.add(act.id,"You need to be at least level " + equip.lvl + " to use that equipment.");	
 	
 	Actor.changeEquip(act,eid);
 }
@@ -115,10 +116,13 @@ Actor.equip.update = function(act){	//accept act or equip directly
 
 	//Boost
 	for(var i in equip.piece){
-		if(!equip.piece[i]) continue;	//no equip on that slot
+		if(!equip.piece[i]){
+			Actor.permBoost(act,'equip-' + i);	 //have nothing so reset
+			continue;	//no equip on that slot
+		}
 		var eq = Equip.get(equip.piece[i]);
-		if(eq) Actor.permBoost(act,'equip-' + i,eq.boost);		//have something
-		else Actor.permBoost(act,'equip-' + i);					//have nothing so reset
+		if(eq) 
+			Actor.permBoost(act,'equip-' + i,eq.boost);		//have something
 	}
 	Actor.setFlag(act,'equip');
 }

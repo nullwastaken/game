@@ -1,5 +1,6 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Quest','Message','Main','Account'],['Cycle']));
+"use strict";
+var Quest = require2('Quest'), Main = require2('Main'), Account = require2('Account');
 
 var Cycle = exports.Cycle = {};
 
@@ -22,6 +23,8 @@ Cycle.onSignIn = function(key,account){
 		Main.updateDailyTask(Main.get(key));
 	}
 }
+
+
 
 Cycle.day = function(){
 	Quest.updateRating();

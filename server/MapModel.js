@@ -1,13 +1,17 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Bullet','Strike','Map','Drop'],['MapModel']));
+"use strict";
+var Map = require2('Map');
 var astar = require('astar');
-
-var TOWN = 'QfirstTown-main';
 
 var TEMP_ADDON = {};	//when trying to add addon to not-yet loaded map
 var TEMP_GRID = {};		//graphic:whoNeeds
 
-var MapModel = exports.MapModel = function(Q,mapId,map,addon){
+var SIGN_IN_PACK = {};
+
+
+var MapModel = exports.MapModel = {};
+
+MapModel.create = function(Q,mapId,map,addon){
 	var m = {
 		id:Q + '-' + mapId,
 		addon:{},
@@ -27,7 +31,7 @@ var MapModel = exports.MapModel = function(Q,mapId,map,addon){
 	if(TEMP_ADDON[m.id])	//could be done at the end for all maps
 		for(var i in TEMP_ADDON[m.id]) 
 			DB[m.id].addon[i] = TEMP_ADDON[m.id][i];
-	if(m.graphic === m.id){	//map made for this quest
+	if(!MapModel.isDuplicate(m)){	//map made for this quest
 		MapModel.setGrid(m,MapModel.Grid(map.grid));
 		for(var i in TEMP_GRID[m.graphic])	//give grid to those who needed
 			MapModel.setGrid(MapModel.get(i),m.grid);
@@ -41,6 +45,8 @@ var MapModel = exports.MapModel = function(Q,mapId,map,addon){
 		}
 	}
 	
+	SIGN_IN_PACK[m.id] = MapModel.compressClient(m);
+	
 	return m.id;
 }
 var DB = MapModel.DB = {};
@@ -49,6 +55,10 @@ MapModel.setGrid = function(map,grid){
 	map.grid = grid;
 	map.height = grid.player.length*32;
 	map.width = grid.player[0] ? grid.player[0].length*32 : 0;
+}
+
+MapModel.isDuplicate = function(m){
+	return m.graphic !== m.id;
 }
 
 MapModel.Grid = function(rawgrid){
@@ -61,14 +71,17 @@ MapModel.Grid = function(rawgrid){
 	}
 		
 	var strGrid = Tk.stringify(rawgrid);
-	var goodgrid = {};
-	goodgrid.astar = new astar.Graph(astargrid);
-	
 	//PRE: 0 => can walk, 1 => cant; 2 => bullet only can walk; 3 => fall close; 4 => fall
 	//POST: 0 => cant walk, 1 => can walk; 3 => fall close 4=> fall
-	goodgrid.player = JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','0').replaceAll('a','1'));
-	goodgrid.npc = JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','0').replaceAll('a','1').replaceAll('4','0'));
-	goodgrid.bullet = JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','1').replaceAll('a','1'));
+	
+	var goodgrid = {
+		astar:new astar.Graph(astargrid),
+		player:JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','0').replaceAll('a','1')),
+		npc:JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','0').replaceAll('a','1').replaceAll('4','0')),
+		bullet:JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','1').replaceAll('a','1')),	
+	};
+	
+	
 	return goodgrid;
 }
 
@@ -99,20 +112,24 @@ MapModel.MapAddon = exports.MapAddon = function(mapid,addonid,extra){	//addonid 
 }
 
 MapModel.getSignInPack = function(){
-	var m = {}; 
-	for(var i in DB) 
-		m[i] = {
-			name:DB[i].name,
-			graphic:DB[i].graphic,
-			width:DB[i].width,
-			height:DB[i].height
-		};
+	return SIGN_IN_PACK;
+}
+MapModel.compressClient = function(map){
+	var m = {
+		name:map.name,
+		graphic:map.graphic,
+		width:map.width,
+		height:map.height,
+		gridPlayer:MapModel.isDuplicate(map) ? 0 : MapModel.Grid.compress(map.grid),
+	};
 	return m;
 }
-
+//MapModel.uncompressClient is in MapModel_client
 MapModel.get = function(name){
 	return DB[Map.getModel(name)] || null;
 }
+
+
 
 
 MapModel.Path = function(id,list){
@@ -143,6 +160,23 @@ MapModel.Path.Spot.raw = function(letter,wait,event,spdMod,timeLimit){
 		timeLimit:timeLimit || 30*25,	
 	}
 }
+
+
+MapModel.Grid.compress = function(grid){	//uncompress in MapModel_client
+	var oneD = grid.player.join('');
+	oneD = oneD.replaceAll('2','1').replaceAll('3','1').replaceAll('4','1');
+	return Tk.baseConverter.toAscii(oneD);	
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

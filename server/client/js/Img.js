@@ -1,20 +1,18 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
 (function(){ //}
 
-Img = {};
+var Img = exports.Img = {};
 
-Img.load = function(src,container,func){
+Img.load = function(src,cb){
 	var tmp = new Image();
 	tmp.src = '/' + src;
-	if(func)
+	if(cb)
 		tmp.onload = function(){
-			func(container);
+			cb(tmp);
 		}
-	return tmp
+	return tmp;
 }
-
-
-
 
 //#####################
 
@@ -23,11 +21,11 @@ Img.icon = [];
 Img.getMinimapIconSize = function(name){
 	if(name === 'minimapIcon.quest') return 24;
 	if(name === 'minimapIcon.questMarker') return 24;
-	if(name.contains('color')) return 6;
+	if(name.$contains('color')) return 6;
 	return 16;
 }
 
-IconModel = function(id,list,size){
+var IconModel = function(id,list,size){
 	size = size || 48;
 	if(DB[id]) return ERROR(3,'id already taken',id);
 	var tmp = {
@@ -40,6 +38,7 @@ IconModel = function(id,list,size){
 }
 
 var DB = IconModel.DB = {};
+
 
 
 //regular icon
@@ -92,9 +91,10 @@ IconModel('bad-human',['0','1','2','3','4','5','6','7','8','9','10','11','12','1
 
 
 
-
-Img.drawIcon = function(ctx,info,x,y,size){	
+Img.drawIcon = function(ctx,info,size,x,y){	
 	size = size || 32;
+	var ret = ctx;
+
 	info = info.split('.');
 	var iconModel = DB[info[0]];
 	if(!iconModel) return ERROR(4,'no icon',info);
@@ -103,18 +103,24 @@ Img.drawIcon = function(ctx,info,x,y,size){
 	
 	var slotX = pos * iconModel.size;
 	
-	ctx.drawImage(
-		iconModel.img,
-		slotX,0,
-		iconModel.size,iconModel.size,
-		x,y,
-		size,size
-	);
-	var rect = [x,x+size,y,y + size];
-	return rect;
+	var draw = function(){
+		ctx.drawImage(
+			iconModel.img,
+			slotX,0,
+			iconModel.size,iconModel.size,
+			x,y,
+			size,size
+		);
+	}
+	if(iconModel.img.complete)
+		draw();
+	else
+		$(iconModel.img).load(draw);
+		
+	return ret;
 }
 
-Img.drawIcon.html = function(icon,size,title,onclick,oncontextmenu,alpha){
+Img.drawIcon.html = function(icon,size,title,alpha){
 	size = size || 24;
 	var canvas = $('<canvas>')
 		.attr({
@@ -127,24 +133,27 @@ Img.drawIcon.html = function(icon,size,title,onclick,oncontextmenu,alpha){
 		});
 	if(title)
 		canvas.attr('title',title);
-	if(onclick)
-		canvas.click(function(e,b,c,d){
-			onclick(e,b,c,d);
-			return false;
-		})
-		.css('cursor','pointer');
-	if(oncontextmenu)
-		canvas.bind('contextmenu',function(e,b,c,d){
-			e.preventDefault();
-			oncontextmenu(e,b,c,d);
-			return false;
-		})
-		.css('cursor','pointer');
-
+	
 	var ctx = canvas[0].getContext("2d");
 	if(alpha !== undefined) ctx.globalAlpha = alpha;
-	if(icon) Img.drawIcon(ctx,icon,0,0,size);
+	if(icon) Img.drawIcon(ctx,icon,size,0,0);
 	return canvas;
+}
+
+Img.redrawIcon = function(canvas,icon,title,alpha){
+	if(title)
+		canvas.attr('title',title);
+	
+	var ctx = canvas[0].getContext("2d");
+	if(alpha !== undefined) ctx.globalAlpha = alpha;
+	else ctx.globalAlpha = 1;
+	
+	var size = canvas[0].width;	//assume square
+	ctx.clearRect(0,0,size,size);
+	if(icon) 
+		Img.drawIcon(ctx,icon,size,0,0);
+	return canvas;
+
 }
 
 //Dialog.get('inventory')
@@ -174,15 +183,30 @@ Img.drawItem = function(iconId,size,title,amount){
 		})
 		.addClass('shadow360')
 		.html(amount);
+	
+	if(amount <= 1)
+		amountHtml.hide();
 		
 	var total = $('<div>')
 		.css({position:'relative',width:size,height:size})
-		.append(icon);
-	if(amount > 1)
-		total.append(amountHtml);
+		.append(icon,amountHtml);
 	return total;
 }
 Img.drawItem.zIndex = 20;	//bad...
+
+Img.redrawItem = function(total,iconId,amount){
+	var c = total.children();
+	var amountHtml = $(c[1]);
+	if(amount <= 1)
+		amountHtml.hide();
+	else {
+		amountHtml.html(amount);
+		amountHtml.show();
+	}
+	Img.redrawIcon($(c[0]),iconId);
+	return total;
+}
+
 
 Img.drawFace = function(info,size){
 	size = size || 96;
@@ -205,6 +229,10 @@ Img.drawArrow = function(side,size){
 	return $('<img>')
 		.attr({src:src})
 		.css({zIndex:Img.drawItem.zIndex,width:size,height:size});
+}
+
+Img.getStar = function(color){
+	return $('<span>').html(CST.STAR).css({color:'yellow' || color});
 }
 
 

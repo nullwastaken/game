@@ -1,64 +1,86 @@
+//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+var CHAT_BOX_TEXT = null;
+"use strict";
 (function(){ //}
-var HEIGHT = 200;
-var WIDTH = 600;
+var Main = require4('Main'), Message = require4('Message'), Img = require4('Img'), Command = require4('Command');
+var Dialog = require3('Dialog');
 
-Dialog.chatBoxText = null;
+var DIALOGUE_HEIGHT = 200;
+var DIALOGUE_WIDTH = 600;
+var CHAT_BOX_INPUT = null;
+
+var getHeight = function(){
+	return Main.getPref(main,'minimizeChat') ? 150 : 200;
+}
+var getWidth = function(){
+	return Main.getPref(main,'minimizeChat') ? 450 : 600; 
+}
+
+
 
 Dialog.UI('chat',{
 	position:'absolute',
 	left:0,
-	top:CST.HEIGHT-HEIGHT,
-	width:WIDTH,
-	height:HEIGHT,
 	background:'rgba(0,0,0,0.3)',
 	padding:'0px 0px',
 	border:'1px solid black',
 	color:'white',
 	font:'1.3em Kelly Slab',
-},function(html){
+},Dialog.Refresh(function(html){
 	if(main.hudState.chat === Main.hudState.INVISIBLE){
 		html.hide();
 		return null;
 	}
 	html.show();
 	
+	var HEIGHT = getHeight();
+	var WIDTH = getWidth();
 	
-	Dialog.chatBoxText = Dialog.chatBoxText || $("<div>")
-		.attr('id','chatBoxText')
+	html.css({
+		top:CST.HEIGHT-HEIGHT,
+		width:WIDTH,
+		height:HEIGHT,
+	});
+	
+	
+	CHAT_BOX_TEXT = CHAT_BOX_TEXT || $("<div>")
 		.addClass('onlyTextScroll shadow')
-		.css({height:175,padding:'5px 5px'})
+		.css({padding:'5px 5px'})
 		.html('Welcome!<br>');
-	html.append(Dialog.chatBoxText);
+	
+	CHAT_BOX_TEXT.css({height:HEIGHT-27});
+	html.append(CHAT_BOX_TEXT);
 	
 	//#############
 	
 	var form = $('<form>')
-		.css({
+		/*.css({
 			border:'1px solid black',
 			height:25,
 			padding:'4px -4px',
 			width:WIDTH
+		})*/
+		.css({
+			border:'1px solid black',
+			position:'absolute',
+			left:0,	//-4 cuz border
+			bottom:0,
 		})
 		.append($('<span>')
 			.html(player.name + ": ")
 			.attr('id','chatUserName')
-		)
-		.append($('<input>')
-			.attr('id','chatBoxInput')
-			.addClass('onlyText')
-			.css({width:400})
-		)			
+		);
+	CHAT_BOX_INPUT = $('<input>')
+		.addClass('onlyText')
+		.css({width:WIDTH-75 - 5*player.name.length});	//-100 cuz player name takes place
+			
+	form.append(CHAT_BOX_INPUT)	
 		.submit(function(e) {
 			e.preventDefault();
+			Dialog.chat.blurInput(true);
 			if(Dialog.chat.getInput()){
 				Message.sendChatToServer(Dialog.chat.getInput());
-				setTimeout(function(){
-					Dialog.chat.blurInput(true);
-				},50);
 			}
-			else
-				Dialog.chat.blurInput(true);
-				
 			return false;
 		})
 		.click(function(){
@@ -71,7 +93,7 @@ Dialog.UI('chat',{
 	html.append(form);	
 	
 	if(main.hudState.bottomChatIcon === Main.hudState.INVISIBLE) return;
-	html.append($('<span>')
+	html.append($('<span>')	//span for all buttons, but only 1 button...
 		.css({
 			position:'absolute',
 			left:WIDTH-24-4,	//-4 cuz border
@@ -80,20 +102,42 @@ Dialog.UI('chat',{
 		.append(Img.drawIcon.html("attackMelee.cube",24,'Shift-Left: Clear Chat and PM')
 			.click(function(e){
 				if(!e.shiftKey) return;
-				$('#chatBoxText').html('');
+				CHAT_BOX_TEXT.html('');
 				$("#pmText").html('');
 			})
 		)
 	);
 	
+	
+	var min = Main.getPref(main,'minimizeChat');		
+	html.append($('<button>')
+		.html(min ? '+' : '-')
+		.attr('title',min ? 'Maximize Chat' : 'Minimize Chat')
+		.css({
+			color:'white',
+			backgroundColor:'rgba(0,0,0,0)',
+			position:'absolute',
+			left:WIDTH-24-4,	//-4 cuz border
+			top:0,
+		})
+		.click(function(){
+			Command.execute('pref',['minimizeChat',!min]);
+		})
+	);
+	CHAT_BOX_TEXT[0].scrollTop += 100000;
+	setTimeout(function(){	//BAD
+		CHAT_BOX_TEXT[0].scrollTop += 100000;
+	},100);
+	
+	
 },function(){
-	return "" + main.hudState.chat + main.hudState.bottomChatIcon;
-});
+	return "" + main.hudState.chat + main.hudState.bottomChatIcon + Main.getPref(main,'minimizeChat');
+}));
 
 Dialog.chat = {};
 
 Dialog.chat.setInput = function(text,focus,add){	//input chat
-	var input = $('#chatBoxInput');
+	var input = CHAT_BOX_INPUT;
 	if(add) input.val(input.val() + text);
 	else input.val(text);
 	if(focus !== false){ 
@@ -106,46 +150,28 @@ Dialog.chat.setInput = function(text,focus,add){	//input chat
 }
 
 Dialog.chat.getInput = function(){
-	return $('#chatBoxInput').val();
+	return CHAT_BOX_INPUT.val();
 }
 
 Dialog.chat.addText = function(text,time){
-	$('#chatBoxText').append(text);
-	$('#chatBoxText').append('<br>');
-	$('#chatBoxText')[0].scrollTop += 50;
-	/*
-	if(typeof where === 'string') where = Message.addToHtml.getBox(where);
-	
-	var id = "ChatreceiveaddToHtml-" + Math.randomId();
-	where.innerHTML += '<span id="' + id + '">' + text + '<br></span>';
-	Message.addToHtml.LIST[id] = timer || Main.getPref(main,'chatTimePublic') * 25;
-	where.scrollTop += 50;
-	
-	for(var i in Message.addToHtml.LIST){
-		Message.addToHtml.LIST[i] -= 25;
-		if(Message.addToHtml.LIST[i] <= 0){
-			var a = $("#" + i);	if(a) a.remove();
-			delete Message.addToHtml.LIST[i];
-		}
-	}
-	*/
+	CHAT_BOX_TEXT.append(text,'<br>');
+	CHAT_BOX_TEXT[0].scrollTop += 50;
 }
 
 Dialog.chat.isInputActive = function(text){
 	if(typeof text === 'string')
-		return $('#chatBoxInput').is(":focus") && $('#chatBoxInput').val() === text;
-	return $('#chatBoxInput').is(":focus");
+		return CHAT_BOX_INPUT.is(":focus") && CHAT_BOX_INPUT.val() === text;
+	return CHAT_BOX_INPUT.is(":focus");
 };
 
 Dialog.chat.blurInput = function(blurInput){
-	$('#gameDiv').focus();
 	if(blurInput)
-		$('#chatBoxInput').blur();
+		CHAT_BOX_INPUT.blur();
 };
 
 Dialog.chat.focusInput = function(){
 	setTimeout(function(){
-		$('#chatBoxInput').focus();
+		CHAT_BOX_INPUT.focus();
 	},20);	
 };
 
@@ -156,22 +182,25 @@ var PM_HTML = null;
 Dialog.UI('pm',{
 	position:'absolute',
 	left:0,
-	top:CST.HEIGHT-HEIGHT-PM_HEIGHT-30,
-	width:WIDTH,
 	height:PM_HEIGHT,
 	maxHeight:PM_HEIGHT,
 	background:'rgba(0,0,0,0)',
 	padding:'4px 4px',
 	color:'yellow',
 	font:'1.3em Kelly Slab',
-},function(html){
+},Dialog.Refresh(function(html){
+	html.css({	//cant put above, cuz Main not defined
+		top:CST.HEIGHT-getHeight()-PM_HEIGHT-30,
+		width:getWidth(),
+	});
+	
 	PM_HTML = html;
 	html.addClass('onlyText container shadow');
 	html.append($('<div>')
 		.attr('id','pmText')
 		.css({height:PM_HEIGHT,maxHeight:PM_HEIGHT})
 	);
-});
+}));
 
 Dialog.pm = {};
 Dialog.pm.addText = function(text,time){
@@ -185,15 +214,15 @@ Dialog.pm.addText = function(text,time){
 Dialog.UI('dialogue',{
 	position:'absolute',
 	left:0,
-	top:CST.HEIGHT-HEIGHT,
-	width:WIDTH,
-	height:HEIGHT,
+	top:CST.HEIGHT-DIALOGUE_HEIGHT,
+	width:DIALOGUE_WIDTH,
+	height:DIALOGUE_HEIGHT,
 	background:'rgba(0,0,0,0.8)',
 	padding:'5px 5px',
 	border:'1px solid black',
 	color:'white',
 	font:'1.3em Kelly Slab',
-},function(html,variable,dia){
+},Dialog.Refresh(function(html,variable,dia){
 	if(!dia) return false;
 	html.addClass('onlyText container shadow');
 	
@@ -217,29 +246,30 @@ Dialog.UI('dialogue',{
 			position:'absolute',
 			left:FACE ? 105 : 0,
 			top:5,	
-			width:FACE ? WIDTH - 105 : WIDTH,
+			width:FACE ? DIALOGUE_WIDTH - 105 : DIALOGUE_WIDTH,
 		})
 		.addClass('inline')
 		.append(dia.node.text)
 		.append('<br>');
 	html.append(text);
 	
+	var helper = function(i){
+		return function(){
+			Command.execute('dialogue,option',[i]);
+		}
+	};
 	for(var i = 0 ; i < dia.node.option.length; i++){
 		text.append('&nbsp; ' + (i+1) + '- ');
 		text.append($('<span>')
 			.html(dia.node.option[i].text + '<br>')	//padding?
 			.css({cursor:'pointer'})
-			.click((function(i){
-				return function(){
-					Command.execute('dialogue,option',[i]);
-				}			
-			})(i))
+			.click(helper(i))
 			.addClass('underlineHover')
 		);
 	}
 	
 	
-});
+}));
 
 
 
@@ -249,21 +279,50 @@ Dialog.UI('dialogue',{
 Dialog.UI('partyClan',{
 	position:'absolute',
 	left:0,
-	top:CST.HEIGHT-HEIGHT-30,
-	width:WIDTH,
 	height:30,
 	padding:'5px 5px',
 	color:'white',
 	font:'1.3em Kelly Slab',
-},function(html,variable,dia){
+},Dialog.Refresh(function(html,variable,dia){
 	if(main.hudState.party === Main.hudState.INVISIBLE) return;
 	
+	var HEIGHT = getHeight();
+	var WIDTH = getWidth();
+	
+	html.css({
+		top:CST.HEIGHT-HEIGHT-30,
+		width:WIDTH,
+	});
+	
 	var party = $('<span>');
-	var icon = Img.drawIcon.html('tab.friend',18,'Right-Click to change Party')
-		.contextmenu(function(){
-			Dialog.chat.setInput('$party,join,');
-		});
-	party.append(icon);
+	
+	var button = $('<button>')
+		.addClass('skinny');
+		
+	if(main.acceptPartyInvite){
+		button.addClass('myButtonGreen')
+			.html('On')
+			.attr('title','Currently accepting party request. Click to refuse them.')
+			.click(function(){
+				Command.execute('setAcceptPartyInvite',[false]);
+			});	
+	} else {
+		button.addClass('myButtonRed')
+			.html('Off')
+			.attr('title','Currently refusing party request. Click to accept them.')
+			.click(function(){
+				Command.execute('setAcceptPartyInvite',[true]);
+			});
+	}
+		
+	
+	party.append(button);	
+	
+	party.append(Img.drawIcon.html('tab.friend',20,'Click to change Party')
+		.click(function(){
+			Command.execute('party,join',[]);
+		}
+	));
 	party.append(' Party "' + (main.party.id || '') + '": ');
 	party.append($('<u>')
 		.attr('title','Leader')
@@ -280,46 +339,11 @@ Dialog.UI('partyClan',{
 	html.append(party);
 	
 },function(){
-	return Tk.stringify(main.party) + Tk.stringify(main.social.clanList) + main.hudState.party;
-});
+	return Tk.stringify(main.party) + Tk.stringify(main.social.clanList) + main.acceptPartyInvite + main.hudState.party + Main.getPref(main,'minimizeChat');
+}));
 
 
 
-/* partyClan
-
-	//Party
-	var func = function(){
-		
-	};
-	el.appendChild();
-	
-	var str = ;
-	str += '<u title="Leader">' +  + '</u>, ';
-	
-	el.appendChild($('<span> ' + str.slice(0,-1) + '</span>')[0]); 
-	
-	el.appendChild($('<br>')[0]);
-	
-	//Clan
-	var func = function(){
-		Main.setOp tionList(main,OptionList('Clan',[
-			OptionList.Option(Dialog.chat.setInput,['$cc,enter,'],'Join'),
-			OptionList.Option(Dialog.chat.setInput,['$cc,leave,'],'Leave'),
-			OptionList.Option(Dialog.chat.setInput,['$cc,create,'],'Create'),
-		]));
-	}
-	el.appendChild(Img.drawIcon.html('blessing.wave',18,'',func,func));
-	
-	var str = ' Clan: ';
-	for(var i in main.social.clanList){str += main.social.clanList[i] + '  '; }
-	
-	el.appendChild($('<span> ' + str + '</span>')[0]); 
-	
-	//style top still in loop
-}
-Loop.partyClan.OLD = '';
-
-*/
 
 
 })();

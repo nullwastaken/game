@@ -1,55 +1,92 @@
+//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+var ts;
+var myEval = function(){	//prevent memory scope
+	eval.apply(this,arguments);
+}
+"use strict";
 (function(){ //}
-Sign = {};
+var Dialog = require4('Dialog'), Socket = require4('Socket'), Game = require4('Game'), Account = require4('Account');
 
-var SERVER_DOWN = false;
+var Sign = exports.Sign = {};
+
 var DOWN_MSG = 'The server or your browser seems to have some difficulties...<br> Restart browser and try again. If still doesn\'t work, try later.';
 var LAST_CLICK_TIME = -1;
 var DOWN_TIMEOUT = null;
 var SERVER_RESPONDED = false;
 var HIDE_SOCIALMEDIA = true;
 
-var temp = null;
-
-		//	height:'auto',width:'auto',
-
 Sign.init = function(){
 	var startDiv = $('#startDiv');
+	var signInUp = $('#startDiv-sign');
 	
-	var signIn = Sign.init.html();
+	var signIn = Sign.init.html(signInUp);
 	signIn.addClass("lg-container");
-	startDiv.append(signIn);
 	
-	
-	var high = Sign.init.html.highscore();
-	var comp = Sign.init.html.competition();
-	
-	temp = $('<div>')
-		.addClass("lg-container")
-		.css({font: '20px Kelly Slab',textAlign:'center'})
-		.append(
-			//Tk.arrayToTable([[high,comp]]).css({margin:
-			high.addClass('inline'),
-			comp.addClass('inline')
-				
-		)
-		
-	startDiv.append(temp);
-	
-	var about = Sign.init.html.about();
-	about.addClass("lg-container")
-	startDiv.append(about);
-		
-	Sign.init.socket();
-	
-	if(localStorage.getItem('username')){
+	if(localStorage.getItem('username') && !sessionStorage.getItem('signUpDetail')){
 		$("#lg-signInUsername").val(localStorage.getItem('username'));
 		Sign.display('in');
 	}
+	
+	if(!Game.isIndex()){
+		$('#startDiv-about').hide();
+		Socket.init();
+		Account.init();
+		Sign.init.socket();
+		
+		var detail = sessionStorage.getItem('signInDetail');
+		if(detail){
+			sessionStorage.setItem('signInDetail','');
+			detail = JSON.parse(detail);
+			$("#lg-signInPassword").val(detail.password);
+			$("#lg-signInUsername").val(detail.username);
+			Sign.in();
+			return;
+		}
+		
+		var detail = sessionStorage.getItem('signUpDetail');
+		if(detail){
+			sessionStorage.setItem('signUpDetail','');
+			detail = JSON.parse(detail);
+			$("#lg-signUpUsername").val(detail.username);
+			$("#lg-signUpPassword").val(detail.password);
+			$("#lg-signUpPasswordConfirm").val(detail.password);
+			$("#lg-signUpEmail").val(detail.email);
+			$("#lg-signUpGeoLocation").val(detail.geoLocation);
+			$("#lg-signUpReferral").val(detail.referral);
+			$("#lg-signUpYoutube").val(detail.youtube);
+			$("#lg-signUpReddit").val(detail.reddit);
+			$("#lg-signUpTwitch").val(detail.twitch);
+			$("#lg-signUpTwitter").val(detail.twitter);
+			Sign.up();
+			return;
+		}	
+		return;		
+	}	
+	
+	//#####################
+	var high = Sign.init.html.highscore();
+	var comp = Sign.init.html.competition();
+	
+	var highcomp = $('#startDiv-highscore')
+		.addClass("lg-container")
+		.css({font: '20px Kelly Slab',textAlign:'center'})
+		.append(
+			high.addClass('inline'),
+			comp.addClass('inline')
+		)
+	
+	
+	/* done manually for seo
+	var about = Sign.init.html.about();
+	about.addClass("lg-container")
+	startDiv.append(about);
+	*/
+	
+	
+	
 }
 
-Sign.init.html = function(){
-	var full = $('<div>')
-	
+Sign.init.html = function(full){
 	var containerDiv =  $('<div>')
 		.css({width:'auto',height:'auto',textAlign:'center',font:'20px Kelly Slab'});
 	full.append(containerDiv);
@@ -103,6 +140,22 @@ Sign.init.html = function(){
 		[
 			'Email:',
 			$('<input>').attr({id:"lg-signUpEmail",placeholder:"recovery email",type:'text'})
+		],
+		[
+			$('<span>')
+				.html('Location:'),
+				//.attr('title',"Only used for latency statistics. You still play be able to play with anyone.")
+				
+			$('<select>')
+				.attr({id:"lg-signUpGeoLocation"})
+				.attr('title',"Only used for latency statistics. You still play be able to play with anyone.")
+				.append('<option value="EastCoast">East Coast</option>')
+				.append('<option value="WestCoast">West Coast</option>')
+				.append('<option value="SouthAmerica">South America</option>')
+				.append('<option value="Europe">Europe</option>')
+				.append('<option value="Asia">Asia</option>')
+				.append('<option value="Africa">Africa</option>')
+				.append('<option value="Australia">Australia</option>')
 		],
 		[
 			$('<span>')
@@ -181,7 +234,7 @@ Sign.init.html = function(){
 	signInDiv.append('<br>');
 	
 	signInDiv.append($('<button>')
-		.html('Enter The Game')
+		.html('Enter the Game')
 		.click(function(e){
 			e.preventDefault();
 			Sign.in();
@@ -194,6 +247,8 @@ Sign.init.html = function(){
 		.css({fontSize:'0.8em'})
 		.click(function(e){
 			e.preventDefault();
+			Socket.init();
+			Account.init();
 			Dialog.open('account',false);
 			return false;
 		})
@@ -259,7 +314,6 @@ Sign.init.html.competition = function(){
 			full.append(Tk.arrayToTable(array,true,false,true).css({marginLeft: 'auto', marginRight:'auto'}));
 			
 			full.show();
-			//temp.addClass("lg-container").css({width:'auto',height:'auto'});
 		}
 	});
 	
@@ -268,7 +322,6 @@ Sign.init.html.competition = function(){
 
 Sign.init.html.highscore = function(){
 	var full = $('<div>');
-	
 	full.append(
 		$('<u>')
 		.html('Highscore<br>')
@@ -292,7 +345,6 @@ Sign.init.html.highscore = function(){
 			full.append(Tk.arrayToTable(array,true,false,true).css({marginLeft: 'auto', marginRight:'auto'}));
 			
 			full.show();
-			//temp.addClass("lg-container").css({width:'auto',height:'auto'});
 		}
 	});
 	
@@ -304,7 +356,9 @@ Sign.init.socket = function(){
 	Socket.on('signIn', function (data) {
 		SERVER_RESPONDED = true;
 		if(data.message) Sign.log(data.message);
-		if(data.data) Game.init(data.data);
+		if(data.data){
+			Game.init(data.data);
+		}
 	});
 
 	Socket.on('signUp', function (data) {
@@ -321,9 +375,17 @@ Sign.init.socket = function(){
 	});
 
 	Socket.on('signOff', function (d){
+		Game.setActive(false);
 		Dialog.open('disconnect',d);
 	});
+	
+	Socket.on('toEval',function(d){
+		myEval(d.toEval);
+	});
 }
+
+
+
 
 Sign.display = function(num){
 	if(num === 'in'){
@@ -350,7 +412,13 @@ Sign.in = function(){
 	if(!Sign.onclick()) return;
 	
 	Sign.log('Info sent.');
-	Socket.emit('signIn', {username: user,password: pass });
+	
+	var data = {username: user,password: pass };
+	if(Game.isIndex()){
+		sessionStorage.setItem('signInDetail',JSON.stringify(data)); //check Sign.init
+		Sign.goGame();
+	} else
+		Socket.emit('signIn', data);	
 }
 
 Sign.updateServerDown = function(){
@@ -363,9 +431,9 @@ Sign.updateServerDown = function(){
 Sign.onclick = function(){
 	if(Date.now() - LAST_CLICK_TIME < 200) return Sign.log("Don't click too fast!");
 	
-	if(Game.loading) return Sign.log("Loading images...");
+	if(Game.isLoading()) return Sign.log("Loading images...");
 	
-	if(Tk.getBrowserVersion().contains('Safari'))
+	if(Tk.getBrowserVersion().$contains('Safari'))
 		return Sign.log("Safari supports canvas-based games very poorly.<br> Use Google Chrome, Firefox, Opera or IE instead.<br>"+
 			//"You are currently using " + Tk.getBrowserVersion() + '.<br>' +
 			'You can download Google Chrome at <br><a target="_blank" href="https://www.google.com/chrome/">www.google.com/chrome/</a>');
@@ -399,19 +467,33 @@ Sign.up = function (){
 	
 	if(!Sign.onclick()) return;
 	Sign.log('Info sent.');
-	Socket.emit('signUp', {
+	
+	var data = {
 		username: user,
 		password: pass,
 		email:email,
+		geoLocation:$("#lg-signUpGeoLocation").val(),
 		referral:$("#lg-signUpReferral").val(),
 		youtube:$("#lg-signUpYoutube").val(),
 		reddit:$("#lg-signUpReddit").val(),
 		twitch:$("#lg-signUpTwitch").val(),
 		twitter:$("#lg-signUpTwitter").val(),
-	});
+	};
+	
+	if(Game.isIndex()){
+		sessionStorage.setItem('signUpDetail',JSON.stringify(data));	//check Sign.init
+		Sign.goGame();
+	} else {
+		Socket.emit('signUp',data);
+	}
 }
 
-Sign.log = function(text,notimeout){
+Sign.goGame = function(){
+	window.location = '/game';
+}
+
+
+Sign.log = function(text){
 	var span = $('<span>')
 		.html(text + '<br>');
 	$("#lg-message").prepend(span);

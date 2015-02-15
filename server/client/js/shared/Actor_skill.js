@@ -1,6 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Main','Server','Message','Boost']));
-
+"use strict";
+(function(){ //}
+var Main = require2('Main'), Message = require2('Message');
+var Actor = require3('Actor');
 Actor.Skill = function(exp,lvl){
 	return {
 		exp:exp||0,	
@@ -76,6 +78,7 @@ Actor.levelUp = function(act){
 	Main.reputation.updatePt(Actor.getMain(act));
 }
 
+})(); //{
 
 
 

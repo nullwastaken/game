@@ -1,6 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Server','Main','ItemList','Save','Message','Dialogue','Boost','Drop','Quest','Collision','Command','Contribution']));
-
+"use strict";
+(function(){ //}
+var Main = require3('Main');
 Main.chrono = {}; 
 
 Main.Chrono = function(chrono){	//should do something cuz can store timer in db...
@@ -21,7 +22,8 @@ Main.chrono.start = function(main,id,visible,text){
 	Main.setFlag(main,'chrono');
 }
 Main.chrono.stop = function(main,id){
-	if(!main.chrono[id]) return ERROR(3,'no chrono',id);
+	if(!main.chrono[id])
+		return ERROR(3,'no chrono',id);
 	main.chrono[id].active = 0;
 	Main.setFlag(main,'chrono');
 	return main.chrono[id].time;	//send # frames 
@@ -49,6 +51,7 @@ var Chrono = function(id,visible,text){
 	};
 }
 
+})(); //{
 
 
 

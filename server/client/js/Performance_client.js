@@ -1,39 +1,47 @@
-
+//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
 (function(){ //}
+var Input = require4('Input'), Command = require4('Command'), Receive = require4('Receive'), Socket = require4('Socket'), Dialog = require4('Dialog'), Main = require4('Main');
+var Performance = exports.Performance = {};
+
 var FRAME_COUNT = 0;
+var FREQUENCE = 3*25;
 
-Performance = {
-	frequence:5*1000/40,
-	oldtime:Date.now(),
-	clientPerformance:'100%',
-	latencyTime:0,
-	cycleTime:0,
+var OLD_TIME = Date.now();
+var LATENCY = 0;
+var CYCLE_TIME = 0;
+var CLIENT_PERFORMANCE = '100%';
 
-};
-
+Performance.getLatency = function(){
+	return LATENCY; 
+}
 
 Performance.loop = function(){
-	Performance.delay = Date.now() - Receive.START_TIME;
-    if(FRAME_COUNT++ % Performance.frequence !== 0) return;
+	if(FRAME_COUNT % 25*30 === 0){
+		if(Input.isWindowActive())
+			Command.execute('sendPing',[Performance.getLatency()]);
+	}
+	Performance.delay = Date.now() - Receive.getStartTime();
+    if(FRAME_COUNT++ % FREQUENCE !== 0) return;
 	
-	var timeSupposedToTake = Performance.frequence*40;
-	var timeTaken = Date.now() - Performance.oldtime;
+	var timeSupposedToTake = FREQUENCE*40;
+	var timeTaken = Date.now() - OLD_TIME;
 	
-	Performance.cycleTime = timeTaken / Performance.frequence;
-	Performance.clientPerformance = (timeSupposedToTake/timeTaken*100).r(0) + '%';
+	CYCLE_TIME = timeTaken / FREQUENCE;
+	CLIENT_PERFORMANCE = (timeSupposedToTake/timeTaken*100).r(0) + '%';
 	
-	Performance.oldtime = Date.now();
-	Performance.latency();
+	OLD_TIME = Date.now();
+	Performance.testLatency();
 };
 	
 
-Performance.latency = function(){
+Performance.testLatency = function(){
 	Socket.emit('ping', {'send':Date.now()});
 }
 
 Performance.init = function(){
 	Socket.on('ping', function (d) {
-		Performance.latencyTime = Date.now() - d.send; 
+		LATENCY = Date.now() - d.send; 
 	});
 	
 	Dialog.UI('performance',{
@@ -44,19 +52,31 @@ Performance.init = function(){
 		height:'auto',
 		color:'white',
 		font:'1em Kelly Slab',
-	},function(html){
+	},Dialog.Refresh(function(html){
 		if(!Main.getPref(main,'displayFPS')) return false;
 		//if overwrite old one, double tooltip...
 		
 		html.addClass('shadow');
-		html.attr('title','Ping: ' + Performance.latencyTime + ' ms. FPS: ' + (1000/Performance.cycleTime).r(0) + '/25.');
-		html.html(Performance.clientPerformance);
+		return true;
 	},function(){
-		return '' + Performance.latencyTime + Performance.clientPerformance + Main.getPref(main,'displayFPS');
-	});
+		return '' + LATENCY + CLIENT_PERFORMANCE + Main.getPref(main,'displayFPS');
+	},25,function(html,variable,param){
+		var title = 'Ping: ' + LATENCY + ' ms. FPS: ' + (1000/CYCLE_TIME).r(0) + '/25.';
+		var text = CLIENT_PERFORMANCE;
+		
+		if(variable.title !== title){
+			variable.title = title;
+			html.attr('title',title);
+		}
+		if(variable.text !== text){
+			variable.text = text;
+			html.html(text);
+		}
+	}));
 	
 	
 }
+
 
 /*
 	$("#performanceDiv").css({

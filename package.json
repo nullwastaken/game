@@ -1,40 +1,54 @@
 {
-    "name": "rainingchain",
-    "version": "1.0.0-101",
-    "description": "Raining Chain",
-    "main": "app.js",
-    "subdomain": "rainingchain",
-    "domains": [
-        "rainingchain.com",
-        "www.rainingchain.com"
-    ],
-    "scripts": {
-        "start": "node app.js"
-    },
-    "dependencies": {
-        "astar": "0.0.x",
-        "async": "0.2.x",
-        "busy": "0.1.x",
-        "crypto": "0.0.x",
-        "express": "3.2.x",
-        "mongojs": "0.9.x",
-        "socket.io": "1.0.x",
-        "twit": "1.1.x",
-        "request": "2.21.x",
-        "nodetime": "0.8.x",
-        "nodemailer": "0.6.x"
-    },
-    "engines": {
-        "node": "0.10.x"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/rainingchain/rainingchain"
-    },
-    "keywords": [
-        "node",
-        "heroku",
-        "express"
-    ],
-    "author": "Samuel Magnan"
+  "name": "rainingchain",
+  "version": "1.0.0-124",
+  "description": "Raining Chain",
+  "main": "app.js",
+  "subdomain": "rainingchain",
+  "domains": [
+    "rainingchain.com",
+    "www.rainingchain.com"
+  ],
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "astar": "0.0.x",
+    "async": "0.2.x",
+    "busy": "0.1.x",
+    "crypto": "0.0.x",
+    "express": "4.11.x",
+    "compression": "1.3.x",
+    "body-parser": "1.11.x",
+    "mongojs": "0.9.x",
+    "socket.io": "1.0.x",
+    "twit": "1.1.x",
+    "request": "2.21.x",
+    "nodetime": "0.8.x",
+    "nodemailer": "0.6.x",
+    "express-subdomain": "~1.0.3",
+    "ghost": "0.5.2"
+  },
+  "engines": {
+    "node": "0.10.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rainingchain/rainingchain"
+  },
+  "keywords": [
+    "node",
+    "heroku",
+    "express"
+  ],
+  "author": "Samuel Magnan",
+  "devDependencies": {
+    "gulp": "~3.8.10",
+    "gulp-jshint": "^1.9.0",
+    "jshint-stylish": "^1.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/rainingchain/rainingchain/issues"
+  },
+  "homepage": "https://github.com/rainingchain/rainingchain",
+  "license": "CC BY-NC-SA 4.0"
 }

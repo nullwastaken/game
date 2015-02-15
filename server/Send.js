@@ -1,11 +1,27 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Server','Sign','Main','ActiveList','Socket','Map','Actor','Performance','Anim','ItemList','Strike','Drop','Bullet'],['Send']));
+"use strict";
+var Sign = require2('Sign'), Main = require2('Main'), ActiveList = require2('ActiveList'), Socket = require2('Socket'), Map = require2('Map'), Actor = require2('Actor'), Performance = require2('Performance'), Anim = require2('Anim'), Strike = require2('Strike'), Drop = require2('Drop'), Bullet = require2('Bullet');
 var BISON = require('./client/js/shared/BISON');
 
 var Send = exports.Send = {};
 var LOOP100 = true;
-	
+
+var DEBUG_SIMULATION_PACKAGE_LOST = NODEJITSU ? false : false;
+var DEBUG_SIMULATION_PACKAGE_LOST_GOOD = true;
+
 Send.loop = function(){		// 1/2 times
+	
+	if(DEBUG_SIMULATION_PACKAGE_LOST){
+		INFO('DEBUG_SIMULATION_PACKAGE_LOST');
+		if(DEBUG_SIMULATION_PACKAGE_LOST_GOOD)
+			if(Math.random() < 1/20) DEBUG_SIMULATION_PACKAGE_LOST_GOOD = false;	//TEMP IMPORTANT
+		if(!DEBUG_SIMULATION_PACKAGE_LOST_GOOD){
+			if(Math.random() < 1/5) DEBUG_SIMULATION_PACKAGE_LOST_GOOD = true;	//TEMP IMPORTANT
+			return;
+		}
+	}
+	
+	
 	Send.loop.FRAME_COUNT++;
 	if(Send.loop.FRAME_COUNT % 2 !== 0)	return;
 		
@@ -84,6 +100,7 @@ Send.sendUpdate = function(key,socket){
 	
 	//Send
 	if(BISON.active) sa = BISON.encode(sa);
+	sa.timestamp = Date.now();
 	socket.emit('change', sa );
 	return sa;
 }
@@ -125,11 +142,11 @@ Send.reset = function(){
 
 //####################################
 Send.init = function(obj){ //create object that has all info for the client to init the object
-	if(obj.type == 'bullet') return Bullet.doInitPack(obj);
-	else if(obj.type == 'strike') return Strike.doInitPack(obj);
-	else if(obj.type == 'drop') return Drop.doInitPack(obj);
-	else if(obj.type == 'npc' || obj.type == 'player')	return Actor.doInitPack(obj);
-	else if(obj.type == 'anim') return Anim.doInitPack(obj);
+	if(obj.type === 'bullet') return Bullet.doInitPack(obj);
+	else if(obj.type === 'strike') return Strike.doInitPack(obj);
+	else if(obj.type === 'drop') return Drop.doInitPack(obj);
+	else if(obj.type === 'npc' || obj.type === 'player')	return Actor.doInitPack(obj);
+	else if(obj.type === 'anim') return Anim.doInitPack(obj);
 }
 
 

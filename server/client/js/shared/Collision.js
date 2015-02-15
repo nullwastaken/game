@@ -1,5 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Bullet','Combat','Input','Actor','MapModel','Map'],['Collision']));
+"use strict";
+(function(){ //}
+var Combat = require2('Combat'), Actor = require2('Actor'), MapModel = require2('MapModel'), Map = require2('Map');
 /*
 rect: [minx,maxx,miny, maxy]
 pt: {x:12.3,y:13.23}	//real position
@@ -9,7 +11,6 @@ pos: {x:1,y:23}			//grid position
 var Collision = exports.Collision = {};
 
 Collision.testRectRect = function(rect1,rect2){
-	if(rect1.length === 4 || rect2.length === 4) return ERROR(4,'rect');
 	return rect1.x <= rect2.x+rect2.width 
 		&& rect2.x <= rect1.x+rect1.width
 		&& rect1.y <= rect2.y + rect2.height
@@ -17,12 +18,18 @@ Collision.testRectRect = function(rect1,rect2){
 }
 
 Collision.testPtRect = function(pt,rect){
-	if(rect.length === 4) return ERROR(4,'not a rect');
 	return pt.x >= rect.x
 		&& pt.y >= rect.y
 		&& pt.x <= rect.x+rect.width 
 		&& pt.y <= rect.y+rect.height;
 }
+Collision.testPtRect.fast = function(pt,rectx,recty,rectwidth,rectheight){
+	return pt.x >= rectx
+		&& pt.y >= recty
+		&& pt.x <= rectx+rectwidth 
+		&& pt.y <= recty+rectheight;
+}
+
 
 Collision.testPtRRect = function(pt,rectangle){	//Collision Pt and Rotated Rect
 	var c = Math.cos(-rectangle.angle*Math.PI/180);
@@ -135,7 +142,7 @@ Collision.bulletActor.test = function(atk,def){
 	
 	if(def.damagedIf === 'false') return false;
 	if(normal && def.damagedIf !== 'true'){
-		if(Array.isArray(def.damagedIf)) normal = def.damagedIf.contains(atk.parent);
+		if(Array.isArray(def.damagedIf)) normal = def.damagedIf.$contains(atk.parent);
 		if(def.damagedIf === 'player') normal = parent.type === 'player';
 		if(def.damagedIf === 'npc') normal = parent.type === 'npc';
 		if(typeof def.damagedIf === 'function') normal = def.damagedIf(parent);
@@ -186,21 +193,40 @@ Collision.strikeActor.collision = function(atk,player){
 Collision.strikeMap = function(strike,target){	//gets farthest position with no collision
 	var end = Collision.getPos(target);
 	var path = Collision.getPath(Collision.getPos(strike),end);
-	
+
 	var grid = MapModel.get(strike.map).grid['bullet'];
-	for(var i in path){
-		if(Collision.testPosGrid(path[i],grid)) 
-			return {x:path[i].x*32,y:path[i].y*32};	
+	for(var i = 0; i < path.length; i++){
+		if(Collision.testPosGrid(path[i],grid)){
+			return {x:path[i].x*32,y:path[i].y*32,collision:true};	
+		}
+	}
+
+	return target;
+}
+
+Collision.strikeMap.client = function(strike,target){	//when input mouse to move
+	var end = Collision.getPos(target);
+	var path = Collision.getPath(Collision.getPos(strike),end);
+
+	var grid = MapModel.get(strike.map).grid['player'];
+	
+	if(Collision.testPosGrid(path[0],grid) || Collision.testPosGrid(path[1],grid)){
+		return {x:strike.x,y:strike.y,collision:true};
+	}
+	for(var i = 2; i < path.length; i++){
+		if(Collision.testPosGrid(path[i],grid)){
+			return {x:path[i-2].x*32,y:path[i-2].y*32,collision:true};	
+		}
 	}
 
 	return target;
 }
 
 
-Collision.testLineMap = function(map,start,end){
+Collision.testLineMap = function(map,start,end,what){
 	var path = Collision.getPath(Collision.getPos(start),Collision.getPos(end));
 	
-	for(var i in path){
+	for(var i = 0; i < path.length; i++){
 		var grid = MapModel.get(map).grid['bullet'];
 		if(Collision.testPosGrid(path[i],grid)) return true;	
 	}
@@ -227,11 +253,12 @@ Collision.loop.FRAME_COUNT = 0;
 Collision.loop.mapMod = function(){	//note, 
 	Collision.MAP_MOD = {};
 	var list = Actor.getBulletCollisionMapModList();
-	for(var i in list)
+	for(var i = 0; i < list.length; i++)
 		Collision.MAP_MOD[list[i].map + '-' + list[i].x + '-' + list[i].y] = 1;
 	
 }
 
 Collision.MAP_MOD = {};	//all bullets share the same mapMod
 
+})(); //{
 

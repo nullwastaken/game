@@ -6,7 +6,9 @@
 var s = loadAPI('v1.0','QlureKill',{
 	name:"Lure & Kill",
 	author:"rc",
-	thumbnail:"",
+	maxParty:2,
+	thumbnail:true,
+	reward:{"ability":{'Qsystem-player-windKnock':0.5}},
 	description:"Kill monsters by first luring them.",
 	scoreModInfo:"Depends on amount of kills. [Only for Infinite Challenge]."
 });
@@ -30,11 +32,11 @@ s.newHighscore('killCount',"Most Kills","Most kills without dying. Use Challenge
 });
 s.newHighscore('timeEasy',"Fastest Time [Easy]","Kill all monsters and finish quest.",'ascending',function(key){
 	if(s.isChallengeActive(key,'insane')) return null;
-	return s.get(key,'chrono')*40;
+	return s.stopChrono(key,'timer')*40;
 });
 s.newHighscore('timeHard',"Fastest Time [Insane]","Kill all monsters and finish quest with Challenge Insanity on.",'ascending',function(key){
 	if(!s.isChallengeActive(key,'insane')) return null;
-	return s.get(key,'chrono')*40;
+	return s.stopChrono(key,'timer')*40;
 });
 
 s.newChallenge('insane',"Insanity!","Fight against 10 enemies at once. Need to kill 50.",2,function(key){
@@ -44,7 +46,7 @@ s.newChallenge('infinite',"Infinite","Fight until you die for highscore. Challen
 	return true;
 });
 s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 3 minutes.",2,function(key){
-	return s.get(key,'chrono') < 3*60*25;
+	return s.stopChrono(key,'timer') < 3*60*25;
 });
 
 s.newEvent('_start',function(key){ //
@@ -70,18 +72,17 @@ s.newEvent('_death',function(key){ //
 	else s.failQuest(key);
 });
 s.newEvent('_abandon',function(key){ //
-	if(s.isInQuestMap(key))
-		s.teleport(key,'QfirstTown-north','t7','main',false);
+	s.teleport(key,'QfirstTown-north','t7','main');
+	s.setRespawn(key,'QfirstTown-north','t7','main');
 });
 s.newEvent('_complete',function(key){ //
-	s.set(key,'chrono',s.stopChrono(key,'timer'));
 	s.callEvent('_abandon',key);
 });
 s.newEvent('startGame',function(key){ //teleport and spawn enemy
 	s.removeQuestMarker(key,'start');
 	var chronoVisible = !!s.isChallengeActive(key,'speedrun');
 	s.startChrono(key,'timer',chronoVisible);
-	s.teleport(key,'main','t1','solo',true);
+	s.teleport(key,'main','t1','party',true);
 	s.setRespawn(key,'QfirstTown-north','t7','main');
 	s.message(key,'The strange shape on the ground weakens enemies.');
 	s.message(key,'Kill ' + s.get(key,'enemyToKill') + ' enemies to complete the quest.');
@@ -100,8 +101,8 @@ s.newEvent('startGame',function(key){ //teleport and spawn enemy
 	}
 });
 s.newEvent('spawnEnemy',function(key){ //
-	var spot = ['e1','e2','e3','e4','e5','e6','e7','e8'].random();
-	var monster = ['plant','bat','bee','mushroom','skeleton','ghost','taurus','mummy'].random();
+	var spot = ['e1','e2','e3','e4','e5','e6','e7','e8'].$random();
+	var monster = ['plant','bat','bee','mushroom','skeleton','ghost','taurus','mummy'].$random();
 	s.spawnActor(key,'main',spot,monster,{
 		hp:5000,
 		globalDmg:0.5,
@@ -122,6 +123,7 @@ s.newEvent('killEnemy',function(key,e){ //
 });
 s.newEvent('weakenActor',function(key){ //weaken enemy on red zone, check map loop, last 10 sec
 	s.addBoost(key,'globalDef',0.05,25*10,'weakenActor');
+	s.addBoost(key,'maxSpd',0.25,25*5,'slowerActor');
 	s.addAnimOnTop(key,'boostPink');
 });
 s.newEvent('talkTapis',function(key){ //

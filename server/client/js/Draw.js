@@ -1,8 +1,9 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Map','Input','Message','Collision','Button','OptionList','Command'],['Draw']));
-
-var Draw = {};
+"use strict";
 (function(){ //}
+var Dialog = require4('Dialog'), MapModel = require4('MapModel'), Anim = require4('Anim'), Drop = require4('Drop'), Actor = require4('Actor'), Strike = require4('Strike'), Bullet = require4('Bullet'), Main = require4('Main');
+
+var Draw = exports.Draw = {};
 
 Draw.init = function(){
 	Dialog.UI('stage',{
@@ -12,7 +13,7 @@ Draw.init = function(){
 		width:CST.WIDTH,
 		height:CST.HEIGHT,
 		zIndex:Dialog.ZINDEX.LOW,
-	},function(html,variable){
+	},Dialog.Refresh(function(html,variable){
 		var canvas = $('<canvas>')
 			.css({
 				top:0,
@@ -26,7 +27,7 @@ Draw.init = function(){
 				width:CST.WIDTH,
 				height:CST.HEIGHT,
 			})
-			.click(function(e){
+			.click(function(){
 				Dialog.chat.blurInput();
 			});
 			
@@ -44,23 +45,26 @@ Draw.init = function(){
 		
 		
 		
-	},null,1,function(html,variable){	//loop
+	},null,1,null,function(html,variable){	//loop
 		// !main.hudState.minimap 
 		Draw.loop(variable.ctx);
-	});
+	}));
 
 }
 Draw.loop = function(ctx){
 	ctx.clearRect(0, 0, CST.WIDTH, CST.HEIGHT);
 	
 	//Draw
+	
 	MapModel.draw(ctx,'b');   //below player
+	
 	Anim.draw(ctx,'b');  //below player
+	
 	
 	var context = Drop.drawAll(ctx);
 	context = Actor.drawAll(ctx) || context;
-	if(context) Dialog.open('context',context);
-	else Dialog.close('context');
+	
+	Dialog.refresh('context',context);
 	
 	Strike.drawAll(ctx);
 	Bullet.drawAll(ctx);

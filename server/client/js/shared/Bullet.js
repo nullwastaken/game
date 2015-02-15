@@ -1,10 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Map','Sprite','Combat','ActiveList','Actor','Attack','Collision'],['Bullet']));
-if(SERVER) eval('var Bullet;');
-
+"use strict";
 (function(){ //}
-
-Bullet = exports.Bullet = {};
+var Map = require2('Map'), Sprite = require2('Sprite'), Combat = require2('Combat'), ActiveList = require2('ActiveList'), Actor = require2('Actor'), Collision = require2('Collision');
+var Bullet = exports.Bullet = {};
 var LIST = Bullet.LIST = {};	//Bullet.LIST only for debug
 
 Bullet.remove = function(b){
@@ -45,7 +43,7 @@ Bullet.undoInitPack = function(obj,id){
 		serverX:obj[1],
 		serverY:obj[2],
 		angle:obj[3],
-		sprite:Sprite(obj[4],obj[5]),
+		sprite:Sprite.create(obj[4],obj[5],'bullet'),
 		spd:obj[6] || null,
 		handleClientSide:!!obj[6],
 		type:'bullet'
@@ -130,7 +128,9 @@ Bullet.move.parabole = function(b){
 
 	b.x = b.crX + numX;
 	b.y = b.crY + numY;
-	if(b.timer >= b.parabole.timer){ b.toRemove = 1; };
+	if(b.timer >= b.parabole.timer){ 
+		b.toRemove = 1; 
+	}
 }
 		
 Bullet.move.boomerang = function(b){
@@ -193,7 +193,7 @@ if(!SERVER){ //}
 				b.x = (b.serverX + b.x)/2;
 				b.y = (b.serverY + b.y)/2;
 			}
-		};
+		}
 	}
 		
 	Bullet.drawAll = function(ctx){

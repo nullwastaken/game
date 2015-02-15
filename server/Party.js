@@ -1,10 +1,11 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Main','Message','Actor'],['Party']));
+"use strict";
+var Main = require2('Main');
 
-var Party = exports.Party = function(id){
+var Party = exports.Party = {};
+Party.create = function(id){
 	var tmp = {
 		id:id,
-		quest:null,
 		leader:null,
 		list:{},
 		maxSize:100,
@@ -68,7 +69,7 @@ Party.changeLeader = function(party,key,message){
 }
 Party.addMessage = function(party,str,toexclude){
 	for(var i in party.list){
-		if(toexclude && !toexclude.contains(i))
+		if(toexclude && !toexclude.$contains(i))
 			Main.addMessage(Main.get(i),str);
 	}
 }
@@ -80,6 +81,14 @@ Party.setFlagForAll = function(party){
 	}
 }
 
+
+Party.isPartyDead = function(party){
+	for(var i in party.list){
+		if(!Main.getAct(Main.get(i)).dead)
+			return false;
+	}
+	return true;
+}
 
 Party.getViaMain = function(main){
 	return Main.getParty(main);

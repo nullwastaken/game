@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Raining Chain</title>
+		<title>Raining Chain MMORPG HTMl5 Open Source</title>
+		<link rel="icon" type="image/png" href="/img/ui/interface/favicon.png?v=4">
+	  
 		<meta name="google" value="notranslate" />
 		<link href='http://fonts.googleapis.com/css?family=Kelly Slab' rel='stylesheet' type='text/css'>
 		
@@ -16,31 +18,30 @@
 		<script src="/library/jquery.min.js"></script>
 		<script src="/library/jqueryui/js/jquery-ui-1.10.4.custom.min.js"></script>
 		<link href="/library/jqueryui/css/custom-theme/jquery-ui-1.10.4.custom.css" rel="stylesheet">
-		<<link href="/library/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+		<link href="/library/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 		<script src="/socket.io/socket.io.js"></script>
 		
 	</head>
 	
 	
 	<body>
+		<script src="/js/main.js"></script>
 		<script src="/js/Socket_client.js"></script>
+		<script src="/js/Sign_client.js"></script>
 		
-		<script>
-		var SERVER = false;
-		var exports = {};
-		var loadDependency = function(){return '';}
-		var require = function(){};
-		var key = '';
-		var player = {};
-		var main = {};
-		</script>
+		<script src="/js/Game.js"></script>
+		<script src="/js/Account.js"></script>
+		
+		<script src="/js/Dialog.js"></script>
 		
 		<script src="/js/shared/CST.js"></script>
 		<script src="/js/shared/ERROR.js"></script>
 		<script src="/js/shared/Tk.js"></script>
 		<script src="/js/shared/Stat.js"></script>
+		
+		<!-- -- >
 		<script src="/js/shared/Combat_shared.js"></script>
-		<script src="/js/shared/Combat_balance.js"></script>
+		<script src="/js/ClientPrediction.js"></script>
 		
 		<script src="/js/Draw.js"></script>
 		
@@ -50,7 +51,7 @@
 		<script src="/js/Song.js"></script>
 		<script src="/js/Input_client.js"></script>
 		<script src="/js/Receive.js"></script>
-			
+		
 		<script src="/js/shared/Actor.js"></script>
 		<script src="/js/shared/ActorModel.js"></script>
 		<script src="/js/shared/Actor_combat.js"></script>
@@ -83,11 +84,9 @@
 		<script src="/js/shared/ItemList.js"></script>
 		<script src="/js/shared/ItemModel.js"></script>
 		
-		<script src="/js/Sign_client.js"></script>
 		<script src="/js/Performance_client.js"></script>
-		
-		<script src="/js/Dialog.js"></script>
 		<script src="/js/Dialog_reputation.js"></script>
+		<script src="/js/Dialog_itemList.js"></script>
 		<script src="/js/Dialog_stat.js"></script>
 		<script src="/js/Dialog_ability.js"></script>
 		<script src="/js/Dialog_binding.js"></script>
@@ -97,7 +96,6 @@
 		<script src="/js/Dialog_friend.js"></script>
 		<script src="/js/Dialog_equip.js"></script>
 		<script src="/js/Dialog_setting.js"></script>
-		<script src="/js/Dialog_account.js"></script>
 		<script src="/js/Dialog_misc.js"></script>
 		<script src="/js/Dialog_bottomRight.js"></script>
 		<script src="/js/Dialog_bottomLeft.js"></script>
@@ -114,14 +112,14 @@
 		<script src="/js/shared/Main_quest.js"></script>
 		<script src="/js/shared/Main_quest_status.js"></script>
 		<script src="/js/shared/Main_temp.js"></script>
-		<script src="/js/shared/Main_question.js"></script>	<!-- after Dialog -->
+		<script src="/js/shared/Main_question.js"></script>	
 		<script src="/js/shared/Main_party.js"></script>
 		
-		<script src="/js/shared/Message.js"></script>	<!-- after Main -->
+		<script src="/js/shared/Message.js"></script>
 		<script src="/js/Message_client.js"></script>
 		<script src="/js/Message_receive.js"></script>
 		
-		<script src="/js/shared/Anim.js"></script>
+		<script src="/js/Anim_client.js"></script>
 		<script src="/js/shared/AnimModel.js"></script>
 		<script src="/js/shared/Collision.js"></script>
 		<script src="/js/shared/Sprite.js"></script>
@@ -132,76 +130,67 @@
 		<script src="/js/shared/ReputationGrid.js"></script>
 		<script src="/js/shared/ReputationConverter.js"></script>
 		
-		
-		
 		<script src="/js/shared/Contribution.js"></script>
 		
-		<script src="/js/main.js"></script>
 		<script src="/js/MapModel_client.js"></script>
 		<script src="/js/shared/QueryDb.js"></script>
-		<script src="/js/Debug_client.js"></script>
+		
+		<!-- -->
 		
 		<div id="startDiv">
 			<div style="position:absolute;left:0;top:0">
-				<a href="/rs"><font size="5">Runescape Calculators</font></a><br>
-				<a href="/zelda"><font size="5">Zelda Glitch Database</font></a>
+				<a href="/rs"><font size="3">Runescape Calculators</font></a><br>
+				<a href="/zelda"><font size="3">Zelda Glitch Database</font></a><br>
+				<a href="/pokemon"><font size="3">Pokemon Database</font></a><br>
+				<a href="/"><font size="3">Open Source HTML5 MMORPG</font></a>
 			</div>
-			<!-- Sign_client.js  - Sign.html() -->
-			<!-- General Info -->
+			
+			<div id="startDiv-sign"></div>
+			<div id="startDiv-highscore"></div>
+
+			<div id="startDiv-about" style="font:20px Kelly Slab;text-align:center;" class="lg-container">
+				<h2>What is Raining Chain?</h2>
+				Raining Chain is a free-to-play <a style="color:blue" href="https://github.com/RainingChain/rainingchain">open source</a> HTML5 MMORPG using Javascript, Canvas, NodeJS and Socket.io.<br><br>
+				
+				Check out my <a style="color:blue" href="http://blog.rainingchain.com">Blog</a> where I cover the different concepts behind creating a HTML5 MMORPG.<br><br>
+				Latest gameplay video:<br><object width="450" height="300" data="https://www.youtube.com/embed/Xnjb2ZshyHM"></object><br><br>
+				Run the game on your own computer and <br>
+				contribute to the project with the <a style="color:blue" href="http://www.rainingchain.com/contribution/">Quest Creator</a>:<br>
+				<object width="450" height="300" data="http://www.youtube.com/embed/CCAjNcfS5OI"></object>
+			</div>
 		</div>
 		
 		<div id="mainDiv" style="display:none; top:0px; width: 1280px;  height:720px; margin: 0px auto;">
-			<div  id="gameDiv" style="position:absolute; top:0px; width:1280px; height:720px; overflow:hidden;"></div>
+			<div  id="gameDiv" style="position:absolute; top:0px; width:1280px; height:720px; "></div> <!--overflow:hidden;-->
 			
 			<div id="gameBottom" style="position:absolute; white-space:normal; width:1280px; top:720px; font:30px Kelly Slab; color:white;">
 				<div id="testOutput" style="display:none;font-size:2em;color:white"></div>
 				<div id="playerOnline"><br></div>
 				<div id="infoDay"><br></div>
+				<!--
 				<button style="font-size: 20px; background-color:black;" onclick="$('#gameComment').toggle();">Display/Hide Comments</button>
+				-->
 				<div id="gameComment" style="display:none">
-					<!-- Begin Comments JavaScript Code --><script type="text/javascript" async>function ajaxpath_5498679eb80a7(url){return window.location.href == '' ? url : url.replace('&s=','&s=' + escape(window.location.href));}(function(){document.write('<div id="fcs_div_5498679eb80a7"><a title="free comment script" href="http://www.freecommentscript.com">&nbsp;&nbsp;<b>Free HTML User Comments</b>...</a></div>');fcs_5498679eb80a7=document.createElement('script');fcs_5498679eb80a7.type="text/javascript";fcs_5498679eb80a7.src=ajaxpath_5498679eb80a7((document.location.protocol=="https:"?"https:":"http:")+"//www.freecommentscript.com/GetComments2.php?p=5498679eb80a7&s=&Size=10#!5498679eb80a7");setTimeout("document.getElementById('fcs_div_5498679eb80a7').appendChild(fcs_5498679eb80a7)",1);})();</script><noscript><div><a href="http://www.freecommentscript.com" title="free html user comment box">Free Comment Script</a></div></noscript><!-- End Comments JavaScript Code -->
+					<!-- Begin Comments JavaScript Code -->
+					<!--
+					<script type="text/javascript" async>function ajaxpath_5498679eb80a7(url){return window.location.href == '' ? url : url.replace('&s=','&s=' + escape(window.location.href));}(function(){document.write('<div id="fcs_div_5498679eb80a7"><a title="free comment script" href="http://www.freecommentscript.com">&nbsp;&nbsp;<b>Free HTML User Comments</b>...</a></div>');fcs_5498679eb80a7=document.createElement('script');fcs_5498679eb80a7.type="text/javascript";fcs_5498679eb80a7.src=ajaxpath_5498679eb80a7((document.location.protocol=="https:"?"https:":"http:")+"//www.freecommentscript.com/GetComments2.php?p=5498679eb80a7&s=&Size=10#!5498679eb80a7");setTimeout("document.getElementById('fcs_div_5498679eb80a7').appendChild(fcs_5498679eb80a7)",1);})();</script><noscript><div><a href="http://www.freecommentscript.com" title="free html user comment box">Free Comment Script</a></div></noscript>
+					-->
+					<!-- End Comments JavaScript Code -->
+					
 				</div>
 			</div>
 		</div>
 		<br>
+				
 		
-		
-		
-		
-		
-		<script>
-		$(document).ready(function() {
-			Sign.init();
-			Account.init();
-			$(document).tooltip({
-				items: '*:not(.ui-dialog-titlebar-close)',
-				show:false,
-				hide:false,
-				tooltipClass: "toolTipDetails",
-			});		
-		});
-		/*
-		$.get( "test.txt", function( str ) {
-			var reg = /START\r\n[\s\S]*?\r\nEND/gm;
-			var res = str.match(reg);
-			
-			for (var i = 0 ; res && i < res.length; i++){
-				res[i] = res[i].replace('START', '').replace('END', '');
-			}
-		  
-		});
-		*/
-		
-		
-		</script>
 		
 	</body>
 	
 	<!--
-<script type="text/javascript">
-	var sc_project=9738829; var sc_invisible=1; var sc_security="f32083c8"; 
-	var scJsHost = (("https:" == document.location.protocol) ?"https://secure." : "http://www.");
-	document.write("<sc"+"ript type='text/javascript' src='" +scJsHost+"statcounter.com/counter/counter.js'></"+"script>");
-</script>
--->
+	<script type="text/javascript">
+		var sc_project=9738829; var sc_invisible=1; var sc_security="f32083c8"; 
+		var scJsHost = (("https:" == document.location.protocol) ?"https://secure." : "http://www.");
+		document.write("<sc"+"ript type='text/javascript' src='" +scJsHost+"statcounter.com/counter/counter.js'></"+"script>");
+	</script>
+	-->
 </html>

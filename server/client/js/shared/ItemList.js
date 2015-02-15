@@ -1,8 +1,25 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Message','Account','Save','Sign','Button','OptionList','ItemModel','Main'],['ItemList']));
-var db;
+"use strict";
+(function(){ //}
+var Account = require2('Account'), ItemModel = require2('ItemModel'), Main = require2('Main');
+var QueryDb = require4('QueryDb');
+/*
 
-var ItemList = exports.ItemList = function(key,data){
+player has tradeList
+if tradeList opened and click in inventory, it transfer item to tradeList
+
+if tradelist close, transfer back item to inventory
+if server crash, transfer tradelist to inventory
+
+player has tradeWith:keyOther
+loop and check if Actor.get(keyOther).tradeWith = something
+
+when player close win, it sends message to server
+
+*/
+
+var ItemList = exports.ItemList = {};
+ItemList.create = function(key,data){
 	var tmp = {
 		key:key,
 		id:key,
@@ -11,21 +28,8 @@ var ItemList = exports.ItemList = function(key,data){
     return tmp;
 }
 
-
-ItemList.init = function(dbLink){
-	db = dbLink;
-}
-
 ItemList.getMain = function(inv){
 	return Main.get(inv.id);
-}
-
-ItemList._item = function(name,amount,icon){
-	return {
-		name:name,
-		amount:amount || 1,
-		icon:icon || '',
-	};
 }
 
 ItemList.format = function(id,amount,calledFromQuest){	//if calledFromQuest, ItemList.format will be called another time, check itemFormat
@@ -34,12 +38,22 @@ ItemList.format = function(id,amount,calledFromQuest){	//if calledFromQuest, Ite
 	else if(typeof id === 'string'){ tmp[id] = amount || 1; }
 	else if(typeof id === 'object') tmp = id;
 	
-	if(!calledFromQuest) for(var i in tmp) { var a = tmp[i]; delete tmp[i]; tmp[ItemModel.getId(i)] = a;  }
+	if(!calledFromQuest) 
+		for(var i in tmp) { 
+			var a = tmp[i]; 
+			delete tmp[i]; 
+			tmp[ItemModel.getId(i)] = a; 
+		}
 	
 	for(var i in tmp){
 		if(!calledFromQuest && !ItemModel.get(i)){ ERROR(3,'item dont exist',i,tmp); delete tmp[i]; }
 		if(Math.floor(tmp[i]) !== tmp[i]){ ERROR(3,'item amount isnt whole',i,tmp[i]); delete tmp[i]; }
-		if(tmp[i] === 0) delete tmp[i];
+		if(tmp[i] === 0) 
+			delete tmp[i];
+		if(tmp[i] < 0){
+			ERROR(3,'item amount cannot be negative');
+			delete tmp[i];
+		}
 	}
 		
 	return tmp;
@@ -65,22 +79,12 @@ ItemList.add.offlineOrOnline = function(username,id,amount){
 		ItemList.add.offline(username,id,amount);
 	}
 }
-/*
-ItemList.add.offline = function(username,id,amount){
-	var key = '$%^';
-	Sign.in.loadMain(key,{username:username},function(main,questVar){
-		Main.LIST[key] = main;	//BADDDD
-		ItemList.add(main.invList,id,amount);
-		delete Main.LIST[key];	
-		
-		Save.main(main,function(){});
-	});
-}
-*/
+
 ItemList.setFlag = function(inv){
 	var main = ItemList.getMain(inv);
 	if(inv === main.invList) Main.setFlag(main,'invList');
 	else if(inv === main.bankList) Main.setFlag(main,'bankList');
+	else if(inv === main.tradeList) Main.setFlag(main,'tradeList');
 }
 
 ItemList.remove = function (inv,id,amount){
@@ -109,14 +113,15 @@ ItemList.have = function (inv,id,amount){
 
 //############################
 
+
 ItemList.transfer = function(originInv,destinationInv,id,amount,verifyIfOwn){
 	var list = ItemList.format(id,amount);
 	if(verifyIfOwn && !ItemList.have(originInv,list)) return false;
 	ItemList.remove(originInv,list);
 	ItemList.add(destinationInv,list);	
+	
 	return true;
 }
-
 
 ItemList.stringify = function(list,cb){
 	if(!SERVER){
@@ -124,7 +129,10 @@ ItemList.stringify = function(list,cb){
 		for(var i in list){
 			var item = QueryDb.get('item',i,cb);
 			if(!item) return false;
-			str += 'x' + list[i] + ' ' + item.name + ',';
+			if(item.type !== 'ability')
+				str += 'x' + list[i] + ' ' + item.name + ',';
+			else
+				str += '<u>x' + list[i] + ' ' + item.name + '</u>,';
 		}
 		return str.slice(0,-1);
 	} else {
@@ -136,5 +144,37 @@ ItemList.stringify = function(list,cb){
 		return str.slice(0,-1);
 	}
 }
+
+ItemList.combine = function(inv,inv2){
+	var res = Tk.deepClone(inv);
+	
+	for(var i in inv2.data){
+		res.data[i] = res.data[i] || 0;
+		res.data[i] += inv2.data[i];
+	}
+	return res;
+}
+
+ItemList.getData = function(inv){
+	return inv.data;
+}
+
+ItemList.getAllItemOwned = function(key){
+	var inv = ItemList.getData(Main.get(key).invList);
+	var bank = ItemList.getData(Main.get(key).bankList);
+		
+	return inv.$keys().concat(bank.$keys());
+}
+
+
+})(); //{
+
+
+
+
+
+
+
+
 
 

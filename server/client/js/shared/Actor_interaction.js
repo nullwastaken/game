@@ -1,9 +1,9 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['SkillPlotModel','Actor','Quest','Server','ItemModel','Main','ActiveList','ItemList','Map','Message','Drop','Collision','OptionList','Button','OptionList']));
-
+"use strict";
 (function(){ //}
+var SkillPlotModel = require2('SkillPlotModel'), Quest = require2('Quest'), Server = require2('Server'), ItemModel = require2('ItemModel'), Main = require2('Main'), Map = require2('Map'), Message = require2('Message'), Drop = require2('Drop'), Collision = require2('Collision'), OptionList = require2('OptionList');
+var Actor = require3('Actor');
 
-var DIST = 200;
 var TOOFAR = function(key){
 	Message.add(key,"You're too far away.");
 }
@@ -12,9 +12,15 @@ var TESTDISTANCE = function(act,e){	//return false = good distance
 	if(Date.now()-act.lastInteraction < 500) return true;
 	act.lastInteraction = Date.now();
 	
-	if(Collision.getDistancePtPt(act,e) < DIST/2) return false;
+	var myDist = act.interactionMaxRange;
+	var angle = Collision.getAnglePtPt(act,e);	//BAD TEMP, boost if click above cuz mapMod
+	if(angle > 270-45 && angle < 270+45)
+		myDist += 50;
 	
-	if(Collision.getDistancePtPt(act,e) > DIST || Collision.testLineMap(act.map,act,e)){
+	if(Collision.getDistancePtPt(act,e) < myDist/2) 
+		return false;
+	
+	if(Collision.getDistancePtPt(act,e) > myDist || Collision.testLineMap(act.map,act,e)){
 		TOOFAR(act.id);
 		return true;
 	}
@@ -71,6 +77,7 @@ Actor.click.dialogue = function(act,eid){
 Actor.click.pushable = function(pusher,beingPushed){
 	var act = Actor.get(beingPushed);
 	if(!act.pushable) return ERROR(3,'no pushable');
+	if(act.pushable.onlySimulate) return;
 	if(act.timeout.movePush) return;	//BAD
 	
 	var pushery = pusher.y + pusher.sprite.bumperBox.right.y;
@@ -80,8 +87,9 @@ Actor.click.pushable = function(pusher,beingPushed){
 	var angle = Math.floor((pusherAngle+fact/2)/fact)*fact%360;
 		
 	if(pusherAngle > 340) pusherAngle -= 360;	//QUICKFIX
-	if(Math.abs(pusherAngle-angle) > 20) return;
-	
+	if(Math.abs(pusherAngle-angle) > 20){
+		return Message.add(pusher.id,'You need to be perpendicular to what you want to push.');
+	}
 	//Test if too far
 	var blockVarX = 0;	//only supported direction =4
 	var blockVarY = 0;
@@ -115,12 +123,8 @@ Actor.click.pushable = function(pusher,beingPushed){
 	if(Collision.actorMap(x+1,y,map,act)) return;
 	if(Collision.actorMap(x,y+1,map,act)) return;
 	if(Collision.actorMap(x+1,y+1,map,act)) return;
-		
-	if(Actor.initPushable(act,angle) !== false){	//if no being in movement already, prevent spam click
-		Actor.stickToGrid(act);
-		if(act.pushable.event)
-			act.pushable.event(pusher.id,act.id);
-	}
+	
+	Actor.initPushable(act,angle,pusher.id);	//if no being in movement already, prevent spam click
 }
 
 Actor.click.skillPlot = function(act,eid){	
@@ -133,12 +137,12 @@ Actor.click.skillPlot = function(act,eid){
 	var key = act.id;
 	var main = Main.get(key);
 	
-	if(Collision.getDistancePtPt(act,e) > DIST) return;	//cant use TESTDIST cuz if tree in wall, cant click..
+	if(Collision.getDistancePtPt(act,e) > e.interactionMaxRange) return;	//cant use TESTDIST cuz if tree in wall, cant click..
 	if(+main.quest[quest]._skillPlot[e.skillPlot.num]) return;
 	
 	main.quest[quest]._skillPlot[e.skillPlot.num] = 1;
 	
-	var item = plot.item.random();
+	var item = plot.item.$random();
 	
 	var amount = 1;
 	var exp = plot.exp;
@@ -162,7 +166,6 @@ Actor.click.skillPlot = function(act,eid){
 		Message.add(key,"You harvested the item: " + ItemModel.get(item).name + '.');
 	}
 	Actor.addExp(act,exp);
-	Server.log(3,key,'harvest',item);
 }
 
 Actor.click.waypoint = function(act,eid){
@@ -186,7 +189,6 @@ Actor.click.loot = function(act,eid){	//need work
 		Message.add(act.id,"Nice loot!");
 		act.removeList[eid] = 1;
 	}
-	Server.log(3,act.id,'openChest',eid);
 }
 
 Actor.click.toggle = function(act,eid){
@@ -215,12 +217,9 @@ Actor.click.drop = function (act,id){
 		
 	Main.addItem(main,drop.item,drop.amount);
 	Drop.remove(drop);	
-	
-	Server.log(3,act.id,'pickDrop',drop);
 }
 
 Actor.click.drop.rightClick = function(act,pt){
-	var key = act.id;
 	var option = [];
 	var list = Map.get(act.map).list.drop;
 	for(var i in list){
@@ -229,7 +228,7 @@ Actor.click.drop.rightClick = function(act,pt){
 			option.push(OptionList.Option(Actor.click.drop,[OptionList.ACTOR,i],'Pick ' + ItemModel.get(d.item).name));
 	}
 	
-	//Main.setOptionList(Actor.getMain(act),OptionList('Pick',option,false));
+	//Main.setOptionList(Actor.getMain(act),OptionList.create('Pick',option,false));
 }
 
 Actor.click.bank = function(act,eid){
@@ -255,11 +254,45 @@ Actor.click.party = function(act,eid){
 		return Message.add(act.id,"The player you are trying to invite is currently has an active quest and therefore can't join your party.");
 	if(Main.getPartyId(main) === Main.getPartyId(main2))
 		return Message.add(act.id,"This player is already in your party.");
+	if(!main2.acceptPartyInvite)
+		return Message.add(act.id,"This player is not accepting party requests right now.");
+	
+		
 	Main.question(main2,function(){
 		if(!Main.get(main.id)) return;	//aka dc
 		Main.changeParty(main2,Main.getPartyId(main));
 	},'Do you want to join "' + act.name + '" party?','boolean');
 }	
+
+Actor.click.trade = function(act,eid){
+	var main = Actor.getMain(act);
+	var main2 = Main.get(eid);
+	
+	Main.question(main2,function(){
+		if(!Main.get(main.id)) return;	//aka dc
+		Main.startTrade(main,main2);
+	},'Do you want to trade with "' + act.name + '"?','boolean');
+}	
+
+
+Actor.click.revive = function(act,eid){	//TEMP
+	var act2 = Actor.get(eid);
+	if(TESTDISTANCE(act,act2)) return;
+	if(!act2.dead) return;
+	
+	var main = Actor.getMain(act);
+	
+	Main.addMessage(Actor.getMain(act2),act.name + ' is trying to revive you.');
+	
+	Actor.setTimeout(act,function(){
+		if(TESTDISTANCE(act,act2)) return Main.addMessage(main,'Reviving failed. You need to stay closer.');
+		if(!act2.dead) return;
+		Main.addMessage(main,'You managed to revive ' + act2.name + '. Good job!');
+		Actor.revivePlayer(act2);
+	},25*3);
+	
+	Main.addMessage(Actor.getMain(act),'Trying to revive ' + act2.name + '...'); 
+}
 
 Actor.movePush = function(act,angle,magn,time){	//push that isnt pushable, ex: player fall
 	if(act.timeout.movePush) return false;	//only 1 push at a time
@@ -275,11 +308,15 @@ Actor.movePush = function(act,angle,magn,time){	//push that isnt pushable, ex: p
 	},time,'movePush');
 }
 
-Actor.initPushable = function(act,angle){	//TOFIX find better name
+Actor.initPushable = function(act,angle,pusherId){	//TOFIX find better name
 	if(act.pushable.timer >= 0) return false;	//only 1 push at a time
 	
 	act.pushable.angle = angle;
 	act.pushable.timer = act.pushable.time;
+	
+	Actor.stickToGrid(act);
+	if(act.pushable.event)
+		act.pushable.event(pusherId,act.id);
 }
 
 Actor.stickToGrid = function(act){
@@ -287,8 +324,15 @@ Actor.stickToGrid = function(act){
 	act.y = Math.round(act.y/16)*16-1; 
 }
 
-Actor.click.trade = function(act,eid){
-	
-}
+
+
+
+
+
+
+
+
+
 
 })();
+

@@ -1,6 +1,10 @@
+//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
 (function(){ //}
+var QueryDb = require4('QueryDb');
+var Dialog = require3('Dialog');
 
-Dialog('highscore','Highscore',Dialog.Size(700,700),Dialog.Refresh(function(){
+Dialog.create('highscore','Highscore',Dialog.Size(700,700),Dialog.Refresh(function(){
 	return Dialog.highscore.apply(this,arguments);
 }),{
 	param:null,
@@ -9,10 +13,11 @@ Dialog('highscore','Highscore',Dialog.Size(700,700),Dialog.Refresh(function(){
 //QueryDb.get('highscore','QlureKill-_score')
 
 Dialog.highscore = function(html,variable,param){
-	if(typeof param === 'string') param = {quest:param.split('-')[0],category:param};
+	if(typeof param === 'string') 
+		param = {quest:param.split('-')[0],category:param};
 	param = param || {};
-	param.quest = param.quest || QueryDb.getHighscoreQuestList().randomAttribute();
-	param.category = param.category || QueryDb.getHighscoreForQuest(param.quest).randomAttribute();
+	param.quest = param.quest || QueryDb.getHighscoreQuestList().$randomAttribute();
+	param.category = param.category || QueryDb.getHighscoreForQuest(param.quest).$randomAttribute();
 	
 	variable.param = param;
 	
@@ -49,13 +54,24 @@ Dialog.highscore.top = function(html,variable,highscore){
 		sel2.append('<option value="' + i + '">' + QueryDb.getHighscoreName(i) + '</option>');
 	}
 	sel2.change(function(){
-		Dialog.open('highscore',{quest:sel.val(),category:sel2.val()});
+		Dialog.refresh('highscore',{quest:sel.val(),category:sel2.val()});
 	});
 	sel2.val(highscore.id);
 	html.append(' - Category: ');
 	html.append(sel2);
 	
 	//#########
+	html.append(' ');
+	html.append($('<button>')
+		.html('Refresh')
+		.addClass('myButton')
+		.click(function(){
+			QueryDb.get('highscore',highscore.id,function(){
+				Dialog.refresh('highscore',{quest:highscore.quest,category:highscore.id});
+			},true);
+		})
+	);
+	
 	html.append('<br>');
 	html.append($('<div>').css({width:'auto',height:'auto'}).html(QueryDb.getHighscoreDescription(highscore.id)));
 	
@@ -77,7 +93,7 @@ Dialog.highscore.table = function(html,variable,highscore){
 		]);
 	}
 	
-	html.append(Tk.arrayToTable(array,true,false,true));
+	html.append(Tk.arrayToTable(array,true,false,true).css({marginLeft:'auto',marginRight:'auto'}));
 }
 
 

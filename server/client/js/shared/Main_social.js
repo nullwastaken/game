@@ -1,7 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','ActorModel','Server','Account','Main','ItemList','Quest','Map','Ability','Message','Social']));
-
-
+"use strict";
+(function(){ //}
+var Actor = require2('Actor'), Account = require2('Account'), Main = require2('Main'), Message = require2('Message');
+var Main = require3('Main');
 Main.Social = function(){
 	return {
 		message:[],
@@ -49,7 +50,7 @@ Main.social.update = function(main){	//should only be for safety, Main.onSignInO
 Main.social.onSignInOff = function(main,direction){
 	var name = main.username;
 	var text = name.q() + ' just logged ' + direction + '.';
-	var msg = Message('signNotification',text,name);
+	var msg = Message.SignNotification(text);
 	for(var i in Main.LIST){
 		var otherMain = Main.LIST[i];
 		if(otherMain.username === name) continue;
@@ -144,4 +145,5 @@ var Friend = function(name,nick,comment){
 	}
 }
 
+})(); //{
 

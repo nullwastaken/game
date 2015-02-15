@@ -1,4 +1,12 @@
+//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
+(function(){ //}	Client only
+var Sprite = require4('Sprite'), Main = require4('Main'), ClientPrediction = require4('ClientPrediction'), SpriteModel = require4('SpriteModel'), Collision = require4('Collision'), Img = require4('Img'), Pref = require4('Pref'), QueryDb = require4('QueryDb'), Attack = require4('Attack'), Input = require4('Input');
+var Actor = require3('Actor');
+
 Actor.drawAll = function (ctx){
+	Actor.drawServerPlayer(ctx);	//black dot
+	
 	Actor.drawStrikeZone(player,ctx);
 	var array = Actor.drawAll.getSortedList();
 	var context = null;
@@ -9,9 +17,23 @@ Actor.drawAll = function (ctx){
 			Actor.drawStatus(act,ctx); 
 		}
 	}
-	
 	return context;
 }	
+
+Actor.drawServerPlayer = function(ctx){
+	if(!ClientPrediction.isActive()) return;
+	if(!Main.getPref(main,'displayServerPosition')) return;
+	
+	var shadow = ClientPrediction.getServerXYofLastServerStamp();
+	
+	ctx.globalAlpha = 0.5;
+	ctx.beginPath();
+	var x = shadow.x-player.x+CST.WIDTH2;
+	var y = shadow.y-player.y+CST.HEIGHT2;
+	ctx.arc(x,y,12,0,2*Math.PI);
+	ctx.fill();
+	ctx.globalAlpha = 1;
+}
 
 Actor.drawAll.getSortedList = function(){
 	var drawSortList = [];
@@ -42,19 +64,21 @@ Actor.drawChatHead = function(ctx){
 }	
 Actor.drawChatHead.func = function(act,ctx){
 	if(!act.chatHead) return;
-		
+	if(act.type === 'player' && main.social.muteList[act.context]) return; //BAD assume context === username
+	
 	var spriteServer = act.sprite;
 	var spriteFromDb = SpriteModel.get(Actor.getSpriteName(act));
 	var sizeMod = spriteFromDb.size* spriteServer.sizeMod;
 	
 	var numX = CST.WIDTH2+act.x-player.x;
-	var numY = CST.HEIGHT2+act.y-player.y - 35 + spriteFromDb.hpBar*sizeMod;;
+	var numY = CST.HEIGHT2+act.y-player.y - 35 + spriteFromDb.hpBar*sizeMod;
 	
 	ctx.setFont(20);
 	var length = ctx.length(act.chatHead.text);
 	var rect = {x:numX-length/2,width:length,y:numY,height:20};
 	
 	var safe = 0;
+	var bad;
 	do {
 		bad = false;
 		for(var i in Actor.drawChatHead.list){
@@ -89,12 +113,11 @@ Actor.getSpriteName = function(act){
 }
 
 Actor.drawStatus = function(act,ctx){	//hp + status
-	if(act.hpMax <= 5) return; //QUICKFIX for targets
+	if(act.hpMax <= 5) return; //BAD QUICKFIX for targets
 		
 	var spriteServer = act.sprite;
 	var spriteFromDb = SpriteModel.get(Actor.getSpriteName(act));
-	var animFromDb = spriteFromDb.anim[spriteServer.anim];
-
+	
 	var sizeMod = spriteFromDb.size* spriteServer.sizeMod;
 	var numX = CST.WIDTH2+act.x-player.x-50;
 	var numY = CST.HEIGHT2+act.y-player.y + spriteFromDb.hpBar*sizeMod;
@@ -116,11 +139,31 @@ Actor.drawStatus = function(act,ctx){	//hp + status
 		var y = numY - 30;
 		
 		if(act.statusClient[i] == '1'){
-			Img.drawIcon(ctx,'status.' + CST.status.list[i],x,y,24);
+			Img.drawIcon(ctx,'status.' + CST.status.list[i],24,x,y);
 			count++;
 		}
 	}
 	ctx.globalAlpha = 1;
+	
+	//##############
+	ctx.save();
+	ctx.setFont(18);
+	for(var i in act.hitHistoryToDraw){
+		var numX2 = numX + 105;
+		var numY2 = numY + (+i) * 22; 
+		
+		ctx.fillStyle = act.hitHistoryToDraw[i].num < 0 ? 'red' : 'green';
+		ctx.fillText(act.hitHistoryToDraw[i].num.r(0),numX2-0.5,numY2-0.5);
+		ctx.lineWidth = 0.25;
+		ctx.strokeStyle = 'white'
+		ctx.strokeText(act.hitHistoryToDraw[i].num.r(0),numX2-0.5,numY2-0.5);
+		
+		
+	}
+	ctx.restore();
+	
+	
+	
 }
 
 Actor.drawAll.getMinimapList = function(){	//bad...
@@ -170,7 +213,7 @@ Actor.drawStrikeZone = function(act,ctx){
 		//9 dots
 		//for(var i in point)	ctx.fillRect(point[i].x-5-act.x+CST.WIDTH2,point[i].y-5-act.y+CST.HEIGHT2,10,10);
 		
-		if(displayStrike && Input.state.ability[j]){
+		if(displayStrike && Input.getState('ability')[j]){
 			ctx.save();
 			var x = fakeStrike.x-act.x+CST.WIDTH2;
 			var y = fakeStrike.y-act.y+CST.HEIGHT2;
@@ -218,7 +261,7 @@ Actor.drawStrikeZone = function(act,ctx){
 
 
 
-
+})(); //{
 
 
 

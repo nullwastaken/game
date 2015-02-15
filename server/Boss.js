@@ -1,10 +1,11 @@
-eval(loadDependency(['Actor','Combat','Collision','Ability'],['Boss']));
-//boss
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
+var Actor = require2('Actor'), Collision = require2('Collision');
 
 
 
-var Boss = exports.Boss = function(id,variable,phase,startingPhase){	//model...
+var Boss = exports.Boss = {};
+Boss.create = function(id,variable,phase,startingPhase){	//model...
 	var tmp = {	
 		id:id,
 		phase:phase,
@@ -26,7 +27,7 @@ Boss.Variable = function(list){
 		_noattack:0,	//time if above 0 => cant attack
 	}	
 	for(var i in list){
-		if(i.contains('_',true)) return ERROR(3,'cant have boss variable starting with _');
+		if(i.$contains('_',true)) return ERROR(3,'cant have boss variable starting with _');
 		tmp[i] = list[i];
 	}
 	return tmp;		
@@ -41,16 +42,23 @@ Boss.Phase = function(info){
 	};
 }
 
-Boss.get = function(name,e){
+Boss.get = function(name,act){
 	var boss = Tk.deepClone(DB[name]);
 	if(!boss) return ERROR(2,'no boss with this name',name);
-	boss.parent = e.id;
+	boss.parent = act.id;
 	return boss;
 }
 
 Boss.useAbility = function(boss,ab,extra){
 	var v = boss.variable;
 	if(v._noattack > 0) return;
+	extra = extra || {};
+	if(extra.x !== undefined)
+		extra.x += Boss.getAct(boss).x;
+	if(extra.y !== undefined)
+		extra.y += Boss.getAct(boss).y;	
+		
+	
 	Actor.useAbility(Boss.getAct(boss),ab,false,false,extra);
 }
 Boss.getAct = function(boss){
@@ -59,7 +67,7 @@ Boss.getAct = function(boss){
 
 
 Boss.getSummon = function(boss,name){
-	var act = Actor.get(boss.parent);
+	var act = Boss.getAct(boss);
 	if(!act.summon[name]) return [];
 	var tmp = [];
 	for(var i in act.summon[name].child)
@@ -68,7 +76,8 @@ Boss.getSummon = function(boss,name){
 }
 
 Boss.loop = function(boss){
-	var act = Actor.get(boss.parent);
+	var act = Boss.getAct(boss);
+	
 	var v = boss.variable;
 	v._frame++;
 	v._framePhase++;
@@ -106,7 +115,7 @@ Boss.loop.transition = function(boss){
 }
 
 Boss.loop.updateTargetAngle = function(boss){	//TOFIX can only have player target
-	var act = Actor.get(boss.parent);
+	var act = Boss.getAct(boss);
 	for(var i in boss.variable._target){ 
 		if(!Actor.get(i)){ delete boss.variable._target[i]; continue; }
 		boss.variable._target[i] = Collision.getAnglePtPt(act,Actor.get(i));
@@ -115,7 +124,7 @@ Boss.loop.updateTargetAngle = function(boss){	//TOFIX can only have player targe
 
 Boss.loop.updateTarget = function(boss){	//TOFIX can only have player target
 	//Update Boss Target. can have multiple targets unlike regular enemy
-	var act = Actor.get(boss.parent);
+	var act = Boss.getAct(boss);
 	boss.variable._target = {};
 	for(var i in act.activeList){ 
 		if(Actor.isPlayer(i)){
@@ -124,6 +133,11 @@ Boss.loop.updateTarget = function(boss){	//TOFIX can only have player target
 	}
 }
 Boss.getRandomTarget = function(boss){
+	for(var i in boss.variable._target)
+		return i;
+	return null;
+}
+Boss.getRandomTargetAngle = function(boss){
 	for(var i in boss.variable._target)
 		return boss.variable._target[i];
 	return null;

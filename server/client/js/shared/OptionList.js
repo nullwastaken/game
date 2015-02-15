@@ -1,7 +1,10 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Input','Message','Collision','Actor','Main'],['OptionList']));
-
-var OptionList = exports.OptionList = function(name,option){
+"use strict";
+(function(){ //}
+var Actor = require2('Actor');
+var Command = require4('Command');
+var OptionList = exports.OptionList = {};
+OptionList.create = function(name,option){
 	return {
 		name:name || '',
 		option:option || [],	//[OptionList.Option]
@@ -51,5 +54,6 @@ OptionList.uncompressClient = function(optionList,command,entity){
 	return optionList;
 }
 
+})(); //{
 
 

@@ -1,8 +1,13 @@
+//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
 (function(){ //}
-Dialog('stat','Combat Stat',Dialog.Size(600,600),Dialog.Refresh(function(){
+var Actor = require4('Actor'), Img = require4('Img');
+var Dialog = require3('Dialog');
+
+Dialog.create('stat','Combat Stat',Dialog.Size(600,600),Dialog.Refresh(function(){
 	Dialog.stat.apply(this,arguments);
 },function(){
-	return Tk.stringify(player.boost.list);
+	return Tk.stringify(player.boost.list) + Tk.stringify(Actor.getEquip(player));
 }));
 //Dialog.open('stat')
 
@@ -58,7 +63,34 @@ Line.LIST = {offensive:[],defensive:[]};
 Line.getElementFunc = function(type,name){	//BADD hardcoded
 	return function(r,b){
 		var el = type + '-' + name + '-+';
-		return 'x' + Tk.round(1+(+player.boost.list[el].base),2,2);
+		if(type === 'dmg'){
+			return 'x' + Tk.round(1+player.boost.list[el].base,2,2);
+		} else {
+			var totaldef = Actor.getEquip(player).def[name];
+			var mod = 1+player.boost.list[el].base;
+			
+			var num = totaldef*mod;	//3
+			var res = 1-1/num;		//1-1/3 = 66% reduc
+			res = Math.max(res,0);
+			
+			var num = Math.max(1,num.r(2));
+			var str = num === 1 
+				? 'No Damage Reduction.' 
+				: 'You will take ' + num + ' times less damage from ' + name.capitalize() + "."
+			return $('<span>')
+				.append($('<span>')
+					.html(Tk.round(totaldef,2,2))
+					.attr('title','Raw defence derived from Equipment Power')
+				)
+				.append($('<span>')
+					.html(' * ' + Tk.round(mod,2,2) + ' => ')
+					.attr('title','Bonus from reputation and equipment boost.')
+				)
+				.append($('<u>')
+					.html(Tk.round(res*100,1) + "% Dmg Reduc")
+					.attr('title',str)
+				);
+		}
 	}
 }
 
@@ -173,7 +205,7 @@ Line.getStatusFunc = function(status,magn,time,chance){
 	Line('offensive','Strike','Impact strike behaviour. (Ex: Slash)','offensive.bullet',function(r,b){
 		var str = '<span title="AoE:Increase the region of the strike that deals damage.">AoE: ' + r('strike-size',2,2) + '</span>, ';
 		str += '<span title="Range:Increase the max distance between you and the strike region center.">Range: ' + r('strike-range',2,2) + '</span>, ';
-		str += '<span title="#:Allow a single attack to damage more monsters.">#: ' + r('strike-maxHit',2,2) + '</span>';
+		//str += '<span title="#:Allow a single attack to damage more monsters.">#: ' + r('strike-maxHit',2,2) + '</span>';
 		return str;
 	});
 	Line('offensive','Summon','Impact summon behaviour. (Ex: Slash)','summon.wolf',function(r,b){

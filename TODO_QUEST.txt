@@ -1,0 +1,64 @@
+
+
+soccer quest
+	wind attack push ball
+			
+####################################
+
+QcaptureCookies
+	game last 2 min
+	2 type of monster
+		one type that goes up to down following path
+			if reach bottom, they capture flag and then go up
+		one  type that just attack
+		
+	if kill monster holding cookie, nothing happens
+	if monster come back, point less
+	
+	player go up and steal their cookie
+	
+	Challenge 1:
+		1 life
+	Challenge 2:
+		steal all cookies
+	Challenge 3:
+		cant die and x2 more attack enemy
+
+####################################
+
+QbossFrenzy
+	need to kill boss back to back
+	
+	possible to select only fight 1 boss for fastest highscore time but no points given
+	
+	only need to kill 3/5 to win
+	
+	Challenge 1:
+		kill all 5, and loop with boss x1.5 dmg
+	Challenge 2:
+		kill all at once
+	Challenge 3:
+		kill with preset
+
+####################################
+
+
+QregularPvp
+	must be 2 ppl
+	game last 3 min
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	

@@ -6,7 +6,9 @@
 var s = loadAPI('v1.0','QbaseDefence',{
 	name:"Defend The Base",
 	author:"rc",
-	reward:{"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
+	maxParty:2,
+	thumbnail:true,
+	reward:{"ability":{'Qsystem-player-fireBullet':0.5},"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
 	description:"Kill waves of monsters before they reach your base using the right ability.",
 });
 var m = s.map; var b = s.boss; var g;
@@ -16,6 +18,7 @@ kill zombies by using the right ability
 get pt by killing them, use pt to upgrade self
 if survive all waves, win
 */
+
 
 s.newVariable({
 	wave:0,
@@ -67,8 +70,8 @@ s.newEvent('_death',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('_abandon',function(key){ //
-	if(s.isInQuestMap(key))
-		s.teleport(key,'QfirstTown-east','t4','main',false);
+	s.teleport(key,'QfirstTown-east','t4','main');
+	s.setRespawn(key,'QfirstTown-east','t4','main');
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
@@ -92,10 +95,10 @@ s.newEvent('startGame',function(key){ //
 	}
 	
 	if(!s.isChallengeActive(key,'color4')){
-		s.message(key,'Use the right ability to defeat the enemies ([$0], [$1], [$5]).');
+		s.message(key,'Use the right ability to defeat the enemies (' + s.message.input(0) + ', ' + s.message.input(1) + ', ' + s.message.input(5) + ').');
 		s.usePreset(key,'color3');
 	} else {
-		s.message(key,'Use the right ability to defeat the enemies ([$0], [$1], [$2], [$3]).');
+		s.message(key,'Use the right ability to defeat the enemies (' + s.message.input(0) + ', ' + s.message.input(1) + ', ' + s.message.input(2) + ', ' + s.message.input(3) + ').');
 		s.usePreset(key,'color4');
 	}
 	s.setTimeout(key,'nextWave',1*25);	//call the first wave in 1 sec
@@ -142,9 +145,9 @@ s.newEvent('getWaveInfo',function(num){ //
 });
 s.newEvent('spawnEnemy',function(key){ //
 	var color = s.isChallengeActive(key,'color4') 
-		? ['red','blue','yellow','green'].random() 
-		: ['red','blue','yellow'].random();
-	var spot = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s'].random();
+		? ['red','blue','yellow','green'].$random() 
+		: ['red','blue','yellow'].$random();
+	var spot = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s'].$random();
 	var eid = s.spawnActor(key,'base',spot,color,{deathEvent:'killEnemy',v:32});
 	
 	s.followPath(eid,'myPath',function(){	//no key in param cuz using key of nextWave

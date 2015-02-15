@@ -1,6 +1,10 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Map','MapGraph']));
+"use strict";
 (function(){ //}
+var Map = require2('Map'), MapGraph = require2('MapGraph');
+var Img = require4('Img');
+var Actor = require3('Actor');
+
 var NO_PATH = -1;
 
 Actor.QuestMarker = function(goal,client){

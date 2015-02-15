@@ -1,5 +1,6 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Message','Main','Actor','Message'],['Clan']));
+"use strict";
+var Message = require2('Message');
 var db = null; //Clan.init
 
 
@@ -8,11 +9,11 @@ var Clan = exports.Clan = {};
 Clan.init = function(dbLink){	
 	db = dbLink;
 	return;
-	db.clan.find({},{'_id':0},function(err,data){
+	/*db.clan.find({},{'_id':0},function(err,data){
 		for(var i = 0 ; i < data.length ; i++){
 			DB[data[i].id] = data[i];
 		}
-	});
+	});*/
 }
 var DB = Clan.DB = {};
 
@@ -43,7 +44,7 @@ Clan.enter = function(key,name){
 	var pn = Actor.get(key).name;
 	
 	if(!DB[name]) return Message.add(key,'This clan doesn\'t exist.');
-	if(main.social.clanList.contains(name)) return Message.add(key,'You are already in this clan chat.');	;
+	if(main.social.clanList.$contains(name)) return Message.add(key,'You are already in this clan chat.');	;
 	main.social.clanList.push(name);
 	Main.setFlag(main,'social,clanList');
 	

@@ -1,4 +1,4 @@
-eval(loadDependency(["Debug"]));
+var Debug = require2('Debug');
 //12/18/2014 12:24 AM
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
@@ -7,6 +7,7 @@ var s = loadAPI('v1.0','QfirstTown',{
 	name:"",
 	author:"rc",
 	admin:true,
+	showInTab:false,
 	dailyTask:false,
 	showWindowComplete:false,
 	skillPlotAllowed:true,
@@ -109,26 +110,32 @@ s.newMap('main',{
 	load:function(spot){
 		m.spawnTeleporter(spot.t3,function(key){
 			s.teleport(key,'east','t7','main');
+			s.setRespawn(key,'east','t7','main');
 		},'zone',null,'east');
 		m.spawnTeleporter(spot.t4,function(key){
 			s.teleport(key,'south','t1','main');
+			s.setRespawn(key,'south','t1','main');
 		},'zone','down','south');
 		
 		m.spawnTeleporter(spot.t1,function(key){
 			s.teleport(key,'north','t1','main');
+			s.setRespawn(key,'north','t1','main');
 		},'zone','up','north');
 		
 		m.spawnTeleporter(spot.t7,function(key){
 			s.teleport(key,'nwLong','t1','main');
+			s.setRespawn(key,'nwLong','t1','main');
 		},'door',null,'nwLong');
 		m.spawnTeleporter(spot.t8,function(key){ 
 			s.teleport(key,'Qtutorial-genetosHouse2','t1','main');
+			s.setRespawn(key,'Qtutorial-genetosHouse2','t1','main');
 		},'door');
 		m.spawnTeleporter(spot.a,function(key){ 
 			s.message(key,'There\'s nothing here.');
 		},'door');
 		m.spawnTeleporter(spot.b,function(key){
 			s.teleport(key,'high','t1','main');
+			s.setRespawn(key,'high','t1','main');
 		},'door',null,'high');
 		m.spawnTeleporter(spot.c,function(key){ 
 			s.message(key,'There\'s nothing here.');
@@ -136,6 +143,7 @@ s.newMap('main',{
 		
 		m.spawnTeleporter(spot.k,function(key){ 
 			s.teleport(key,'eastCave','t1','main');
+			s.setRespawn(key,'eastCave','t1','main');
 		},'cave','right','eastCave');
 		
 		
@@ -144,8 +152,6 @@ s.newMap('main',{
 		
 		m.spawnSkillPlot(spot.s2,'Qdarkness','tree-red',0);
 		m.spawnSkillPlot(spot.s1,'QprotectFirstTown','tree-red',0);
-		
-		m.spawnWaypoint(spot.g1,true);
 		
 		m.spawnActor(spot.n1,'npc',{
 			name:'Biglemic',
@@ -230,7 +236,10 @@ s.newMap('east',{
 },{
 	spot:{t3:{x:864,y:48},t2:{x:1232,y:48},t1:{x:2608,y:144},a:{x:1648,y:208},s4:{x:736,y:304},s7:{x:224,y:288},s3:{x:2368,y:336},s5:{x:2112,y:560},s6:{x:1152,y:544},t8:{x:3024,y:560},t7:{x:48,y:784},e1:{x:1136,y:784},g1:{x:1792,y:960},e2:{x:2064,y:944},t5:{x:3152,y:1008},s1:{x:2496,y:1168},s2:{x:1056,y:1392},t4:{x:1680,y:1552},t6:{x:2896,y:1552}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t7,function(key){s.teleport(key,'main','t3','main');},'zone','left','main');
+		m.spawnTeleporter(spot.t7,function(key){
+			s.teleport(key,'main','t3','main');
+			s.setRespawn(key,'main','t3','main');
+		},'zone','left','main');
 		
 		m.spawnSkillPlot(spot.s3,'QtowerDefence','tree-red',0);
 		m.spawnSkillPlot(spot.s5,'QbulletHeaven','tree-red',0);
@@ -238,8 +247,6 @@ s.newMap('east',{
 		m.spawnSkillPlot(spot.s4,'QbaseDefence','tree-red',0);
 		m.spawnSkillPlot(spot.s2,'QpuzzleBridge','tree-red',0);
 		m.spawnSkillPlot(spot.s6,'QpuzzleBridge','hunt-squirrel',1);
-		
-		m.spawnWaypoint(spot.g1,true);
 	}
 });
 s.newMap('eastCave',{
@@ -252,6 +259,7 @@ s.newMap('eastCave',{
 	load:function(spot){
 		m.spawnTeleporter(spot.t1,function(key){
 			s.teleport(key,'main','k');
+			s.setRespawn(key,'main','k');
 		},'zone','down','main');
 	}
 });
@@ -263,7 +271,10 @@ s.newMap('south',{
 },{
 	spot:{t1:{x:1760,y:48},t2:{x:1552,y:1200},t7:{x:48,y:1248},t3:{x:3152,y:1728},t6:{x:48,y:2240},t5:{x:1216,y:3152},t4:{x:2176,y:3152}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','t4','main');},'zone','up','main');
+		m.spawnTeleporter(spot.t1,function(key){
+			s.teleport(key,'main','t4','main');
+			s.setRespawn(key,'main','t4','main');
+		},'zone','up','main');
 	}
 });
 s.newMap('north',{
@@ -274,14 +285,15 @@ s.newMap('north',{
 },{
 	spot:{t3:{x:1728,y:48},s4:{x:1120,y:208},t8:{x:880,y:208},t4:{x:3152,y:432},s5:{x:3104,y:848},s3:{x:2160,y:976},e2:{x:1936,y:1200},t7:{x:1232,y:1232},t2:{x:48,y:1264},s6:{x:976,y:1296},g1:{x:1888,y:1664},b1:{x:2592,y:1632,width:128,height:32},t5:{x:3152,y:1792},e1:{x:1584,y:1936},s8:{x:1216,y:2064},s1:{x:2304,y:2288},s2:{x:1840,y:2288},a:{x:2768,y:2448},t6:{x:3152,y:2448},e3:{x:2416,y:2512},s7:{x:2896,y:2864},t1:{x:1280,y:3152}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','t1','main');},'zone','down','main');
+		m.spawnTeleporter(spot.t1,function(key){
+			s.teleport(key,'main','t1','main');
+			s.setRespawn(key,'main','t1','main');
+		},'zone','down','main');
 		m.spawnBlock(spot.b1,function(){ return true; },'spike');	
 		
 		m.spawnSkillPlot(spot.s6,'QlureKill','rock-bronze',0);
 		m.spawnSkillPlot(spot.s2,'Qminesweeper','rock-bronze',0);
 		//m.spawnSkillPlot(spot.s7,'Qfifteen','rock-bronze',0);
-		
-		m.spawnWaypoint(spot.g1,true);
 	}
 });
 s.newMap('nwLong',{
@@ -292,7 +304,10 @@ s.newMap('nwLong',{
 },{
 	spot:{n1:{x:368,y:912},t1:{x:528,y:1168},t2:{x:528,y:1456}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','t7','main');},'zone','down','main');
+		m.spawnTeleporter(spot.t1,function(key){
+			s.teleport(key,'main','t7','main');
+			s.setRespawn(key,'main','t7','main');
+		},'zone','down','main');
 	}
 });
 s.newMap('high',{
@@ -303,20 +318,13 @@ s.newMap('high',{
 },{
 	spot:{t2:{x:352,y:384},n1:{x:368,y:592},t1:{x:528,y:928}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t1,function(key){s.teleport(key,'main','b','main');},'zone','down','main');
+		m.spawnTeleporter(spot.t1,function(key){
+			s.teleport(key,'main','b','main');
+			s.setRespawn(key,'main','b','main');
+		},'zone','down','main');
 	}
 });
-s.newMap('simpleMap',{
-	name:"Simple Map",
-	lvl:0,
-	grid:["00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000"],
-	tileset:'v1.2'
-},{
-	spot:{},
-	load:function(spot){
-		
-	}
-});
+
 s.newMap('transitionMap',{
 	name:"Transition Map",
 	lvl:0,

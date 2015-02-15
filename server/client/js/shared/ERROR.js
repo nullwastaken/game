@@ -5,7 +5,7 @@ ERROR = exports.ERROR = function(lvl,p0,p1,p2,p3,p4,p5,p6){
 	var stack = ERROR.getStack().split('\n');	//remove first 3 useless stack
 	for(var i = 0 ; i < stack.length;){
 		if(!stack[i]) break;
-		if(stack[i].contains('ERROR')) stack.splice(0,1);
+		if(stack[i].$contains('ERROR')) stack.splice(0,1);
 		else break;
 	}
 	
@@ -27,6 +27,9 @@ ERROR.err = function(lvl,err,p0,p1,p2,p3,p4,p5,p6){
 	if(typeof err === 'string')	str += err;
 	else if(err && typeof err === 'object') str += err.stack || err.message;
 	
+	str = str.replace('at Function.ERROR.getStack (C:\rc\rainingchain\server\client\js\shared\ERROR.js:','');
+	str = str.replace('at exports.ERROR (C:\rc\rainingchain\server\client\js\shared\ERROR.js:','');
+	
 	if(!ERROR.display) return;
 	if(ERROR.count > ERROR.resetAt) return;
 	var all = SERVER ? global : window;
@@ -34,23 +37,26 @@ ERROR.err = function(lvl,err,p0,p1,p2,p3,p4,p5,p6){
 	ERROR.last = str;
 	
 	if(ERROR.LOG.length < 100000){
-		if(!str.contains('RS_server')){
-			str = str.replace('at Function.ERROR.getStack (/opt/run/snapshot/package/server/client/js/shared/ERROR.js:75:38) at exports.ERROR (/opt/run/snapshot/package/server/client/js/shared/ERROR.js:5:20)','');
-			ERROR.LOG += 'NEW' + str.slice(50,500);
+		if(!str.$contains('RS_server') && !str.$contains('Debug.ts')){
+			str = str.replace('at Function.ERROR.getStack (/opt/run/snapshot/package/server/client/js/shared/ERROR.js:')
+			str = str.replace('at exports.ERROR (/opt/run/snapshot/package/server/client/js/shared/ERROR.js:','');
+			str = str.replace('/opt/run/snapshot/package/server/','');
+			str = str.replace('Error at Function.ERROR.getStack (client/js/shared/ERROR.js:')
+			str = str.replace('at exports.ERROR (client/js/shared/ERROR.js:','');
+			str = str.replace('Error at Function.ERROR.getStack','');
+			ERROR.LOG += '<br>\r\nNEW' + (new Date()) + str.slice(50,600);
 		}
-		
-			
 	}
 		
 	
 	all['con' + 'sole'].log(str);
 	
 	//quest
-	if(SERVER && str.contains('(C:\\rc\\rainingchain\\server\\client\\quest\\')){
+	if(SERVER && str.$contains('(C:\\rc\\rainingchain\\server\\client\\quest\\')){
 		var list = str.split('(C:\\rc\\rainingchain\\server\\client\\quest\\');
 		for(var i = list.length-1; i >= 0; i--){
 			if(list[i][0] !== 'Q'){
-				list.removeAt(i);
+				list.$removeAt(i);
 			} else {
 				list[i] = list[i].slice(0,list[i].indexOf(')'));
 			}
@@ -77,7 +83,7 @@ ERROR.LOG = '';
 
 ERROR.getStack = function(){
 	if(SERVER || window.chrome) return (new Error()).stack;
-	try { !createError; } catch(err) {
+	try { undefined(); } catch(err) {
 		return (new Error()).stack || err.stack || err.message;	//cuz ie sucks
 	}
 }

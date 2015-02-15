@@ -1,6 +1,10 @@
+//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
 (function(){ //}
+var Actor = require4('Actor'), QueryDb = require4('QueryDb'), Input = require4('Input'), Img = require4('Img'), Command = require4('Command'), Combat = require4('Combat'), AttackModel = require4('AttackModel'), Stat = require4('Stat');
+var Dialog = require3('Dialog');
 
-Dialog('ability','Ability',Dialog.Size(800,500),Dialog.Refresh(function(html,variable,param){
+Dialog.create('ability','Ability',Dialog.Size(800,700),Dialog.Refresh(function(html,variable,param){
 	Dialog.ability(html,variable,param);
 },function(html,variable,param){
 	return Tk.stringify(player.ability) + Tk.stringify(player.abilityList) + variable.param + variable.typeShowed + Tk.stringify(Actor.getEquip(player).piece);	
@@ -34,12 +38,13 @@ Dialog.ability = function(html,variable,param){
 	Dialog.ability.abilityList(html,variable,ability,right);
 	Dialog.ability.generalInfo(html,variable,ability,right);
 	
-	if(ability.funcStr === 'Combat.attack') var bool = Dialog.ability.attack(html,variable,ability,right);
+	var bool;
+	if(ability.funcStr === 'attack') bool = Dialog.ability.attack(html,variable,ability,right);
 	
-	if(ability.funcStr === 'Combat.boost') var bool = Dialog.ability.boost(html,variable,ability,right);
-	if(ability.funcStr === 'Combat.summon') var bool = Dialog.ability.summon(html,variable,ability,right);
-	if(ability.funcStr === 'Combat.heal') var bool = Dialog.ability.heal(html,variable,ability,right);
-	if(ability.funcStr === 'Combat.dodge') var bool = Dialog.ability.dodge(html,variable,ability,right);
+	if(ability.funcStr === 'boost') bool = Dialog.ability.boost(html,variable,ability,right);
+	if(ability.funcStr === 'summon') bool = Dialog.ability.summon(html,variable,ability,right);
+	if(ability.funcStr === 'heal') bool = Dialog.ability.heal(html,variable,ability,right);
+	if(ability.funcStr === 'dodge') bool = Dialog.ability.dodge(html,variable,ability,right);
 	
 	return bool;
 }
@@ -51,7 +56,15 @@ Dialog.ability.leftSide = function(html,variable,ability,left){
 	);
 
 	var array = [];
-	for(var i = 0 ; i < Input.setting.ability.length ; i++){
+	var set = Input.getSetting();
+	
+	var helper = function(i){
+		return function(){
+			Command.execute('win,ability,swap',[ability.id,i]);
+		}
+	};
+	
+	for(var i = 0 ; i < set.ability.length ; i++){
 		var buttonTitle = Input.getKeyName('ability',i,true);
 		var button = $('<span>')
 			.attr('title',buttonTitle)
@@ -59,22 +72,19 @@ Dialog.ability.leftSide = function(html,variable,ability,left){
 			
 		//####
 		var abilityId = Actor.getAbility(player)[i];
+		var icon;
 		if(!abilityId)
-			var icon = Img.drawIcon.html(null,30);
+			icon = Img.drawIcon.html(null,30);
 		else {
 			var ab = QueryDb.get('ability',abilityId,function(){
 				Dialog.refresh('ability',variable.param);
 			});
 			if(ab)
-				var icon = Img.drawIcon.html(ab.icon,30);
+				icon = Img.drawIcon.html(ab.icon,30);
 			else Dialog.close('ability');
 		}
 		icon.attr('title',"Assign " + ability.name + " to " + buttonTitle)
-			.click((function(i){
-				return function(){
-					Command.execute('win,ability,swap',[ability.id,i]);
-				}
-			})(i));
+			.click(helper(i));
 		
 		array.push([
 			button,
@@ -83,44 +93,71 @@ Dialog.ability.leftSide = function(html,variable,ability,left){
 	}
 	
 	left.append(Tk.arrayToTable(array).css({textAlign:'center',width:'100%'}));
-	
+	left.append("<br>");
 	var el2 = $('<button>')
 		.addClass("myButton skinny")
 		.attr('title','Open Key Binding Window')
 		.html('Change<br>Bindings')
-		.css({font:'1em Kelly Slab'})
+		.css({border:'2px solid black',font:'0.8em Kelly Slab'})
 		.click(function(){
 			Dialog.open('binding');
 		});
 	left.append(el2);
 }
 
+var helper = function(id){
+	return function(){
+		Dialog.refresh('ability',id);
+	}
+}
+
 Dialog.ability.abilityList = function(html,variable,selectedAb,right){
 	var abilityList = Actor.getAbilityList(player);
 	var obj = [];
 	for(var i in abilityList){
-		var ability = QueryDb.get('ability',i);
+		var ability = QueryDb.get('ability',i,function(){
+			Dialog.refresh('ability');
+		});
 		if(ability){
 			obj.push(ability);
 		}
 	}
-	var el = $('<p>');
-	el.append('Select Ability: ');
+	
+	var el = $('<div>');
+	var attackList = $('<p>').html(' - Attack: ');
+	var miscList = $('<p>').html(' - Misc: &nbsp;&nbsp;');
+	el.append('<h3 class="u">Select Ability</h3>',attackList,miscList);
+		
 	for(var j = 0 ; j < obj.length; j++){
 		var ability = obj[j];	
 		
-		var el2 = Img.drawIcon.html(ability.icon,30,'Select: ' + ability.name,(function(id){
-			return function(){
-				Dialog.refresh('ability',id);
-			}
-		})(ability.id));
+		var el2 = Img.drawIcon.html(ability.icon,30,'Select: ' + ability.name)
+			.click(helper(ability.id));
 		
-		if(selectedAb.id === ability.id){
-			el2.css({border:'2px solid red'});
+		var selected = selectedAb.id === ability.id;
+		
+		if(ability.type === 'attack'){
+			var element = AttackModel.getElement(ability.param);
+			var color = CST.element.toColor[element];
+			
+			//el2.css({border:'4px solid ' + color});
+			
+			var ctx = el2[0].getContext('2d');
+			ctx.fillStyle = color;
+			ctx.globalAlpha = 0.2;
+			ctx.fillRect(0,0,30,30);	
+			
+			if(selected)
+				el2.css({border:'4px solid ' + color});
+			
+			attackList.append(el2);
 		}
-		
-		el.append(el2);
-		if(j === 20) el.append('<br>');
+		else {
+			if(selected)
+				el2.css({border:'4px solid black'});
+			miscList.append(el2);	
+		}
+		//if(j === 16) el.append('<br>');
 	}
 	right.append(el);
 }
@@ -157,7 +194,7 @@ Dialog.ability.attack = function(html,variable,ab,right){
 	
 	
 	var preatk = Tk.deepClone(ab.param);
-	var atk = Combat.attack.mod(player,Tk.deepClone(preatk));
+	var atk = Combat.applyAttackMod(player,Tk.deepClone(preatk));
 	
 	var element = AttackModel.getElement(preatk);
 	if(!element) return ERROR(4,'ability with no element');
@@ -187,7 +224,7 @@ Dialog.ability.attack = function(html,variable,ab,right){
 	} else {
 		array.push([
 			'Weapon: ',
-			Img.drawIcon.html('element.' + element,30,element.capitalize(),null,null,0.3),
+			Img.drawIcon.html('element.' + element,30,element.capitalize(),0.3),
 			$('<span>')
 				.html('x' + weapon.dmg.main.r(1))
 				.attr('title','Weapon Base Damage'),
@@ -200,7 +237,7 @@ Dialog.ability.attack = function(html,variable,ab,right){
 	//###
 	Actor.mastery.update(player);
 	array.push([
-		'Mastery: ',
+		'Boost: ',
 		Img.drawIcon.html('element.' + element,30,element.capitalize()),
 		$('<span>')
 			.html(' x' + player.mastery.dmg[element].sum.r(3))
@@ -253,7 +290,7 @@ Dialog.ability.attack = function(html,variable,ab,right){
 		var s = r(a.chance*100,2) + '% chance to Stun, draining ' + r(a.magn*100,0) + '% Ability Charge for ' + r(a.time/25,2) + 's.';
 		mod.append(s + '<br>');
 	}
-	if(atk.stun.chance > 0){
+	if(atk.bleed.chance > 0){
 		var a = atk.bleed;
 		var s = r(a.chance*100,2) + '% chance to Bleed for ' + r(a.magn*a.time,2) + ' Dmg over ' + r(a.time/25,2) + 's.';
 		mod.append(s + '<br>');
@@ -331,7 +368,7 @@ Dialog.ability.dodge = function(html,variable,ab,right){
 	right.append(str);
 }
 
-Dialog.ability.boost = function(diffX,diffY){ 
+Dialog.ability.boost = function(html,variable,ab,right){ 
 	var info = ab.param;
 	for(var i in info){
 		var b = info[i];
@@ -343,7 +380,4 @@ Dialog.ability.boost = function(diffX,diffY){
 	}
 }
 
-
-
-
-})();
+})(); //{

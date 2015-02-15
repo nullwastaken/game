@@ -1,13 +1,13 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Sprite']));
-
-
-
-var AttackModel = exports.AttackModel = function(info,addDefaultStatus){
+"use strict";
+(function(){ //}
+var Sprite = require2('Sprite');
+var AttackModel = exports.AttackModel = {};
+AttackModel.create = function(info,addDefaultStatus){
 	var tmp = {
 		//All
 		type:'bullet',
-		dmg:AttackModel.Dmg(0,'melee'),
+		dmg:AttackModel.Dmg(0,1,0,0,0,0,0),
 		hitAnim:null,	//when enemy get hits, use anim on him {name,sizeMod}
 		damageIfMod:0, //if 1, hit allies
 		amount:1,	//# bullets shot
@@ -25,6 +25,7 @@ var AttackModel = exports.AttackModel = function(info,addDefaultStatus){
 		onHit:null,
 		onHitHeal:null,
 		ghost:0,
+		hitEvent:'',
 		
 		//Strike Only
 		width:10,      			//width for strike
@@ -75,6 +76,8 @@ AttackModel.Boomerang = function(comeBackTime,spd,spdBack,newId){
 	}
 }
 AttackModel.Dmg = function(main,me,ra,ma,fi,co,li){
+	if(typeof me === 'string')
+		return ERROR(3,'me should be number');
 	return {
 		main:main || 0,
 		ratio:CST.element.template(me,ra,ma,fi,co,li)
@@ -98,7 +101,7 @@ AttackModel.OnMove = function(period,rotation,attack){
 	return {
 		period:period || 25,
 		rotation:rotation || 0,
-		attack:AttackModel(attack)
+		attack:AttackModel.create(attack)
 	};
 }
 AttackModel.Curse = function(chance,boost){
@@ -110,11 +113,11 @@ AttackModel.Curse = function(chance,boost){
 AttackModel.OnHit = AttackModel._onDamagePhase = function(chance,attack){
 	return {
 		chance:chance || 0,
-		attack:AttackModel(attack)
+		attack:AttackModel.create(attack)
 	};
 }
 AttackModel.Sprite = function(name,sizeMod){
-	return Sprite(name,sizeMod);
+	return Sprite.create(name,sizeMod);
 }
 AttackModel.OnHitHeal = function(hp,mana){
 	return {
@@ -128,8 +131,12 @@ AttackModel.OnHitHeal = function(hp,mana){
 AttackModel.addDefaultStatus = function(model){	//select 1st element, if no status, add 5% status default
 	var el = AttackModel.getElement(model);
 	var status = CST.element.toStatus[el];
-	if(model[status]) return;	//do not overwrite
-	model[status] = AttackModel.Status(0.05,1,1);
+	/*if(!model.knock || model.knock.chance === 0){
+		model.knock = AttackModel.Status(1,2,0.1);
+	}*/
+	if(!model[status] || model[status].chance === 0)
+		model[status] = AttackModel.Status(0.05,1,1);
+		
 }
 
 AttackModel.getElement = function(model){
@@ -137,12 +144,12 @@ AttackModel.getElement = function(model){
 		if(model.dmg.ratio[el]) return el;	
 }
 
-AttackModel.InitPosition = function(min,max,type){
+AttackModel.InitPosition = function(min,max){
 	return {
 		type:min === undefined ? 'actor' : 'mouse',	//or mouse
 		min:min || 0,
 		max:max === undefined ? 50 : max,
 	}
 }
-
+})(); //{
 

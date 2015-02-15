@@ -5,6 +5,9 @@
 var s = loadAPI('v1.0','Qminesweeper',{
 	name:"Minesweeper",
 	author:"rc",
+	maxParty:4,
+	thumbnail:true,
+	reward:{"ability":{'Qsystem-player-magicBomb':0.5}},
 	scoreModInfo:"Depends on your time.",
 	description:"Play the puzzle game minesweeper.",
 });
@@ -17,18 +20,18 @@ s.newVariable({
 	flagCount:0
 });
 s.newHighscore('speedrun',"Fastest Time [Easy]","Fastest Completion",'ascending',function(key){
-	return s.get(key,'chrono') * 40;
+	return s.stopChrono(key,'timer') * 40;
 });
 s.newHighscore('speedrunHard',"Fastest Time [Hard]","Fastest Completion with Challenge Dodge & Mine active.",'ascending',function(key){
 	if(!s.isChallengeActive(key,'monster')) return null;
-	return s.get(key,'chrono') * 40;
+	return s.stopChrono(key,'timer') * 40;
 });
 s.newHighscore('noflag',"Fastest Time [No Flag]","Fastest Completion with Challenge No Flag active.",'ascending',function(key){
 	if(!s.isChallengeActive(key,'noflag')) return null;
-	return s.get(key,'chrono') * 40;
+	return s.stopChrono(key,'timer') * 40;
 });
-s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 30 seconds.",2,function(key){
-	return s.get(key,'chrono') < 25*30;
+s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 60 seconds.",2,function(key){
+	return s.stopChrono(key,'timer') < 25*60;
 });
 s.newChallenge('monster',"Dodge And Mine","Complete the quest while monsters attack you.",2,function(key){
 	return true;
@@ -62,11 +65,10 @@ s.newEvent('_death',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('_abandon',function(key){ //
-	if(s.isInQuestMap(key))
-		s.teleport(key,'QfirstTown-north','t5','main',false);
+	s.teleport(key,'QfirstTown-north','t5','main',false);
+	s.setRespawn(key,'QfirstTown-north','t5','main',false);
 });
 s.newEvent('_complete',function(key){ //
-	s.set(key,'chrono',s.stopChrono(key,'timer'));
 	s.callEvent('_abandon',key);
 });
 s.newEvent('newGrid',function(){ //
@@ -89,7 +91,7 @@ s.newEvent('generateBombGrid',function(){ //
 	for(var i = 0 ; i < s.callEvent('getCst','BOMBAMOUNT'); i++){
 		do {
 			var num = Math.floor(Math.random()*100);
-		} while(bombPosition.contains(num))	//prevent duplicate
+		} while(bombPosition.$contains(num))	//prevent duplicate
 			
 		bombPosition.push(num);
 	}
@@ -99,7 +101,7 @@ s.newEvent('generateBombGrid',function(){ //
 		grid[i] = [];
 		for(var j = 0 ; j < SIZE; j++){
 			var num = i + j*10;
-			grid[i][j] = bombPosition.contains(num) ? s.callEvent('getCst','BOMB') : 0;
+			grid[i][j] = bombPosition.$contains(num) ? s.callEvent('getCst','BOMB') : 0;
 		}
 	}
 	return grid;
@@ -255,10 +257,20 @@ s.newDialogue('Yelface','Yelface','villager-male.2',[ //{
 	],''),
 	s.newDialogue.node('intro2',"Well, I'm too dumb to complete a game so I have no clue if it fully works.",[ 
 		s.newDialogue.option("Do you want me to test it?",'intro3',''),
+		s.newDialogue.option("How to play minesweeper?",'howto','')
 	],''),
 	s.newDialogue.node('intro3',"You are reading my mind! Let's go!",[ 
 		s.newDialogue.option("Okay.",'','startGame'),
-	],'')
+	],''),
+	s.newDialogue.node('howto',"Find the empty squares while avoiding the mine squares.<br>Uncover a mine, and the game ends.<br>Uncover an empty square, and you keep playing.",[ 
+		s.newDialogue.option("Next.",'howto2',''),
+	],''),
+	s.newDialogue.node('howto2',"Uncover a number, and it tells you how many mines lay hidden in the eight surrounding squares—information you use to deduce which nearby squares are safe to click.",[ 
+		s.newDialogue.option("Next.",'howto3',''),
+	],''),
+	s.newDialogue.node('howto3',"Mark the mines. If you suspect a square conceals a mine, right-click it. This puts a flag on the square.",[ 
+		s.newDialogue.option("Let's start!",'','startGame'),
+	],''),
 ]); //}
 
 

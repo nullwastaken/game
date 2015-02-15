@@ -1,7 +1,9 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['AttackModel','ItemModel','Actor','Main','Boost','OptionList'],['Ability']));
+"use strict";
+var AttackModel = require2('AttackModel'), Message = require2('Message'), ItemModel = require2('ItemModel'), Actor = require2('Actor'), Main = require2('Main'), Boost = require2('Boost'), OptionList = require2('OptionList');
 
-var Ability = exports.Ability = function(quest,id,ability){
+var Ability = exports.Ability = {};
+Ability.create = function(quest,id,ability){
 	var tmp = {
 		quest:'',
 		id:'',
@@ -30,9 +32,22 @@ var Ability = exports.Ability = function(quest,id,ability){
 	
 	DB[id] = tmp;
 	
-	Ability.createItemVersion(tmp);
+	if(id.$contains('player'))	//BAD
+		Ability.createItemVersion(tmp);
 	
 	return tmp;
+}
+
+Ability.verifyDmg = function(ab){
+	if(ab.type === 'attack'){
+		var dmg = ab.param.attack.dmg;
+		if(isNaN(dmg.main))
+			ERROR(3,'dmg ratio not a number ability:' + ab.id);
+		for(var i in dmg.ratio){
+			if(isNaN(dmg.ratio[i]))
+				ERROR(3,'dmg ratio not a number ability:' + ab.id);
+		}
+	}
 }
 
 var DB = Ability.DB = {};
@@ -42,22 +57,23 @@ Ability.get = function(id){
 };	//for quest
 
 Ability.createItemVersion = function(tmp){
-	ItemModel(tmp.quest,tmp.id,tmp.name,'plan.ability',[
+	//ability id === item id or quest reward fucked
+	ItemModel.create(tmp.quest,tmp.id,tmp.name,'plan.ability',[
 		ItemModel.Option(Ability.clickScroll,'Learn Ability','Learn Ability',[OptionList.ACTOR,tmp.id])
-	],tmp.name,{type:'ability'});
+	],tmp.name,{trade:false,type:'ability'});
 }
 
 Ability.Param = function(funcStr,param){	//unused but sub yes
-	if(funcStr === 'Combat.heal') return Ability.Param.heal(param);
-	if(funcStr === 'Combat.summon') return Ability.Param.summon(param);
-	if(funcStr === 'Combat.attack') return Ability.Param.attack(param);
-	if(funcStr === 'Combat.boost') return Ability.Param.boost(param);
-	if(funcStr === 'Combat.dodge') return Ability.Param.dodge(param);
-	if(funcStr === 'Combat.event') return Ability.Param.event(param);
-	if(funcStr === 'Combat.idle') return Ability.Param.idle(param);
+	if(funcStr === 'heal') return Ability.Param.heal(param);
+	else if(funcStr === 'summon') return Ability.Param.summon(param);
+	else if(funcStr === 'attack') return Ability.Param.attack(param);
+	else if(funcStr === 'boost') return Ability.Param.boost(param);
+	else if(funcStr === 'dodge') return Ability.Param.dodge(param);
+	else if(funcStr === 'event') return Ability.Param.event(param);
+	else if(funcStr === 'idle') return Ability.Param.idle(param);
 	return ERROR(3,'invalid funcStr',funcStr,param);
 }
-Ability.Param.idle = function(param){
+Ability.Param.idle = function(){
 	return {};
 }
 
@@ -106,7 +122,7 @@ Ability.Param.boost.boost = function(stat,type,value,time){	//bad name...
 }
 
 Ability.Param.attack = function(param){
-	return AttackModel(param);
+	return AttackModel.create(param);
 }
 
 
@@ -117,7 +133,7 @@ Ability.functionVersion = function(name){	//turn ability into function. called w
 	if(!ab) return ERROR(3,'no ability',name);
 	
 	if(ab.funcStr === 'Combat.attack'){
-		ab.param = new Function('return ' + Tk.stringify(AttackModel(ab.param)));
+		ab.param = new Function('return ' + Tk.stringify(AttackModel.create(ab.param)));
 	}
 	return ab;
 }
@@ -134,7 +150,11 @@ Ability.compressClient = function(ability){
 }	
 
 Ability.clickScroll = function(act,id){
-	Actor.ability.add(act,id);
-	Main.removeItem(Actor.getMain(act),id);
+	var main = Actor.getMain(act);
+	if(!Main.haveItem(main,id,1)) return;
+	Main.openDialog(main,'ability');
+	Message.addPopup(act.id,"Congratulations! You learned a new ability!");
+	Actor.addAbility(act,id);
+	Main.removeItem(main,id);
 }
 

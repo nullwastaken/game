@@ -1,9 +1,11 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 //kinda linked with Input but client only
-
 if(typeof exports === 'undefined') exports = {};
 
-eval('INFO = function(){ co' + 'nsole.log.apply(co' + 'nsole,arguments); };');	//so doesnt show in search all
+INFO = function(){ //so doesnt show in search all
+	var cons = SERVER ? global['cons' + 'ole'] : window['cons' + 'ole'];
+	cons.log.apply(cons,arguments); 
+};	
 
 /* DATE
 
@@ -29,7 +31,8 @@ Date.nowDate = function(num){
 }
 
 //Math
-var Tk = exports.Tk = {};
+Tk = exports.Tk = {};	//TEMP global
+//var Tk = exports.Tk = {};
 Tk.sin = function (number){
 	return (Math.sin(number/180*Math.PI))
 }
@@ -59,7 +62,7 @@ Tk.atan2 = function (y,x){
 	return (angle+360)%360;
 	
 	//slower old
-	return ((Math.atan2(y,x)/Math.PI*180)+360)%360
+	//return ((Math.atan2(y,x)/Math.PI*180)+360)%360
 }
 Math.log10 = function(num){
     return Math.log(num) / Math.log(10);
@@ -119,7 +122,7 @@ Tk.getBrowserVersion = function(){
         return 'IE '+(tem[1] || '');
     }
     M= M[2]? [M[1], M[2]]:[navigator.appName, navigator.appVersion, '-?'];
-    if((tem= ua.match(/version\/([\.\d]+)/i))!= null) M[2]= tem[1];
+    if((tem= ua.match(/version\/([\.\d]+)/i))!== null) M[2]= tem[1];
     return M.join(' ');
 };
 
@@ -145,48 +148,26 @@ Object.defineProperty(Number.prototype, "mm", {
 	}
 });	
 
-Object.defineProperty(Number.prototype, "toPercent", {
-    enumerable: false,
-    value: function(num) {
-		return Tk.round(this*100,num || 0) + '%';
-	}
-});	
+Tk.frameToChrono = function(num){
+	return Tk.msToChrono(num*40);
+}
+Tk.msToChrono = function(time){
+	time = time || 0;
+	var hour = Math.floor(time / CST.HOUR);
+	time %= CST.HOUR;
+	var min = Math.floor(time / CST.MIN);
+	min = min < 10 ? '0' + min : min;
+	time %= CST.MIN;
+	var sec = Math.floor(time / CST.SEC);
+	sec = sec < 10 ? '0' + sec : sec;
+	var milli = time % CST.SEC;
+	if(milli < 10) milli = '00' + milli;
+	else if(milli < 100) milli = '0' + milli;
 	
-Object.defineProperty(Number.prototype, "toChrono", {
-    enumerable: false,
-    value: function() {
-		var time = this;
-		var hour = Math.floor(time / CST.HOUR);
-		time %= CST.HOUR;
-		var min = Math.floor(time / CST.MIN);
-		min = min < 10 ? '0' + min : min;
-		time %= CST.MIN;
-		var sec = Math.floor(time / CST.SEC);
-		sec = sec < 10 ? '0' + sec : sec;
-		var milli = time % CST.SEC;
-		if(milli < 10) milli = '00' + milli;
-		else if(milli < 100) milli = '0' + milli;
-		
-		if(+hour) return hour + ':' + min + ':' + sec + '.' + milli;	
-		if(+min) return min + ':' + sec + '.' + milli;	
-		return sec + '.' + milli;		
-	}
-});	
-
-Object.defineProperty(Number.prototype, "interval", {
-    enumerable: false,
-    value: function(num) {
-		return this % num === 0;
-	}
-});	
-
-Object.defineProperty(Number.prototype, "frameToChrono", {
-    enumerable: false,
-    value: function() {
-		return (this*40).toChrono();
-	}
-});	
-
+	if(+hour) return hour + ':' + min + ':' + sec + '.' + milli;	
+	if(+min) return min + ':' + sec + '.' + milli;	
+	return sec + '.' + milli;
+}
 
 Object.defineProperty(Number.prototype, "r", {
     enumerable: false,
@@ -239,42 +220,45 @@ Tk.stringify = function(string){
 }
 Tk.isEqual = function(obj0,obj1){
 	if(obj0 === undefined || obj1 === undefined){ return false;}	
-	return obj0 == obj1;
+	return obj0 === obj1;
 }
 
 
 //Via Array
 Tk.viaArray = {};
-Tk.viaArray.get = function(d){
+Tk.viaArray.get = function(origin,a){
 	try {
-		if(!d.origin){ d.origin = (SERVER ? global : window);}
-		if(typeof d.array != 'object'){ return d.origin[array]; }
-		var a = d.array;
-		switch (a.length) {
-			case 1: return d.origin[a[0]]; break;
-			case 2: return d.origin[a[0]][a[1]];break;
-			case 3: return d.origin[a[0]][a[1]][a[2]];break;
-			case 4: return d.origin[a[0]][a[1]][a[2]][a[3]];break;
-			case 5: return d.origin[a[0]][a[1]][a[2]][a[3]][a[4]];break;
-			case 6: return d.origin[a[0]][a[1]][a[2]][a[3]][a[4]][a[5]];break;
-			default: break;
-		}
+		return Tk.viaArray.get.main(origin,a);
 	} catch (err) { ERROR.err(3,err); }
 }
-Tk.viaArray.set = function(d){
+Tk.viaArray.get.main = function(origin,a){
+	if(typeof a !== 'object')
+		return origin[a];
+	switch (a.length) {
+		case 1: return origin[a[0]];
+		case 2: return origin[a[0]][a[1]];
+		case 3: return origin[a[0]][a[1]][a[2]];
+		case 4: return origin[a[0]][a[1]][a[2]][a[3]];
+		case 5: return origin[a[0]][a[1]][a[2]][a[3]][a[4]];
+		case 6: return origin[a[0]][a[1]][a[2]][a[3]][a[4]][a[5]];
+		default: break;
+	}
+}
+Tk.viaArray.set = function(origin,a,value){
 	try {
-		if(!d.origin){ d.origin = window;}
-		var a = d.array;
-		switch (a.length) {
-			case 1: d.origin[a[0]] = d.value; break;
-			case 2: d.origin[a[0]][a[1]] = d.value;break;
-			case 3: d.origin[a[0]][a[1]][a[2]] = d.value;break;
-			case 4: d.origin[a[0]][a[1]][a[2]][a[3]] = d.value;break;
-			case 5: d.origin[a[0]][a[1]][a[2]][a[3]][a[4]] = d.value;break;
-			case 6: d.origin[a[0]][a[1]][a[2]][a[3]][a[4]][a[5]] = d.value;break;
-			default: break;
-		}	
-	} catch (err) { ERROR.err(3,d.array); }
+		return Tk.viaArray.set.main(origin,a,value);
+	} catch (err) { ERROR.err(3,err); }
+}
+Tk.viaArray.set.main = function(origin,a,value){
+	switch (a.length) {
+		case 1: origin[a[0]] = value; break;
+		case 2: origin[a[0]][a[1]] = value;break;
+		case 3: origin[a[0]][a[1]][a[2]] = value;break;
+		case 4: origin[a[0]][a[1]][a[2]][a[3]] = value;break;
+		case 5: origin[a[0]][a[1]][a[2]][a[3]][a[4]] = value;break;
+		case 6: origin[a[0]][a[1]][a[2]][a[3]][a[4]][a[5]] = value;break;
+		default: break;
+	}
 }
 
 //Round
@@ -290,7 +274,7 @@ Tk.round = function (num,decimals,str){
 	var num = Tk.round(num,decimals).toString();
 	
 	var dot = num.indexOf('.');
-	if(dot == -1){ num += '.'; dot = num.length-1; }
+	if(dot === -1){ num += '.'; dot = num.length-1; }
 	
 	var missing0 = decimals - num.length + dot + 1;
 	
@@ -348,7 +332,7 @@ Tk.useTemplate = function(temp,obj,deep,viaarray){
 	if(deep) obj = Tk.deepClone(obj); 
 	if(viaarray){
 		for(var i in obj){
-			Tk.viaArray.set({origin:temp,array:i.split(','),value:obj[i]});
+			Tk.viaArray.set(temp,i.split(','),obj[i]);
 		}
 		return temp;
 	}
@@ -378,6 +362,9 @@ Tk.arrayToTable = function(array,top,left,CSSTableGenerator,spacing){
 	return table;
 }
 
+Tk.arrayToTable.access = function(what,row,column){
+	return $(what.children().children()[row]).children()[column].innerHTML;
+}
 
 
 
@@ -392,7 +379,6 @@ Tk.convertRatio = function(ratio){	//normalize vector
 	return ratio;
 }
 
-
 Tk.rotatePt = function(pt,angle,anchor){
 	anchor = anchor || {};
 	anchor.x = anchor.x || 0;
@@ -403,9 +389,8 @@ Tk.rotatePt = function(pt,angle,anchor){
 	}	
 }
 
-
 //Prototype
-Object.defineProperty(Array.prototype, "random", {	// !name: return random element || name:  [{name:10},{name:1}] and return obj
+Object.defineProperty(Array.prototype, "$random", {	// !name: return random element || name:  [{name:10},{name:1}] and return obj
     enumerable: false,
     value: function(name){
 		if(!this.length) return null;
@@ -413,23 +398,12 @@ Object.defineProperty(Array.prototype, "random", {	// !name: return random eleme
 		
 		var obj = {};	
 		for(var i in this) obj[i] = this[i][name];
-		var choosen = obj.random();
+		var choosen = obj.$random();
 		return choosen !== null ? this[choosen] : null
 	}
 });
 
-Object.defineProperty(Array.prototype, "normalize", {	// Tk.convertRatio for array
-    enumerable: false,
-    value: function(){
-		var sum = 0;
-		for(var i in this)
-			sum += this[i];
-		for(var i in this)
-			this[i] /= sum;
-	}
-});
-
-Object.defineProperty(Object.prototype, "random", {	//return attribute, must be {attribute:NUMBER}, chance of being picked depends on NUMBER
+Object.defineProperty(Object.prototype, "$random", {	//return attribute, must be {attribute:NUMBER}, chance of being picked depends on NUMBER
     enumerable: false,
     value: function(name){
 		if(!Object.keys(this).length) return null;
@@ -453,10 +427,10 @@ Object.defineProperty(Object.prototype, "random", {	//return attribute, must be 
 	}
 });
 
-Object.defineProperty(Object.prototype, "randomAttribute", {	//return random attribute
+Object.defineProperty(Object.prototype, "$randomAttribute", {	//return random attribute
     enumerable: false,
     value: function(){
-		return Object.keys(this).random();
+		return Object.keys(this).$random();
 	}
 });	
 	
@@ -477,7 +451,6 @@ Object.defineProperty(Object.prototype, "$isEmpty", {
 		return true;
 	}
 });
-
 
 Object.defineProperty(Object.prototype, "$sum", {
 	enumerable: false,
@@ -512,7 +485,7 @@ Object.defineProperty(Object.prototype, "$keys", {
 	}
 });	
 
-Object.defineProperty(Array.prototype, "contains", {
+Object.defineProperty(Array.prototype, "$contains", {
     enumerable: false,
     value: function(name,begin){
 		if(begin) return this.indexOf(name) === 0;
@@ -520,14 +493,14 @@ Object.defineProperty(Array.prototype, "contains", {
 	}
 });	
 
-Object.defineProperty(Array.prototype, "insert", {
+Object.defineProperty(Array.prototype, "$insertAt", {
     enumerable: false,
     value: function (index, item) {
 	  this.splice(index, 0, item);
 	}
 });
 
-Object.defineProperty(Array.prototype, "remove", {
+Object.defineProperty(Array.prototype, "$remove", {
     enumerable: false,
     value: function (element,all) {
 		for(var i = this.length-1; i >= 0; i--){
@@ -539,7 +512,8 @@ Object.defineProperty(Array.prototype, "remove", {
 		return this;
 	}
 });
-Object.defineProperty(Array.prototype, "removeAt", {
+
+Object.defineProperty(Array.prototype, "$removeAt", {
     enumerable: false,
     value: function (i) {
 		this.splice(i,1);
@@ -580,13 +554,26 @@ Object.defineProperty(Object.prototype, "$getMin", {
 });
 
 
-//String
-String.prototype.replaceAll = function (find, replace) {
-    return this.replace(new RegExp(find, 'g'), replace);
+Tk.baseConverter = {	//https://gist.github.com/eyecatchup/6742657
+  toAscii: function(bin) {
+    return bin.replace(/\s*[01]{8}\s*/g, function(bin) {
+      return String.fromCharCode(parseInt(bin, 2))
+    })
+  },
+  toBinary: function(str, spaceSeparatedOctets) {
+    return str.replace(/[\s\S]/g, function(str) {
+      str = Tk.baseConverter.zeroPad(str.charCodeAt().toString(2));
+      return str;	//OLD: return !1 == spaceSeparatedOctets ? str : str + " "
+    })
+  },
+  zeroPad: function(num) {
+    return "00000000".slice(String(num).length) + num
+  }
 };
 
-String.prototype.keyCodeToName = function(full){	//TOFIX fusion bothfunctions
-	var charCode = Number(this);
+
+//String
+Tk.keyCodeToName = function(charCode,full){	//TOFIX fusion bothfunctions
 	var boost = '';
 	
 	if(charCode > 1000){	//bad... check Input SHIFTKEY
@@ -595,117 +582,92 @@ String.prototype.keyCodeToName = function(full){	//TOFIX fusion bothfunctions
 	}
 	
 	var m;
-	if(charCode == 1) var m = 'l';
-	else if(charCode == 2) var m = 'm';
-	else if(charCode == 3) var m = 'r';
-	else if (charCode == 8) var m = "backspace"; //  backspace
-	else if (charCode == 9) var m = "tab"; //  tab
-	else if (charCode == 13) var m = "enter"; //  enter
-	else if (charCode == 16) var m = "shelse ift"; //  shelse ift
-	else if (charCode == 17) var m = "ctrl"; //  ctrl
-	else if (charCode == 18) var m = "alt"; //  alt
-	else if (charCode == 19) var m = "pause/break"; //  pause/break
-	else if (charCode == 20) var m = "caps lock"; //  caps lock
-	else if (charCode == 27) var m = "escape"; //  escape
-    else if (charCode == 32) var m = "_";	 //space        
-    else if (charCode == 33) var m = "page up"; // page up, to avoid displaying alternate character and confusing people	         
-	else if (charCode == 34) var m = "page down"; // page down
-	else if (charCode == 35) var m = "end"; // end
-	else if (charCode == 36) var m = "home"; // home
-	else if (charCode == 37) var m = "left arrow"; // left arrow
-	else if (charCode == 38) var m = "up arrow"; // up arrow
-	else if (charCode == 39) var m = "right arrow"; // right arrow
-	else if (charCode == 40) var m = "down arrow"; // down arrow
-	else if (charCode == 45) var m = "insert"; // insert
-	else if (charCode == 46) var m = "delete"; // delete
-	else if (charCode == 91) var m = "left window"; // left window
-	else if (charCode == 92) var m = "right window"; // right window
-	else if (charCode == 93) var m = "select key"; // select key
-	else if (charCode == 96) var m = "N0"; // N0
-	else if (charCode == 97) var m = "N1"; // N1
-	else if (charCode == 98) var m = "N2"; // N2
-	else if (charCode == 99) var m = "N3"; // N3
-	else if (charCode == 100) var m = "N4"; // N4
-	else if (charCode == 101) var m = "N5"; // N5
-	else if (charCode == 102) var m = "N6"; // N6
-	else if (charCode == 103) var m = "N7"; // N7
-	else if (charCode == 104) var m = "N8"; // N8
-	else if (charCode == 105) var m = "N9"; // N9
-	else if (charCode == 106) var m = "multiply"; // multiply
-	else if (charCode == 107) var m = "add"; // add
-	else if (charCode == 109) var m = "subtract"; // subtract
-	else if (charCode == 110) var m = "decimal point"; // decimal point
-	else if (charCode == 111) var m = "divide"; // divide
-	else if (charCode == 112) var m = "F1"; // F1
-	else if (charCode == 113) var m = "F2"; // F2
-	else if (charCode == 114) var m = "F3"; // F3
-	else if (charCode == 115) var m = "F4"; // F4
-	else if (charCode == 116) var m = "F5"; // F5
-	else if (charCode == 117) var m = "F6"; // F6
-	else if (charCode == 118) var m = "F7"; // F7
-	else if (charCode == 119) var m = "F8"; // F8
-	else if (charCode == 120) var m = "F9"; // F9
-	else if (charCode == 121) var m = "F10"; // F10
-	else if (charCode == 122) var m = "F11"; // F11
-	else if (charCode == 123) var m = "F12"; // F12
-	else if (charCode == 144) var m = "num lock"; // num lock
-	else if (charCode == 145) var m = "scroll lock"; // scroll lock
-	else if (charCode == 186) var m = ";"; // semi-colon
-	else if (charCode == 187) var m = "="; // equal-sign
-	else if (charCode == 188) var m = ","; // comma
-	else if (charCode == 189) var m = "-"; // dash
-	else if (charCode == 190) var m = "."; // period
-	else if (charCode == 191) var m = "/"; // forward slash
-	else if (charCode == 192) var m = "`"; // grave accent
-	else if (charCode == 219) var m = "["; // open bracket
-	else if (charCode == 220) var m = "\\"; // back slash
-	else if (charCode == 221) var m = "]"; // close bracket
-	else if (charCode == 222) var m = "'"; // single quote
+	if(charCode === 1) var m = 'l';
+	else if(charCode === 2) var m = 'm';
+	else if(charCode === 3) var m = 'r';
+	else if (charCode === 8) var m = "backspace"; //  backspace
+	else if (charCode === 9) var m = "tab"; //  tab
+	else if (charCode === 13) var m = "enter"; //  enter
+	else if (charCode === 16) var m = "shift left"; //shift left (shelse ift)
+	else if (charCode === 17) var m = "ctrl"; //  ctrl
+	else if (charCode === 18) var m = "alt"; //  alt
+	else if (charCode === 19) var m = "pause/break"; //  pause/break
+	else if (charCode === 20) var m = "caps lock"; //  caps lock
+	else if (charCode === 27) var m = "escape"; //  escape
+    else if (charCode === 32) var m = "_";	 //space        
+    else if (charCode === 33) var m = "page up"; // page up, to avoid displaying alternate character and confusing people	         
+	else if (charCode === 34) var m = "page down"; // page down
+	else if (charCode === 35) var m = "end"; // end
+	else if (charCode === 36) var m = "home"; // home
+	else if (charCode === 37) var m = "left arrow"; // left arrow
+	else if (charCode === 38) var m = "up arrow"; // up arrow
+	else if (charCode === 39) var m = "right arrow"; // right arrow
+	else if (charCode === 40) var m = "down arrow"; // down arrow
+	else if (charCode === 45) var m = "insert"; // insert
+	else if (charCode === 46) var m = "delete"; // delete
+	else if (charCode === 91) var m = "left window"; // left window
+	else if (charCode === 92) var m = "right window"; // right window
+	else if (charCode === 93) var m = "select key"; // select key
+	else if (charCode === 96) var m = "N0"; // N0
+	else if (charCode === 97) var m = "N1"; // N1
+	else if (charCode === 98) var m = "N2"; // N2
+	else if (charCode === 99) var m = "N3"; // N3
+	else if (charCode === 100) var m = "N4"; // N4
+	else if (charCode === 101) var m = "N5"; // N5
+	else if (charCode === 102) var m = "N6"; // N6
+	else if (charCode === 103) var m = "N7"; // N7
+	else if (charCode === 104) var m = "N8"; // N8
+	else if (charCode === 105) var m = "N9"; // N9
+	else if (charCode === 106) var m = "multiply"; // multiply
+	else if (charCode === 107) var m = "add"; // add
+	else if (charCode === 109) var m = "subtract"; // subtract
+	else if (charCode === 110) var m = "decimal point"; // decimal point
+	else if (charCode === 111) var m = "divide"; // divide
+	else if (charCode === 112) var m = "F1"; // F1
+	else if (charCode === 113) var m = "F2"; // F2
+	else if (charCode === 114) var m = "F3"; // F3
+	else if (charCode === 115) var m = "F4"; // F4
+	else if (charCode === 116) var m = "F5"; // F5
+	else if (charCode === 117) var m = "F6"; // F6
+	else if (charCode === 118) var m = "F7"; // F7
+	else if (charCode === 119) var m = "F8"; // F8
+	else if (charCode === 120) var m = "F9"; // F9
+	else if (charCode === 121) var m = "F10"; // F10
+	else if (charCode === 122) var m = "F11"; // F11
+	else if (charCode === 123) var m = "F12"; // F12
+	else if (charCode === 144) var m = "num lock"; // num lock
+	else if (charCode === 145) var m = "scroll lock"; // scroll lock
+	else if (charCode === 186) var m = ";"; // semi-colon
+	else if (charCode === 187) var m = "="; // equal-sign
+	else if (charCode === 188) var m = ","; // comma
+	else if (charCode === 189) var m = "-"; // dash
+	else if (charCode === 190) var m = "."; // period
+	else if (charCode === 191) var m = "/"; // forward slash
+	else if (charCode === 192) var m = "`"; // grave accent
+	else if (charCode === 219) var m = "["; // open bracket
+	else if (charCode === 220) var m = "\\"; // back slash
+	else if (charCode === 221) var m = "]"; // close bracket
+	else if (charCode === 222) var m = "'"; // single quote
 	
-	if(!m) m = String.fromCharCode(charCode);
+	if(!m) 
+		m = String.fromCharCode(charCode);
 	m = boost + m;
-	if(full && m) m = m.keyFullName();
+	if(full && m) 
+		m = Tk.keyFullName(m);
 	
 	return m;
 }
 
-String.prototype.keyFullName = function(){
-	if(this == 'l') return 'Left Click'; 
-	if(this == 'r') return 'Right Click';
-	if(this == 'sl') return 'Shift-Left Click'; 
-	if(this == 'sr') return 'Shift-Right Click';
-	if(this == '_') return 'Space';
-	return this;
+Tk.keyFullName = function(str){
+	if(str === 'l') return 'Left Click'; 
+	if(str === 'r') return 'Right Click';
+	if(str === 'sl') return 'Shift-Left Click'; 
+	if(str === 'sr') return 'Shift-Right Click';
+	if(str === '_') return 'Space';
+	return str;
 }
 
-String.prototype.capitalize = function() {
-	if(!this.contains(' '))    return this.charAt(0).toUpperCase() + this.slice(1);
-	
-	var array = this.split(' ');
-	for(var i in array) array[i] = array[i].capitalize();
-	return array.join(' ');
-}
-
-String.prototype.numberOnly = function(num){
-	var sign = this[0] === '-';
-	var a = this.replace(/[^\d.]/g, "");
-	if(sign) a = '-' + a;
-	if(num){ a = +a; }
-	return a;
-}
-
-String.prototype.contains = function(name,first){
-	if(!first)
-		return this.indexOf(name) !== -1;
-	return this.indexOf(name) === 0;
-}
-
-String.prototype.set = function(pos,value){
-	return this.slice(0,pos) + value + this.slice(pos+1);
-}
-
-String.prototype.replacePattern = function(func){	//only works like [[sdadsa]]
-	var data = this;
+Tk.replaceBracketPattern = function(data,func){	//only works like [[sdadsa]]
 	for(var i = 0; i < 100; i++){
 		var data2 = data.replace(/(.*?)\[\[(.*?)\]\](.*)/, function(match, p1, p2, p3) {
 			return p1 + func(p2) + p3;
@@ -716,9 +678,7 @@ String.prototype.replacePattern = function(func){	//only works like [[sdadsa]]
 	return data;
 }
 
-String.prototype.replaceCustomPattern = function(begin,ending,func){	//only works like [[sdadsa]]
-	var data = this;
-	
+Tk.replaceCustomPattern = function(data,begin,ending,func){	//only works like [[sdadsa]]
 	var start = data.indexOf(begin); if(start === -1) return data + '';
 	var end = data.indexOf(ending); if(end === -1 || end < start) return data + '';
 	
@@ -730,13 +690,35 @@ String.prototype.replaceCustomPattern = function(begin,ending,func){	//only work
 	return data + '';
 }
 
-
-String.prototype.chronoToTime = function(func){	//1:04:10.10
-	var array = this.split(":");
+Tk.chronoToTime = function(str,func){	//1:04:10.10
+	var array = str.split(":");
 	var time = (+array[array.length-1] * CST.SEC) || 0;
 	time += (+array[array.length-2] * CST.MIN) || 0;
 	time += (+array[array.length-3] * CST.HOUR) || 0;
 	return time;
+}
+
+String.prototype.replaceAll = function (find, replace) {
+    return this.replace(new RegExp(find, 'g'), replace);
+};
+
+String.prototype.capitalize = function() {
+	if(!this.$contains(' '))   
+		return this.charAt(0).toUpperCase() + this.slice(1);
+	
+	var array = this.split(' ');
+	for(var i in array) array[i] = array[i].capitalize();
+	return array.join(' ');
+}
+
+String.prototype.$contains = function(name,first){
+	if(!first)
+		return this.indexOf(name) !== -1;
+	return this.indexOf(name) === 0;
+}
+
+String.prototype.set = function(pos,value){
+	return this.slice(0,pos) + value + this.slice(pos+1);
 }
 
 String.prototype.q = function () {
@@ -804,7 +786,7 @@ if(typeof $ !== 'undefined' && typeof CanvasRenderingContext2D !== 'undefined'){
 	}
 
 
-}; //{
+} //{
 
 Audio = typeof Audio !== 'undefined' ? Audio : function(){	//quick fix QUICKFIX for safari... and opera
 	return {

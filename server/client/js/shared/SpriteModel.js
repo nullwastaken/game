@@ -1,13 +1,14 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['ActiveList','Sprite'],['SpriteModel']));
-if(SERVER) eval('var SpriteModel');
-
+"use strict";
 (function(){ //}
 var SIGN_IN_PACK = {};
 
-SpriteModel = exports.SpriteModel = function(id,src,bumperBox,extra,anim){
-	bumperBox = SpriteModel.bumperBox.apply(this,bumperBox);
-	SIGN_IN_PACK[id] = [id,src,bumperBox,extra,anim];	//data sent to client
+var SpriteModel = exports.SpriteModel = {};
+SpriteModel.create = function(id,src,bumperBox,extra,anim){
+	SIGN_IN_PACK[id] = SpriteModel.compressClient([id,src,bumperBox,extra,anim]);	//data sent to client
+	
+	bumperBox = SpriteModel.BumperBox.apply(this,bumperBox);
+	
 	var a = {
 		id:'',
 		src:"actor/main.png",
@@ -18,7 +19,7 @@ SpriteModel = exports.SpriteModel = function(id,src,bumperBox,extra,anim){
 		hpBar:0,
 		legs:0,
 		bumperBox:bumperBox,
-		hitBox:SpriteModel.hitBox(-10,10,-10,10),
+		hitBox:SpriteModel.HitBox(-10,10,-10,10),
 		anim:{},
 		defaultAnim:"walk",
 		alpha:1,
@@ -31,15 +32,16 @@ SpriteModel = exports.SpriteModel = function(id,src,bumperBox,extra,anim){
 	
 	a.id = id;
 	a.src = 'img/sprite/' + src;
-	if(!extra.hitBox) extra.hitBox = Tk.deepClone(bumperBox);
+	if(!extra.hitBox) 
+		extra.hitBox = Tk.deepClone(bumperBox);
+	
 	for(var i in extra) a[i] = extra[i];
 	
+		
 	for(var i in anim){
 		a.anim[anim[i].name] = anim[i];
 		a.anim['walk'] = anim[i];	//BAD temp
 		a.anim['attack'] = anim[i];
-		a.anim['travel'] = anim[i];
-		a.anim['move'] = anim[i];
 		break;	
 	}
 		
@@ -53,11 +55,12 @@ SpriteModel.get = function(id){
 }
 
 SpriteModel.useSignInPack = function(pack){	//client side only, for now
-	for(var i in pack)
-		SpriteModel.apply(this,pack[i]);
+	for(var i in pack){
+		SpriteModel.create.apply(this,SpriteModel.uncompressClient(pack[i]));
+	}
 }
 
-SpriteModel.hitBox = SpriteModel.bumperBox = function(minX,maxX,minY,maxY){
+SpriteModel.HitBox = SpriteModel.BumperBox = function(minX,maxX,minY,maxY){
 	if(Array.isArray(minX)){ maxX = minX[1]; minY = minX[2]; maxY = minX[3]; minX = minX[0]; }
 	return {
 		right:{ "x":maxX,"y":(minY+maxY)/2 },
@@ -73,13 +76,13 @@ SpriteModel.bullet = function(id,src,sizeX,sizeY,frame,canvasRotate,extra){
 	extra.side = extra.side || [0];
 	extra.showBorder = false;
 	extra.canvasRotate = canvasRotate || 0;
-	return SpriteModel(id,src,[-1,1,-1,1],extra,[
-		SpriteModel.anim('move',frame,sizeX,sizeY,1,{walk:0,dir:extra.side.length})
+	return SpriteModel.create(id,src,[-1,1,-1,1],extra,[
+		SpriteModel.anim('walk',frame,sizeX,sizeY,1,{walk:0,dir:extra.side.length})
 	]);
 }
 SpriteModel.player = function(id,src){
 	var extra = {player:1,size:2.7,side:[1,2,3,0],hpBar:-17,legs:20,hitBox:[ -12,12,-12,12]}
-	return SpriteModel(id,src,[-12,12,-5,20],extra,[
+	return SpriteModel.create(id,src,[-12,12,-5,20],extra,[
 		SpriteModel.anim("move",4,24,32,0.5)
 	]);
 }
@@ -87,13 +90,13 @@ SpriteModel.picture = function(id,src,sizeX,sizeY,size,extra){
 	extra = extra || {};
 	extra.side = extra.side || [0];
 	extra.size = size || 1;
-	return SpriteModel(id,src,[-sizeX/2+1,sizeX/2-1,-sizeY/2+1,sizeY/2-1],extra,[
+	return SpriteModel.create(id,src,[-sizeX/2+1,sizeX/2-1,-sizeY/2+1,sizeY/2-1],extra,[
 		SpriteModel.anim('move',1,sizeX,sizeY,0,{dir:extra.side.length})
 	]);
 }
 SpriteModel.rpgvx = function(id,src){
 	var extra = {size:2,side:[2,0,1,3],hpBar:-22,legs:16};
-	return SpriteModel(id,src,[-16,16,-16,16 ],extra,[
+	return SpriteModel.create(id,src,[-16,16,-16,16 ],extra,[
 		SpriteModel.anim('move',3,32,32,0.5)
 	]);
 }
@@ -124,8 +127,70 @@ SpriteModel.getSignInPack = function(){
 	return SIGN_IN_PACK;
 }
 
+/*
+"bullet-pony": [
+	
+	{
+		"side": [0,1],
+		"showBorder": false,
+		"canvasRotate": 0,
+	},
+	[
+		
+			"name": "move",
+			"startY": 0,
+			"frame": 1,
+			"sizeX": 32,
+			"sizeY": 32,
+			"dir": 2,
+			"spd": 1,
+			"walk": 0,
+			"next": "walk"
+		}
+	]
+],
+*/
+SpriteModel.compressClient = function(array){
+	var array = Tk.deepClone(array);
+	var anim = array[4];
+	var newAnim = [];
+	for(var i in anim){
+		newAnim.push([
+			anim[i].name,
+			anim[i].startY,
+			anim[i].frame,
+			anim[i].sizeX,
+			anim[i].sizeY,
+			anim[i].dir,
+			anim[i].spd,
+			anim[i].walk,
+			anim[i].next		
+		]);
+	}
+	array[4] = newAnim;
+	
+	return array;
+}
 
-
+SpriteModel.uncompressClient = function(array){
+	var anim = array[4];
+	var newAnim = [];
+	for(var i in anim){
+		newAnim.push({
+			name:anim[i][0],
+			startY:anim[i][1],
+			frame:anim[i][2],
+			sizeX:anim[i][3],
+			sizeY:anim[i][4],
+			dir:anim[i][5],
+			spd:anim[i][6],
+			walk:anim[i][7],
+			next:anim[i][8],
+		});
+	}
+	array[4] = newAnim;
+	return array;
+}
 
 
 if(SERVER) return;
@@ -135,7 +200,7 @@ var SpriteFilter = function(id,func,advanced){
 		advanced:advanced || false,
 	}
 }
-SpriteFilter.LIST = {};
+SpriteFilter.LIST = {};	//list hardcoded in s.setSpriteFilter
 
 SpriteFilter('red',function(red,green,blue,alpha){
 	if(red > 100) red += 100;

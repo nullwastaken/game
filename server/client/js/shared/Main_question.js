@@ -1,5 +1,9 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Server','Save','ItemList','Main','Contribution','Message']));
+"use strict";
+(function(){ //}
+var Message = require2('Message');
+var Dialog = require4('Dialog');
+var Main = require3('Main');
 
 Main.Question = function(func,answerType){
 	return {
@@ -8,17 +12,19 @@ Main.Question = function(func,answerType){
 	}
 }
 
-Main.question = function(main,func,text,answerType,option){
+Main.question = function(main,func,text,answerType,option){	//should work client and server
 	answerType = answerType || 'boolean';
 	text = text || "Are you sure?";
 	option = option || [];
 	if(answerType === 'boolean') 
 		option = [Main.Question.YES,Main.Question.NO];
 	
-	if(!Main.Question.ANSWER_TYPE.contains(answerType)) 
+	if(!Main.Question.ANSWER_TYPE.$contains(answerType)) 
 		return ERROR(3,'invalid answerType',answerType);
-	
-	Main.openDialog(main,'question',Main.Question.Dialog(text,option));
+	if(SERVER)
+		Main.openDialog(main,'question',Main.Question.Dialog(text,option));
+	else
+		Dialog.open('question',Main.Question.Dialog(text,option));
 	main.question = Main.Question(func,answerType);
 	
 }
@@ -41,28 +47,31 @@ Main.handleQuestionAnswer = function(main,msg){	//both
 	main.question = null;	//needed cuz func can remodify question
 	if(answerType === 'boolean'){
 		if(msg.text === Main.Question.YES)
-			SERVER ? func(main.id) : func();
+			func(main.id);
 		return;
 	}
-	SERVER ? func.apply(null,[main.id].concat(msg.text.split(','))) : func.apply(null,msg.text.split(','));
+	if(SERVER)
+		func.apply(null,[main.id].concat(msg.text.split(',')))
+	else
+		func.apply(null,msg.text.split(','));
 }
 
 Main.question.init = function(){
-	Dialog('question','Question',Dialog.Size(300,200),Dialog.Refresh(function(html,variable,msg){
+	Dialog.create('question','Question',Dialog.Size('auto','auto'),Dialog.Refresh(function(html,variable,msg){
 		html.css({textAlign:'center'});
 		
-		html.append($('<span>')
+		html.append($('<div>')
 			.html(msg.text + '<br>')
-			.css({fontSize:'1.5em'})
+			.css({fontSize:'1.5em',marginLeft:'auto',marginRight:'auto'})
 		);
 			
 		//#####################
 		var submitAnswer = function(answer){
 			Dialog.close('question');
 			if(main.question) //means question was asked on client
-				return Main.handleQuestionAnswer(main,answer);
+				return Main.handleQuestionAnswer(main,Message.QuestionAnswer(answer));
 			
-			Message.sendToServer(Message('questionAnswer',answer,player.name));
+			Message.sendToServer(Message.QuestionAnswer(answer));
 		}
 		
 		if(msg.option.length){
@@ -81,11 +90,12 @@ Main.question.init = function(){
 			html.append(option);
 			html.append('<br>');
 		} else { //#####################
+			var input = $('<input placeholder="answer" type="text">');
 			var form = $('<form>')
-				.append('<input id="questionInput"  placeholder="answer" type="text">')
+				.append(input)
 				.submit(function(e) {
 					e.preventDefault();
-					submitAnswer($('#questionInput').val());
+					submitAnswer(input.val());
 					return false;
 				});
 			html.append(form);
@@ -94,4 +104,6 @@ Main.question.init = function(){
 	}));
 	
 }
+
+})(); //{
 

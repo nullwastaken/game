@@ -6,6 +6,9 @@
 var s = loadAPI('v1.0','Qdarkness',{
 	name:"Darkness",
 	author:"rc",
+	maxParty:2,
+	thumbnail:true,
+	reward:{"ability":{'Qsystem-player-healSlowCast':0.5}},
 	description:"Retrieve a precious object lost in a mysterious cave haunted by ghosts.",
 });
 var m = s.map; var b = s.boss;
@@ -50,7 +53,10 @@ s.newChallenge('x2boss',"Double Trouble","Fight 2 Bat bosses at once.",2,functio
 	return true;
 });
 
+
 s.newEvent('_start',function(key){ //
+	if(s.isChallengeActive(key,'x2boss'))
+		s.set(key,'bossAmount',2);
 	if(s.isAtSpot(key,'QfirstTown-high','n1',200))
 		s.callEvent('talkBimmy',key);
 	else s.addQuestMarker(key,'start','QfirstTown-high','n1');
@@ -67,12 +73,6 @@ s.newEvent('_hint',function(key){ //
 	if(!s.get(key,'lootChest')) return "Activate switches to kill all ghosts. Alternate between them.";
 	return "Give the ring to Bimmy.";
 });
-s.newEvent('_abandon',function(key){ //
-	if(s.isInMap(key,'well'))
-		s.teleport(key,'QfirstTown-north','a','main',false);
-	if(s.isInMap(key,'ghost'))
-		s.teleport(key,'QfirstTown-main','t2','main',false);
-});
 s.newEvent('seeTeleCaveTown',function(key){ //
 	return s.get(key,'killBatBoss') >= s.get(key,'bossAmount');
 });
@@ -82,9 +82,7 @@ s.newEvent('talkBimmy',function(key){ //
 	if(!s.get(key,'talkBimmy')) return s.startDialogue(key,'bimmy','first');
 	s.startDialogue(key,'bimmy','second');
 	
-	if(s.isChallengeActive(key,'x2boss')){
-		s.set(key,'bossAmount',2);
-	}
+	
 });
 s.newEvent('doneTalkBimmy',function(key){ //
 	s.set(key,'talkBimmy',true);
@@ -110,7 +108,7 @@ s.newEvent('doneTalkDrof',function(key){ //
 });
 s.newEvent('teleTownWell',function(key){ //enter well
 	if(!s.get(key,'talkDrof')) return s.message(key,'You have no reason to go down here.');
-	s.teleport(key,'well','t1','solo',true);
+	s.teleport(key,'well','t1','party',true);
 	s.setRespawn(key,'QfirstTown-main','t2','main',true);	//incase die inside
 	s.removeQuestMarker(key,'well');
 	
@@ -133,7 +131,7 @@ s.newEvent('teleSouthCave',function(key){ //enter cave
 	if(!s.haveItem(key,'lantern')) //prevent from entering if no lantern
 		return s.message(key,'The cave is too dark, you would need a lantern before heading in.');
 	s.message(key,'You can not attack while holding the lantern. Find another way to kill the ghosts.');
-	s.teleport(key,'ghost','t1','solo',true);
+	s.teleport(key,'ghost','t1','party',true);
 	s.setRespawn(key,'QfirstTown-north','a','main',true);	//incase die inside
 	s.set(key,'enterCave',true);
 });

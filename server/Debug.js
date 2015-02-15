@@ -1,19 +1,25 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Quest','OfflineAction','Send','Competition','ActorModel','MapModel','Highscore','QuestVar','Party','SpriteModel','ItemModel','Account','ItemList','Combat','Message','OptionList','Boss','Server', 'Boost',  'Cycle', 'Actor',  'Main', 'Attack', 'Strike', 'Bullet',  'ActiveList', 'ItemList','Sign', 'Save',  'Combat', 'Map', 'Input', 'Message', 'Dialogue',  'Drop', 'Performance', 'Ability',  'Equip', 'Quest', 'Clan', 'Collision', 'Button', 'Sprite', 'Anim', 'Command', 'ReputationGrid', 'Contribution'],['Debug']));
+"use strict";
+var Quest = require2('Quest'), OfflineAction = require2('OfflineAction'), Preset = require2('Preset'), Send = require2('Send'), Competition = require2('Competition'), ActorModel = require2('ActorModel'), MapModel = require2('MapModel'), Highscore = require2('Highscore'), QuestVar = require2('QuestVar'), Party = require2('Party'), SpriteModel = require2('SpriteModel'), ItemModel = require2('ItemModel'), Account = require2('Account'), ItemList = require2('ItemList'), Combat = require2('Combat'), Message = require2('Message'), OptionList = require2('OptionList'), Boss = require2('Boss'), Server = require2('Server'), Boost = require2('Boost'), Cycle = require2('Cycle'), Actor = require2('Actor'), Main = require2('Main'), Attack = require2('Attack'), Strike = require2('Strike'), Bullet = require2('Bullet'), ActiveList = require2('ActiveList'), ItemList = require2('ItemList'), Sign = require2('Sign'), Save = require2('Save'), Combat = require2('Combat'), Map = require2('Map'), Input = require2('Input'), Message = require2('Message'), Dialogue = require2('Dialogue'), Drop = require2('Drop'), Performance = require2('Performance'), Ability = require2('Ability'), Equip = require2('Equip'), Quest = require2('Quest'), Clan = require2('Clan'), Collision = require2('Collision'), Button = require2('Button'), Sprite = require2('Sprite'), Anim = require2('Anim'), Command = require2('Command'), ReputationGrid = require2('ReputationGrid');
 
-var db = null; //Debug.init
 var DEV_TOOL = 'DEV_TOOL';
 var QUEST_TOOL_SUFFIX = '_Tool';
-var Debug = exports.Debug = {
+var Debug = exports.Debug = {};
+
+Debug.attr = {
 	trackQuestVar:!NODEJITSU,
 	SKIP_TUTORIAL:PUBLIC_VERSION || false,
-	DMG_MOD:{player:1,npc:1,pvp:1},
 	ACTIVE:!NODEJITSU,
-	TOEVAL:'',
 };
 
-Debug.init = function(dbLink){
-	db = dbLink;
+Debug.getAttr = function(attr){
+	return Debug.attr[attr];
+}
+Debug.isActive = function(){
+	return Debug.attr.ACTIVE;
+}
+
+Debug.init = function(){
 	Debug.createDevTool();
 }
 
@@ -21,8 +27,8 @@ Debug.spawnEnemy = function(key,model){
 	model = model || 'Qsystem-bat';
 	var player = Actor.get(key);
 	try {
-		Actor.addToMap(Actor(model),Actor.Spot(player.x,player.y,player.map));
-	} catch(err){ ERROR.err(3,err); };
+		Actor.addToMap(Actor.create(model),Actor.Spot(player.x,player.y,player.map));
+	} catch(err){ ERROR.err(3,err); }
 }
 
 Debug.spawnEnemyViaQuestion = function(key){
@@ -65,133 +71,43 @@ Debug.ghost = function(key){
 }
 
 Debug.giveRandomEquip = function(key,type){
+	var username = Actor.get(key).username;
 	if(type === 'weapon')
-		Main.addItem(Main.get(key),Equip.randomlyGenerate(Equip.PieceType('weapon')).id);
+		Main.addItem(Main.get(key),Equip.randomlyGenerate(username,Equip.PieceType('weapon')).id);
 	else
-		Main.addItem(Main.get(key),Equip.randomlyGenerate().id);
+		Main.addItem(Main.get(key),Equip.randomlyGenerate(username).id);
 }
 
-Debug.onSignIn = function(key,name){
-	if(Server.isAdmin(0,name)) 
+Debug.onSignIn = function(key,name,socket){
+	if(Server.isAdmin(0,name)){
 		Debug.giveDevTool(key);
-	if(!Debug.ACTIVE)	return;
+		if(!MINIFY)
+			Debug.ts.onSignIn(socket);
+	}
+	if(!Debug.isActive())	return;
 	
 	var main = Main.get(key);
 	if(main.questActive)
 		Debug.giveQuestTool(key,main.questActive);
 	
-	if(!Quest.TESTING.name) return;
-	
-	//Quest.get(BADDD).event._debugSignIn(key);
-	
-	
-	
-	/*
-	if(name.contains('rc',true) || Quest.TESTING.everyone){	//put true when uploading for ppl to create quest
-		setTimeout(function(){	//otherwise fucks thing
-			var main = Main.get(key);
-			Quest.get('Qtutorial').event.skipTutorial(key);
-			Quest.get(Quest.TESTING.name).event._debugSignIn(key);
-			Debug.giveQuestTool(key,Quest.TESTING.name);
-			Message.add(key,'Game engine set to create the quest: \"' + Quest.TESTING.name + '\".');
-			if(main.questActive !== Quest.TESTING.name){
-				Main.abandonQuest(Main.get(key));
-				Main.startQuest(main,Quest.TESTING.name);
-			}
-		},1000);
-	}
-	*/
 }
 
 Debug.giveDefaultAbility = function(key){
 	var act = Actor.get(key);
-	Actor.ability.add(act,'Qsystem-start-melee');
-	Actor.ability.add(act,'Qsystem-start-bullet');
-	Actor.ability.add(act,'Qsystem-start-freeze');
-	Actor.ability.add(act,'Qsystem-start-fireball');
-	Actor.ability.add(act,'Qsystem-start-heal');
-	Actor.ability.add(act,'Qsystem-start-dodge');
+	Actor.addAbility(act,'Qsystem-start-melee');
+	Actor.addAbility(act,'Qsystem-start-bullet');
+	Actor.addAbility(act,'Qsystem-start-freeze');
+	Actor.addAbility(act,'Qsystem-start-fireball');
+	Actor.addAbility(act,'Qsystem-start-heal');
+	Actor.addAbility(act,'Qsystem-start-dodge');
 	
-	Actor.ability.swap(act,'Qsystem-start-melee',0);
-	Actor.ability.swap(act,'Qsystem-start-bullet',1);
-	Actor.ability.swap(act,'Qsystem-start-freeze',2);
-	Actor.ability.swap(act,'Qsystem-start-fireball',3);
-	Actor.ability.swap(act,'Qsystem-start-heal',4);
-	Actor.ability.swap(act,'Qsystem-start-dodge',5);
+	Actor.swapAbility(act,'Qsystem-start-melee',0);
+	Actor.swapAbility(act,'Qsystem-start-bullet',1);
+	Actor.swapAbility(act,'Qsystem-start-freeze',2);
+	Actor.swapAbility(act,'Qsystem-start-fireball',3);
+	Actor.swapAbility(act,'Qsystem-start-heal',4);
+	Actor.swapAbility(act,'Qsystem-start-dodge',5);
 }
-
-Debug.ts = function(socket,d){
-	try {
-		var key = socket.key;
-		
-		var p = Actor.get(key);
-		var act = p;
-		var player = p;
-		var m = Main.get(key);
-		var main = m;
-		var q = m.quest;
-		var mq = m.quest[Quest.TESTING.name];
-		var add = function(id,amount){ Main.addItem(m,id,amount);}
-		var tele = function(x,y,map){ Actor.teleport(p,{x:x,y:y,map:map}); }
-		
-		var pa = Server.getPlayerAmount();
-		
-		//ts("tele(1700,260,'QfirstTown-east')")
-		
-		var npcAll = {};	//all enemy nearby
-		var combatAll = {}; //all combat enemy nearby
-		var playerAll = {}; //all player nearby 
-		var humanAll = {};
-		var bulletAll = {};	//all bullet nearby
-		
-		var all = {};
-		
-		var npc = {};
-		var combat = {};
-		var human = {};
-		var bullet = {};
-		
-		var name = function(name){
-			return Actor.getViaUserName(name);
-		}
-		
-		for(var i in p.activeList){	
-			var mort = ActiveList.get(i); //cant use var act
-			var id = mort.name + ' ' + mort.id;
-			all[id] = mort;
-			if(mort.type === 'npc'){
-				if(mort.combat){
-					combat = mort;
-					combatAll[id] = mort;
-				} else {
-					npc = mort;
-					npcAll[id] = mort;
-				}
-			}						
-			if(mort.type === 'player'){
-				human = mort;
-				humanAll[id] = mort;
-			}
-			if(mort.type === 'bullet'){
-				bullet = mort;
-				bulletAll[id] = mort;
-			}
-		}				
-		
-		var info = eval(d.command);
-		var data = JSON.stringify(info);
-		INFO(info);
-		socket.emit('testing', {'data':data} );				
-	} catch (err){
-		ERROR.err(3,err);
-		socket.emit('testing', 'failure');
-	}			
-}
-
-
-Debug.changeDeveloperMessage = function(version,text){
-	db.report.upsert({version:version},{'$set':{version:version,message:text}},db.err);
-};
 
 Debug.addItemViaQuestion = function(key){
 	Main.question(Main.get(key),function(key,item,amount){
@@ -231,7 +147,7 @@ Debug.createQuestTool = function(q){
 		INFO('########### ' + Date.now() + ' ###########');
 		var mq = QuestVar.getViaMain(Main.get(key));
 		for(var i in mq){
-			if(['quest','username','key'].contains(i)) continue;
+			if(['quest','username','key'].$contains(i)) continue;
 			var attr = i;
 			for(var j = attr.length; j < 15; j++)
 				attr += ' ';
@@ -283,7 +199,7 @@ Debug.createQuestTool = function(q){
 	
 	var itemId = Quest.addPrefix('Qsystem',q.id + QUEST_TOOL_SUFFIX);
 	var itemName = q.id + ' Tool';
-	ItemModel('Qsystem',itemId,itemName,'system.gold',option,itemName,{
+	ItemModel.create('Qsystem',itemId,itemName,'system.gold',option,itemName,{
 		trade:0,drop:0
 	});
 }
@@ -293,7 +209,7 @@ Debug.addAbility = function(key){
 		var act = Actor.get(key);
 		if(!Ability.get(ability)) return ERROR(3,'ability dont exist',ability);
 		slot = +slot || 0;
-		Actor.ability.swap(act,ability,slot);
+		Actor.swapAbility(act,ability,slot);
 	},"ability,slot",'string');
 }
 
@@ -310,7 +226,7 @@ Debug.createDevTool = function(){
 	];
 	
 	var itemId = Quest.addPrefix('Qsystem',DEV_TOOL);
-	ItemModel('Qsystem',itemId,'Dev Tool','system.gold',option,'Dev Tool',{
+	ItemModel.create('Qsystem',itemId,'Dev Tool','system.gold',option,'Dev Tool',{
 		trade:0,drop:0
 	});
 	
@@ -349,7 +265,7 @@ Debug.startQuest = function(key,qid){
 }
 
 Debug.onStartQuest = function(key,qid){
-	if(!Debug.ACTIVE) return;
+	if(!Debug.isActive()) return;
 	Debug.giveQuestTool(key,qid);
 }
 
@@ -357,23 +273,23 @@ Debug.skipTutorial = function(key){
 	var act = Actor.get(key);
 	
 	Main.addItem(Main.get(key),{'Qsystem-start-bow':1,'Qsystem-start-staff':1,'Qsystem-start-weapon':1});
-	Actor.ability.add(act,'Qsystem-start-melee',false);
-	Actor.ability.swap(act,'Qsystem-start-melee',0);
+	Actor.addAbility(act,'Qsystem-start-melee',false);
+	Actor.swapAbility(act,'Qsystem-start-melee',0);
 	
-	Actor.ability.add(act,'Qsystem-start-bullet',false);
-	Actor.ability.swap(act,'Qsystem-start-bullet',1);
+	Actor.addAbility(act,'Qsystem-start-bullet',false);
+	Actor.swapAbility(act,'Qsystem-start-bullet',1);
 		
-	Actor.ability.add(act,'Qsystem-start-freeze',false);
-	Actor.ability.swap(act,'Qsystem-start-freeze',2);
+	Actor.addAbility(act,'Qsystem-start-freeze',false);
+	Actor.swapAbility(act,'Qsystem-start-freeze',2);
 	
-	Actor.ability.add(act,'Qsystem-start-fireball',false);
-	Actor.ability.swap(act,'Qsystem-start-fireball',3);
+	Actor.addAbility(act,'Qsystem-start-fireball',false);
+	Actor.swapAbility(act,'Qsystem-start-fireball',3);
 	
-	Actor.ability.add(act,'Qsystem-start-heal',false);
-	Actor.ability.swap(act,'Qsystem-start-heal',4);
+	Actor.addAbility(act,'Qsystem-start-heal',false);
+	Actor.swapAbility(act,'Qsystem-start-heal',4);
 	
-	Actor.ability.add(act,'Qsystem-start-dodge',false);
-	Actor.ability.swap(act,'Qsystem-start-dodge',5);
+	Actor.addAbility(act,'Qsystem-start-dodge',false);
+	Actor.swapAbility(act,'Qsystem-start-dodge',5);
 	
 	Main.completeQuest(Main.get(key));
 	Actor.teleport.town(Actor.get(key),true);

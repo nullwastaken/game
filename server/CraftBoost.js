@@ -1,7 +1,9 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Boost']));
+"use strict";
+var Boost = require2('Boost'), Stat = require2('Stat');
 
-var CraftBoost = exports.CraftBoost = function(piece,all,type){
+var CraftBoost = exports.CraftBoost = {};
+CraftBoost.create = function(piece,all,type){
 	for(var i in type)
 		for(var j in all)
 			type[i].push(all[j]);
@@ -15,17 +17,21 @@ CraftBoost.generateBoost = function(piece,type,quality,exclude){
 	if(!list) return ERROR(3,'wrong piece or type',piece,type);
 	
 	var safety = 0;
-	do var chosen = list.random('chance');
+	var chosen;
+	do chosen = list.$random('chance');
 	while(exclude[chosen.stat] && safety++ < 10000)
 	var tier = Math.pow(Math.random(),1/((quality||0)+1));
 	var value = chosen.value * (0.75 + 0.5 *tier);
 	
-	return Boost.Perm(chosen.stat,value,'*');
+	var stat = Stat.get(chosen.stat);
+	var type = stat.value.base === 0 ? '+' : '*';
+	
+	return Boost.Perm(chosen.stat,value,type);
 }
 
 CraftBoost.Type = function(array){	//CraftBoost.Sub[]
 	var tmp = [];
-	for(var i in array){
+	for(var i = 0 ; i < array.length; i++){
 		for(var j in array[i].statList){
 			tmp.push({
 				stat:array[i].statList[j],
@@ -157,10 +163,10 @@ var StatGroup = function(id,baseValue,list){
 
 //######################
 
-CraftBoost('weaponFirstBoost',CraftBoost.Type([ //{
+CraftBoost.create('weaponFirstBoost',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('hp-max'),25,1),
 		CraftBoost.Sub(CraftBoost.Stat('mana-regen'),50,1),
-		CraftBoost.Sub(CraftBoost.Stat('atkSpd'),40,1),
+		CraftBoost.Sub(CraftBoost.Stat('atkSpd'),25,1),
 	]),{
 	mace:CraftBoost.Type([ 
 		CraftBoost.Sub(CraftBoost.Stat('bleed-chance'),30,1),
@@ -227,7 +233,7 @@ CraftBoost('weaponFirstBoost',CraftBoost.Type([ //{
 	])	
 }); //}
 	
-CraftBoost('weapon',CraftBoost.Type([ //{
+CraftBoost.create('weapon',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg'),1,1),
 	]),{
 	mace:CraftBoost.Type([ //brute force / tank
@@ -235,7 +241,6 @@ CraftBoost('weapon',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('def'),10,1),
 	]),
 	spear:CraftBoost.Type([ //aoe
-		//CraftBoost.Sub(CraftBoost.Stat('strike-maxHit'),5,1),	
 		CraftBoost.Sub(CraftBoost.Stat('strike-size'),5,1),
 		CraftBoost.Sub(CraftBoost.Stat('strike-range'),5,1),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-melee'),2,1),
@@ -263,7 +268,6 @@ CraftBoost('weapon',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg-magic'),2,1),
 	]),
 	staff:CraftBoost.Type([ //aoe onHit
-		//CraftBoost.Sub(CraftBoost.Stat('strike-maxHit'),10,1),
 		CraftBoost.Sub(CraftBoost.Stat('strike-range'),10,1),
 		CraftBoost.Sub(CraftBoost.Stat('strike-size'),10,1),
 		CraftBoost.Sub(CraftBoost.Stat('dmg-magic'),2,1),
@@ -274,11 +278,10 @@ CraftBoost('weapon',CraftBoost.Type([ //{
 	])
 });	//}
 
-CraftBoost('amulet',CraftBoost.Type([ //{
+CraftBoost.create('amulet',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg-+'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('def-+'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('status-all'),1,1),
-		CraftBoost.Sub(CraftBoost.Stat('magicFind-rarity'),1,0.5),
 	]),{
 	ruby:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('burn-all'),1.5,1),
@@ -294,11 +297,10 @@ CraftBoost('amulet',CraftBoost.Type([ //{
 	])	
 }); //}`
 
-CraftBoost('ring',CraftBoost.Type([ //{
+CraftBoost.create('ring',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg-+'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('def-+'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('status-all'),1,1),
-		CraftBoost.Sub(CraftBoost.Stat('magicFind-quality'),1,0.5),
 		CraftBoost.Sub(CraftBoost.Stat('magicFind-quantity'),1,0.5),
 	]),{
 	ruby:CraftBoost.Type([
@@ -318,7 +320,7 @@ CraftBoost('ring',CraftBoost.Type([ //{
 	])	
 }); //}
 
-CraftBoost('helm',CraftBoost.Type([ //{
+CraftBoost.create('helm',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg-+'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('def-+'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('summon-all'),1,1),
@@ -346,7 +348,7 @@ CraftBoost('helm',CraftBoost.Type([ //{
 	])	
 }); //}
 	
-CraftBoost('body',CraftBoost.Type([ //{
+CraftBoost.create('body',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('dmg-+'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('def-+'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('def'),1.5,1),
@@ -365,7 +367,6 @@ CraftBoost('body',CraftBoost.Type([ //{
 	bone:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('def-magic'),8,1),
 		CraftBoost.Sub(CraftBoost.Stat('weapon-magic'),2,1),
-		CraftBoost.Sub(CraftBoost.Stat('strike-maxHit'),1,1),	
 	])	
 }); //}
 	

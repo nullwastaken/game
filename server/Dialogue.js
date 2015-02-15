@@ -1,8 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Main'],['Dialogue']));
+"use strict";
 
-
-var Dialogue = exports.Dialogue = function(Q,id,name,image,list){
+var Dialogue = exports.Dialogue = {};
+Dialogue.create = function(Q,id,name,image,list){
 	var tmp = {
 		quest:Q,
 		id:id,
@@ -60,6 +60,4 @@ Dialogue.Face = function(image,name){
 Dialogue.get = function(quest,npc){
 	return (DB[quest] && DB[quest][npc]) || null;
 }
-
-
 

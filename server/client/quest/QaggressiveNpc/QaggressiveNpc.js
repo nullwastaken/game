@@ -1,4 +1,4 @@
-//12/18/2014 1:21 AM
+//02/08/2015 1:27 AM
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 
@@ -6,7 +6,11 @@
 var s = loadAPI('v1.0','QaggressiveNpc',{
 	name:"Bipolarity",
 	author:"rc",
+	thumbnail:"/quest/QaggressiveNpc/QaggressiveNpc.png",
 	description:"Activating a switch can have weird effects on villagers.",
+	maxParty:4,
+	category:['PvE'],
+	reward:{"ability":{"Qsystem-player-magicBullet":0.5}}
 });
 var m = s.map; var b = s.boss; var g;
 
@@ -22,7 +26,7 @@ var m = s.map; var b = s.boss; var g;
 s.newVariable({
 	toggleSwitch:False,
 	killCount:0,
-	secretOrder:'01234567',
+	secretOrder:'check _start'
 });
 
 s.newHighscore('speedrun',"Speedrun","Time to complete the quest normally",'ascending',function(key){
@@ -44,19 +48,23 @@ s.newHighscore('speedrunOrder',"Speedrun Order","Time to complete the quest with
 		return null;
 });
 
-s.newChallenge('speedrun','Fast Killer','Kill them all in less than 4 min',2,function(key){
+s.newChallenge('speedrun',"Fast Killer","Kill them all in less than 4 min",2,function(key){
 	return s.stopChrono(key,'timeToKill') < 25*60*4;
 });
-s.newChallenge('preset','Preset','Complete the quest with preset abilities',2,function(key){
+s.newChallenge('preset',"Preset","Complete the quest with preset abilities",2,function(key){
 	return true;
 });
-s.newChallenge('secretOrder','Secret Order','Kill the villagers in the correct order else they revive.',4,function(key){
+s.newChallenge('secretOrder',"Secret Order","Kill the villagers in the correct order else they revive.",4,function(key){
 	return true;
 });
 
-
-
-
+s.newEvent('_abandon',function(key){ //
+	s.teleport(key,'QfirstTown-eastCave','t7','main');
+	s.setRespawn(key,'QfirstTown-eastCave','t7','main');
+});
+s.newEvent('_complete',function(key){ //
+	s.callEvent('_abandon',key);
+});
 s.newEvent('_signIn',function(key){ //
 	s.failQuest(key);
 });
@@ -72,9 +80,6 @@ s.newEvent('_start',function(key){ //
 s.newEvent('_hint',function(key){ //
 	if(!s.get(key,'toggleSwitch')) return 'I wonder what that switch does...';
 	return 'KILL THEM ALL!';
-});
-s.newEvent('_death',function(key){ //
-	s.failQuest(key);
 });
 s.newEvent('killNpc',function(key,eid){ //
 	if(s.isChallengeActive(key,'secretOrder')){
@@ -98,11 +103,13 @@ s.newEvent('toggleSwitch',function(key){ //
 	},'npc',null,{toKill:true});
 	
 	s.set(key,'toggleSwitch',true);
+	s.setRespawn(key,'fight','t2','party');
 	s.displayPopup(key,'Kill them all to turn them back to normal.');
 	s.startChrono(key,'timeToKill');
 });
 s.newEvent('transformNpc',function(key){ //
-	s.spawnActorOnTop(key,'fight','dragon',{
+	var type = ['dragon','death','mummy'];
+	s.spawnActorOnTop(key,'fight',type.$random(),{
 		deathEvent:'killNpc',
 		name:s.getAttr(key,'name'),
 		sprite:s.newNpc.sprite(s.getAttr(key,'sprite').name),
@@ -120,47 +127,47 @@ s.newEvent('startGame',function(key){ //
 	s.teleport(key,'fight','t1');
 });
 
-s.newPreset('preset1',s.newPreset.ability(['simple3','simple','simple2','','','']),null,False,False,False,False);
-
 s.newAbility('simple','attack',{
-	name:'Lightning',
+	name:"Lightning",
 	icon:'offensive.bullet',
-	description:'This is an ability.',
+	description:"This is an ability.",
 	periodOwn:15
 },{
 	type:'bullet',
+	amount:1,
 	dmg:s.newAbility.dmg(125,'lightning'),
 	hitAnim:s.newAbility.anim('lightningHit',0.4),
 	sprite:s.newAbility.sprite('lightningball',1)
 });
 s.newAbility('simple2','attack',{
-	name:'Lightning',
+	name:"Lightning",
 	icon:'offensive.bullet',
-	description:'This is an ability.',
+	description:"This is an ability.",
 	periodOwn:15,
-	costMana:25,
+	costMana:25
 },{
 	type:'bullet',
 	amount:3,
-	angle:15,
 	dmg:s.newAbility.dmg(150,'lightning'),
 	hitAnim:s.newAbility.anim('lightningHit',0.4),
 	sprite:s.newAbility.sprite('lightningball',0.8)
 });
 s.newAbility('simple3','attack',{
-	name:'Lightning Strike',
+	name:"Lightning Strike",
 	icon:'offensive.bullet',
-	description:'This is an ability.',
-	periodOwn:25,
+	description:"This is an ability."
 },{
 	type:'strike',
+	amount:1,
+	dmg:s.newAbility.dmg(500,'lightning'),
 	initPosition:s.newAbility.initPosition(0,100),
 	delay:2,
 	width:25,
 	height:25,
-	dmg:s.newAbility.dmg(500,'lightning'),
-	preDelayAnim:s.newAbility.anim('lightningHit',1),
+	preDelayAnim:s.newAbility.anim('lightningHit',1)
 });
+
+s.newPreset('preset1',s.newPreset.ability(['simple3','simple','simple2','','','']),null,False,False,False,False);
 
 s.newDialogue('switch','Switch','',[ //{ 
 	s.newDialogue.node('click',"for(var i in npcList)<br> npcList[i].aggressive = true;<br>Are you sure you want to activate this?",[ 
@@ -242,9 +249,19 @@ s.newMap('fight',{
 	}
 });
 s.newMapAddon('QfirstTown-eastCave',{
-	spot:{t7:{x:1232,y:1456}},
+	spot:{e1:{x:1392,y:688},t7:{x:1232,y:1456},e2:{x:1392,y:1968}},
 	load:function(spot){
 		m.spawnTeleporter(spot.t7,'startGame','zoneLight','down');
+		
+		m.spawnActorGroup(spot.e1,[
+			m.spawnActorGroup.list('salamander',1),
+			m.spawnActorGroup.list('mosquito',2),
+		]);
+				
+		m.spawnActorGroup(spot.e2,[
+			m.spawnActorGroup.list('ghost',1),
+			m.spawnActorGroup.list('plant',2),
+		]);
 	}
 });
 s.newMapAddon('QfirstTown-main',{
@@ -255,7 +272,6 @@ s.newMapAddon('QfirstTown-main',{
 		},'underground');
 		
 		m.spawnToggle(spot.q1,function(){ return false; },function(){});
-		
 	}
 });
 

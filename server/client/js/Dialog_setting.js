@@ -1,8 +1,13 @@
+//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
 (function(){ //}
-Dialog('setting','Settings',Dialog.Size(350,550),Dialog.Refresh(function(){
+var ClientPrediction = require4('ClientPrediction'), Input = require4('Input'), Pref = require4('Pref'), Command = require4('Command'), Main = require4('Main');
+var Dialog = require3('Dialog');
+
+Dialog.create('setting','Settings',Dialog.Size(450,550),Dialog.Refresh(function(){
 	Dialog.setting.apply(this,arguments);
 },function(){
-	return Tk.stringify(main.pref);
+	return Tk.stringify(main.pref) + ClientPrediction.getMode();
 }));
 //Dialog.open('setting')
 
@@ -12,7 +17,10 @@ Dialog.setting = function(html,variable){
 	var list = Pref.get();
 	html.append('<h2>Preferences</h2>');
 	
-	html.append($('<button>')
+	var divTop = $('<div>');
+	html.append(divTop);
+	
+	divTop.append($('<button>')
 		.addClass('myButton')
 		.click(function(){
 			Dialog.open('binding');
@@ -20,8 +28,8 @@ Dialog.setting = function(html,variable){
 		.html('Key Bindings')
 		.attr('title','Change Key Bindings')
 	);
-	html.append('<br>');
-	html.append($('<button>')
+	divTop.append('<br>');
+	divTop.append($('<button>')
 		.addClass('myButton')
 		.click(function(){
 			Dialog.open('account',true);
@@ -29,10 +37,11 @@ Dialog.setting = function(html,variable){
 		.html('Account Management')
 		.attr('title','Open Account Management Window')
 	);
+	divTop.append('<br>');
 	
-	html.append('<br>');
-	html.append('Volume:');
-	html.append($('<button>')
+	//Volume
+	divTop.append('Volume:');
+	divTop.append($('<button>')
 		.click(function(){
 			Command.execute('pref',['volumeMaster',(Main.getPref(main,'volumeMaster+10')).mm(0,100)]);
 			Command.execute('pref',['volumeSong',(Main.getPref(main,'volumeSong')+10).mm(0,100)]);
@@ -41,7 +50,7 @@ Dialog.setting = function(html,variable){
 		.html('+')
 		.attr('title','Increase volume')
 	);
-	html.append($('<button>')
+	divTop.append($('<button>')
 		.click(function(){
 			Command.execute('pref',['volumeMaster',(Main.getPref(main,'volumeMaster')-10).mm(0,100)]);
 			Command.execute('pref',['volumeSong',(Main.getPref(main,'volumeSong')-10).mm(0,100)]);
@@ -50,15 +59,69 @@ Dialog.setting = function(html,variable){
 		.html('-')
 		.attr('title','Decrease volume')
 	);
-	html.append($('<button>')
+	divTop.append($('<button>')
 		.click(function(){
 			Command.execute('pref',['volumeMaster',0]);
 		})
 		.html('Mute')
 		.attr('title','Mute volume')
 	);
-	html.append('<br>');
-		
+	divTop.append('<br>');
+	
+	//Client Prediction	
+	divTop.append('Client Prediction: ');
+	divTop.append($('<button>')
+		.html('Yes')
+		.addClass('myButton skinny')
+		.css({border:ClientPrediction.getMode() === ClientPrediction.YES ? '2px solid black' : ''})
+		.click(function(){
+			ClientPrediction.setMode(ClientPrediction.YES);
+		})
+	);
+	divTop.append($('<button>')
+		.html('Auto')
+		.addClass('myButton skinny')
+		.css({border:ClientPrediction.getMode() === ClientPrediction.AUTO ? '2px solid black' : ''})
+		.click(function(){
+			ClientPrediction.setMode(ClientPrediction.AUTO);
+		})
+	);
+	divTop.append($('<button>')
+		.html('No')
+		.addClass('myButton skinny')
+		.css({border:ClientPrediction.getMode() === ClientPrediction.NO ? '2px solid black' : ''})
+		.click(function(){
+			ClientPrediction.setMode(ClientPrediction.NO);
+		})
+	);
+	divTop.append('<br>');
+	
+	
+	//Move Mouse Prediction
+	/* TEMP
+	divTop.append('Move With: ');
+	divTop.append($('<button>')
+		.html('Keyboard')
+		.addClass('myButton skinny')
+		.css({border:Input.isActiveUseMouseForMove() ? '' : '2px solid black'})
+		.click(function(){
+			Input.setUseMouseForMove(false);
+		})
+	);
+	divTop.append($('<button>')
+		.html('Mouse')
+		.addClass('myButton skinny')
+		.css({border:Input.isActiveUseMouseForMove() ? '2px solid black' : ''})
+		.click(function(){
+			Input.setUseMouseForMove(true);
+		})
+	);
+	*/
+	divTop.append('<br>');
+	divTop.append('<br>');
+	
+	
+	
 	//Regular Pref
 	var array = [];
 	for(var i in list){
@@ -74,7 +137,7 @@ Dialog.setting = function(html,variable){
 			.attr('max',pref.max)
 			.attr('min',pref.min);
 		input.change((function(i,input){
-			return function(e){
+			return function(){
 				var newValue = input.val();
 				Command.execute('pref',[i,newValue]);
 			}			

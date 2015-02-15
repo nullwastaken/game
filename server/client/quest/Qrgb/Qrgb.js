@@ -1,4 +1,4 @@
-//12/03/2014 2:45 AM
+//02/07/2015 8:40 PM
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 
@@ -6,7 +6,10 @@
 var s = loadAPI('v1.0','Qrgb',{
 	name:"RGB",
 	author:"rc",
+	thumbnail:"/quest/Qrgb/Qrgb.png",
 	description:"You must restore the RBG setting by activating 2 switches guarded by enemies.",
+	maxParty:4,
+	reward:{"ability":{'Qsystem-player-healCost':0.5}},
 });
 var m = s.map; var b = s.boss; var g;
 
@@ -26,25 +29,23 @@ s.newVariable({
 	haveQuestMarker:False,
 	killBlue:0,
 	killGreen:0,
-	chrono:0,
-});
-
-s.newChallenge('hp100',"100 Hp","Complete the quest with only 100 max hp.",2,function(key){
-	return true;
-});
-
-s.newChallenge('min4',"Speedrun","Complete the quest within 4 minutes.",2,function(key){
-	return s.get(key,'chrono') < 25*60*4;
-});
-
-s.newChallenge('deathlytower',"Deathly Tower","Towers are harder to kill. WAY HARDER.",2.5,function(key){
-	return true;
+	chrono:0
 });
 
 s.newHighscore('speedrun',"Fastest Time","Fastest Time with Deathly Tower active.",'ascending',function(key){
 	if(s.isChallengeActive(key,'deathlytower'))
 		return s.get(key,'chrono');	
 	return null;
+});
+
+s.newChallenge('hp100',"100 Hp","Complete the quest with only 100 max hp.",2,function(key){
+	return true;
+});
+s.newChallenge('min4',"Speedrun","Complete the quest within 4 minutes.",2,function(key){
+	return s.get(key,'chrono') < 25*60*4;
+});
+s.newChallenge('deathlytower',"Deathly Tower","Towers are harder to kill. WAY HARDER.",2.5,function(key){
+	return true;
 });
 
 s.newEvent('talkNpc',function(key){ //
@@ -61,8 +62,6 @@ s.newEvent('talkNpc',function(key){ //
 		return s.startDialogue(key,'razfibre','afterRedSwitch');
 	}
 });
-
-
 s.newEvent('_signIn',function(key){ //
 	if(s.isChallengeActive(key,'hp100')){
 		s.addBoost(key,'hp-max',0.1);
@@ -86,14 +85,12 @@ s.newEvent('_signIn',function(key){ //
 		s.addQuestMarker(key,"green",'QfirstTown-south','t1');
 	}
 });
-
 s.newEvent('_start',function(key){ //
 	if(s.isChallengeActive(key,'hp100')){
 		s.addBoost(key,'hp-max',0.1);
 		s.message(key,'You hp has been lowered because of the challenge.');
-	}	
+	}
 });
-
 s.newEvent('_complete',function(key){ //
 	if(s.isChallengeActive(key,'min4') || s.isChallengeActive(key,'deathlytower'))
 		s.set(key,'chrono',s.stopChrono(key,'myChrono'));
@@ -124,13 +121,10 @@ s.newEvent('toggleRed',function(key){ //
 		s.startChrono(key,'myChrono');	
 	}
 });
-
 s.newEvent('toggleRedConfirmed',function(key){ //
 	s.addTorchEffect(key,"red",1000000,"rgba(255,0,0,0.3)",10);
 	s.startDialogue(key,'razfibre','activateSwitch');
 	s.set(key,'toggleRed',true);
-	
-	
 });
 s.newEvent('addQuestMarker',function(key){ //
 	s.set(key,'haveQuestMarker',true);
@@ -143,7 +137,6 @@ s.newEvent('killBlue',function(key){ //
 s.newEvent('killGreen',function(key){ //
 	s.add(key,'killGreen',1);
 });
-
 s.newEvent('toggleBoth',function(key){ //
 	s.teleport(key,'QfirstTown-main','n1','main');
 	s.removeTorchEffect(key,'green');
@@ -166,12 +159,32 @@ s.newEvent('toggleGreen',function(key){ //
 	s.addTorchEffect(key,'green',100000,'rgba(0,255,0,0.3)',10);
 	s.displayPopup(key,'You activated the green switch which reactivated the green RGB parameter. Your RGB is (255,255,0).');
 });
-
 s.newEvent('questComplete',function(key){ //
 	s.completeQuest(key);
 });
+s.newEvent('teleSouthGreen',function(key){ //
+	if(!s.get(key,'toggleRed'))
+		return s.message(key,'You have no reason to go there.');
+	s.teleport(key,'greenSwitchForest','t1','party',true);	
+	s.setRespawn(key,'greenSwitchForest','t1','party');
+	s.displayPopup(key,'Those red towers seem to strengthen monsters.');
+	
+	var model = s.isChallengeActive(key,'deathlytower')? 'totemBoss' : 'totem';
+	s.spawnActor(key,'greenSwitchForest','e1',model,{tag:{totem:true}});
+	s.spawnActor(key,'greenSwitchForest','e2',model,{tag:{totem:true}});
+	s.spawnActor(key,'greenSwitchForest','e3',model,{tag:{totem:true}});
+});
 
-
+s.newAbility('fireball','attack',{
+},{
+	type:'bullet',
+	amount:3,
+	angleRange:360,
+	dmg:s.newAbility.dmg(200,'fire'),
+	hitAnim:s.newAbility.anim('fireHit',0.5),
+	spd:40,
+	sprite:s.newAbility.sprite('fireball',1)
+});
 
 s.newDialogue('razfibre','Razfibre','warrior-male.1',[ //{ 
 	s.newDialogue.node('normalNpc',"Hey! Do NOT touch the red switch! It's dangerous.",[ 	],''),
@@ -189,20 +202,19 @@ s.newDialogue('razfibre','Razfibre','warrior-male.1',[ //{
 		s.newDialogue.option("*Do it anyway.*",'','toggleRedConfirmed'),
 		s.newDialogue.option("*Don't do it.*",'','')
 	],''),
-	s.newDialogue.node('toggleBoth',"Yeah, you made it! Your RGB settings is now back to (255,255,255).",[
-		s.newDialogue.option("No problem.",'','questComplete'),
-	])
+	s.newDialogue.node('toggleBoth',"Yeah, you made it! Your RGB settings is now back to (255,255,255).",[ 
+		s.newDialogue.option("No problem.",'','questComplete')
+	],'')
 ]); //}
 
 s.newNpc('totem',{
 	nevermove:True,
 	sprite:s.newNpc.sprite('tower-red',1)
 });
-
 s.newNpc('totemBoss',{
 	nevermove:True,
-	sprite:s.newNpc.sprite('tower-red',1),
-	boss:s.newNpc.boss('totem')
+	boss:s.newNpc.boss('totem'),
+	sprite:s.newNpc.sprite('tower-red',1)
 });
 
 s.newMapAddon('QfirstTown-main',{
@@ -267,28 +279,10 @@ s.newMapAddon('QfirstTown-north',{
 			if(!s.get(key,'toggleRed'))
 				return s.message(key,'You have no reason to go there.');
 			s.teleport(key,'blueSwitchCave','t1','party',true);	
-			s.setRespawn(key,'QfirstTown-north','t1','main');
+			s.setRespawn(key,'blueSwitchCave','t1','party');
 		},'cave');
 	}
 });
-
-
-s.newEvent('teleSouthGreen',function(key){ //
-	if(!s.get(key,'toggleRed'))
-		return s.message(key,'You have no reason to go there.');
-	s.teleport(key,'greenSwitchForest','t1','party',true);	
-	s.setRespawn(key,'QfirstTown-south','t1','main');
-	s.displayPopup(key,'Those red towers seem to strengthen the monster.');
-	
-	var model = s.isChallengeActive(key,'deathlytower')? 'totemBoss' : 'totem';
-	s.spawnActor(key,'greenSwitchForest','e1',model,{tag:{totem:true}});
-	s.spawnActor(key,'greenSwitchForest','e2',model,{tag:{totem:true}});
-	s.spawnActor(key,'greenSwitchForest','e3',model,{tag:{totem:true}});
-
-});
-
-
-		
 s.newMap('greenSwitchForest',{
 	name:"Green Switch Forest",
 	lvl:0,
@@ -321,8 +315,6 @@ s.newMap('greenSwitchForest',{
 		m.spawnTeleporter(spot.t1,function(key){
 			s.teleport(key,'QfirstTown-south','t1','main');
 		},'zone','down');
-		
-
 	},
 	loop:function(spot){
 		m.forEachActor(spot,100,function(key){
@@ -342,21 +334,13 @@ s.newMap('greenSwitchForest',{
 	}
 });
 s.newMapAddon('QfirstTown-south',{
-	spot:{t1:{x:48,y:1248}},
+	spot:{e1:{x:2096,y:1040},t1:{x:48,y:1248},e4:{x:1872,y:1808},e2:{x:1008,y:1872},e5:{x:848,y:2384},e3:{x:1616,y:2384},e6:{x:2608,y:2480}},
 	load:function(spot){
 		m.spawnTeleporter(spot.t1,'teleSouthGreen','zone','left');
 	}
 });
 
-s.newAbility('fireball','attack',{},{
-	type:"bullet",angleRange:360,amount:3,
-	sprite:s.newAbility.sprite("fireball",1),
-	hitAnim:s.newAbility.anim("fireHit",0.5),
-	dmg:s.newAbility.dmg(200,'fire'),
-	spd:20,
-});
-
-s.newBoss('totem',s.newBoss.variable({rotAngle:0}),function(boss){
+s.newBoss('totem',s.newBoss.variable({"rotAngle":0}),function(boss){
 	s.newBoss.phase(boss,'phase0',{
 		loop:function(boss){
 			var angle = b.set(boss,'rotAngle',(b.get(boss,'rotAngle')+1)%360);
@@ -367,6 +351,5 @@ s.newBoss('totem',s.newBoss.variable({rotAngle:0}),function(boss){
 		}
 	});
 });
-
 
 s.exports(exports);

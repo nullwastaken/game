@@ -1,9 +1,10 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Stat'],['Boost']));
+"use strict";
+(function(){ //}
+var Stat = require2('Stat');
+var Boost = exports.Boost = {};
 
-
-
-var Boost = exports.Boost = function(name,stat,value,time,type){
+Boost.create = function(name,stat,value,time,type){
 	time = time || CST.bigInt;
 	var spd = time < 25 ? 'fast' : (time >= 250 ? 'fast' : 'reg');
 	if(!Stat.get(stat)) return ERROR(3,'invalid stat',stat);
@@ -39,5 +40,8 @@ Boost.stackSimilarPerm = function(list){	//if boost same thing, add values
 	return array;
 }
 
-Boost.FROM_ABILITY = 'combat.collision.curse';
+Boost.FROM_ABILITY = 'fromAbility';
 Boost.SEPARATOR = '@';	//separator
+
+})(); //{
+

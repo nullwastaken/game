@@ -1,7 +1,11 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Account','Boss','Preset','Map','ActiveList','Debug','ActorGroup','Quest','Message','Send','Stat','Button','OptionList','Sprite','Main','ActorModel'],['Actor']));
+"use strict";
+(function(){ //}
+var Account = require2('Account'), Boss = require2('Boss'), Map = require2('Map'), ActiveList = require2('ActiveList'), ActorGroup = require2('ActorGroup'), Quest = require2('Quest'), Message = require2('Message'), Stat = require2('Stat'), OptionList = require2('OptionList'), Sprite = require2('Sprite'), Main = require2('Main'), ActorModel = require2('ActorModel');
+var Input = require4('Input');
 
-var Actor = exports.Actor = function(modelId,extra){
+var Actor = exports.Actor = {};
+Actor.create = function(modelId,extra){
 	var act = {
 		//non-extra
 		change:{},
@@ -13,14 +17,17 @@ var Actor = exports.Actor = function(modelId,extra){
 		activeList:{},   //actors near this object
 		active:1,    	//if not active, dont move. no cpu
 		damagedBy:{},   //list of actors that damaged him (used for owner of the drops)
-		dead:0,          //dead:invisible
+		dead:false,          //dead:invisible
 		
+		hitHistory:[],
+		hitHistoryToDraw:[],
 		moveAngle:1,
 		spdX:0,	
 		spdY:0,	
 		mouseX:0,	
 		mouseY:0,
 		moveInput:Actor.MoveInput(),	
+		moveTarget:Actor.MoveTarget(),
 		bumper:Actor.Bumper(),        //true if touchs map
 
 		attackReceived:{},	//so pierce doesnt hit multiple times
@@ -36,6 +43,7 @@ var Actor = exports.Actor = function(modelId,extra){
 		summon:{},       //if actor is master
 		summoned:null,      //if actor is child
 		
+		staggerTimer:0,
 		serverX:0,
 		serverY:0,
 		id:Math.randomId(),
@@ -49,6 +57,8 @@ var Actor = exports.Actor = function(modelId,extra){
 		x:Actor.DEFAULT_SPOT.x,	
 		y:Actor.DEFAULT_SPOT.y,	
 		spriteFilter:null,
+		
+		maxSpdMod: 1,	//BAD but alternative is Boost which is slow
 		
 		equip:Actor.Equip(),
 
@@ -65,7 +75,6 @@ var Actor = exports.Actor = function(modelId,extra){
 		//{Setting for Map.load extra
 		dialogue:null,
 		chatHead:null,
-		deathAbility:[],
 		deathEvent:null,	//function param:id of each killer
 		deathEventOnce:null,	//function param:array id of killers
 		onclick:{},
@@ -92,34 +101,46 @@ var Actor = exports.Actor = function(modelId,extra){
 		respawnLoc:Actor.RespawnLoc(),
 		respawnTimer:25,
 		questMarker:{},
-		preset:{},
+		preset:{},	
 	}
 	var model = Tk.deepClone(ActorModel.get(modelId));
 	if(!model) return ERROR(2,'no model dont exist',modelId);
 	for(var i in model) act[i] = model[i];
 	for(var i in extra) act[i] = extra[i];
 	
-	Sprite.updateBumper(act);
-	
 	Actor.setBoostListBase(act);
 	
-	if(!SERVER) return act;
-	
+	if(!SERVER){
+		act.clientSpdX = 0; //for clientPrediction
+		act.clientSpdY = 0;
+		return act;
+	}
 	if(act.type !== 'player')
 		Actor.setAbilityListUsingAbilityAi(act); //based on aiChance
 		
 	act.optionList = Actor.generateOptionList(act);
 	act.onclick = Actor.generateOnclick(act);
 		
-	act.context = act.name;
+	act.context = Actor.getContext(act);
 	if(act.type === 'npc')
 		act.acc = act.maxSpd/3;
 	
-	if(act.boss) act.boss = Boss.get(act.boss,act);
+	if(act.boss) 
+		act.boss = Boss.get(act.boss,act);
 	
-	if(act.nevermove) Actor.nevermove(act); 
-	if(act.nevercombat) Actor.nevercombat(act); 
-	else {
+	if(act.nevermove){
+		act.preventStagger = true;
+		act.move = 0;
+		act.spdX = 0;
+		act.spdY = 0;
+		act.maxSpd = 1;
+		act.statusResist = Actor.StatusResist(0,1,0,0,0,0);
+	}
+	if(act.nevercombat){
+		act.combat = 0;
+		act.hpMax = 1;
+		act.hp = 1;
+	} else {
 		for(var i in act.immune) 
 			if(act.immune) act.mastery.def[i].sum = CST.bigInt;
 		Actor.setWeakness(act);
@@ -135,13 +156,22 @@ var Actor = exports.Actor = function(modelId,extra){
 		Actor.equip.update(act);	//only if player
 		act.ability = ab;
 	}
-	
 	return act;
 }
 
+Actor.MoveTarget = function(x,y,active){
+	return {
+		x:x || 0,
+		y:y || 0,
+		active:active || false,	
+	}
+}
+
+Actor.getContext = function(act){
+	return act.name + (act.type === 'player' ? ' (Lv ' + Actor.getLevel(act) +')': '');
+}
 Actor.addToMap = function(act,spot,force){	//act=[Actor]
 	if(!force && !Actor.addToMap.test(act,spot)) return;
-	//else e.lvl = Actor.creation.lvl(Map.get(spot.map).lvl,cr.lvl); 
 	
 	act.map = spot.map;
 	act.x = act.crX = spot.x; 
@@ -179,7 +209,7 @@ Actor.getViaUserName = function(id){
 }
 
 Actor.isInMap = function(act,map){
-	return act.map.contains(map,true);
+	return act.map.$contains(map,true);
 }
 
 Actor.addToList = function(bullet){
@@ -228,74 +258,8 @@ Actor.ChatHead = function(text,timer){
 	}
 }
 
-Actor.nevercombat = function(act){
-	act.combat = 0;
-	/*
-	delete act.permBoost;
-	delete act.boost;
-	
-	//General
-	delete act.drop;
-	delete act.item;
-	delete act.pickRadius;
-	
-	//Combat
-	delete act.attackReceived;	
-	delete act.damageIf;
-	delete act.targetIf;
-	delete act.boss;
-	delete act.bonus;	
-	delete act.mastery;
-	delete act.ability;
-	delete act.abilityList;
-	delete act.atkSpd;
-	
-	//Def = DefMain * defArmor * act.mastery.def
-	delete act.hp;	
-	delete act.mana;
-	
-	delete act.globalDef;	
-	delete act.reflect;
-	
-	//Resist
-	delete act.status;
-	
-	//Atk
-	delete act.dmg;
-	delete act.globalDmg;
-	delete act.aim;
-	delete act.weapon;
-	delete act.ability;
-	delete act.equip;
-	
-	
-	delete act.summon
-	delete act.summmoned;
-	*/
-	//For update:
-	act.hpMax = 1;
-	act.hp = 1;
-}
 
-Actor.nevermove = function(act){
-	act.move = 0;
-		/*
-	delete act.friction; 
-	delete act.maxSpd;
-	delete act.acc;
-	delete act.mapMod; 
-	delete act.moveAngle;
-	delete act.spdX;
-	delete act.spdY; 
-	delete act.moveInput; 
-	delete act.bumper; 
-	//delete act.moveRange;
-	*/
-	//For update:
-	act.spdX = 0;
-	act.spdY = 0;
-	act.maxSpd = 1;
-}
+var TEXT_INVITE_PARTY = 'Invite to Party';
 
 Actor.generateOnclick = function(act){
 	act.onclick = act.onclick || {};
@@ -303,9 +267,17 @@ Actor.generateOnclick = function(act){
 	for(var i in act.onclick)	//if added onclick manually in quest api
 		if(act.onclick[i] && act.onclick[i].param[0] !== act.id)
 			act.onclick[i].param.unshift(act.id);
-			
+	
+	var left = null;
+	if(act.onclick.left)
+		left = act.onclick.left;
+	else {
+		if(act.optionList && act.optionList.option[0] && act.optionList.option[0].name !== TEXT_INVITE_PARTY)	//BAD prevent left-click invite party...
+		left = act.optionList.option[0];
+	}
+	
 	var click = {
-		left:act.onclick.left || (act.optionList && act.optionList.option[0]) || null,
+		left:left,
 		right:act.onclick.right || null,
 		shiftLeft:act.onclick.shiftLeft || null,
 		shiftRight:act.onclick.shiftRight || null,
@@ -317,7 +289,6 @@ Actor.generateOnclick = function(act){
 
 Actor.generateOptionList = function(act){
 	if(act.hideOptionList) return null;
-	var name = act.name;
 	var option = [];
 	
 	if(act.onclick){
@@ -327,42 +298,22 @@ Actor.generateOptionList = function(act){
 		if(act.onclick.shiftRight) option.push(act.onclick.shiftRight);
 	}
 	
-	//if(act.type === 'player') option.push(OptionList.Option(Actor.click.party,[OptionList.ACTOR,act.id],'Invite to Party'));
+	if(act.type === 'player') option.push(OptionList.Option(Actor.click.party,[OptionList.ACTOR,act.id],TEXT_INVITE_PARTY));
+	if(act.type === 'player') option.push(OptionList.Option(Actor.click.trade,[OptionList.ACTOR,act.id],'Trade'));
+	if(act.type === 'player') option.push(OptionList.Option(Actor.click.revive,[OptionList.ACTOR,act.id],'Revive'));
 	if(act.dialogue) option.push(OptionList.Option(Actor.click.dialogue,[OptionList.ACTOR,act.id],'Talk'));
 	if(act.waypoint) option.push(OptionList.Option(Actor.click.waypoint,[OptionList.ACTOR,act.id],'Set Respawn'));
 	if(act.loot)	option.push(OptionList.Option(Actor.click.loot,[OptionList.ACTOR,act.id],'Loot'));
 	if(act.skillPlot)	option.push(OptionList.Option(Actor.click.skillPlot,[OptionList.ACTOR,act.id],'Harvest'));
+	if(act.pushable) option.push(OptionList.Option(Actor.click.pushable,[OptionList.ACTOR,act.id],'Push'));
 	if(act.toggle) option.push(OptionList.Option(Actor.click.toggle,[OptionList.ACTOR,act.id],'Interact With'));
 	if(act.teleport) option.push(OptionList.Option(Actor.click.teleport,[OptionList.ACTOR,act.id],'Teleport'));
 	if(act.bank) option.push(OptionList.Option(Actor.click.bank,[OptionList.ACTOR,act.id],'Bank'));
 	if(act.signpost) option.push(OptionList.Option(Actor.click.signpost,[OptionList.ACTOR,act.id],'Read'));
-	if(act.pushable) option.push(OptionList.Option(Actor.click.pushable,[OptionList.ACTOR,act.id],'Push'));
-	
-	if(act.deathEvent && Quest.TESTING.simple) 
-		option.push(OptionList.Option(function(key,eid){ 	
-			var e = Actor.get(eid);
-			Message.add(key,'You killed "' + e.name + '".'); 
-			e.deathEvent(key,eid);  
-		},[act.id],'Kill'));
 	
 	if(option.length === 0) return null;
-	return Actor.OptionList(act.name,option);	//bad...
+	return Actor.OptionList(act.name,option);
 }
-
-
-Actor.creation = {}; 
-
-Actor.creation.lvl = function(lvl,mod){
-	if(!mod) return lvl;
-	if(typeof mod === 'number') return mod;
-	if(typeof mod === 'function') return mod(lvl);
-	
-	if(mod[0] === '+' || mod[0] === '-') return lvl + +mod;
-	if(mod[0] === '*') return lvl * +mod.slice(1);
-	
-	return lvl;	
-}
-
 
 Actor.remove = function(act){
 	if(typeof act === 'string') act = Actor.LIST[act];
@@ -423,6 +374,30 @@ Actor.Map.compressClient = function(name){
 
 //####################################
 
+Actor.HitHistory = function(num){
+	return num;
+}
+Actor.HitHistoryToDraw = function(num){
+	return {
+		num:num || 0,
+		timer:20,
+	};
+}
+Actor.HitHistoryToDraw.loop = function(act){
+	while(act.hitHistoryToDraw.length > 5)
+		act.hitHistoryToDraw.shift();
+
+	for(var i = act.hitHistoryToDraw.length-1; i>=0 ;i--){
+		if(act.hitHistoryToDraw[i].timer-- < 0)
+			act.hitHistoryToDraw.splice(i,1);
+	}
+}
+
+
+Actor.addHitHistory = function(act,num){
+	act.hitHistory.push(num);
+	Actor.setFlag(act,'hitHistory');
+}
 
 Actor.Mastery = function(def,dmg){
 	return {	
@@ -454,7 +429,7 @@ Actor.Mastery.element = function(sum,plus,time,x,exp){
 
 Actor.mastery = {};
 Actor.mastery.update = function(act){
-	//Note: mod is applied in Combat.attack.mod.act
+	//Note: mod is applied in Combat.applyAttackMod.player
 	var mas = act.mastery;
 	for(var i in mas){
 		for(var j in mas[i]){
@@ -470,13 +445,14 @@ Actor.CombatContext = function(){
 }
 
 
-Actor.Pushable = function(magn,time,event){
+Actor.Pushable = function(magn,time,event,onlySimulate){
 	return {
 		magn:magn,
 		time:time,
 		event:event||null,
 		timer:0,
-		angle:0
+		angle:0,
+		onlySimulate:onlySimulate || false,
 	};
 }
 Actor.Block = function(size,value,impactPlayer,impactNpc,impactBullet){
@@ -491,7 +467,7 @@ Actor.Block = function(size,value,impactPlayer,impactNpc,impactBullet){
 
 
 Actor.changeSprite = function(act,info){
-	Sprite.change(act,info);
+	Sprite.change(act.sprite,info);
 }
 
 Actor.Summon = function(){
@@ -510,77 +486,10 @@ Actor.Summoned = function(parent,name,time,distance){
 
 
 Actor.OptionList = function(name,option){
-	return OptionList(name,option);
+	return OptionList.create(name,option);
 }
 
-//Preset
-Actor.addPreset = function(act,name,s){
-	act.preset[name] = Preset.get(name);
-	Actor.updatePreset(act,s);
-}
+})(); //{
 
-Actor.removePreset = function(act,name,s){
-	delete act.preset[name];
-	Actor.updatePreset(act,s);
-}
-
-Actor.updatePreset = function(act,s){
-	var key = act.id;
-	
-	var reputation = true;
-	var ability = true;
-	var pvp = false;
-	var combat = true;
-	
-	for(var i in act.preset){
-		if(act.preset[i].noReputation)
-			reputation = false;
-		if(act.preset[i].noAbility)
-			ability = false;
-		if(act.preset[i].pvp)
-			pvp = true;
-		if(act.preset[i].noCombat)
-			combat = false;
-	}
-	s.enableReputation(key,reputation); 
-	s.enableAttack(key,ability); 	
-	s.enablePvp(key,pvp); 
-	s.enableCombat(key,combat); //case quest isAlwaysActive???
-	
-	var ability = false;	
-	for(var i in act.preset){
-		var preset = act.preset[i];
-		if(preset.ability){
-			Actor.setCombatContext(act,'ability','quest',true);
-			for(var i = 0 ; i < preset.ability.length; i++){
-				if(preset.ability[i])
-					s.addAbility(act.id,preset.ability[i],i);
-			}
-			s.rechargeAbility(act.id);
-			ability = true;
-			break;
-		}
-	}
-	if(!ability)
-		Actor.setCombatContext(Actor.get(key),'ability','normal');
-	
-	
-	var equip = false;	
-	for(var i in act.preset){
-		var preset = act.preset[i];
-		if(preset.equip){
-			Actor.setCombatContext(act,'equip','quest',true);
-			for(var i in preset.equip){
-				if(preset.equip[i])
-					s.addEquip(act.id,preset.equip[i]);
-			}
-			equip = true;
-			break;
-		}
-	}
-	if(!equip)
-		Actor.setCombatContext(Actor.get(key),'equip','normal');
-	
-}
 
 

@@ -1,13 +1,14 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Main','Actor','Server','ItemList','ReputationConverter','Save','Message','Dialogue','Boost','Drop','Quest','Collision','Command','ReputationGrid','Contribution']));
-
+"use strict";
+(function(){ //}
+var Actor = require2('Actor'), Stat = require2('Stat'), ReputationConverter = require2('ReputationConverter'), Boost = require2('Boost'), ReputationGrid = require2('ReputationGrid');
+var Main = require3('Main');
 /*
 0 - dont have
 1 - have
 2 - start with
 */
 
-//revamp Command('win,reputation,add 	too
 Main.Reputation = function(){
 	return {
 		exp:0,
@@ -123,8 +124,8 @@ Main.reputation.testAdd = function(grid,i,j){
 	var pos = [n,s,w,e];
 	
 	for(var num = 0; num < pos.length; num++){
-		var p = grid[pos[num][0]][pos[num][1]];
-		if(p === '1' || p === '2'){
+		var p = +grid[pos[num][0]][pos[num][1]];
+		if(p === ReputationGrid.HAVE || p === ReputationGrid.FREEBY){
 			return true;
 		}
 	}
@@ -133,10 +134,10 @@ Main.reputation.testAdd = function(grid,i,j){
 
 Main.reputation.testRemove = function(grid,yy,xx){
 	var dbgrid = ReputationGrid.get();
-	if(grid[yy][xx] === '2') return false;
+	if(grid[yy][xx] === ('' + ReputationGrid.FREEBY)) return false;
 
 	var grid = Tk.deepClone(grid);
-	grid[yy] = grid[yy].set(xx,'0');
+	grid[yy] = grid[yy].set(xx,('' + ReputationGrid.NOT_HAVE));
 	
 	var listValid = {};
 	var listTested = {};	//list where i already checked the pts around and added they to listValid
@@ -145,7 +146,7 @@ Main.reputation.testRemove = function(grid,yy,xx){
 	
 	for(var i =0; i < grid.length; i++)
 		for(var j =0; j < grid[i].length; j++)
-			if(grid[i][j] !== '0')
+			if(+grid[i][j] !== ReputationGrid.NOT_HAVE)
 				listNeedToBeValid[i+'-'+j] = 1;
 	
 
@@ -162,9 +163,9 @@ Main.reputation.testRemove = function(grid,yy,xx){
 			var pos = [n,s,w,e];
 			
 			for(var k in pos){
-				var p = grid[pos[k][0]][pos[k][1]];	
+				var p = +grid[pos[k][0]][pos[k][1]];	
 				var str = pos[k][0] + '-' + pos[k][1];
-				if(p === '1' || p === '2'){
+				if(p === ReputationGrid.HAVE || p === ReputationGrid.FREEBY){
 					if(!listTested[str])	listToTest[str] = 1;
 				}
 				listValid[str] = 1;
@@ -191,7 +192,7 @@ Main.reputation.changeActivePage = function(main,num){
 Main.reputation.addConverter = function(main,num,name){
 	//test if player has access
 	if(!ReputationConverter.get(name)) return;
-	if(Main.reputation.get(main,num).converter.contains(name))	//already contains
+	if(Main.reputation.get(main,num).converter.$contains(name))	//already contains
 		return;
 	if(!ReputationConverter.canSelect(main,num,name)) return;	//message sending done inside
 	Main.reputation.get(main,num).converter.push(name);
@@ -200,7 +201,7 @@ Main.reputation.addConverter = function(main,num,name){
 	
 }
 Main.reputation.removeConverter = function(main,num,name){
-	Main.reputation.get(main,num).converter.remove(name);
+	Main.reputation.get(main,num).converter.$remove(name);
 	Main.reputation.updateBoost(main);
 	Main.setFlag(main,'reputation');
 }
@@ -233,7 +234,8 @@ Main.reputation.getUsedPt = function(grid){
 	var used = 0;
 	for(var i in grid)
 		for(var j = 0; j < grid[i].length;j++)
-			if(grid[i][j] === '1') used++;
+			if(+grid[i][j] === ReputationGrid.HAVE) 
+				used++;
 	return used;
 }
 
@@ -245,22 +247,6 @@ Main.reputation.getLvl = function(main){
 	return Actor.getLevel(Main.getAct(main));
 }
 
-/*
-Skill.lvlUp = function(act,skill){
-	var sk = act.skill;
-	var key = act.id;
-	Message.add(key,'You are now level ' + sk.lvl[skill] + ' in ' + skill.capitalize() + '!');
-	
-	if(['melee','range','magic'].contains(skill)) Message.add(key,'You now deal more damage in ' + skill.capitalize() + '.');
-	
-	Server.log(1,key,'Skill.lvlUp',skill,sk.lvl[skill]);
-	Actor.setFlag(act,'skill,lvl');
-	if(Main.get(key).contribution.reward.broadcastAchievement > 0){
-		Main.get(key).contribution.reward.broadcastAchievement--;
-		Message.broadcast(act.name.q() + ' is now level ' + sk.lvl[skill] + ' in ' + skill.capitalize() + '!'); 
-	}
-}
-*/
 
 //###############
 
@@ -269,9 +255,12 @@ Main.reputation.getBoost = function(main,grid){	//convert the list of reputation
 	var base = ReputationGrid.getConverted(main).base;
 	for(var i = 0 ; i < grid.length ; i++){
 		for(var j = 0 ; j < grid[i].length ; j++){
-			if(grid[i][j] !== '1') continue;
+			if(+grid[i][j] !== ReputationGrid.HAVE) continue;
 			var slot = base[i][j];
-			tmp.push(Boost.Perm(slot.stat,slot.value,'+'));	//+ and not *, cuz stat with 0 by default (ex:ability) wont work
+			if(Stat.get(slot.stat).value.base === 0)
+				tmp.push(Boost.Perm(slot.stat,slot.value,'+'));	//+ and not *, cuz stat with 0 by default (ex:ability) wont work
+			else 
+				tmp.push(Boost.Perm(slot.stat,slot.value,'*'));
 		}
 	}
 	return Boost.stackSimilarPerm(tmp);
@@ -282,3 +271,4 @@ Main.reputation.updateBoost = function(main){
 	Actor.permBoost(Main.getAct(main),Main.reputation.BOOST_NAME,Main.reputation.getBoost(main,grid));
 }
 
+})(); //{

@@ -3,7 +3,6 @@ QfirstTown
 Qtutorial
 Qdebug
 Qhighscore
-Qcontribution
 Qbtt000
 QlureKill
 QprotectFirstTown
@@ -17,3 +16,9 @@ Qfifteen
 Qrgb
 QkillTheDragon
 QaggressiveNpc
+QcollectFight
+QduelLeague
+QkingOfTheHill
+QcatchThemAll
+Qsoccer
+QpuzzleSwitch

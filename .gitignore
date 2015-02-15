@@ -3,13 +3,19 @@ node_modules/nodetime
 node_modules/nodemailer
 node_modules/jitsu
 node_modules/twit
+node_modules/gulp
+node_modules/gulp-jshint
+node_modules/jshint-stylish
+node_modules/pako
 server/client/rs
 server/client/zelda
+server/client/pokemon
 .npmignore
-story plans
+gulpfile.js
+jshint-setting.json
+
 TODO.txt
 TODO_LOW_PRIORITY.txt
-TODO_NEW.txt
-package.json
 
 server/client/quest/tileset
+*.backup

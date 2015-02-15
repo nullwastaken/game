@@ -1,6 +1,10 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Boss','Map','Main','Debug','Socket','Quest','Message','Actor','Send','Stat','OptionList','Sprite','ActorModel']));
+"use strict";
+(function(){ //}
 
+var OptionList = require2('OptionList'), Sprite = require2('Sprite');
+var Dialog = require4('Dialog');
+var Actor = require3('Actor');
 Actor.doInitPack = function(act){
 	if(act.nevercombat){
 		return [
@@ -45,7 +49,7 @@ Actor.undoInitPack = function(draw,id){
 	act.serverX = draw[1];
 	act.serverY = draw[2];
 	act.angle = draw[3];
-	act.sprite = Sprite(draw[4],draw[5]);
+	act.sprite = Sprite.create(draw[4],draw[5]);
 	act.maxSpd = draw[6];
 	act.context = draw[7];
 	act.minimapIcon = draw[8];
@@ -73,9 +77,9 @@ Actor.undoInitPack = function(draw,id){
 	act.spdX = 0;
 	act.spdY = 0;
 	act.withinStrikeRange = false;
-	Sprite.updateBumper(act);	//bad, idk if needed
+	act.hitHistory = [];
+	act.hitHistoryToDraw = [];	//BADD
 	
-
 	return act;
 }
 
@@ -144,6 +148,7 @@ Actor.setChange.npc = function(act,frame){
 		}
 		if(frame % 4 === 0){
 			var angle = Math.floor(act.angle/15)*15+1;	if(act.old.a !== angle) act.change.a = act.old.a = angle;
+			if(act.flag.hitHistory){ act.flag.hitHistory = 0; act.change.hitHistory = act.hitHistory; act.hitHistory = []; }
 		}
 	}
 	if(!act.nevercombat){
@@ -168,19 +173,17 @@ Actor.setChange.npc = function(act,frame){
 	}	
 }
 
-Actor.setChange.player = function(act,frame){	//BOB
+Actor.setChange.player = function(act,frame){
 	if(frame % 2 === 0){
-		var x = Math.floor(act.x);	if(act.old.x !== x) act.change.x = act.old.x = x; 
+		var x = Math.floor(act.x);	if(act.old.x !== x) act.change.x = act.old.x = x;
 		var y = Math.floor(act.y);	if(act.old.y !== y) act.change.y = act.old.y = y;
-		
 		if(act['spriteFilter']){ act.change['spriteFilter'] = act['spriteFilter']; act['spriteFilter'] = null; }	//BAD
 	}
 	if(frame % 4 === 0){
 		var angle = Math.floor(act.angle);	if(act.old.a !== angle) act.change.a = act.old.a = angle;	//
+		if(act.flag.hitHistory){ act.flag.hitHistory = 0; act.change.hitHistory = act.hitHistory; act.hitHistory = []; }
 	}
 	if(frame % 6 === 0){
-		//var x = Math.floor((Math.abs(act.spdX)+Math.abs(act.spdY))/2);	if(act.old.spd !== x) act.change.spd = act.old.spd = x;
-		
 		var hp = Math.floor(act.hp);	if(act.old.hp !== hp) act.change.hp = act.old.hp = hp;
 		if(act.old.statusClient !== act.statusClient) act.change.statusClient = act.old.statusClient = act.statusClient;
 		
@@ -224,15 +227,18 @@ Actor.Flag = function(){
 }
 
 Actor.setFlag = function(act,what){
-	act.flag[what] = 1;
+	act.flag[what] = 'use need to edit Actor.initFlag';
 }
 
-Actor.initFlag = function(act){	//return true if not empty
+Actor.initFlag = function(act){	//return true if not empty.  note: data for yourself only
 	for(var what in act.flag){
+		//comment cuz check Actor.setFlag
 		if(what === 'curseClient') act.flag[what] = act.curseClient;		//must be first cuz public and npc
+		else if(what === 'hitHistory'){ act.flag[what] = act.hitHistory; }
 		else if(what === 'spriteFilter') act.flag[what] = act.spriteFilter;
 		else if(what === 'permBoost') act.flag[what] = act.permBoost;
 		else if(what === 'equip')	act.flag[what] = Actor.Equip.compressClient(act.equip,act);
+		else if(what === 'pvpEnabled') act.flag[what] = act.pvpEnabled;
 		else if(what === 'questMarker') act.flag[what] = act.questMarker;
 		else if(what === 'ability') act.flag[what] = Actor.Ability.compressClient(act.ability,act);
 		else if(what === 'abilityList')	act.flag[what] = Actor.AbilityList.compressClient(act.abilityList,act);
@@ -267,11 +273,9 @@ Actor.uncompressChange = function(change){
 		}
 		delete change.flag;
 	}
-	
 	change = Actor.uncompressXYA(change);
 	change = Actor.uncompressChange.chargeClient(change);
 	change = Actor.uncompressChange.serverXY(change);
-	
 	
 	if(change.ability) change.ability = Actor.Ability.uncompressClient(change.ability);
 	if(change.equip) change.equip = Actor.Equip.uncompressClient(change.equip);
@@ -281,6 +285,8 @@ Actor.uncompressChange = function(change){
 	if(change.skill){
 		Dialog.open('expPopup',change.skill.exp - Actor.getExp(player))
 	}
+	
+	
 	
 	return change;
 }
@@ -353,10 +359,16 @@ Actor.uncompressXYA = function(info){
 
 Actor.applyChange = function(act,change){
 	if(!change) return;
-	change = Actor.uncompressChange(change);
+	change = Actor.uncompressChange(change,act);
+		
+	if(change.hitHistory){
+		for(var i = 0; i < change.hitHistory.length; i++){
+			act.hitHistoryToDraw.push(Actor.HitHistoryToDraw(change.hitHistory[i]));	
+		}
+	}
 	
 	for(var j in change)
-		Tk.viaArray.set({'origin':act,'array':j.split(','),'value':change[j]});	
+		Tk.viaArray.set(act,j.split(','),change[j]);	
 }
 
 Actor.getSignInPack = function(act){	//for player sign in
@@ -400,7 +412,6 @@ Actor.uncompressDb = function(act,key){
 		act.skill = Actor.Skill(act.skill.exp,act.skill.lvl);
 		act.context = act.name;
 		act.id = key;
-
 		return act;
 	} catch(err){ 
 		ERROR.err(3,err,'error with uncompress Db');
@@ -408,3 +419,4 @@ Actor.uncompressDb = function(act,key){
 	}
 }
 
+})(); //{

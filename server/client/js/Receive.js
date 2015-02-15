@@ -1,19 +1,39 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
+(function(){ //}
+var Actor = require4('Actor'), Anim = require4('Anim'), ActiveList = require4('ActiveList'), Main = require4('Main'), Game = require4('Game'), Socket = require4('Socket'), Strike = require4('Strike'), Bullet = require4('Bullet'), Drop = require4('Drop'), Sfx = require4('Sfx');
 
-var Receive = function(data,unfreeze){
-try {
-	Receive.START_TIME = Date.now();
+var Receive = exports.Receive = {};
+
+
+var SHOW_TIME = false;
+var SHOWDATA_ACTIVE = false;
+var SHOWDATA_LOG = false;
+var START_TIME = 0;
+var LAST_TIME = Date.now();
+var SERVER_TIMESTAMP = Date.now();
+
+
+Receive.getStartTime = function(){
+	return START_TIME;
+}	
+
+Receive.useData = function(data,unfreeze){
+	START_TIME = Date.now();
 	if(BISON.active) data = BISON.decode(data);
+	SERVER_TIMESTAMP = data.timestamp;
+	
 	Receive.showData(data);
 	
-	if(!Receive.freeze.onReceive(data)) return Receive.loop();	//cuz still need to run game
+	if(!Receive.freeze.onReceive(data)) 
+		return Receive.loop();	//cuz still need to run game
 
 	//Update player
 	Actor.applyChange(player,data.p);
 	
     //Init Anim
 	for(var i in data.a) 
-		Anim(data.a[i]);	
+		Anim.create(data.a[i]);	
 	
 	//fix bug if in both list
 	for(var i in data.i) 
@@ -52,44 +72,38 @@ try {
 	if(unfreeze !== true) 
 		Receive.loop();
 	
-} catch (err){ ERROR.err(3,err) }
 }
 
 Receive.loop = function(){
 	if(!CST.ASYNC_LOOP){
-		var delay = (Date.now()-Receive.LAST_TIME)/2;
-		Receive.LAST_TIME = Date.now();
+		var delay = (Date.now()-LAST_TIME)/2;
+		LAST_TIME = Date.now();
 		delay = delay.mm(1,100).r(0);
-		if(Receive.showData.DELAY) INFO(delay);
+		if(SHOWDATA_ACTIVE) INFO(delay);
 		Game.loop();		//first
 		setTimeout(Game.loop,delay);	//second mid way
 	}
-	if(Receive.SHOW_TIME) INFO(Date.now() - Receive.START_TIME);
+	if(SHOW_TIME) INFO(Date.now() - START_TIME);
 }
-
 
 Receive.init = function(){	//socket on
 	Socket.on('change', function(data){
-		Receive(data);
+		try {
+			Receive.useData(data);
+		} catch (err){ ERROR.err(3,err) }
 	});
 }
 
-Receive.SHOW_TIME = false;
-Receive.START_TIME = 0;
-Receive.LAST_TIME = Date.now();
-
 Receive.showData = function(data){
-	if(!Receive.showData.ACTIVE) return;
+	if(!SHOWDATA_ACTIVE) return;
 	var txt = JSON.stringify(data); 
-	if(Receive.showData.LOG) Receive.log += txt;
+	if(SHOWDATA_LOG) Receive.log += txt;
 	else INFO(txt);
 }
-Receive.showData.ACTIVE = false;
-Receive.showData.LOG = false;
-Receive.showData.DELAY = false;
 
-
-
+Receive.getServerTimestamp = function(){
+	return SERVER_TIMESTAMP;
+}
 
 Receive.initEntity = function(obj,id){
 	if(obj[0] === 'b') return Receive.initEntity.bullet(obj,id);
@@ -125,7 +139,6 @@ Receive.initEntity.drop = function(obj,id){
 	ActiveList.addToList(b);
 }
 
-
 Receive.freeze = function(){
 	Receive.freeze.ACTIVE = true;
 	Main.screenEffect.add(main,Main.ScreenEffect.fadeout('mapTransition',25));
@@ -137,7 +150,7 @@ Receive.freeze.LIST = [];
 Receive.unfreeze = function(){
 	Receive.freeze.ACTIVE = false;
 	for(var i in Receive.freeze.LIST)
-		Receive(Receive.freeze.LIST[i],true);
+		Receive.useData(Receive.freeze.LIST[i],true);
 	Receive.freeze.LIST = [];	
 }
 
@@ -156,7 +169,7 @@ Receive.freeze.onReceive = function(data){
 	return true;
 }
 
-
+})(); //{
 
 
 

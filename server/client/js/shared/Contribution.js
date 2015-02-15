@@ -1,12 +1,14 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Message','Account','Main','Sprite'],['Contribution']));
-
-if(SERVER) eval('var Contribution');
+"use strict";
 (function(){ //}
-Contribution = exports.Contribution = {};
+var Actor = require2('Actor'), Message = require2('Message'), Main = require2('Main');
+var Command = require4('Command');
 
+var Contribution = exports.Contribution = {};
+
+var db;	//TODO
 var chat = function(key,text){
-	Message.add(key,Message('contribution',text));
+	Message.add(key,Message.Contribution(text));
 }
 
 Contribution.template = function(){
@@ -105,6 +107,7 @@ Contribution.template = function(){
 
 
 Contribution.onSignIn = function(key){
+	return;/*
 	if(Main.get(key).contribution.reward.player.name){	
 		Actor.get(key).sprite.normal = Main.get(key).contribution.reward.player.name;
 		Actor.changeSprite(Actor.get(key),{name:'normal'});
@@ -113,7 +116,7 @@ Contribution.onSignIn = function(key){
 	if(Contribution.globalMessage.active.text && Date.now() < Contribution.globalMessage.active.end){
 		var a = Contribution.globalMessage.active;
 		Message.add(key,'<span style="color:#EEEEEE; font-weight:bold;">Message from contributor ' + a.username.q() + ': <br> &nbsp;&nbsp;&nbsp;' + a.text + '</span>');
-	}
+	}*/
 }
 
 Contribution.globalMessage = {
@@ -142,7 +145,7 @@ Contribution.globalMessage.approve = function(num){	//no clue if work
 		
 	}
 	db.main.findOne({username:a.username},{},function(err,res){
-		if(err) throw err; if(!res) return;
+		if(err) ERROR.err(2,err); if(!res) return;
 		res.contribution.reward.point.usable = cost;
 		res.contribution.reward.point.used = cost;
 		res.contribution.reward.globalMessage.status = 'Approved';
@@ -161,7 +164,7 @@ Contribution.globalMessage.refuse = function(num,text){
 		Main.get(key).contribution.reward.globalMessage.status = 'Refused' + text;4
 	}
 	db.main.findOne({username:a.username},{},function(err,res){
-		if(err) throw err; if(!res) return;
+		if(err) return db.err(err); if(!res) return;
 		res.contribution.reward.globalMessage.status = 'Refused' + text;
 		db.main.update({username:a.username},res,db.err);
 	}
@@ -448,7 +451,7 @@ Contribution.generateCustomChat = function(key){
 		}
 	}
 	
-	return Main.Social.customChat(symbol,color);;
+	return Main.Social.customChat(symbol,color);
 }
 
 Contribution.generateCustomChat.LIST = [

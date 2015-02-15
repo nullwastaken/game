@@ -1,7 +1,9 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Main','Boss','Combat','ActiveList','Map','Collision','Sprite','Anim','Boost']));
-
+"use strict";
 (function(){ //}
+var Boost = require2('Boost');
+var Actor = require3('Actor');
+
 var INTERVAL_STATUS = 3;
 
 Actor.Status = function(){
@@ -56,8 +58,8 @@ Actor.status.afflict.stun = function(act,b){
 	stun.magn = info.magn*(1-resist);
 	
 	Actor.boost(act,[
-		Boost('stun','maxSpd',0,stun.time,'*'),
-		Boost('stun','atkSpd',0.25,stun.time,'*'),
+		Boost.create('stun','maxSpd',0,stun.time,'*'),
+		Boost.create('stun','atkSpd',0.25,stun.time,'*'),
 	]); 
 	
 	for(var i in act.abilityChange.charge){
@@ -65,7 +67,7 @@ Actor.status.afflict.stun = function(act,b){
 	}
 }
 
-Actor.status.afflict.bleed = function(act,b,dmg){
+Actor.status.afflict.bleed = function(act,b){
 	var info = b.bleed;
 	var bleed = act.status.bleed;
 	var resist = act.statusResist.bleed;
@@ -82,7 +84,7 @@ Actor.status.afflict.chill = function(act,b){
 	chill.time = info.time*(1-resist);
 	chill.magn = (1/info.magn)*(1-resist);
 	
-	Actor.boost(act,Boost('chill','maxSpd',chill.magn,chill.time,'*'));
+	Actor.boost(act,Boost.create('chill','maxSpd',chill.magn,chill.time,'*'));
 }
 
 Actor.status.afflict.knock = function(act,b){
@@ -93,6 +95,7 @@ Actor.status.afflict.knock = function(act,b){
 	knock.time = info.time*(1-resist); 
 	knock.magn = info.magn*(1-resist);	
 	knock.angle = b.moveAngle || 0;
+	Actor.boost(act,Boost.create('knock','acc',0,knock.time,'*'));
 }
 
 Actor.status.afflict.drain = function(act,b){
@@ -105,7 +108,7 @@ Actor.status.afflict.drain = function(act,b){
 	drain.time = info.time*(1-resist); 
 	drain.magn = info.magn*(1-resist);	
 	
-	Actor.boost(act,Boost('drainBad','mana-regen',1/4,drain.time,'+')); 
+	Actor.boost(act,Boost.create('drainBad','mana-regen',1/4,drain.time,'+')); 
 	atker.mana = Math.min(atker.manaMax,atker.mana + drain.magn);
 	act.mana = Math.max(0,act.mana - drain.magn);
 	
@@ -122,22 +125,21 @@ Actor.status.loop = function(act){
 	if(act.status.chill.time > 0) Actor.status.loop.chill(act);
 	if(act.status.drain.time > 0) Actor.status.loop.drain(act);
 	
-	if(Actor.testInterval(act,2*INTERVAL_STATUS)){
-		act.statusClient = '';
-		for(var i in CST.status.list)	act.statusClient += act.status[CST.status.list[i]].time > 0 ? '1' : '0';
-	}
+	act.statusClient = '';
+	for(var i in CST.status.list)	
+		act.statusClient += act.status[CST.status.list[i]].time > 0 ? '1' : '0';
 }
 
 Actor.status.loop.stun = function(act){
-	act.status.stun.time--;
+	act.status.stun.time -= INTERVAL_STATUS;
 }
 
 Actor.status.loop.chill = function(act){
-	act.status.chill.time--;
+	act.status.chill.time -= INTERVAL_STATUS;
 }
 
 Actor.status.loop.drain = function(act){
-	act.status.drain.time--;
+	act.status.drain.time -= INTERVAL_STATUS;
 }
 
 Actor.status.loop.knock = function(act){

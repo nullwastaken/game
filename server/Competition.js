@@ -1,7 +1,14 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Quest','OfflineAction','Highscore','Material','Main'],['Competition']));
+"use strict";
+var Quest = require2('Quest'), OfflineAction = require2('OfflineAction'), Highscore = require2('Highscore'), Main = require2('Main');
 
-var Competition = exports.Competition = function(highscore,end,reward){
+var db;
+
+var CURRENT = null;
+
+
+var Competition = exports.Competition = {};
+Competition.create = function(highscore,end,reward){	//rename highscore to category?
 	var high = Highscore.get(highscore);
 	var a = {
 		id:Math.randomId(),
@@ -15,7 +22,7 @@ var Competition = exports.Competition = function(highscore,end,reward){
 		quest:Quest.get(Highscore.getQuest(highscore)).name,
 		reward:reward || [],	
 	}
-	Competition.CURRENT = a;
+	CURRENT = a;
 	return a;
 }
 
@@ -34,23 +41,21 @@ Competition.Reward = function(item,exp){
 }
 
 Competition.Reward.randomlyGenerate = function(){
-	var mat = Material.getRandom();
 	return [
 		Competition.Reward({'wood-0':20},2000),
 		Competition.Reward({'wood-0':16},1600),
 		Competition.Reward({'wood-0':12},1200),
 		Competition.Reward({'wood-0':8},800),
 		Competition.Reward({'wood-0':4},400),	
-	]
+	];
 }
 
-Competition.CURRENT = null;
-var db;
+
 Competition.init = function(dbLink,app){
 	db = dbLink;
 	db.competition.findOne({},{_id:0},function(err,res){
 		if(res)
-			Competition.CURRENT = res;
+			CURRENT = res;
 		else {
 			Competition.generateRandom();
 		}
@@ -70,14 +75,13 @@ Competition.init = function(dbLink,app){
 }
 
 Competition.generateRandom = function(){
-	Competition(Competition.getNext(),Date.now()+CST.WEEK,Competition.Reward.randomlyGenerate());
+	Competition.create(Competition.getNext(),Date.now()+CST.WEEK,Competition.Reward.randomlyGenerate());
 }
 
 Competition.save = function(){
 	var comp = Competition.getCurrent();
 	db.competition.upsert({id:comp.id},comp);
 }
-
 
 Competition.onQuestComplete = function(key,highscoreInfo){
 	var comp = Competition.getCurrent();
@@ -89,7 +93,7 @@ Competition.onQuestComplete = function(key,highscoreInfo){
 		var username = Main.get(key).username;
 			
 		var alreadyThere = false;
-		for(var i in comp.rank){
+		for(var i = 0 ; i < comp.rank.length; i++){
 			if(comp.rank[i].username === username){
 				alreadyThere = true;
 				if((comp.order === 'ascending' && highscoreInfo[j] > comp.rank[i].score)
@@ -109,20 +113,31 @@ Competition.onQuestComplete = function(key,highscoreInfo){
 	}	
 }
 
+Competition.removePlayer = function(comp,username){
+	for(var i = 0 ; i < comp.rank.length; i++){
+		if(comp.rank[i].username === username){
+			comp.rank.splice(i,1);
+			INFO('Player removed from competition');
+			Competition.save();
+			return;
+		}
+	}
+	INFO('No player with username ' + username + ' found in competition.');
+};
+
 Competition.updateRank = function(comp){
 	if(comp.order === 'ascending')
 		comp.rank.sort(function(a,b){
-			return a-b;
+			return a.score-b.score;
 		});
 	else 
 		comp.rank.sort(function(a,b){
-			return b-a;
+			return b.score-a.score;
 		});
 }
 
-
 Competition.getCurrent = function(){
-	return Competition.CURRENT;
+	return CURRENT;
 }
 
 Competition.getNext = function(){
@@ -133,21 +148,21 @@ Competition.getNext = function(){
 		'Qminesweeper-speedrun',
 		'QtowerDefence-remainingpteasy',
 	];
-	return list.random();
+	return list.$random();
 }
 
 Competition.end = function(comp){
 	//give reward
 	for(var i = 0; i < comp.reward.length; i++){
 		if(comp.rank[i]){
-			OfflineAction(comp.rank[i].username,'message',OfflineAction.Data.message(
+			OfflineAction.create(comp.rank[i].username,'message',OfflineAction.Data.message(
 				'Congratulation! You finished #' + (i+1) + ' in the competition! You win ' + comp.reward[i].exp + ' exp and a bunch of items.'
 			));
-			OfflineAction(comp.rank[i].username,'questPopup',OfflineAction.Data.message(
+			OfflineAction.create(comp.rank[i].username,'questPopup',OfflineAction.Data.message(
 				'Congratulation! You finished #' + (i+1) + ' in the competition! You win ' + comp.reward[i].exp + ' exp and a bunch of items.'
 			));
-			OfflineAction(comp.rank[i].username,'addExp',OfflineAction.Data.addExp(comp.reward[i].exp,false));
-			OfflineAction(comp.rank[i].username,'addItem',OfflineAction.Data.addItem(comp.reward[i].item));
+			OfflineAction.create(comp.rank[i].username,'addExp',OfflineAction.Data.addExp(comp.reward[i].exp,false));
+			OfflineAction.create(comp.rank[i].username,'addItem',OfflineAction.Data.addItem(comp.reward[i].item));
 		}
 	}
 	db.competition.remove({id:comp.id},db.err);
@@ -157,7 +172,7 @@ Competition.end = function(comp){
 Competition.getHomePage = function(){
 	var cur = Competition.getCurrent();
 	var temp = {};
-	for(var i in cur){
+	for(var i in cur){	//only want to compress rank
 		if(i === 'rank')
 			temp[i] = cur[i].slice(0,5);
 		else
@@ -165,7 +180,6 @@ Competition.getHomePage = function(){
 	}
 	return temp;
 }	
-
 
 
 

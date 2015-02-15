@@ -1,7 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Server','Main','ItemList','Save','Message','Dialogue','Boost','Drop','Quest','Collision','Command','Contribution']));
-
+"use strict";
 (function(){ //}
+var Quest = require2('Quest');
+var Main = require3('Main');
 
 Main.verifyDailyTask = function(main,q,challengeSuccess){	//called when quest complete
 	for(var i in main.dailyTask){
@@ -20,12 +21,12 @@ Main.verifyDailyTask = function(main,q,challengeSuccess){	//called when quest co
 
 Main.updateDailyTask = function(main){	//DEAD
 	return;
-	if(main.dailyTask.length >= 3)	main.dailyTask.shift();
+	/*if(main.dailyTask.length >= 3)	main.dailyTask.shift();
 	
 	var task = DailyTask.generateRandom();
 	main.dailyTask.push(task);
 	
-	Main.addMessage(main,'Complete this Daily Challenge for massive rewards: ' + task.description);
+	Main.addMessage(main,'Complete this Daily Challenge for massive rewards: ' + task.description);*/
 }
 
 
@@ -47,7 +48,7 @@ var DailyTask = exports.DailyTask = function(quest,challenge){
 
 DailyTask.generateRandom = function(){
 	var quest = Quest.getRandomDaily();		
-	var challenge = quest.challenge.randomAttribute() || '';
+	var challenge = quest.challenge.$randomAttribute() || '';
 	return DailyTask(quest.id,challenge);
 }
 

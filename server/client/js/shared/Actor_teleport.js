@@ -1,6 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Quest','Server','Main','MapModel','ActiveList','ItemList','Map','Message','Drop','Collision','OptionList','Button','OptionList']));
-
+"use strict";
+(function(){ //}
+var Main = require2('Main'), MapModel = require2('MapModel'), ActiveList = require2('ActiveList'), Map = require2('Map'), Message = require2('Message');
+var Actor = require3('Actor');
 
 Actor.RespawnLoc = function(recent,safe){
 	return {
@@ -70,6 +72,11 @@ Actor.getPartyName = function(act){
 //############################
 
 Actor.teleport = function(act,spot,force){
+	try {
+		return Actor.teleport.main(act,spot,force);
+	} catch(err){  ERROR.err(3,err);}
+}
+Actor.teleport.main = function(act,spot,force){
 	act.x = spot.x;
 	act.y = spot.y;
 	var map = force ? spot.map : Actor.teleport.getMapName(act,spot.map);	//allow admin to go in solo instance
@@ -78,24 +85,21 @@ Actor.teleport = function(act,spot,force){
 		ActiveList.update(act);
 		return; 
 	}
-	try {
-		if(!Map.get(map)) //test if need to create instance
-			Map(Map.getModel(map),Map.getVersion(map),act.id); 
-	} catch(err){  ERROR.err(3,err);}
-	
-	try { 
-		Map.leave(act); 
-		act.map = map;
-		Map.enter(act);
-		ActiveList.update(act);
-	} catch(err){  ERROR.err(3,err);}
+	if(!Map.get(map)) //test if need to create instance
+		Map.create(Map.getModel(map),Map.getVersion(map),act.id); 
+
+	Map.leave(act); 
+	act.map = map;
+	Map.enter(act);
+	ActiveList.update(act);
 	Actor.questMarker.update(act);
 }
 
+
 Actor.teleport.getMapName = function(act,map){
 	if(!map) return act.map;
-	if(!map.contains("@"))	return map + '@MAIN'; 				//main instance
-	if(map.contains("@@"))	return map + act.username; 				//alone instance
+	if(!map.$contains("@"))	return map + '@MAIN'; 				//main instance
+	if(map.$contains("@@"))	return map + act.username; 				//alone instance
 	if(map[map.length-1] === '@') return map + Actor.getPartyName(act);	//party instance
 	return map;
 }
@@ -103,7 +107,7 @@ Actor.teleport.getMapName = function(act,map){
 
 
 Actor.teleport.join = function(act,mort2){	//TOFIX
-	if(mort2.map.contains("@@")) return false;
+	if(mort2.map.$contains("@@")) return false;
 	
 	Actor.teleport(act,mort2.respawnLoc.recent);
 	return true;
@@ -135,8 +139,11 @@ Actor.teleport.fromQuest = function(act,spot,newmap,deleteold){
 		Map.remove(oldmapObject);
 }
 	
-	
+Actor.isNearBank = function(act){
+	return Map.isNearBank(Map.get(act.map),act);
+}	
 
+})(); //{
 
 
 

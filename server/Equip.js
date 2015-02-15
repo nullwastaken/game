@@ -1,11 +1,19 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['ItemList','Message','Boost','OptionList','Combat','Material','CraftBoost','ItemModel','Main','Actor'],['Equip']));
-var db = null; 	//Equip.init
+"use strict";
+var Message = require2('Message'), ItemList = require2('ItemList'), Boost = require2('Boost'), OptionList = require2('OptionList'), Combat = require2('Combat'), Material = require2('Material'), CraftBoost = require2('CraftBoost'), ItemModel = require2('ItemModel'), Main = require2('Main'), Actor = require2('Actor');
+var Equip = exports.Equip = {};
 
-var Equip = exports.Equip = function(quest,id,piece,type,name,lvl,valueMod,boost,extra,addDb){	//called directly when creating quest equip
-	if(!CST.equip.piece.contains(piece || extra.piece)) return ERROR(3,'invalid piece',piece|| extra.piece);
-	if(!CST.equip[piece|| extra.piece].contains(type|| extra.type)) return ERROR(3,'piece and type doesnt match',piece|| extra.piece,type|| extra.type);
-		
+var DB = Equip.DB = {};
+var db = null; 	//Equip.init
+var START_ITEM_ID = 'E';
+
+var FETCH_ALL_DB_INIT = true;
+var DELETE_EQUIP_DB_WHEN_UPGRADE = false;
+
+Equip.create = function(quest,id,piece,type,name,lvl,valueMod,boost,extra,addDb){	//called directly when creating quest equip
+	if(!CST.equip.piece.$contains(piece || extra.piece)) return ERROR(3,'invalid piece',piece|| extra.piece);
+	if(!CST.equip[piece|| extra.piece].$contains(type|| extra.type)) return ERROR(3,'piece and type doesnt match',piece|| extra.piece,type|| extra.type);
+			
 	var equip = {
 		version:'v1.0',
 		quest:quest || '',
@@ -14,7 +22,7 @@ var Equip = exports.Equip = function(quest,id,piece,type,name,lvl,valueMod,boost
 		type:type || 'metal',
 		name:name || "Hello Kitty",
 		icon:'',
-		lvl:0,
+		lvl:lvl || 0,
 		def:null,
 		dmg:null,	
 		defRaw:null,
@@ -28,6 +36,7 @@ var Equip = exports.Equip = function(quest,id,piece,type,name,lvl,valueMod,boost
 		quality:0,
 		rarity:0,
 		maxAmount:0,
+		creationDate:Date.now(),
 		/**/
 		upgradable:0,
 		upgradeInfo:null,/**/
@@ -50,10 +59,9 @@ var Equip = exports.Equip = function(quest,id,piece,type,name,lvl,valueMod,boost
 	if(addDb !== false) db.equip.upsert({id:equip.id}, Equip.compressDb(Tk.deepClone(equip)), db.err);
 	return equip;
 }
-var DB = Equip.DB = {};
 
 Equip.createFromModel = function(equip,addDb){
-	return Equip(null,null,null,null,null,null,null,null,equip,addDb);
+	return Equip.create(null,null,null,null,null,null,null,null,equip,addDb);
 }	
 
 Equip.get = function(id){
@@ -62,29 +70,32 @@ Equip.get = function(id){
 
 Equip.init = function(dbLink,cb){
 	db = dbLink;
-	db.equip.find({},{'_id':0},function(err, results) { if(err) throw err
-		for(var i in results)	
-			Equip.uncompressDbAndAdd(results[i]);
+	//now, we fetch needed equip when player logs
+	if(FETCH_ALL_DB_INIT){
+		db.equip.find({},{'_id':0},function(err, results) { if(err) return db.err(err);
+			for(var i = 0 ; i < results.length; i++)
+				Equip.uncompressDbAndAdd(results[i]);
 
-		cb.call();
-	});
+			cb.call();
+		});
+	} else {
+		cb.call();	
+	}
 }
 
 //#######################
 
 Equip.randomlyGenerateFromQuestReward = function(act){
-	return Equip.randomlyGenerate(null,Actor.getLevel(act),null,null,null,null,act.username);
+	return Equip.randomlyGenerate(act.username,null,Actor.getLevel(act),null,null,null,null);
 }
 
-
-Equip.randomlyGenerate = function(pieceType,lvl,quality,rarity,min,max,creator){
+Equip.randomlyGenerate = function(creator,pieceType,lvl,quality,rarity,min,max){
 	pieceType = pieceType || Equip.PieceType();
 	
 	quality = quality !== undefined ? quality : Equip.generateQuality(quality);
 	rarity = rarity !== undefined ? rarity : Equip.generateRarity(rarity);
 	
-	var name = Equip.Name(pieceType);
-	var id = Math.randomId();
+	var id = START_ITEM_ID + Math.randomId();
 	var piece = pieceType.piece;
 	var type = pieceType.type;
 	lvl = Equip.Lvl(lvl || 0);
@@ -103,20 +114,21 @@ Equip.randomlyGenerate = function(pieceType,lvl,quality,rarity,min,max,creator){
 		creator:creator || '',
 		upgradeInfo:Equip.generateUpgradeInfo(piece,type,lvl),
 	}
-		
-	return Equip('',id,piece,type,name,lvl,valueMod,boost,extra,true);
+	var name = Equip.Name(pieceType,boost);
+	
+	return Equip.create('',id,piece,type,name,lvl,valueMod,boost,extra,true);
 };
 
 Equip.PieceType = function(piece,type){
 	if(piece && type) return {piece:piece,type:type};
 	
-	if(!piece) piece = CST.equip.piece.random();
-	if(piece === 'armor') piece = ['amulet','ring','body','helm'].random();
-	if(piece === 'weapon') return {piece:'weapon',type:CST.equip.weapon.random()};
-	if(piece === 'amulet') return {piece:'amulet',type:CST.equip.amulet.random()};
-	if(piece === 'ring') return {piece:'ring',type:CST.equip.ring.random()};
-	if(piece === 'body') return {piece:'body',type:CST.equip.body.random()};
-	if(piece === 'helm') return {piece:'helm',type:CST.equip.helm.random()};
+	if(!piece) piece = CST.equip.piece.$random();
+	if(piece === 'armor') piece = ['amulet','ring','body','helm'].$random();
+	if(piece === 'weapon') return {piece:'weapon',type:CST.equip.weapon.$random()};
+	if(piece === 'amulet') return {piece:'amulet',type:CST.equip.amulet.$random()};
+	if(piece === 'ring') return {piece:'ring',type:CST.equip.ring.$random()};
+	if(piece === 'body') return {piece:'body',type:CST.equip.body.$random()};
+	if(piece === 'helm') return {piece:'helm',type:CST.equip.helm.$random()};
 	return ERROR(3,'invalid piece',piece);
 }
 
@@ -160,7 +172,8 @@ Equip.UpgradeInfo = function(exp,item){
 		exp:exp	|| 0,
 	}
 }
-Equip.UpgradeInfo.item = function(array){
+
+Equip.UpgradeInfo.item = function(array){	//convert array to {}
 	var item = {};
 	for(var i in array){
 		if(!array[i][1]) continue;	//not include if 0
@@ -183,7 +196,7 @@ Equip.generateUpgradeInfo = function(piece,type,lvl){
 		return Equip.UpgradeInfo(expRewarded,Equip.UpgradeInfo.item([['bone-'+matLvl,10]]));
 
 	if(type === 'ruby' || type === 'sapphire' || type === 'topaz'){
-		var random = ['metal-','wood-','bone-'].random();
+		var random = ['metal-','wood-','bone-'].$random();
 		var item = [
 			[type + '-'+ matLvl,2],
 			[random+matLvl,1]
@@ -202,10 +215,28 @@ Equip.generateUpgradeInfo = function(piece,type,lvl){
 	return ERROR(3,'invalid piece type',type,piece);
 }
 
-Equip.Name = function(pieceType){
-	if(pieceType.piece === 'weapon') return pieceType.type;
-	return pieceType.type + ' ' + pieceType.piece;
+Equip.Name = function(pieceType,boost){
+	var name = '';
+	if(pieceType.piece === 'weapon'){
+		name = pieceType.type.capitalize();
+	} else {
+		name = pieceType.type.capitalize() + ' ' + pieceType.piece.capitalize();
+	}
+	if(boost.length == 3 || boost.length == 4){
+		name = Equip.Name.PREFIX.$random() + ' ' + name
+	}
+	if(boost.length == 5 && boost.length == 6){
+		name = name + ' ' + Equip.Name.SUFFIX.$random();
+	}
+	if(boost.length > 6)
+		name = Equip.Name.PREFIX.$random() + ' ' + name + ' ' + Equip.Name.SUFFIX.$random();
+	return name;
 }
+
+Equip.Name.PREFIX = ['Awesome','Super','Amazing','Great','Good','Nice','Cool','Legendary','Rare','Epic','Lame'];
+
+Equip.Name.SUFFIX = ['of Strength','of Wisdom','of Courage','of Epicness'];
+
 
 Equip.Lvl = function(lvl){
 	lvl = lvl || 0
@@ -223,7 +254,7 @@ Equip.generateRarity = Equip.generateQuality = function(rarity){
 
 //#######################
 
-Equip.RawDmg = function(equip,lvl,main,mastery){	//1.5 is if good element
+Equip.RawDmg = function(equip,lvl,main){	//1.5 is if good element
 	if(equip.piece !== 'weapon') main = 0;
 	return {
 		main:Combat.getMainDmgDefByLvl(lvl)/Combat.WEAPON_MAIN_MOD * main,
@@ -231,13 +262,14 @@ Equip.RawDmg = function(equip,lvl,main,mastery){	//1.5 is if good element
 	};
 }
 
-Equip.RawDef = function(equip,lvl,main,mastery){	//2.25 is average
+Equip.RawDef = function(equip,lvl,main){	//2.25 is average
 	if(equip.piece === 'weapon') main = 0;
 	return {
 		main:Combat.getMainDmgDefByLvl(lvl)/Combat.ARMOR_MAIN_MOD * main,
 		ratio:Equip.generateRatio(equip.piece,equip.type)
 	};
 }
+
 Equip.Def = Equip.Dmg = function(rawdef,mastery){
 	var mod = Combat.getMasteryExpMod(mastery);
 	return {
@@ -282,8 +314,6 @@ Equip.PIECE_VALUE_MOD = {
 	weapon:1.5,
 }
 
-
-
 Equip.generateRatio = function(piece,type){
 	//Weapon
 	if(type === 'mace') return {melee:1.5,range:1,magic:1,fire:1.5,cold:1,lightning:1};
@@ -312,7 +342,7 @@ Equip.generateRatio = function(piece,type){
 
 Equip.createItemVersion = function(equip){
 	var option = [
-		ItemModel.Option(Main.openDialog,'Examine Equip',null,[OptionList.MAIN,'equipPopup',equip.id]),
+		ItemModel.Option(Main.openDialog,'Examine Equip',null,[OptionList.MAIN,'equipPopup',{id:equip.id}]),	//based on Dialog.EquipPopup
 		ItemModel.Option(Actor.equip.click,'Wear Equip',null,[OptionList.ACTOR,equip.id]),
 	];
 	var extra = {type:'equip',drop:0};
@@ -324,7 +354,7 @@ Equip.createItemVersion = function(equip){
 	//if(equip.upgradable && equip.boost.length < equip.maxAmount)	
 	//	option.push(ItemModel.Option(Equip.upgrade.click,'Upgrade','Use crafting materials to unlock addition boost.',[equip.id]));
 		
-	ItemModel(equip.quest,equip.id,equip.name,Equip.Icon(equip),option,null,extra);
+	ItemModel.create(equip.quest,equip.id,equip.name,Equip.Icon(equip),option,null,extra);
 }
 
 //#########################
@@ -372,6 +402,7 @@ Equip.boundToAccount = function(key,eid){
 Equip.removeFromDb = function(eid){
 	if(!DB[eid]) return ERROR(3,'equip dont exist',eid);
 	if(DB[eid].quest) return;
+	if(!DELETE_EQUIP_DB_WHEN_UPGRADE) return;
 	delete DB[eid];
 	db.equip.remove({'id':eid});
 }
@@ -388,7 +419,7 @@ Equip.salvage = function(key,id){
 		
 		//add item
 		var item = {};
-		item[Material.getRandom()] = equip.boost.length + 1;
+		item[Material.getRandom(Actor.getLevel(Actor.get(key)))] = equip.boost.length + 1;
 		Main.addItem(main,item);
 		
 		//give exp
@@ -412,6 +443,56 @@ Equip.destroy = function(key,id){
 	},'Destroy this equip permanently?','boolean');
 }
 
+Equip.fetchList = function(list,username,cb){
+	if(FETCH_ALL_DB_INIT) return cb();
+	db.equip.find({id:{$in:list}},{_id:0},function(err,results){
+		if(err) ERROR.err(3,err);
+		for(var i in results)	
+			Equip.uncompressDbAndAdd(results[i]);
+			//if(equip.creator !== username)	//added trading...
+			//	ERROR(2,'equip ' + equip.id + ' owned by ' + username + ' but created by ' +  equip.creator);
+		cb();
+	})	
+}
+
+Equip.onSignOff = function(inv,bank,equip){
+	if(FETCH_ALL_DB_INIT) return;
+	
+	// !quest => randomly generated
+	for(var i in inv){
+		if(Equip.get(i) && !Equip.get(i).quest)	//i[0] === START_ITEM_ID
+			Equip.removeFromRAM(i);
+	}
+	for(var i in bank){
+		if(Equip.get(i) && !Equip.get(i).quest)
+			Equip.removeFromRAM(i);
+	}
+	for(var i in equip){
+		if(equip[i] && !Equip.get(equip[i]).quest)
+			Equip.removeFromRAM(equip[i]);
+	}
+		
+}
+
+Equip.getAllEquipOwned = function(key){
+	var list = ItemList.getAllItemOwned(key);
+	var equip = Actor.getEquip(Actor.get(key)).piece;
+	
+	for(var i in equip)
+		list.push(i);
+	
+	for(var i = list.length-1; i >= 0; i--){
+		if(!Equip.get(list[i]))
+			list.splice(i,1);
+	}
+	return list;
+}
+
+Equip.removeFromRAM = function(id){
+	if(FETCH_ALL_DB_INIT) return;
+	delete DB[id];
+	ItemModel.removeFromRAM(id);
+}
 
 Equip.upgrade = function(equip){
 	var equip = Tk.deepClone(equip);	//case Qsystem-
@@ -461,7 +542,6 @@ Equip.upgrade.click = function(key,eid){
 	Message.add(key,'You upgraded your equip. It now has an additional boost.');	
 }
 
-
 Equip.addMasteryExp = function(key,eid,amount){
 	var equip = DB[eid];
 	if(!equip) return;
@@ -500,6 +580,60 @@ Equip.addMasteryExp = function(key,eid,amount){
 		
 	Message.add(key,'Your equip is now more powerful.');	
 }
+
+Equip.addMasteryExp.click = function(key,eid){
+	var main = Main.get(key);
+	Main.question(main,function(key,num){
+		num = Math.floor(+num);
+		num = Math.min(num,Actor.getExp(Actor.get(key)));
+		if(isNaN(num) || num < 1) return Message.add(key,'Not a number');
+		
+		var equip = Equip.get(eid);
+		if(!equip) return;
+		
+		var boostOld = Combat.getMasteryExpMod(equip.masteryExp);
+		var boostNew = Combat.getMasteryExpMod(equip.masteryExp + num);
+		var powerOld;
+		var powerNew;
+		if(equip.piece === 'weapon'){
+			powerOld = Combat.getVisiblePower(equip.dmg.main);
+			powerNew = Combat.getVisiblePower(equip.dmg.main / boostOld * boostNew);
+		} else {
+			powerOld = Combat.getVisiblePower(equip.def.main);
+			powerNew = Combat.getVisiblePower(equip.def.main / boostOld * boostNew);
+		}
+			
+		var str = 'Spend ' + num.r(0) + ' Exp to upgrade from <br>' + powerOld.r(2) + ' to ' + powerNew.r(2) + ' Power?';
+		Main.question(main,function(key){
+			Equip.addMasteryExp(key,eid,num);
+		},str,'boolean');
+	},'How many points do you want to invest?','number');
+}
+
+Equip.getSignInPack = function(key){	//warning, compress everytime needed
+	var list = Equip.getAllEquipOwned(key);
+	var pack = {};
+	for(var i = 0 ; i < list.length; i++){
+		pack[list[i]] = Equip.compressClient(Equip.get(list[i]));
+	}
+	return pack;	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

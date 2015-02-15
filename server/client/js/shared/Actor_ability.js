@@ -1,5 +1,9 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Server','Message','Combat','Ability','Anim']));
+"use strict";
+(function(){ //}
+var Message = require2('Message'), Combat = require2('Combat'), Ability = require2('Ability'), Anim = require2('Anim');
+
+var Actor = require3('Actor');
 
 var INTERVAL_ABILITY = 3;
 
@@ -44,7 +48,7 @@ Actor.AbilityList.compressClient = function(abilityList,act){
 	return Object.keys(Actor.getAbilityList(act));
 }
 
-Actor.AbilityList.uncompressClient = function(abilityList,act){
+Actor.AbilityList.uncompressClient = function(abilityList){
 	var tmp = {};
 	for(var i in abilityList)
 		tmp[abilityList[i]] = 1;
@@ -54,9 +58,12 @@ Actor.AbilityList.uncompressClient = function(abilityList,act){
 //################
 Actor.Ability = function(normal,quest){
 	return {
-		normal:normal || [null,null,null,null,null,null],	//array of Ability.functionVersion
-		quest:quest || [null,null,null,null,null,null],
+		normal:normal || Actor.Ability.Part(),	//array of Ability.functionVersion
+		quest:quest || Actor.Ability.Part(),
 	}
+}
+Actor.Ability.Part = function(){
+	return [null,null,null,null,null,null];
 }
 
 Actor.Ability.compressDb = function(ability){
@@ -82,7 +89,7 @@ Actor.Ability.compressClient = function(ability,act){
 	return tmp;
 }
 
-Actor.Ability.uncompressClient = function(ability,act){
+Actor.Ability.uncompressClient = function(ability){
 	for(var i in ability) 
 		if(!ability[i]) ability[i] = null;
 	return Actor.Ability(ability);
@@ -125,7 +132,10 @@ Actor.AbilityChange = function(ab){	//ab : ability
 		chargeClient:[0,0,0,0,0,0],
 		globalCooldown:0
 	};
-	for(var i in ab) if(ab[i]) tmp.charge[ab[i].id] = 0;
+	ab = ab || [];
+	for(var i = 0; i < ab.length; i++)
+		if(ab[i]) 
+			tmp.charge[ab[i].id] = 0;
 	return tmp;
 }
 
@@ -137,7 +147,7 @@ Actor.setAbilityListUsingAbilityAi = function(act){
 	act.abilityList = Actor.AbilityList(act.abilityAi.list);
 	for(var id in act.abilityAi.list){
 		if(id !== Actor.IDLE_ABILITY_ID) 
-			Actor.ability.swap(act,id);
+			Actor.swapAbility(act,id);
 	}
 }
 
@@ -145,10 +155,10 @@ Actor.setAbilityListUsingAbilityAi = function(act){
 
 Actor.ability = {};
 
-Actor.ability.remove = function(act,name){
+Actor.removeAbility = function(act,name){
 	delete Actor.getAbilityList(act)[name];
 	var ab = Actor.getAbility(act);
-	for(var i in ab){
+	for(var i = 0; i < ab.length; i++){
 		if(ab[i] && ab[i].id === name){
 			ab[i] = null;
 		}
@@ -157,11 +167,14 @@ Actor.ability.remove = function(act,name){
 	Actor.setFlag(act,'abilityList');
 }
 
-Actor.ability.swap = function(act,name,position,strict){
-	if(strict && !Actor.ability.swap.test(act,name,position)) return;
+Actor.swapAbility = function(act,name,position,strict){
+	if(strict && !Actor.swapAbility.test(act,name,position)) return;
 	
 	var ab = Actor.getAbility(act);
-	if(position === undefined)	for(position = 0; position < 100; position++) if(!ab[position]) break;	//get first empty position
+	if(position === undefined)	
+		for(position = 0; position < 100; position++) 
+			if(!ab[position]) 
+				break;	//get first empty position
 	
 	for(var i in ab){ //prevent multiple
 		if(ab[i] && ab[i].id === name) ab[i] = null; 
@@ -175,27 +188,27 @@ Actor.ability.swap = function(act,name,position,strict){
 	Actor.setFlag(act,'abilityList');
 }
 
-Actor.ability.swap.test = function(act,name,position){
+Actor.swapAbility.test = function(act,name,position){
 	if(act.combatContext.ability !== 'normal') 
-		return Message.add(key,'You can\'t change your ability at this point of the quest.');
+		return Message.add(act.id,'You can\'t change your ability at this point of the quest.');
 	
-	if(!Actor.getAbilityList(act)[name]) return Message.add(key,'You don\'t have this ability');
+	if(!Actor.getAbilityList(act)[name]) 
+		return Message.add(act.id,'You don\'t have this ability');
 	
 	var ability = Ability.functionVersion(name);
 	
-	if(position === 4 && ability.type !== 'heal') return Message.add(act.id,'This ability slot can only support Healing abilities.');
-	if(position === 5 && ability.type !== 'dodge') return Message.add(act.id,'This ability slot can only support Dodge abilities.');
+	if(position === 4 && ability.type !== 'heal') 
+		return Message.add(act.id,'This ability slot can only support Healing abilities.');
+	if(position === 5 && ability.type !== 'dodge') 
+		return Message.add(act.id,'This ability slot can only support Dodge abilities.');
 	
 	return true;
 }
 
-
-Actor.ability.add = function(act,name,message){
+Actor.addAbility = function(act,name){
 	if(!Ability.get(name)) return ERROR(3,'ability not exist',name);
-	if(message !== false) Message.add(act.id,"You have learnt a new ability: \"" + Ability.get(name).name + '".');
 	Actor.getAbilityList(act)[name] = 1;
-	Server.log(1,act.id,'learnAbility',name);
-	
+
 	Actor.setFlag(act,'ability');
 	Actor.setFlag(act,'abilityList');
 }
@@ -205,8 +218,8 @@ Actor.getAbility = function(act){
 	return act.ability[act.combatContext.ability];
 }
 
-Actor.getAbilityList = function(act){
-	return act.abilityList[act.combatContext.ability];
+Actor.getAbilityList = function(act,forceContext){
+	return act.abilityList[forceContext || act.combatContext.ability];
 }
 
 
@@ -224,7 +237,7 @@ Actor.ability.loop.charge = function(act){	//HOTSPOT
 	ma.globalCooldown -= INTERVAL_ABILITY;
 	ma.globalCooldown = ma.globalCooldown.mm(-100,250); 	//cuz if atkSpd is low, fuck everything with stun
 	var ab = Actor.getAbility(act);
-	for(var i in ab){
+	for(var i = 0; i < ab.length; i++){
 		var s = ab[i]; if(!s) continue;	//cuz can have hole if player
 		ma.charge[s.id] = (ma.charge[s.id] + act.atkSpd * INTERVAL_ABILITY) || 0;
 	}
@@ -235,7 +248,7 @@ Actor.ability.loop.chargeClient = function(act){
 	var ma = act.abilityChange;
 	
 	ma.chargeClient = '';
-	for(var i in ab){
+	for(var i = 0; i < ab.length; i++){
 		var s = ab[i]; if(!s){ ma.chargeClient += '0'; continue; }	//cuz can have hole if player
 		//Client
 		var rate = ma.charge[s.id] / s.periodOwn;
@@ -247,7 +260,8 @@ Actor.ability.loop.clickVerify = function(act){
 	if(act.noAbility) return;
 	var ab = Actor.getAbility(act);
 	var ma = act.abilityChange;
-	for(var i in ab){
+	
+	for(var i = 0; i < ab.length; i++){
 		var s = ab[i]; if(!s) continue;	//cuz can have hole if player
 		
 		if(ma.press[i] === '1' && ma.charge[s.id] > s.periodOwn && (s.bypassGlobalCooldown || (ma.globalCooldown <= 0))){
@@ -262,7 +276,7 @@ Actor.ability.loop.clickVerify = function(act){
 Actor.ability.fullyRecharge = function(act){
 	var ab = Actor.getAbility(act);
 	act.abilityChange.globalCooldown = 0;
-	for(var i in ab){
+	for(var i = 0; i < ab.length; i++){
 		var s = ab[i]; if(!s) continue;	//cuz can have hole if player
 		act.abilityChange.charge[s.id] = 1000;
 	}
@@ -270,7 +284,8 @@ Actor.ability.fullyRecharge = function(act){
 
 Actor.setSpriteFilter = function(act,filter){	//dodge is hardcodded
 	act.spriteFilter = filter;
-	if(SERVER) Actor.setFlag(act,'spriteFilter');
+	if(SERVER) 
+		Actor.setFlag(act,'spriteFilter');
 }
 
 Actor.SpriteFilter = function(filter,time){ //BAD name
@@ -291,20 +306,20 @@ Actor.useAbility = function(act,ab,mana,reset,extra){
 	}
 	
 	if(ab.preDelayAnimOverSprite)
-		Anim(ab.preDelayAnimOverSprite,Anim.Target(act.id));
+		Anim.create(ab.preDelayAnimOverSprite,Anim.Target(act.id));
 	
 	Actor.setTimeout(act,function(){
 		if(ab.postDelayAnimOverSprite)	
-			Anim(ab.postDelayAnimOverSprite,Anim.Target(act.id));
+			Anim.create(ab.postDelayAnimOverSprite,Anim.Target(act.id));
 	
 		//Do Ability Action
-		if(ab.funcStr === 'Combat.attack') return Combat.attack(act,ab.param,extra);
-		if(ab.funcStr === 'Combat.dodge') return Combat.dodge(act,ab.param);
-		if(ab.funcStr === 'Combat.heal') return Combat.heal(act,ab.param);
-		if(ab.funcStr === 'Combat.summon') return Combat.summon(act,ab.param);
-		if(ab.funcStr === 'Combat.event') return Combat.event(act,ab.param);
-		if(ab.funcStr === 'Combat.idle') return Combat.idle(act,ab.param);
-		if(ab.funcStr === 'Combat.boost') return Combat.boost(act,ab.param);
+		if(ab.funcStr === 'attack') return Combat.attack(act,ab.param,extra);
+		else if(ab.funcStr === 'dodge') return Combat.dodge(act,ab.param);
+		else if(ab.funcStr === 'heal') return Combat.heal(act,ab.param);
+		else if(ab.funcStr === 'summon') return Combat.summon(act,ab.param);
+		else if(ab.funcStr === 'event') return Combat.event(act,ab.param);
+		else if(ab.funcStr === 'idle') return Combat.idle(act,ab.param);
+		else if(ab.funcStr === 'boost') return Combat.boost(act,ab.param);
 		ERROR(3,'invalid funcStr',ab.funcStr,act.name);
 	},ab.delay);
 	
@@ -326,7 +341,7 @@ Actor.useAbility.testResource = function(act,ab){
 }
 
 
-
+})(); //{
 
 
 

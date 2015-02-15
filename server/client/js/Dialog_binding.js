@@ -1,8 +1,13 @@
+//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
 (function(){ //}
-Dialog('binding','Key Binding',Dialog.Size(550,550),Dialog.Refresh(function(){
+var Input = require4('Input');
+var Dialog = require3('Dialog');
+
+Dialog.create('binding','Key Binding',Dialog.Size(550,550),Dialog.Refresh(function(){
 	Dialog.binding.apply(this,arguments);
 },function(){
-	return Tk.stringify(Input.binding) + Tk.stringify(Input.setting);
+	return Tk.stringify(Input.getBinding()) + Tk.stringify(Input.getSetting());
 }));
 //Dialog.open('binding')
 
@@ -20,10 +25,10 @@ Dialog.binding = function(html,variable){
 	
 	for(var j in list){
 		var info = list[j];
-		for(var i = 0; i < Input.state[info.id].length; i++){
+		for(var i = 0; i < Input.getState(info.id).length; i++){
 			var name = Input.getKeyName(info.id,i,true);
 			
-			if(Input.binding[info.id] === i)
+			if(Input.getBinding()[info.id] === i)
 				name = '***';
 			
 			var el = $('<span>');
@@ -31,7 +36,7 @@ Dialog.binding = function(html,variable){
 			el[0].title = 'Change Key Binding for ' + info.name + ' ' + info.list[i];
 			el[0].onclick = (function(id,i){
 				return function(){
-					Input.binding[id] = i;
+					Input.setBinding(id,i);
 				}
 			})(info.id,i);
 			
@@ -49,15 +54,18 @@ Dialog.binding = function(html,variable){
 	var el = $('<div>').addClass('inline');
 	el.append('<h3>Default Bindings</h3>');
 	var array = ['QWERTY','AZERTY','NUMBER'];
+	
+	var helper = function(i){
+		return function(){
+			Input.usePreset(array[i].toLowerCase());
+		}
+	};
+	
 	for(var i = 0; i < array.length; i++){
 		var btn = $('<button>').addClass('myButton');
 		btn.html(array[i]);
 		btn.attr('title','Change for ' + array[i]);
-		btn.click((function(i){
-			return function(){
-				Input.usePreset(array[i].toLowerCase());
-			}
-		})(i));
+		btn.click(helper(i));
 		el.append(btn);
 		el.append('<br>');
 	}

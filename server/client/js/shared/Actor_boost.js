@@ -1,6 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Stat','Boost']));
-
+"use strict";
+(function(){ //}
+var Stat = require2('Stat'), Boost = require2('Boost');
+var Actor = require3('Actor');
 
 Actor.Boost = function(type){
 	return {          //timer aka needs to be updated every frame
@@ -27,7 +29,9 @@ Actor.boost = function(act, boost){
 	//fast[i]: i = stat@source
 	
 	if(Array.isArray(boost)){
-		for(var i in boost) Actor.boost(act,boost[i]); return;
+		for(var i = 0; i < boost.length; i++)
+			Actor.boost(act,boost[i]); 
+		return;
 	}
 	
 	act.boost[boost.spd][boost.id] = boost;
@@ -59,7 +63,7 @@ Actor.boost.removeAll = function(act,stringToMatch){
 	stringToMatch = stringToMatch || '';	//'' = match all
 	for(var i in act.boost.list){
 		for(var j in act.boost.list[i].name){
-			if(act.boost.list[i].name[j].name.contains(stringToMatch))
+			if(act.boost.list[i].name[j].name.$contains(stringToMatch))
 				Actor.boost.remove(act,act.boost.list[i].name[j]);
 		}
 	}
@@ -164,7 +168,7 @@ Actor.permBoost.update = function(act){
 	Actor.setFlag(act,'permBoost');
 }
 
-
+})(); //{
 
 
 

@@ -4,14 +4,16 @@
 'use strict';
 var s = loadAPI('v1.0','Qbtt000',{
 	name:'Break Targets',
-	author:'',
-	reward:{"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
+	author:'rc',
+	maxParty:1,
+	thumbnail:true,
+	reward:{"ability":{'Qsystem-player-coldBullet':0.5},"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
 	description:"Find the fastest way to break 10 targets.",
 });
 var m = s.map; var b = s.boss; var g;
 
 /* COMMENT:
-
+	
 */
 
 s.newVariable({
@@ -49,7 +51,7 @@ s.newEvent('_debugSignIn',function(key){	//
 	s.teleport(key,'QfirstTown-east','t6','main');
 });
 s.newEvent('_hint',function(key){	//
-	return "Kill all 10 targets.<br>[$4] = Restart.";
+	return "Kill all 10 targets.<br>" + s.message.input(4) + " = Restart.";
 });
 s.newEvent('_death',function(key){	//
 	s.failQuest(key);
@@ -63,17 +65,17 @@ s.newEvent('_getScoreMod',function(key){	//
 	if(s.get(key,'chrono') < 10*25) return 2;
 	return 1;
 });
-s.newEvent('_abandon',function(key){	//
-	if(s.isInQuestMap(key))
-		s.teleport(key,'QfirstTown-east','t6','main',false);
+s.newEvent('_abandon',function(key){ //
+	s.teleport(key,'QfirstTown-east','t6','main');
+	s.setRespawn(key,'QfirstTown-east','t6','main');
 });
-s.newEvent('_complete',function(key){	//
+s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
 });
 s.newEvent('startGame',function(key){	//
 	s.removeQuestMarker(key,'start');
 	s.message(key,"Break all 10 targets in less than 18 seconds.");
-	s.message(key,"Press [$4] to restart the quest quickly.");
+	s.message(key,"Press " + s.message.input(4) + " to restart the quest quickly.");
 	if(s.isChallengeActive(key,'fireonly')) 
 		s.usePreset(key,'fireonly');
 	else s.usePreset(key,'target');
@@ -101,7 +103,7 @@ s.newEvent('killTarget',function(key){	//
 s.newEvent('endCourse',function(key){	//
 	var time = s.stopChrono(key,'timer');
 	s.set(key,'chrono',time);
-	s.message(key,'Your time: ' + time.frameToChrono());
+	s.message(key,'Your time: ' + s.frameToChrono(time));
 	if(!s.isChallengeActive(key,'fivetimes')){
 		if(time < 25*18)
 			return s.completeQuest(key);

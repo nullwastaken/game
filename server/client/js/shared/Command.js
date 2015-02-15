@@ -1,12 +1,13 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Equip','OptionList','Server','Contribution','ItemList','Highscore','Clan','Challenge','Sign','Social','Message','Main','Dialogue','Quest'],['Command']));
-if(!SERVER) eval('var Command');
+"use strict";
+(function(){ //}
+var Actor = require2('Actor'), Account = require2('Account'), Equip = require2('Equip'), Socket = require2('Socket'), Server = require2('Server'), Contribution = require2('Contribution'), ItemList = require2('ItemList'), Challenge = require2('Challenge'), Sign = require2('Sign'), Message = require2('Message'), Main = require2('Main'), Quest = require2('Quest');
+var Dialog = require4('Dialog'), Pref = require4('Pref'), Song = require4('Song');
+var Command = exports.Command = {};
 
 //quests needed to be loaded first via D b.quest.$keys() for Command.Param.quest
 
-(function(){ //}
-
-Command = exports.Command = function(id,description,help,param,func,clientSide){
+Command.create = function(id,description,help,param,func,clientSide){
 	if(DB[id]) return ERROR(2,'id already taken',id);
 	var tmp = {
 		id:id || ERROR(3,'id missing'),
@@ -63,13 +64,13 @@ Command.init = function(){
 		whiteSpace:'nowrap',
 		padding:'3px',
 		backgroundColor:'white',
-	},function(html,variable){
+	},Dialog.Refresh(function(html){
 		var text = Dialog.chat.getInput();
 		if(text[0] !== '$')	return false;	//setTimeout cuz called before keydown
 		
 		var txt = text.slice(1);
 		for(var i in DB){
-			if(!txt.contains(i)) continue;
+			if(!txt.$contains(i)) continue;
 			var cmd = DB[i];	//a match!
 			var str = cmd.description;
 			for(var j in cmd.param){
@@ -80,7 +81,9 @@ Command.init = function(){
 			return;	
 		}
 		return false;	//no command matches $command
-	});
+	},function(){
+		return Dialog.chat.getInput();
+	}));
 }
 
 //############
@@ -110,12 +113,13 @@ Command.receive.verifyInput = function(d){
 		if(p[i] !== undefined && doc[i].type === 'string'){
 			if(typeof p[i] !== 'string') return 'param' + i + ' is not string'; 
 			
-			if(doc[i].whiteList && !doc[i].whiteList.contains(p[i])) return 'param' + i + ' not part of whiteList';
+			if(doc[i].whiteList && !doc[i].whiteList.$contains(p[i])) return 'param' + i + ' not part of whiteList';
 		}
 	}
 	for(++i;i < doc.length; i++){
-		if(!doc[i].optional) return 'missing non-optional param';
-		if(doc[i].default != null) p[i] = doc[i].default;
+		if(!doc[i].optional) 
+			return 'missing non-optional param';
+		p[i] = doc[i].default;
 	}
 	
 	return d;
@@ -138,7 +142,7 @@ Command.execute = function(func,param){
 	param = param || [];
 	if(!DB[func]) return ERROR(3,'invalid func',func);
 	if(DB[func].clientSide) return DB[func].func.apply(this,param);
-	Socket.emit('Command.execute',Command.Query(func,param));
+	Socket.emit('command',Command.Query(func,param));
 }
 
 
@@ -146,8 +150,17 @@ Command.execute = function(func,param){
 //############
 //############
 
+Command.create('invite','Invite player to party.',true,[ //{
+	Command.Param('string','Username',false),
+],function(key,user){
+	var act = Actor.get(key);
+	var eid = Account.getKeyViaUsername(user);
+	if(!eid) return Message.add(key,'This player doesn\'t exist.');
+	Actor.click.party(act,eid);
+}); //}
+
 //Fl
-Command('fl,add','Add a new Friend to your Friend List',true,[ //{
+Command.create('fl,add','Add a new Friend to your Friend List',true,[ //{
 	Command.Param('string','Username to add',false),
 	Command.Param('string','Nickname',true),
 	Command.Param('string','Comment',true),
@@ -155,114 +168,107 @@ Command('fl,add','Add a new Friend to your Friend List',true,[ //{
 	if(user.length === 0) return;
 	Main.addFriend(Main.get(key),user,nick,comment);
 }); //}
-Command('fl,remove','Remove a Friend',true,[ //{
+Command.create('fl,remove','Remove a Friend',true,[ //{
 	Command.Param('string','Username to remove',false),
 ],function(key,user){
 	Main.removeFriend(Main.get(key),user);
 }); //}
-Command('fl,comment','Change Friend Comment',true,[ //{
+Command.create('fl,comment','Change Friend Comment',true,[ //{
 	Command.Param('string','Username',false),
 	Command.Param('string','Comment',false),
 ],function(key,user,comment){
 	Main.social.changeFriendComment(Main.get(key),user,comment);
 	
 }); //}
-Command('fl,nick','Set Nickname for a friend',true,[ //{
+Command.create('fl,nick','Set Nickname for a friend',true,[ //{
 	Command.Param('string','Username',false),
 	Command.Param('string','Nickname',false),
 ],function(key,user,nick){
 	Main.social.changeFriendNick(Main.get(key),user,nick);
 }); //}
-Command('fl,pm','Change who can PM you right now.',true,[ //{
+Command.create('fl,pm','Change who can PM you right now.',true,[ //{
 	Command.Param('string','Option (on,off or friend)',false,{whiteList:['on','off','friend']}),
 ],function(key,setting){
 	Main.changeStatus(Main.get(key),setting);
 }); //}
-Command('mute',"Mute a player.",true,[ //{
+Command.create('mute',"Mute a player.",true,[ //{
 	Command.Param('string','Username',false),
 ],function(key,user){
-	Main.mutePlayer(Main.get(key),user);
+	Main.question(Main.get(key),function(){
+		Main.mutePlayer(Main.get(key),user);
+		Message.add(key,'To unmute, type $unmute,' + user + '.');
+	},'Are you sure you want to mute "' + user + '"?','boolean');
 }); //}
-Command('unmute',"Unmute a player.",true,[ //{
+Command.create('unmute',"Unmute a player.",true,[ //{
 	Command.Param('string','Username',false),
 ],function(key,user){
 	Main.unmutePlayer(Main.get(key),user);
 }); //}
 
 //Window
-Command('win,bank,click',"Withdraw Items from Bank.",false,[ //{
-	Command.Param.mouse(),
-	Command.Param('number','Slot',false,{max:255}),
-	Command.Param('number','Amount to withdraw',true,{default:1}),
-],function(key,side,slot,amount){
-	var m = Main.get(key);
-	Main.clickBank(m,side,slot,amount);
-}); //}
-
-Command('win,quest,toggleChallenge',"Toggle a Quest Challenge. Only possible before starting the quest.",false,[ //{
+Command.create('win,quest,toggleChallenge',"Toggle a Quest Challenge. Only possible before starting the quest.",false,[ //{
 	Command.Param('string','Challenge Id',false),
 ],function(key,challenge){
 	Challenge.toggle(Challenge.get(challenge),Main.get(key));
 }); //}
-Command('win,quest,start',"Start a quest.",false,[ //{
+Command.create('win,quest,start',"Start a quest.",false,[ //{
 	Command.Param('string','Quest Id',false),
 ],function(key,qid){
 	Main.startQuest(Main.get(key),qid);
 }); //}
-Command('win,quest,abandon',"Abandon a quest.",false,[ //{
+Command.create('win,quest,abandon',"Abandon a quest.",false,[ //{
 	Command.Param('string','Quest Id',false),
 ],function(key,qid){
 	var main = Main.get(key);
 	if(main.quest[qid] && Date.now() - main.quest[qid]._startTime > CST.MIN)
-		if(!Main.quest.hasRatedQuest(main,qid)) 
-			Main.displayQuestRating(main,qid,true);
+		Main.displayQuestRating(main,qid,true);
 			
 	Main.abandonQuest(main);
 }); //}
-Command('win,reputation,add',"Select a Reputation",false,[ //{
+Command.create('win,reputation,add',"Select a Reputation",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
 	Command.Param('number','Y',false,{max:14}),
 	Command.Param('number','X',false,{max:14}),
 ],function(key,num,i,j){	
 	if(Main.getQuestActive(Main.get(key)) !== null) 
-		return Message.add(key,'Finish the quest you\'re doing before modifying your Reputation.');
+		return Message.addPopup(key,'Finish the quest you\'re doing before modifying your Reputation.');
 	Main.reputation.add(Main.get(key),num,i,j);
 }); //}
-Command('win,reputation,clear',"Clear Reputation Grid",false,[ //{
+Command.create('win,reputation,clear',"Clear Reputation Grid",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
-],function(key,num,i,j){
+],function(key,num){
 	var main = Main.get(key);
 	if(Main.getQuestActive(main) !== null) 
-		return Message.add(key,'Finish the quest you\'re doing before modifying your Reputation.');
+		return Message.addPopup(key,'Finish the quest you\'re doing before modifying your Reputation.');
 	Main.question(main,function(){
 		Main.reputation.clearGrid(main,num);
 	},'Are you sure you want to clear the grid?','boolean');
 	
 }); //}
-Command('win,reputation,remove',"Remove a Reputation",false,[ //{
+Command.create('win,reputation,remove',"Remove a Reputation",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
 	Command.Param('number','Y',false,{max:14}),
 	Command.Param('number','X',false,{max:14}),
 ],function(key,num,i,j){
 	if(Main.getQuestActive(Main.get(key)) !== null) 
-		return Message.add(key,'Finish the quest you\'re doing before modifying your Reputation.');
+		return Message.addPopup(key,'Finish the quest you\'re doing before modifying your Reputation.');
 	Main.reputation.remove(Main.get(key),num,i,j);
 }); //}
-Command('win,reputation,page',"Change Active Reputation Page",false,[ //{
+Command.create('win,reputation,page',"Change Active Reputation Page",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
 ],function(key,num){
 	if(Main.getQuestActive(Main.get(key)) !== null) 
-		return Message.add(key,'Finish the quest you\'re doing before modifying your Reputation.');
+		return Message.addPopup(key,'Finish the quest you\'re doing before modifying your Reputation.');
 	Main.reputation.changeActivePage(Main.get(key),num);
 }); //}
 
-Command('win,reputation,converterAdd',"Add Converter",false,[ //{
+Command.create('win,reputation,converterAdd',"Add Converter",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
 	Command.Param('string','Converter Name',false),
 ],function(key,num,name){
 	Main.reputation.addConverter(Main.get(key),num,name);	
 }); //}
-Command('win,reputation,converterRemove',"Add Converter",false,[ //{
+Command.create('win,reputation,converterRemove',"Add Converter",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
 	Command.Param('string','Converter Name',false),
 ],function(key,num,name){
@@ -270,39 +276,95 @@ Command('win,reputation,converterRemove',"Add Converter",false,[ //{
 }); //}
 
 
-Command('win,ability,swap',"Set an Ability to a Key",false,[ //{
+Command.create('win,ability,swap',"Set an Ability to a Key",false,[ //{
 	Command.Param('string','Ability Id',false),
 	Command.Param('number','Key Position',false,{max:5}),
 ],function(key,name,position){
-	Actor.ability.swap(Actor.get(key),name,position,true);
+	Actor.swapAbility(Actor.get(key),name,position,true);
+}); //}
+
+
+Command.create('sendPing','Send Ping',false,[ //{
+	Command.Param('number','Ping',false),
+],function(key,ping){
+	Socket.addPingData(Socket.get(key),ping);
+}); //}
+
+Command.create('setAcceptPartyInvite','Change if you accept party invite or not',false,[ //{
+	Command.Param('boolean','Value',false),
+],function(key,val){
+	Main.get(key).acceptPartyInvite = val;
+	Main.setFlag(Main.get(key),'acceptPartyInvite');
+	Message.add(key,val ? 'You can receive party invitations.' : 'You cannot receive party invitations.');
 }); //}
 
 
 //Tab
-Command('useItem',"Select an option from the Right-Click Option List of an item.",false,[ //{
+Command.create('useItem',"Select an option from the Right-Click Option List of an item.",false,[ //{
 	Command.Param('string','Id',false),
 	Command.Param('number','Option Position',false),
 ],function(key,id,slot){
 	Main.useItem(Main.get(key),id,slot);
 }); //}
 
-Command('transferInvBank',"Transfer items from Inventory to Bank.",false,[ //{
+Command.create('transferInvBank',"Transfer items from Inventory to Bank.",false,[ //{
 	Command.Param('string','Item Id',false),
 	Command.Param('number','Amount',true,{default:1,min:1}),
 ],function(key,id,amount){
 	Main.transferInvBank(Main.get(key),id,amount);
 }); //}
 
-Command('transferBankInv',"Transfer items from Bank to Inventory.",false,[ //{
+Command.create('transferBankInv',"Transfer items from Bank to Inventory.",false,[ //{
 	Command.Param('string','Item Id',false),
 	Command.Param('number','Amount',true,{default:1,min:1}),
 ],function(key,id,amount){
 	Main.transferBankInv(Main.get(key),id,amount);
 }); //}
 
+
+Command.create('transferInvBankAll',"Transfer all items from Inventory to Bank.",false,[ //{
+],function(key,id,amount){
+	Main.transferInvBankAll(Main.get(key));
+}); //}
+
+
+Command.create('transferInvTrade',"Transfer items from Inventory to Trade.",false,[ //{
+	Command.Param('string','Item Id',false),
+	Command.Param('number','Amount',true,{default:1,min:1}),
+],function(key,id,amount){
+	Main.transferInvTrade(Main.get(key),id,amount);
+}); //}
+
+Command.create('transferTradeInv',"Transfer items from Bank to Inventory.",false,[ //{
+	Command.Param('string','Item Id',false),
+	Command.Param('number','Amount',true,{default:1,min:1}),
+],function(key,id,amount){
+	Main.transferTradeInv(Main.get(key),id,amount);
+}); //}
+
+Command.create('tradeAcceptSelf',"Change if you accept the trade.",false,[ //{
+	Command.Param('boolean','New State',false),
+],function(key,val){
+	Main.setTradeAcceptSelf(Main.get(key),val);
+}); //}
+
+Command.create('tradeCloseWin',"Close trade window.",false,[ //{
+],function(key){
+	Main.stopTrade(Main.get(key));
+}); //}
+
+Command.create('questButton',"Click quest button.",false,[ //{
+	Command.Param('string','Button Id',false),
+],function(key,str){
+	var main = Main.get(key);
+	if(!main.questActive) return;
+	Quest.get(main.questActive).event._button(key,str);
+}); //}
+
+
 //############
 
-Command('equipBound',"Bound an equip to you.",false,[ //{
+Command.create('equipBound',"Bound an equip to you.",false,[ //{
 	Command.Param('string','Equip Id',false),
 ],function(key,id){
 	Main.question(Main.get(key),function(){
@@ -311,7 +373,7 @@ Command('equipBound',"Bound an equip to you.",false,[ //{
 	
 }); //}
 
-Command('equipUpgrade',"Upgrade an equip.",false,[ //{
+Command.create('equipUpgrade',"Upgrade an equip.",false,[ //{
 	Command.Param('string','Equip Id',false),
 ],function(key,id){
 	var main = Main.get(key);
@@ -328,69 +390,94 @@ Command('equipUpgrade',"Upgrade an equip.",false,[ //{
 	
 }); //}
 
-Command('equipMastery',"Improve an equip.",false,[ //{
+Command.create('equipMastery',"Improve an equip.",false,[ //{
 	Command.Param('string','Equip Id',false),
-],function(key,id){
-	Main.question(Main.get(key),function(key,num){
-		num = +num;
-		if(isNaN(num)) return Message.add(key,'Not a number');
-		Equip.addMasteryExp(key,id,num);
-	},'How many points do you want to invest?','number');
-	
+],function(key,eid){
+	Equip.addMasteryExp.click(key,eid);	
 }); //}
 
-Command('equipSalvage',"Salvage an equip.",false,[ //{
+Command.create('equipSalvage',"Salvage an equip.",false,[ //{
 	Command.Param('string','Equip Id',false),
 ],function(key,id){
 	Equip.salvage(key,id);	
 }); //}
 
 
-
 //############
 
-Command('lvlup',"Level Up",false,[ //{
+Command.create('enableMouseForMove',"Move Using the Mouse",false,[ //{
+	Command.Param('boolean','Is Active?',false),
+],function(key,active){
+	Actor.get(key).useMouseForMove = !!active;
+}); //}
+
+
+Command.create('respawnSelf',"Revive self.",false,[ //{
+],function(key){
+	var act = Actor.get(key);
+	if(act.dead)
+		Actor.onCommandRespawn(act);
+}); //}
+
+Command.create('lvlup',"Level Up",false,[ //{
 ],function(key){
 	Actor.levelUp(Actor.get(key));
 }); //}
 
+Command.create('enablePvp',"Toggle PvP",false,[ //{
+	Command.Param('boolean','Enable',false),
+],function(key,bool){
+	if(Main.getQuestActive(Main.get(key)))
+		return Message.addPopup(key,'You can\'t toggle PvP while doing a quest.');
+	Actor.enablePvp(Actor.get(key),bool);
+}); //}
 
-Command('tab,removeEquip',"Remove a piece of equipment",false,[ //{
+Command.create('setLookingFor',"Set Looking For",false,[ //{
+	Command.Param('string','Looking For',false),
+	Command.Param('string','Comment',true),
+],function(key,str,comment){
+	var main = Main.get(key);
+	main.lookingFor = Main.LookingFor(str,comment);
+	Main.setFlag(main,'lookingFor');
+}); //}
+
+
+Command.create('tab,removeEquip',"Remove a piece of equipment",false,[ //{
 	Command.Param('string','Equipement Piece',false,{whiteList:CST.equip.piece}),
 ],function(key,piece){
 	Actor.removeEquip(Actor.get(key),piece,false);
 }); //}
 
 /*
-Command('cc,create',"Create a new Clan",true,[ //{
+Command.create('cc,create',"Create a new Clan",true,[ //{
 	Command.Param('string','Clan Name',false),
 ],function(key,name){
 	Clan.creation(key,name);
 }); //}
-Command('cc,enter',"Enter a Clan",true,[ //{
+Command.create('cc,enter',"Enter a Clan",true,[ //{
 	Command.Param('string','Clan Name',false),
 ],function(key,name){
 	Clan.enter(key,name);
 }); //}
 
-Command('cc,leave',"Leave a Clan",true,[ //{
+Command.create('cc,leave',"Leave a Clan",true,[ //{
 	Command.Param('string','Clan Name',false),
 ],function(key,name){
 	Clan.leave(key,name);
 }); //}
 
-Command('cc,leaveAll',"Leave all Clans",true,[ //{
+Command.create('cc,leaveAll',"Leave all Clans",true,[ //{
 ],function(key){
 	Clan.leave(key,'ALL');
 }); //}
 */
 
-Command('playerlist',"Get list of player online.",true,[ //{
+Command.create('playerlist',"Get list of player online.",true,[ //{
 ],function(key){	//to improve, save the list every 1 sec
 	Message.add(key,Server.getPlayerInfo());
 }); //}
 
-Command('chrono,remove',"Remove a stopped chronometer.",false,[ //{
+Command.create('chrono,remove',"Remove a stopped chronometer.",false,[ //{
 	Command.Param('string','Chrono Name',false),
 ],function(key,name){
 	var main = Main.get(key);
@@ -398,21 +485,25 @@ Command('chrono,remove',"Remove a stopped chronometer.",false,[ //{
 		Main.chrono.remove(main,name);
 }); //}
 
-Command('logout',"Safe way to log out of the game",false,[ //{
+Command.create('logout',"Safe way to log out of the game",false,[ //{
 ],function(key){
 	Sign.off(key,"You safely quit the game.");
 }); //}
 
-Command('hometele',"Abandon active quest and teleport to Town. Useful if stuck.",false,[ //{
+Command.create('hometele',"Abandon active quest and teleport to Town. Useful if stuck.",false,[ //{
 ],function(key){
-	Main.question(Main.get(key),function(){
+	var main = Main.get(key);
+	var str = Main.getQuestActive(main) 
+		? 'Are you sure you want to abandon active quest and teleport to town?'
+		: 'Teleport to town?';
+	Main.question(main,function(){
 		if(Actor.teleport.town(Actor.get(key),true,false) !== true) return;
-		Main.abandonQuest(Main.get(key));
+		Main.abandonQuest(main);
 		Message.add(key,'You were teleported to first town.');		
-	},'Are you sure you want to abandon active quest and teleport to town?','boolean');
+	},str,'boolean');
 }); //}
 
-Command('dialogue,option',"Choose a dialogue option.",false,[ //{
+Command.create('dialogue,option',"Choose a dialogue option.",false,[ //{
 	Command.Param('number','Dialogue Option #',false,{min:-1}),
 ],function(key,slot){
 	var main = Main.get(key);
@@ -422,40 +513,45 @@ Command('dialogue,option',"Choose a dialogue option.",false,[ //{
 	Main.dialogue.selectOption(main,main.dialogue.node.option[slot]);
 }); //}
 
-Command('actorOptionList',"Select an option from the Right-Click Option List of an actor.",false,[ //{
+Command.create('actorOptionList',"Select an option from the Right-Click Option List of an actor.",false,[ //{
 	Command.Param('string','Id',false),
 	Command.Param('number','Option Position',false),
 ],function(key,id,slot){
 	Actor.click.optionList(Actor.get(key),id,slot);
 }); //}
 
-Command('party,join',"Join a party.",true,[ //{
-	Command.Param('string','Party Name (Usually Username)',false),
-],function(key,name){
-	if(name.contains('@') || name.contains('!')) 
-		return Message.add(key,"You can't join this party.");	//reserved
-	Main.changeParty(Main.get(key),name);
+Command.create('party,join',"Join a party.",true,[ //{
+
+],function(key){
+	if(Main.getQuestActive(Main.get(key)))
+		return Message.addPopup(key,"You can't change your party while doing a quest.");
+	
+	Main.question(Main.get(key),function(key,name){
+		if(name.$contains('@') || name.$contains('!') || name.$contains('$')) 
+			return Message.addPopup(key,"You can't join this party.");	//reserved
+		Main.changeParty(Main.get(key),name);
+	},'What party would you like to join?','string');	
 }); //}
 
-Command('party,leave',"Leave your party.",true,[ //{
+Command.create('party,leave',"Leave your party.",true,[ //{
 ],function(key){
 	Message.add(key, 'You left your party.');
 	Main.changeParty(Main.get(key),Math.randomId());
 }); //}
 
-Command('pvp',"Teleport/Quit to PvP Zone.",true,[ //{
+Command.create('pvp',"Teleport/Quit to PvP Zone.",true,[ //{
 ],function(key){
 	return;
 	/*
 	var act = Actor.get(key);
-	if(act.map.contains('pvpF4A')){	//TOFIX
+	if(act.map.$contains('pvpF4A')){	//TOFIX
 		Actor.teleport(act,act.respawnLoc.safe);
 		Message.add(key,"You can no longer attack or be attacked by other players.");
 	}
 	*/
 }); //}
 
-Command('questRating',"Rate a quest.",false,[ //{
+Command.create('questRating',"Rate a quest.",false,[ //{
 	Command.Param('string','Quest Id',false),
 	Command.Param('number','Rating',false,{min:1,max:3}),
 	Command.Param('string','Comment',true),
@@ -464,40 +560,40 @@ Command('questRating',"Rate a quest.",false,[ //{
 	Quest.rate(Main.get(key),quest,rating,text,abandonReason);
 }); //}
 
-Command('reward,purchase',"Purchase a Contribution Reward",false,[ //{
+Command.create('reward,purchase',"Purchase a Contribution Reward",false,[ //{
 	Command.Param('string','Type',false),
 	Command.Param('string','Param',false),
 ],function(key,type,param){
 	Contribution.purchase(key,type,param);
 }); //}
 
-Command('reward,select',"Select a Contribution Reward",false,[ //{
+Command.create('reward,select',"Select a Contribution Reward",false,[ //{
 	Command.Param('string','Type',false),
 	Command.Param('string','Param',false),
 ],function(key,type,param){
 	Contribution.select(key,type,param);
 }); //}
 
-Command('reward,reset',"Reset a Contribution Reward",false,[ //{
+Command.create('reward,reset',"Reset a Contribution Reward",false,[ //{
 	Command.Param('string','Type',false),
 ],function(key,type){
 	Contribution.reset(key,type);
 }); //}
 
-Command('reward,change',"Change the social media accounts linked with your Raining Chain account.",false,[ //{
+Command.create('reward,change',"Change the social media accounts linked with your Raining Chain account.",false,[ //{
 	Command.Param('string','Website',false,{whiteList:['reddit','youtube','twitch','twitter']}),
 	Command.Param('string','Account Name',false),
 ],function(key,account,name){
 	Contribution.change(key,account,name);
 }); //}
 
-Command('reward,updateSocialMedia',"Update Social Media Contribution Points",false,[ //{
+Command.create('reward,updateSocialMedia',"Update Social Media Contribution Points",false,[ //{
 	Command.Param('string','Website',false,{whiteList:['reddit','youtube','twitch','twitter']}),
 ],function(key,account){
 	Contribution.updateSocialMedia(key,account);
 }); //}
 
-Command('help',"Show List of Commands.",true,[ //{
+Command.create('help',"Show List of Commands.",true,[ //{
 	Command.Param('number','Show ALL Options (Not Recommended)',true),
 ],function(lvl){
 	lvl = typeof lvl === 'undefined' ? lvl : 1;
@@ -509,29 +605,24 @@ Command('help',"Show List of Commands.",true,[ //{
 	}
 },true); //}
 
-Command('reward,open',"Open Contribution Window",false,[ //{
+Command.create('reward,open',"Open Contribution Window",false,[ //{
 ],function(key){
 	//$( "#contribution" ).d ialog('open');
 },true); //}
 
-Command('mod',"Open the Mod Window.",true,[ //{
-],function(){
-	readFiles.open();
-},true); //}
-
-Command('pref',"Change a Preference.",true,[ //{
+Command.create('pref',"Change a Preference.",true,[ //{
 	Command.Param('string','Pref Id',false),
 	Command.Param('number','New Pref Value',false),
 ],function(name,value){
 	Pref.change(name,value);
 },true); //}
 
-Command('music,next',"Skip this song.",true,[ //{
+Command.create('music,next',"Skip this song.",true,[ //{
 ],function(){
 	Song.ended();
 },true); //}
 
-Command('music,info',"Get info about song being played.",true,[ //{
+Command.create('music,info',"Get info about song being played.",true,[ //{
 ],function(){
 	Message.add(key,Song.getCurrentSongInfo());
 },true); //}

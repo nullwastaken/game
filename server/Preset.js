@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Main']));
-
-var Preset = exports.Preset = function(quest,id,ability,equip,noReputation,pvp,noAttack,noCombat){
+"use strict";
+var Preset = exports.Preset = {};
+Preset.create = function(quest,id,ability,equip,noReputation,pvp,noAttack,noCombat){
 	var tmp = {
 		quest:quest || '',
 		id:id || '',
@@ -21,18 +21,8 @@ var DB = Preset.DB = {};
 Preset.get = function(id){
 	return DB[id];
 }
-Preset.Ability = function(ability){
-	for(var i = ability.length; i < 6; i++)
-		ability.push('');
-	return ability;
-}
-Preset.Equip = function(equip){
-	for(var i in CST.equip.piece){
-		var p = CST.equip.piece[i];
-		equip[p] = equip[p] || '';
-	}
-}
-
+//for ability and equip constructor, check QuestAPI_new
+//Actor.updatePreset
 
 
 

@@ -1,11 +1,11 @@
-eval(loadDependency(["Quest","Actor","Main"]));
+var Quest = require2('Quest'), Actor = require2('Actor'), Main = require2('Main');
 //11/27/2014 11:14 AM
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 
 var s = loadAPI('v1.0','Qhighscore',{
 	name:'Global Highscore',
-	author:'',
+	author:'rc',
 	showInTab:false,
 	dailyTask:false,
 	globalHighscore:true,
@@ -37,16 +37,21 @@ s.newHighscore('challengeCount',"Challenge Count","Most Challenges Completed",'d
 	
 	return sum;
 });
-s.newHighscore('reputationCount',"Reputation Count","Most Reputation Points",'descending',function(key){
-	return s.getReputationPt(key).r(2);
+s.newHighscore('level',"Level","Highest Level",'descending',function(key){
+	return s.getLevel(key);
 });
 s.newHighscore('questScoreSum',"Sum Quest Score","Sum of All Quest Scores",'descending',function(key){
 	var mq = Main.get(key).quest;
 	var sum = 0;
 	for(var i in mq)
-		sum += mq[i]._rewardScore || 0;
+		sum += Math.min(mq[i]._rewardScore || 0,10000);
 		
 	return sum;
 });
+
+
+
+
+
 
 s.exports(exports);

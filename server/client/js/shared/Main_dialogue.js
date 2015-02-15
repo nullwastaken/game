@@ -1,6 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Main','Party','Message','Collision','Actor','Dialogue']));
-
+"use strict";
+(function(){ //}
+var Main = require2('Main'), Party = require2('Party'), Collision = require2('Collision'), Actor = require2('Actor'), Dialogue = require2('Dialogue');
+var Main = require3('Main');
 Main.Dialogue = function(node,face,x,y){
 	return {
 		node:node || ERROR(3,'node missing'),
@@ -29,11 +31,15 @@ Main.dialogue.end = function(main){
 }
 
 Main.dialogue.selectOption = function(main,option){
-	if(main.questActive && !Party.isLeader(main.id))
-		return Message.addPopup(main.id,'Only the leader can choose dialogue options.');
-	if(option.next)
-		Main.dialogue.start(main,{quest:option.quest,npc:option.npc,node:option.next});
-	else Main.dialogue.end(main);
+	//if(main.questActive && !Party.isLeader(main.id))
+	//	return Message.addPopup(main.id,'Only the leader can choose dialogue options.');
+	
+	Party.forEach(Main.getParty(main),function(key2){
+		var main2 = Main.get(key2);
+		if(option.next)
+			Main.dialogue.start(main2,{quest:option.quest,npc:option.npc,node:option.next});
+		else Main.dialogue.end(main2);
+	});
 	
 	if(option.event)	//after end so can trigger another dialogue
 		option.event(main.id);
@@ -49,4 +55,5 @@ Main.dialogue.loop = function(main){
 	}
 }
 
+})(); //{
 

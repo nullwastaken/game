@@ -1,7 +1,10 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Boost','Actor','Strike','Sign','MapModel','Drop','Bullet','ActiveList','Collision','Map','ActorGroup']));
+"use strict";
+var Actor = require2('Actor'), Strike = require2('Strike'), Sign = require2('Sign'), MapModel = require2('MapModel'), Drop = require2('Drop'), Bullet = require2('Bullet'), ActiveList = require2('ActiveList'), Collision = require2('Collision'), Map = require2('Map'), ActorGroup = require2('ActorGroup');
 
-var Map = exports.Map = function(namemodel,version,creatorkey){	//create instance of map. version is usually the player name
+var BANK_DIST = 400;
+var Map = exports.Map = {};
+Map.create = function(namemodel,version,creatorkey){	//create instance of map. version is usually the player name
 	var tmp = {
 		id:'',
 		lvl:0,
@@ -9,6 +12,7 @@ var Map = exports.Map = function(namemodel,version,creatorkey){	//create instanc
 		model:'',
 		version:'',
 		timer:5*60*1000/25,
+		bankSpot:[],
 		list:{entity:{},player:{},bullet:{},npc:{},anim:{},actor:{},drop:{},group:{}},		//acts like all but for faster activeList and collisionRect
 	};
 	tmp.version = version || 'MAIN';
@@ -48,9 +52,9 @@ Map.getVersion = function(name){
 }
 
 Map.getInstanceType = function(name){
-	if(name.contains('@MAIN')) return 'public';
-	if(name.contains('@@')) return 'solo';
-	if(name.contains('@')) return 'party';
+	if(name.$contains('@MAIN')) return 'public';
+	if(name.$contains('@@')) return 'solo';
+	if(name.$contains('@')) return 'party';
 	else return 'public';
 }
 
@@ -111,7 +115,7 @@ Map.enter = function(act,force){
 	var newmap = LIST[map];
 	if(!newmap){
 		if(!force) return ERROR(3,'map dont exist',map);
-		newmap = Map(Map.getModel(map),Map.getVersion(map),act.id);
+		newmap = Map.create(Map.getModel(map),Map.getVersion(map),act.id);
 	}
 	Map.addToEntityList(newmap,act.type,act.id,true);
 	
@@ -232,6 +236,33 @@ Map.getActorInMap = function(map){
 Map.get = function(id){
 	return LIST[id] || null;
 }
+
+
+
+
+Map.addBankSpot = function(spot){
+	var map = Map.get(spot.map);
+	map.bankSpot.push(spot);
+}
+
+
+
+Map.isNearBank = function(map,pt){
+	for(var i in map.bankSpot){
+		if(Collision.getDistancePtPt(pt,map.bankSpot[i]) < BANK_DIST)
+			return true;
+	}
+	return false;
+}
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,10 +1,10 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Sprite','Actor'],['ActorModel']));
-if(SERVER) eval('var ActorModel;');
-
+"use strict";
 (function(){ //}
-	
-ActorModel = exports.ActorModel = function(id,info){
+var Sprite = require2('Sprite'), Actor = require2('Actor');
+
+var ActorModel = exports.ActorModel = {};
+ActorModel.create = function(id,info){
 	var tmp = {
 		modelId:id,
 		alwaysActive:0,
@@ -27,14 +27,15 @@ ActorModel = exports.ActorModel = function(id,info){
 		name:"Goblin",     //visible name
 		minimapIcon:'color.red',     //icon used for minimap
 		quest:'',
-		sprite:Sprite(Actor.DEFAULT_SPRITENAME,1),
+		sprite:Sprite.create(Actor.DEFAULT_SPRITENAME,1),
 		moveRange:Actor.MoveRange(),
-		useUpdateInput:1, 		//generate its own input	(ex: pushable dont but still move)
-		reflect:CST.element.template(0), //% reflected
+		useUpdateInput:true, 		//generate its own input	(ex: pushable dont but still move)
+		useMouseForMove:false,
 		nevercombat:0,
 		boss:'',
 		ability:Actor.Ability(),
 		
+		preventStagger:false,
 		globalDef:1,
 		globalDmg:1,   //global modifier
 		aim:0,       //difference between mouse and actually bullet direction
@@ -42,9 +43,10 @@ ActorModel = exports.ActorModel = function(id,info){
 		ghost:0,
 		nevermove:0,
 		maxSpd:CST.NPCSPD,	
-		acc:12,
+		acc:CST.PLAYERACC,
 		immune:{},
 		abilityAi:Actor.AbilityAi(),	
+		interactionMaxRange:150,
 		
 		waypoint:null, 		//right click:setRespawn
 		combat:1,
@@ -52,6 +54,7 @@ ActorModel = exports.ActorModel = function(id,info){
 		damagedIf:'true',
 		targetIf:'player',  //condition used by monsters to find their target. check targetIfList
 		statusResist:Actor.StatusResist(),
+		pvpEnabled:false,
 		
 		//BAD
 		combatContext:Actor.CombatContext(),		//only there cuz need it to access ability... -.-
@@ -70,18 +73,22 @@ ActorModel = exports.ActorModel = function(id,info){
 var DB = ActorModel.DB ={};
 
 ActorModel.init = function(){
-	DB['player'] = ActorModel('player',{
+	DB['player'] = ActorModel.create('player',{
 		type:"player",
+		preventStagger:true,
 		combatType:'player',
 		damageIf:'npc',
+		damagedIf:'npc',
 		targetIf:'npc',	//important for summon
 		awareNpc:1,
 		alwaysActive:1,
 		minimapIcon:'color.yellow',
 		pickRadius:250,
 		useUpdateInput:false,
-		maxSpd:CST.NPCSPD*1.8,
+		useMouseForMove:false,
+		maxSpd:CST.PLAYERSPD,
 		friction:CST.FRICTION,
+		acc:CST.PLAYERACC,
 	});
 }
 ActorModel.get = function(id){
@@ -91,3 +98,4 @@ ActorModel.get = function(id){
 
 
 })();
+

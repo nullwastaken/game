@@ -1,9 +1,13 @@
+//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
 (function(){ //}
+var Main = require4('Main'), MapModel = require4('MapModel'), Actor = require4('Actor'), Img = require4('Img'), Collision = require4('Collision'), Command = require4('Command');
+var Dialog = require3('Dialog');
 
 Dialog.UI('minimap',{
 	position:'absolute',
 	top:0,
-},function(html,variable){
+},Dialog.Refresh(function(html,variable){
 	html.css({
 		left:CST.WIDTH - CST.WIDTH/Main.getPref(main,'mapRatio'),
 		width:CST.WIDTH/Main.getPref(main,'mapRatio'),
@@ -24,20 +28,17 @@ Dialog.UI('minimap',{
 			id:'minimapCanvas'
 		});
 	html.append(canvas);
-	
 	variable.ctx = canvas[0].getContext('2d');
-	
-	
 },function(){
 	return Main.getPref(main,'mapRatio');
-},3,function(html,variable){	//loop
+},3,null,function(html,variable){	//loop
 	if(main.hudState.minimap === Main.hudState.INVISIBLE){
 		html.hide();
 	} else {
 		html.show();
 		Dialog.UI.minimap(variable.ctx);
 	}
-});
+}));
 
 
 Dialog.UI.minimap = function (ctx){
@@ -68,7 +69,7 @@ Dialog.UI.minimap.icon = function(ctx){
 		var numY = cy+list[i].vy/Dialog.UI.minimap.ZOOM;
 		
 		var size = list[i].size;
-		Img.drawIcon(ctx,list[i].icon,numX-size/2,numY-size/2,size);
+		Img.drawIcon(ctx,list[i].icon,size,numX-size/2,numY-size/2);
 	}
 	
 	//quest marker
@@ -77,7 +78,7 @@ Dialog.UI.minimap.icon = function(ctx){
 		var numX = (cx+qm[i].vx/Dialog.UI.minimap.ZOOM).mm(0,CST.WIDTH/Main.getPref(main,'mapRatio'));
 		var numY = (cy+qm[i].vy/Dialog.UI.minimap.ZOOM).mm(0,CST.HEIGHT/Main.getPref(main,'mapRatio'));
 		var size = qm[i].size;
-		Img.drawIcon(ctx,qm[i].icon,numX-size/2,numY-size/2,size);
+		Img.drawIcon(ctx,qm[i].icon,size,numX-size/2,numY-size/2);
 	}
 	
 	
@@ -103,7 +104,7 @@ Dialog.UI('minimapBelow',{
 	backgroundColor:"rgba(0,0,0,0.5)",
 	border:"2px solid black",
 	whiteSpace:'nowrap',
-},function(html){
+},Dialog.Refresh(function(html){
 	if(main.hudState.minimap === Main.hudState.INVISIBLE){
 		html.hide();
 		return null;
@@ -135,14 +136,14 @@ Dialog.UI('minimapBelow',{
 	html.append(MapModel.getCurrent().name);	
 },function(){
 	return '' + Main.getPref(main,'mapRatio') + MapModel.getCurrent().name + main.hudState.minimap;
-},3);
+},3));
 
 Dialog.UI('hint',{
 	position:'absolute',
 	height:25,
 	color:'white',
 	textShadow:'1px 1px 0 #000'
-},function(html){
+},Dialog.Refresh(function(html){
 	if(main.hudState.minimap === Main.hudState.INVISIBLE) return;
 	
 	html.css({
@@ -164,7 +165,7 @@ Dialog.UI('hint',{
 	
 },function(){
 	return '' + Main.getPref(main,'mapRatio') + main.questHint + main.hudState.minimap + main.hudState.questHint;
-},3);
+},3));
 
 
 Dialog.UI('quitGame',{
@@ -172,15 +173,15 @@ Dialog.UI('quitGame',{
 	top:0,
 	left:CST.WIDTH-18,
 	zIndex:Dialog.ZINDEX.HIGH,
-},function(html){
-	var el = Img.drawIcon.html('system.close',18,"Shift-Left Click to safely leave the game.",null,null,0.7);
+},Dialog.Refresh(function(html){
+	var el = Img.drawIcon.html('system.close',18,"Shift-Left Click to safely leave the game.",1);
 	el.click(function(e){
 		if(e.shiftKey)
 			Command.execute('logout');
 	});
 	html.append(el);
 	
-},null,10000);
+},null,10000));
 	
 	
 })();

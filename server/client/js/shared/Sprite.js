@@ -1,48 +1,56 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['ActiveList','Actor','SpriteModel'],['Sprite']));
+"use strict";
+(function(){ //}
+var ActiveList = require2('ActiveList'), Actor = require2('Actor'), SpriteModel = require2('SpriteModel');
+var Collision = require4('Collision'), Main = require4('Main'), ClientPrediction = require4('ClientPrediction'), Input = require4('Input');
 
-
-//TODO: Sprite first argument is sprite
-var Sprite = exports.Sprite = function(name,sizeMod){
+var Sprite = exports.Sprite = {};
+Sprite.create = function(name,sizeMod,actorType){
+	var model = SpriteModel.get(name);
+	if(!model) return ERROR(4,'no model for name',name);
+	
 	var s = {
-    	name:'mace',
+    	name:name,
 		anim:"walk",		//on SERVER: normally null. change for 1 frame when attack
     	oldAnim:"walk",		//client stuff
-		sizeMod : 1,
-    	startX : 0,
-    	timer : 0,
-		alpha: 1,
-		dead: 0,			//used to change alpha
+		sizeMod:sizeMod || 1,
+    	startX: 0,
+    	timer: 0,
+		alpha:1,
+		hitBox:null,	//set later
+		bumperBox:null,
+		dead: false,			//used to change alpha
 		normal:'mace',		//default appearance, contribution reward
 	};
 	s.name = name;
 	s.sizeMod = sizeMod || 1;
-	var model = SpriteModel.get(name);
-	if(!model) return ERROR(4,'no model for name',name);
 	s.anim = s.oldAnim = model.defaultAnim;
+	
+	if(SERVER || actorType !== 'bullet')	//idk
+		Sprite.updateBumper(s);
+	
 	return s;
 };
 
-Sprite.change = function(act,info){
-    if(!act || !act.sprite) return ERROR(5,'no act or no sprite');
+Sprite.change = function(sprite,info){
+    if(!sprite) return ERROR(5,'no act or no sprite');
 
 	if(info.name){
-		if(info.name === 'normal')  act.sprite.name = act.sprite.normal;
-		else act.sprite.name = info.name;
+		if(info.name === 'normal')  sprite.name = sprite.normal;
+		else sprite.name = info.name;
 	}
-	act.sprite.sizeMod = info.sizeMod || act.sprite.sizeMod;
+	sprite.sizeMod = info.sizeMod || sprite.sizeMod;
 		
-	Sprite.updateBumper(act);
+	Sprite.updateBumper(sprite);
 }
 
-Sprite.updateBumper = function(act){		//server only
+Sprite.updateBumper = function(sprite){
 	//Set the Sprite Bumper Box to fit the sizeMod
-	var model = SpriteModel.get(act.sprite.name.split(',')[0]);
-	if(!model) return ERROR(4,'no sprite model',act.sprite.name);
+	var model = SpriteModel.get(sprite.name.split(',')[0]);
+	if(!model) return ERROR(4,'no sprite model',sprite.name);
 	
-	act.sprite.hitBox = Sprite.resizeBumper(Tk.deepClone(model.hitBox),act.sprite.sizeMod * model.size);
-	act.sprite.bumperBox = Sprite.resizeBumper(Tk.deepClone(model.bumperBox),act.sprite.sizeMod * model.size);
-		
+	sprite.hitBox = Sprite.resizeBumper(Tk.deepClone(model.hitBox),sprite.sizeMod * model.size);
+	sprite.bumperBox = Sprite.resizeBumper(Tk.deepClone(model.bumperBox),sprite.sizeMod * model.size);
 }
 
 Sprite.updateAnim = function (act){	//client side only
@@ -51,7 +59,7 @@ Sprite.updateAnim = function (act){	//client side only
 	
 	if(act.sprite.animOld !== act.sprite.anim){	//otherwise, animation can be cut if timer for walk is high 
 		act.sprite.animOld = act.sprite.anim;
-		Sprite.change(act,{'anim':act.sprite.anim});
+		Sprite.change(act.sprite,{'anim':act.sprite.anim});
 	}
 	var animFromDb = dsp.anim[act.sprite.anim];	
 	if(!animFromDb) return ERROR(4,"sprite anim dont exist",act.sprite);
@@ -65,7 +73,7 @@ Sprite.updateAnim = function (act){	//client side only
 	act.sprite.timer += animFromDb.spd * mod;	
 	act.sprite.startX = Math.floor(act.sprite.timer);
 	if(act.sprite.startX > animFromDb.frame-1){
-		Sprite.changeAnim(act,animFromDb.next);
+		Sprite.changeAnim(act.sprite,animFromDb.next);
 	}
 	if(act.sprite.dead){
 		act.sprite.alpha -= act.sprite.dead;
@@ -75,10 +83,10 @@ Sprite.updateAnim = function (act){	//client side only
 	
 }
 
-Sprite.changeAnim = function(act,anim){
-	act.sprite.anim = anim;
-	act.sprite.startX = 0;
-	act.sprite.timer = 0;
+Sprite.changeAnim = function(sprite,anim){
+	sprite.anim = anim;
+	sprite.startX = 0;
+	sprite.timer = 0;
 }
 
 
@@ -92,12 +100,12 @@ Sprite.resizeBumper = function(bumperBox,size){
 Sprite.draw = function(ctx,act){	//also does position update calc, client prediction //BAD hardcoded border
 	var list = act.sprite.name.split(',');
 
-	for(var i in list){
+	var underMouse = false;
+	for(var i = 0; i < list.length; i++){
 		var model = SpriteModel.get(list[i]);
 		
 		var image = SpriteModel.getImage(model,act.spriteFilter);
 		if(!image) continue;
-		
 		
 		var animFromDb = model.anim[act.sprite.anim];
 		
@@ -117,7 +125,6 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 		var posX = (CST.WIDTH2 - player.x) + act.x + offsetX;
 		var posY = (CST.HEIGHT2 - player.y) + act.y + offsetY;
 		
-		var underMouse = false;
 		if(act.type !== 'bullet' && act !== player){
 			if(Collision.testMouseRect(key,{x:posX- sizeOffX,y:posY- sizeOffY,width:sizeOffX*2,height:sizeOffY*2}))
 				underMouse = true;
@@ -128,7 +135,6 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 				var filter = Main.getPref(main,'strikeTarget') === 0 && act.withinStrikeRange ? 'allRed' : 'allBlack';
 				var black = SpriteModel.getImage(model,{filter:filter});
 				if(!black) continue;
-				var border = 2 + Math.floor(animFromDb.sizeX/10);
 				
 				ctx.drawImage(black, 
 					startX,Math.floor(startY+1),	//bad way to fix random line on top of player
@@ -171,12 +177,17 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 	if(underMouse && act.context){
 		return act.context;
 	}
-	
-	
+	return '';
 }
 
-Sprite.getMoveAngle = function(act){
-	if(act === player && Input.state.ability.toString() !== '0,0,0,0,0,0'){
+
+Sprite.getMoveAngle = function(act){	//moveAngle
+	if(ClientPrediction.isActive() && act === player){	//TEMP
+		//check Actor.loop.updatePosition.player
+		return act.moveAngle;
+	}
+	
+	if(act === player && Input.getState('ability').toString() !== '0,0,0,0,0,0'){	//using ability
 		return act.angle;
 	}
 	if(Math.abs(act.spdY) < 0.1 && Math.abs(act.spdX) < 0.1) 
@@ -184,6 +195,6 @@ Sprite.getMoveAngle = function(act){
 				
 	return Tk.atan2(act.spdY*1.2,act.spdX);	//+0.1 otherwise change all the time when moving diagonal
 }
-
+})(); //{
 
 

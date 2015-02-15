@@ -1,35 +1,51 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Main','Bullet','Strike','Sign','Map','Drop','Debug','Server','Collision'],['ActiveList']));
-if(SERVER) eval('var ActiveList;');
+"use strict";
 (function(){ //}
+var Actor = require2('Actor'), Bullet = require2('Bullet'), Strike = require2('Strike'), Sign = require2('Sign'), Map = require2('Map'), Drop = require2('Drop'), Collision = require2('Collision');
+var ActiveList = exports.ActiveList = {};	//Actor.loop.activeList is where the update happens
+
 //activelist used: boss, target, mapMod, chat, button, send
 //bullet: Collision.bulletActor, 
 
-ActiveList = exports.ActiveList = {};	//Actor.loop.activeList is where the update happens
 var LIST = ActiveList.LIST = {};
-ActiveList.test = function(act,obj){	
+ActiveList.test = function(act,obj){
+	try{
+		return ActiveList.test.main(act,obj);
+	} catch(err){ 
+		ERROR.err(3,err); 
+		return false;
+	}
+}
+ActiveList.test.main = function(act,obj){
 	//Test used to know if obj should be in activeList of act.
 	//optimization: test only once for each pair. ex: act.activeListAlreadyTest
-	if(!obj){ return false; }
-	if(act.id === obj.id){ return false; }
-	if(!obj.viewedIf || !act.viewedIf){ return false; }
-	if(obj.viewedIf === 'false' || act.viewedIf === 'false'){ return false; }
-	if(act.map !== obj.map){ return false; }
-	if(obj.dead || act.dead){ return false; }
+	if(!obj)
+		return false;
+	if(act.id === obj.id)
+		return false;
+	if(!obj.viewedIf || !act.viewedIf)
+		return false;
+	if(obj.viewedIf === 'false' || act.viewedIf === 'false')
+		return false;
+	if(act.map !== obj.map)
+		return false;
+	if((obj.dead || act.dead) && act.type !== 'player' && obj.type !== 'player')
+		return false;
+
 	if(typeof obj.viewedIf === 'function')
-		try {
-			if(!act.isActor || !obj.viewedIf(act.id,obj.id)){ return false; }
-		} catch(err){ ERROR(3,'invalid viewedIf condition',err.stack); }
+		if(!act.isActor || !obj.viewedIf(act.id,obj.id))
+			return false; 
 	if(typeof act.viewedIf === 'function')
-		try {
-			if(!obj.isActor || !act.viewedIf(obj.id,act.id)){ return false; }
-		} catch(err){ ERROR(3,'invalid viewedIf condition',err.stack); }
-	if(typeof obj.viewedIf === 'object' && obj.viewedIf.indexOf(act.id) === -1){ return false; }
-	if(typeof act.viewedIf === 'object' && act.viewedIf.indexOf(obj.id) === -1){ return false; }
+		if(!obj.isActor || !act.viewedIf(obj.id,act.id))
+			return false;
+	if(typeof obj.viewedIf === 'object' && obj.viewedIf.indexOf(act.id) === -1)
+		return false;
+	if(typeof act.viewedIf === 'object' && act.viewedIf.indexOf(obj.id) === -1)
+		return false;
 	
-	var rect = {x:act.x-800,width:1600,y:act.y-600,height:1200};
-	return Collision.testPtRect(obj,rect);
+	return Collision.testPtRect.fast(obj,act.x-800,act.y-600,1600,1200);
 }
+
 
 ActiveList.update = function(act){	//called by npc in loop
 	var tested = {};
@@ -163,3 +179,5 @@ ActiveList.removeInactive = function(){ //client
 	}
 }
 })();
+
+

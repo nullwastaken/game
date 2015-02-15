@@ -1,6 +1,9 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Server','ItemList','Save','Message','Dialogue','Boost','Drop','Quest','Collision','Command','Contribution','Main']));
-
+"use strict";
+(function(){ //}
+var Message = require2('Message');
+var Sfx = require4('Sfx'), Song = require4('Song'), Dialog = require4('Dialog');
+var Main = require3('Main');
 Main.Temp = function(){	//unsued...
 	return {};
 	/*
@@ -16,11 +19,6 @@ Main.Temp = function(){	//unsued...
 	dialog:{},
 	*/
 }
-
-
-//##################
-
-
 
 //##################
 
@@ -127,6 +125,18 @@ Main.playSong = function(main,song){
 
 Main.openDialog = function(main,what,param){	//param = false => close
 	main.temp.dialog = main.temp.dialog || {};
+	
+	/*if(what === 'permPopup' && !param.css){	//BAD
+		param.css = {
+			position:'absolute',
+			width:'200px',
+			height:'auto',
+			top:'400px',
+			right:'0px'
+		};
+	}*/
+	
+	
 	main.temp.dialog[what] = param === undefined ? 0 : param;
 }
 Main.closeDialog = function(main,what){
@@ -163,29 +173,7 @@ Main.applyTempChange = function(main,temp){	//on client when receive
 			Dialog.open(i,temp.dialog[i]);
 	}
 	if(temp.playerOnline){
-		var div = $('<div>')
-			.html(temp.playerOnline.length + ' player(s) online: You, ');
-			
-		for(var i in temp.playerOnline){
-			if(temp.playerOnline[i] === player.name)
-				temp.playerOnline.splice(+i,1);
-		}
-			
-		for(var i in temp.playerOnline){
-			div.append($('<span>')
-				.html(temp.playerOnline[i])
-				.click((function(i){
-					return function(){
-						Message.setInputForPM(key,temp.playerOnline[i]);
-						//reply to temp.playerOnline[i]
-					}
-				})(i))
-				.attr('title','Click to send PM')
-			);
-			if(i != temp.playerOnline.length - 1)
-				div.append(', ');
-		}
-		$('#playerOnline').html(div);
+		Dialog.open('playerOnline',temp);
 	}
 	
 	if(temp.questRating)
@@ -198,4 +186,4 @@ Main.applyTempChange = function(main,temp){	//on client when receive
 		Main.screenEffect.remove(main,temp.screenEffectRemove[i]);	
 }
 
-
+})(); //{

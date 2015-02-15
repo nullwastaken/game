@@ -1,7 +1,11 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Main','Boss','Combat','ActiveList','Map','Collision','Sprite','Anim','Boost']));
+"use strict";
+(function(){ //}
+var Boss = require2('Boss'), Main = require2('Main'), ActiveList = require2('ActiveList'), Collision = require2('Collision'), Sprite = require2('Sprite');
+var MapModel = require4('MapModel'), ClientPrediction = require4('ClientPrediction');
+var Actor = require3('Actor');
 
-Actor.loop = function(){	//server static
+Actor.loop = function(){	//server, for client check below
 	Actor.loop.FRAME_COUNT++;
 	for (var i in Actor.LIST)   
 	    Actor.loop.forEach(Actor.LIST[i]);
@@ -28,12 +32,13 @@ Actor.loop.forEach = function(act){
 		
 	
 	if(act.combat){
-		if(act.hp <= 0) return Actor.death.die(act);
+		if(act.hp <= 0) 
+			return Actor.death.die(act);
 		if(act.boss) Boss.loop(act.boss);
 		Actor.ability.loop(act);
 		Actor.resource.loop(act);    
 		Actor.status.loop(act);
-		
+		act.staggerTimer--;
 		Actor.summon.loop(act);
 		Actor.attackReceived.loop(act); 	//used to remove attackReceived if too long
 	}
@@ -62,18 +67,20 @@ Actor.updateActive = function(act){
 
 Actor.timeout = {};
 Actor.timeout.loop = function(act){
-	if(!Actor.testInterval(act,1)) return;
+	//if(!Actor.testInterval(act,1)) return;
 	for(var i in act.timeout){
 		act.timeout[i].timer -= 1;
 		if(act.timeout[i].timer < 0){
-			try {
-				act.timeout[i].func(act.id);
-				delete act.timeout[i];	
-			}catch(err){ 
-				ERROR.err(3,err); 
-				delete act.timeout[i];	
-			}		
+			Actor.timeout.loop.main(act,i);	
+			delete act.timeout[i];	
 		}	
+	}
+}
+Actor.timeout.loop.main = function(act,i){
+	try {
+		act.timeout[i].func(act.id);
+	}catch(err){ 
+		ERROR.err(3,err); 
 	}
 }
 
@@ -83,8 +90,12 @@ Actor.setTimeout = function(act,cb,time,name){
 		return cb(act.id);
 
 	name = name || Math.randomId();
-	act.timeout[name] = {timer:time,func:cb};
+	act.timeout[name] = Actor.Timeout(time,cb);
 }
+Actor.Timeout = function(time,func){
+	return {timer:time,func:func};
+}	
+
 Actor.timeout.remove = function(act,name){
 	delete act.timeout[name];
 }	
@@ -167,6 +178,8 @@ Actor.testInterval.get = function(){	//required cuz goal of testing xya every 2 
 }
 
 
+
+
 if(!SERVER){ //}
 	Actor.loop = function(){
 		for(var i in Actor.LIST){
@@ -177,18 +190,22 @@ if(!SERVER){ //}
 	Actor.loop.forEach = function(act){
 		Actor.loop.updatePosition(act);
 
+		Actor.HitHistoryToDraw.loop(act);
 		Sprite.updateAnim(act);
 		
-		if(act.spriteFilter)
-			if(--act.spriteFilter.time < 0)
-				act.spriteFilter = null;
-				
-		if(!act.chatHead) return;
-		if(--act.chatHead.timer <= 0)	
-			act.chatHead = null;	
+		if(act.spriteFilter && --act.spriteFilter.time < 0)
+			act.spriteFilter = null;
+		
+		
+		if(act.chatHead){
+			act.chatHead.timer = Math.min(act.chatHead.timer,Main.getPref(main,'chatHeadTimer')*25);
+			if(--act.chatHead.timer <= 0)	
+				act.chatHead = null;	
+		}
 	}
 	
 	Actor.loop.player = function(){
+		Actor.move.client(player);
 		Actor.loop.forEach(player);		
 		if(Actor.loop.player.OLD.permBoost !== player.permBoost){
 			Actor.loop.player.OLD.permBoost = player.permBoost;
@@ -198,26 +215,48 @@ if(!SERVER){ //}
 		if(!MapModel.getCurrent().imageLoaded)
 			MapModel.initImage(MapModel.getCurrent());
 		
+		if(Actor.loop.player.OLD.statusClient !== player.statusClient){
+			if(player.statusClient[0] == '1' || player.statusClient[3] == '1')	//bleed burn
+				player.spriteFilter = Actor.SpriteFilter('red',10000);
+			else if(player.statusClient[1] == '1' || player.statusClient[4] == '1')	//knock chill
+				player.spriteFilter = Actor.SpriteFilter('blue',10000);
+			else if(player.statusClient[2] == '1' || player.statusClient[5] == '1')	//drain stun
+				player.spriteFilter = Actor.SpriteFilter('green',10000);
+			else 
+				player.spriteFilter = null;
+		}
+		
+		
 	}
 	Actor.loop.player.OLD = {};
 	
-	Actor.loop.updatePosition = function(act){	//
+	Actor.loop.updatePosition = function(act){	//for npc
+		if(ClientPrediction.isActive() && act === player) 
+			return ClientPrediction.updateShadow(act);
+		
 		var diffX = act.serverX - act.x;
 		var diffY = act.serverY - act.y;
-		
+				
 		if(CST.ASYNC_LOOP){
 			act.x = (act.serverX + act.x)/2;
 			act.y = (act.serverY + act.y)/2;
-			act.spdX = diffX;
-			act.spdY = diffY;
 		} else {
 			act.x = act.x + diffX/2;
 			act.y = act.y + diffY/2;
-			act.spdX = diffX;
-			act.spdY = diffY;
 		}
+		act.spdX = diffX;
+		act.spdY = diffY;
 	}	
 
-}
+	
+	
+	
 
+	
+	
+	
+	
+
+}
+})(); //{
 

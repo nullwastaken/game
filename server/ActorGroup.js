@@ -1,7 +1,9 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Tk','Map'],['ActorGroup']));
+"use strict";
+var Actor = require2('Actor'), Map = require2('Map');
 
-var ActorGroup = exports.ActorGroup = function(spot,list,respawn,v){
+var ActorGroup = exports.ActorGroup = {};
+ActorGroup.create = function(spot,list,respawn,v){
 	var enemyIdList = [];
 		
 	var id = Math.randomId();
@@ -19,7 +21,7 @@ var ActorGroup = exports.ActorGroup = function(spot,list,respawn,v){
 		//list[i].extra.group = id;
 		for(var j = 0 ; j < list[i].amount; j++){
 			var pos = ActorGroup.alterSpot(Tk.deepClone(spot),v);
-			var e = Actor(list[i].model,list[i].extra);
+			var e = Actor.create(list[i].model,list[i].extra);
 			e.group = id;
 			Actor.addToMap(e,pos);
 			LIST[id].list[e.id] = 1;
@@ -89,7 +91,7 @@ ActorGroup.loop.forEach = function(g){
 	if(g.respawn === false) return ActorGroup.remove(g);
 
 	if(--g.respawn <= 0){
-		ActorGroup(g.param[0],g.param[1],g.param[2],g.param[3]); 	
+		ActorGroup.create(g.param[0],g.param[1],g.param[2],g.param[3]); 	
 		ActorGroup.remove(g);
 	}
 

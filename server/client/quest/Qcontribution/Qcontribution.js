@@ -1,10 +1,10 @@
-eval(loadDependency(["Main"]));
+var Main = require3('Main');
 //11/26/2014 7:46 PM
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 var s = loadAPI('v1.0','Qcontribution',{
 	name:'Contribution',
-	author:'',
+	author:'rc',
 	showInTab:false,
 	dailyTask:false,
 	globalHighscore:true,

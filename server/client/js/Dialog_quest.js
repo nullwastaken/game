@@ -1,6 +1,10 @@
+//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+"use strict";
 (function(){ //}
+var QueryDb = require4('QueryDb'), Command = require4('Command'), Actor = require4('Actor');
+var Dialog = require3('Dialog');
 
-Dialog('quest','Quest',Dialog.Size(900,600),Dialog.Refresh(function(){
+Dialog.create('quest','Quest',Dialog.Size(950,600),Dialog.Refresh(function(){
 	return Dialog.quest.apply(this,arguments);
 },function(html,variable){
 	return Tk.stringify(main.quest[variable.quest]) + variable.quest + main.questActive;
@@ -27,7 +31,6 @@ Dialog.quest = function (html,variable,param){
 		);
 		
 	html.append(top);
-	
 	Dialog.quest.challenge(top,q,mq);
 	Dialog.quest.bonus(top,q,mq);
 	Dialog.quest.start(top,q,mq);
@@ -42,6 +45,11 @@ Dialog.quest = function (html,variable,param){
 	Dialog.quest.playerInfo(bottom,q,mq);
 }
 
+var helperChal = function(i){
+	return function(){
+		Command.execute('win,quest,toggleChallenge',[i]);
+	}
+}
 
 Dialog.quest.challenge = function(top,q,mq){
 	var el = $('<div>').addClass('inline');
@@ -49,7 +57,8 @@ Dialog.quest.challenge = function(top,q,mq){
 	
 	el.append('<h2 class="u">Challenges</h2>');
 	
-	var star = $('<span>★</span>')
+	var star = $('<span>')
+		.html(CST.STAR)
 		.addClass('shadow360')
 		.attr('title',mq._complete ? 'Completed this quest at least once' : 'Never completed this quest')
 		.css({color:mq._complete ? 'yellow' : 'gray'});
@@ -58,6 +67,8 @@ Dialog.quest.challenge = function(top,q,mq){
 	el.append(' - ');
 		
 	var chalActive = ''; for(var i in mq._challenge) if(mq._challenge[i]) chalActive = i;
+	
+	
 	var text = $('<span>No Challenge</span>')
 		.addClass('shadow')
 		.css({cursor:'pointer',color:chalActive ? 'red' : 'green'})
@@ -69,11 +80,12 @@ Dialog.quest.challenge = function(top,q,mq){
 	el.append(text);
 	el.append('<br>');
 		
-		
+	
 	for(var i in q.challenge){
 		var c = q.challenge[i];
 		
-		var star = $('<span>★</span>')
+		var star = $('<span>')
+			.html(CST.STAR)
 			.addClass('shadow360')
 			.attr('title',mq._challengeDone[i] ? 'Completed this challenge at least once' : 'Never completed this challenge')
 			.css({color:mq._challengeDone[i] ? 'yellow' : 'gray'});
@@ -84,11 +96,7 @@ Dialog.quest.challenge = function(top,q,mq){
 			.addClass('shadow')
 			.css({cursor:'pointer',color:chalActive === i ? 'green' : 'red'})
 			.attr('title','Click to toggle challenge: ' + c.description)
-			.click((function(i){	
-				return function(){
-					Command.execute('win,quest,toggleChallenge',[i]);
-				}
-			})(i));
+			.click(helperChal(i));
 		el.append(text);
 		el.append('<br>');
 		
@@ -151,7 +159,7 @@ Dialog.quest.generateBonusArray = function(b,challengeActive,challengeDone){
 			'<u>x' + (b.challenge.item*b.challengeDone.item*b.cycle.item).r(3)+'</u>',
 		],
 	];
-	return Tk.arrayToTable(array,true,true,true);
+	return Tk.arrayToTable(array,true,true,true);	
 }
 
 Dialog.quest.start = function(top,q,mq){
@@ -232,6 +240,12 @@ Dialog.quest.generalInfo = function(bottom,q,mq){
 
 }
 
+var helperHigh = function(i){
+	return function(){
+		Dialog.open('highscore',i);
+	}
+}
+
 Dialog.quest.playerInfo = function(bottom,q,mq){
 	var el = $('<div>').addClass('inline');
 	bottom.append(el);
@@ -259,14 +273,14 @@ Dialog.quest.playerInfo = function(bottom,q,mq){
 	el.append('<h2 class="u">Highscores</h2>');
 	for(var i in q.highscore){
 		el.append(' - ');
+		var highscore = QueryDb.get('highscore',i,function(){
+			Dialog.refresh('quest',q.id);
+		});
+		if(!highscore) return;
 		var high = $('<a>')
-			.html(q.highscore[i].name + ' : ' + (mq._highscore[i] || '---'))
-			.attr('title',q.highscore[i].description)
-			.click((function(i){
-				return function(){
-					Dialog.open('highscore',i);
-				}
-			})(i));
+			.html(highscore.name + ' : ' + (mq._highscore[i] || '---'))
+			.attr('title',highscore.description)
+			.click(helperHigh(i))
 			
 		el.append(high);
 		el.append('<br>');

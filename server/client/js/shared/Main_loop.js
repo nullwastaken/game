@@ -1,6 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Main','Server','ItemList','Save','Message','Dialogue','Boost','Drop','Quest','Collision','Command','Contribution']));
-
+"use strict";
+(function(){ //}
+var Save = require2('Save');
+var Main = require3('Main');
 Main.loop = function(){
 	Main.loop.FRAME_COUNT++;
 	for (var i in Main.LIST)
@@ -13,6 +15,7 @@ Main.loop.forEach = function(main){	//server
 	Save.loop(main.id);
 	Main.chrono.loop(main); 
 	Main.social.update(main);   				//check if any change in friend list
+	Main.ItemList.loop(main);
 }
 Main.loop.FRAME_COUNT = 0;
 
@@ -29,6 +32,7 @@ if(!SERVER){
 	}
 }
 
+})(); //{
 
 
 

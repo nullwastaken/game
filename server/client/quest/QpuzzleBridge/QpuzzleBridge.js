@@ -2,10 +2,13 @@
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 
-//'use strict';
+'use strict';
 var s = loadAPI('v1.0','QpuzzleBridge',{
 	name:"Puzzle & Bridge",
 	author:"rc",
+	maxParty:1,
+	thumbnail:true,
+	reward:{"ability":{'Qsystem-player-healFast':0.5}},
 	scoreModInfo:"Depends on amount of puzzles done.",
 	description:"Puzzle where you need to move blocks to form a bridge.",
 });
@@ -67,7 +70,10 @@ s.newEvent('_debugSignIn',function(key){ //
 	s.teleport(key,'QfirstTown-east','t5','main',false);
 });
 s.newEvent('_hint',function(key){ //
-	return "Move the bridge parts to form bridge then activate switch. If stuck, use item.";
+	if(!s.isChallengeActive(key,'pushing'))
+		return "Move the bridge parts to form bridge then activate switch. If stuck, use item.";
+	else
+		return 'Push Count: ' + s.get(key,'pushCount');
 });
 s.newEvent('_signIn',function(key){ //
 	var lvl = s.get(key,'lvl');
@@ -77,6 +83,9 @@ s.newEvent('_signIn',function(key){ //
 	else if(lvl === 3) s.teleport(key,'g2','t1','solo',true); //s.teleport(key,'g3','t1','solo',true);
 	else if(lvl === 4) s.teleport(key,'g4','t1','solo',true);
 });
+
+
+
 s.newEvent('_death',function(key){ //
 	s.failQuest(key);
 });
@@ -206,7 +215,7 @@ s.newEvent('spawnBridgeH',function(spot){ //
 	});
 });
 s.newEvent('spawnBridgeV',function(spot){ //
-	LOL = m.spawnActor(spot,"block-template",{
+	m.spawnActor(spot,"block-template",{
 		tag:{bridge:true},
 		sprite:s.newNpc.sprite('block-bridgeV'),
 		block:s.newNpc.block(s.newNpc.block.size(2,2),1,false,true,true),

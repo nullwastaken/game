@@ -1,13 +1,11 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Input','OptionList','Message','Collision','Main','Drop','Actor'],['Button']));
-
-if(SERVER) eval('var Button');
-
+"use strict";
 (function(){ //}
 
-var WHITELIST = ['left','right','shiftLeft','shiftRight'];	//bad cuz global client
-
-Button = exports.Button = function(type,id,preventAbility){
+var OptionList = require2('OptionList'), Collision = require2('Collision'), Main = require2('Main'), Drop = require2('Drop'), Actor = require2('Actor');
+var Dialog = require4('Dialog'), Socket = require4('Socket');
+var Button = exports.Button = {};
+Button.create = function(type,id,preventAbility){
 	return {
 		type:type,
 		id:id,
@@ -23,7 +21,7 @@ Button.Click = function(func,param/*...*/,textIfParamArray){	//used on server si
 	return OptionList.Option(func,tmp,text,'');
 }
 
-Button.executeOption = function(option,main,button){
+Button.executeOption = function(option,main){
 	OptionList.executeOption(main,option);
 }
 
@@ -50,11 +48,13 @@ Button.handClickServerSide = function(socket,d){ //d format: [type,id,side]
 if(SERVER) return;
 
 Button.onclick = function(side){	//called when clicking
+	var bool = false;
+	if(Dialog.isMouseOverDialog()) bool = true;
+	if(Dialog.isMouseOverInventory()) bool = true;
 	Dialog.close('optionList');
 	Dialog.close('equipPopup');
+	if(bool) return true;
 	
-	if(Dialog.isMouseOverDialog()) return true;
-	if(Dialog.isMouseOverInventory()) return true;
 	var btn = Button.getBtnUnderMouse();	
 	if(!btn) return false;
 
@@ -64,8 +64,24 @@ Button.onclick = function(side){	//called when clicking
 	if(btn.type === 'actor'){
 		var act = Actor.get(btn.id);
 		if(!act) return false;
-		if(side === 'right' && act.optionList)
-			Dialog.open('optionList',act.optionList);
+		if(side === 'right' && act.optionList){
+			if(!(player.pvpEnabled && act.type === 'player')){	//BAD VERYBAD
+			
+				if(act.sprite.name === Actor.SPRITE_DEATH){
+					var option = {
+						name:act.optionList.name,
+						option:act.optionList.option.slice(2,3)
+					}
+					Dialog.open('optionList',option);
+				} else {
+					var option = {
+						name:act.optionList.name,
+						option:act.optionList.option.slice(0,2)
+					}
+					Dialog.open('optionList',option);
+				}
+			}
+		}
 	}
 	
 	return btn.preventAbility;
@@ -76,8 +92,8 @@ Button.onclick = function(side){	//called when clicking
 
 Button.getBtnUnderMouse = function(){	//server
 	var btn = null;
-	btn = Button.getBtnUnderMouse.drop(btn);
 	btn = Button.getBtnUnderMouse.actor(btn);
+	btn = Button.getBtnUnderMouse.drop(btn);
 	return btn;
 }
 
@@ -90,7 +106,7 @@ Button.getBtnUnderMouse.actor = function(btn){
 		var vy = CST.HEIGHT2 - player.y;
 		
 		if(Collision.testMouseRect(key,Collision.getHitBox(act,vx,vy))){
-			btn = Button('actor',act.id,act.preventAbility);
+			btn = Button.create('actor',act.id,act.preventAbility);
 		}
 	}	
 	return btn;	
@@ -104,7 +120,7 @@ Button.getBtnUnderMouse.drop = function(btn){	//linked with Drop.drawAll for siz
 		var vy = drop.y + CST.HEIGHT2 - player.y;
 		
 		if(Collision.testMouseRect(key,{x:vx,y:vy,width:32,height:32}))
-			btn = Button('drop',drop.id,false);
+			btn = Button.create('drop',drop.id,false);
 	}
 	return btn;	
 }

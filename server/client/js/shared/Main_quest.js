@@ -1,6 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Server','Debug','Main','QuestVar','ItemList','Save','Message','Dialogue','Boost','Drop','Quest','Collision','Command','Contribution']));
-
+"use strict";
+(function(){ //}
+var Actor = require2('Actor'), Server = require2('Server'), Party = require2('Party'), Debug = require2('Debug'), Main = require2('Main'), QuestVar = require2('QuestVar'), Quest = require2('Quest');
+var Main = require3('Main');
 Main.Quest = function(overwrite){
 	if(!SERVER) return {};
 	var tmp = {};
@@ -21,7 +23,6 @@ Main.Quest.part = function(quest,overwrite){
 		_challenge:Quest.getChallengeList(quest),
 		_challengeDone:Quest.getChallengeList(quest),
 		_highscore:Quest.getHighscoreList(quest),
-		_rating:0,
 		_skillPlot:[0,0,0,0,0,0,0],
 		_enemyKilled:0,
 	};
@@ -72,10 +73,11 @@ Main.Quest.uncompressDb.verifyIntegrity = function(quest){	//quest= main.quest
 	}
 	
 	for(var i in allQuest){
-		if(!Quest.get(i).inMain) continue;	//not part of
+		var q = Quest.get(i);
+		if(!q.inMain) continue;	//not part of
 	
 		if(!quest[i]){ 	//aka new quest
-			quest[i] = Main.Quest.part(i);
+			quest[i] = Main.Quest.part(q);
 			continue; 
 		}	
 		
@@ -131,14 +133,18 @@ Main.QuestActive.uncompressDb = function(questActive){
 
 Main.quest = {};
 Main.quest.haveDoneTutorial = function(main){
-	if(Debug.ACTIVE) return true;
+	if(Debug.isActive()) return true;
 	if(Server.isAdmin(main.id)) return true;
 	return !!main.quest.Qtutorial._complete;
 }
 
-Main.quest.onDeath = function(main,killers){
-	if(!main.questActive) return;
-	Quest.get(main.questActive).event._death(main.id,killers);
+Main.quest.onDeath = function(main,wholePartyDead,killer){
+	if(!main.questActive) return false;
+	var ret = Quest.get(main.questActive).event._death(main.id,wholePartyDead,killer);
+	
+	if(!wholePartyDead && ret === true)
+		return true;	//aka turn player into grave
+	return false;	
 }
 
 Main.getQuestVar = function(main,id){
@@ -169,20 +175,17 @@ Main.quest.updateChallengeDoneBonus = function(main,qid){
 	}
 }
 
-Main.quest.hasRatedQuest = function(main,qid){
-	return !!main.quest[qid]._rating;
-}	
-
 Main.quest.updateCycleBonus = function(main){
 	var mq = main.quest;
 	for(var i in mq){
 		mq[i]._bonus.cycle.item = Math.max(mq[i]._bonus.cycle.item,1);	//incase lowered by completing it many times
 		mq[i]._bonus.cycle.exp = Math.max(mq[i]._bonus.cycle.exp,1);
 		mq[i]._bonus.cycle.score = Math.max(mq[i]._bonus.cycle.score,1);
-		
+		/*
 		mq[i]._bonus.cycle.item += 0.02;
 		mq[i]._bonus.cycle.exp += 0.04;
 		mq[i]._bonus.cycle.score += 0.08;
+		*/
 	}
 }
 
@@ -205,6 +208,7 @@ Main.getQuestActive = function(main){
 
 //###################
 
+})(); //{
 
 
 

@@ -1,10 +1,9 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['ActiveList','Combat','Collision','Anim'],['Strike']));
-if(SERVER) eval('var Strike;');
-
+"use strict";
 (function(){ //}
+var ActiveList = require2('ActiveList'), Main = require2('Main');
+var Strike = exports.Strike = {};
 
-Strike = exports.Strike = {};
 var LIST = Strike.LIST = {};
 
 Strike.remove = function(strike){

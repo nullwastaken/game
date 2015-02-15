@@ -1,12 +1,13 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Map','ItemList','ActiveList','ItemModel','Equip','Actor','Main'],['Drop']));
-if(SERVER) eval('var Drop;');
-
+"use strict";
 (function(){ //}
+var Map = require2('Map'), ActiveList = require2('ActiveList'), ItemModel = require2('ItemModel'), Equip = require2('Equip'), Actor = require2('Actor');
+var QueryDb = require4('QueryDb'), Img = require4('Img'), Collision = require4('Collision');
+var Drop = exports.Drop = {};
 
 var TIMER = 25*60;
 
-Drop = exports.Drop = function(spot,item,amount,viewedIf,timer){
+Drop.create = function(spot,item,amount,viewedIf,timer){
 	var tmp = {
 		id:Math.randomId(),
 		type:'drop',
@@ -94,7 +95,7 @@ Drop.drawAll = function(ctx){	//linked with Button.updateList.drop for size 32
 		
 		var item = QueryDb.get('item',drop.item);
 		if(!item) continue;
-		Img.drawIcon(ctx,item.icon,numX,numY,32);
+		Img.drawIcon(ctx,item.icon,32,numX,numY);
 		
 		if(drop.color){
 			ctx.strokeStyle = drop.color;

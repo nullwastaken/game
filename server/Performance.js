@@ -1,5 +1,6 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Sign','Server'],['Performance']));
+"use strict";
+var Sign = require2('Sign'), Server = require2('Server');
 
 var Performance = exports.Performance = {};
 

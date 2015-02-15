@@ -1,9 +1,10 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Debug']));
-
+"use strict";
+var Debug = require2('Debug');
 var db;
 //_preset reserved
-var QuestVar = exports.QuestVar = function(quest,main,oldValue){	//oldValue is taken from db
+var QuestVar = exports.QuestVar = {};
+QuestVar.create = function(quest,main,oldValue){	//oldValue is taken from db
 	var regular = QuestVar.getInitVar(quest);
 	if(!oldValue) oldValue = regular;
 	else {
@@ -44,17 +45,20 @@ QuestVar.init = function(dbLink){
 QuestVar.set = function(quest,key,name,value){
 	if(typeof value === 'object') return ERROR(3,'cant set object',quest,name,value);
 	if(value === undefined) return ERROR(3,'undefined value',quest,name);
-	try {
-		if(Debug.trackQuestVar) INFO(name,value,'[old: ' + LIST[quest][key][name] + ']');
-		return LIST[quest][key][name] = value;
-	}catch(err){ ERROR.err(3,err); }
+	
+	if(!LIST[quest] || !LIST[quest][key]) return ERROR(3,'invalid quest key',quest,key);
+	if(Debug.getAttr('trackQuestVar'))
+		INFO(name,value,'[old: ' + LIST[quest][key][name] + ']');
+	
+	LIST[quest][key][name] = value
+	return value;
 }
 QuestVar.add = function(quest,key,name,value){
 	if(isNaN(value)) return ERROR(3,'NaN',quest,name,value);
-	try {
-		if(Debug.trackQuestVar) INFO(name,LIST[quest][key][name] + value,'[old: ' + LIST[quest][key][name] + ']');
-		return LIST[quest][key][name] += value;
-	}catch(err){ ERROR.err(3,err); }
+	if(!LIST[quest] || !LIST[quest][key]) return ERROR(3,'invalid quest key',quest,key);
+	if(Debug.getAttr('trackQuestVar')) 
+		INFO(name,LIST[quest][key][name] + value,'[old: ' + LIST[quest][key][name] + ']');
+	return LIST[quest][key][name] += value;
 }
 QuestVar.get = function(quest,key,name){
 	var value = LIST[quest] && LIST[quest][key] && LIST[quest][key][name];
@@ -70,22 +74,19 @@ QuestVar.getInitVar.all = function(){
 }
 
 QuestVar.addToList = function(questVar){	//questVar was created via QuestVar
-	try {
-		LIST[questVar.quest][questVar.key] = questVar;
-	}catch(err){ ERROR.err(3,err); }
+	if(!LIST[questVar.quest]) return ERROR(3,'invalid quest',questVar.quest);
+	LIST[questVar.quest][questVar.key] = questVar;
 }
 
 QuestVar.removeFromList = function(quest,main){
-	try {
-		delete LIST[quest][main.id];
-	}catch(err){ ERROR.err(3,err); }
+	if(!LIST[quest]) return ERROR(3,'invalid quest',quest);
+	delete LIST[quest][main.id];
 }
 
 QuestVar.onSignOff = function(main){
-	try {
-		if(!main.questActive) return;
-		delete LIST[main.questActive][main.id];
-	}catch(err){ ERROR.err(3,err); }
+	if(!main.questActive) return;
+	if(!LIST[main.questActive]) return ERROR(3,'invalid quest',main.questActive);
+	delete LIST[main.questActive][main.id];
 }
 
 
@@ -102,14 +103,14 @@ QuestVar.getViaMain = function(main){
 QuestVar.uncompressDb = function(questVar,main){
 	if(!questVar){
 		ERROR(3,'questVar dont exist for',main.questActive,main.username);
-		questVar = QuestVar(main.questActive,main);
+		questVar = QuestVar.create(main.questActive,main);
 	}
 	return questVar;
 }
 
 QuestVar.onSignIn = function(questVar,main){
 	if(questVar)
-		QuestVar.addToList(QuestVar(questVar.quest,main,questVar));
+		QuestVar.addToList(QuestVar.create(questVar.quest,main,questVar));
 }
 
 

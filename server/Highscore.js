@@ -1,15 +1,19 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','Main']));
+"use strict";
+var Server = require2('Server');
 
 var db = null; //Highscore.init
 
+var SIGN_IN_PACK = {};
+
 //QueryDb.get('highscore','Qbtt000-speedrun')
-//Socket.emit('queryDb', QueryDb('highscore','Qbtt000-speedrun'));
+//Socket.emit('queryDb', QueryDb.create('highscore','Qbtt000-speedrun'));
 //QueryDb.getDB().highscore['Qbtt000-speedrun']
 //ts("Quest.DB['QlureKill'].highscore['QlureKill-_score'].getScore.toString()")
 
 
-var Highscore = exports.Highscore = function(quest,id,name,description,order,getScore){	//constructor
+var Highscore = exports.Highscore = {};
+Highscore.create = function(quest,id,name,description,order,getScore){	//constructor
 	var tmp = {
 		quest:quest,
 		id:id || '',
@@ -20,6 +24,7 @@ var Highscore = exports.Highscore = function(quest,id,name,description,order,get
 	};
 	
 	DB[id] = tmp;
+	SIGN_IN_PACK[id] = Highscore.compressClient(tmp);
 	return tmp;
 }
 
@@ -53,7 +58,7 @@ Highscore.fetchTopScore = function(category,cb,amount){	//return [Highscore.Scor
 	var proj = {username:1,value:1};
 	var sort = {value:DB[category].order === 'ascending' ? 1 : -1};	
 	
-	db.highscore.find(req,proj).limit(amount).sort(sort,function(err,res){ if(err) throw err;
+	db.highscore.find(req,proj).limit(amount).sort(sort,function(err,res){
 		var tmp = [];
 		for(var i = 0; i < res.length; i++){
 			tmp.push(Highscore.Score(category,i+1,res[i].value,res[i].username));
@@ -77,8 +82,7 @@ Highscore.fetchScore = function(category,username,cb){
 }
 
 Highscore.fetchValue = function(category,username,cb){
-	var proj = {value:1};
-	db.highscore.findOne({username:username,category:category},proj,function(err,res){ if(err) throw err;
+	db.highscore.findOne({username:username,category:category},{value:1},function(err,res){ if(err) ERROR.err(3,err);
 		cb(res ? res.value || null : null);
 	});
 }
@@ -104,22 +108,19 @@ Highscore.getCategory = function(str){
 }
 
 Highscore.getSignInPack = function(){
-	var h = {}; 
-	for(var i in DB) 
-		h[i] = Highscore.compressClient(DB[i],null);
-	return h;
+	return SIGN_IN_PACK;
 }
 
 Highscore.compressClient = function(highscore,score){	//score == null for SignInPack
-	return {
-		name:highscore.name,
-		description:highscore.description,
-		quest:highscore.quest,
-		id:highscore.id,
-		score:score || null,
-		isPartialVersion:score === null,
-		timestamp:Date.now(),
-	}
+	return [
+		highscore.name,
+		highscore.description,
+		highscore.quest,
+		highscore.id,
+		score || null,
+		score === null,
+		Date.now(),
+	];
 }
 
 Highscore.compressDb = function(category,value,username){
@@ -137,7 +138,7 @@ Highscore.setNewScore = function(q,main,mq){
 		if(typeof score !== 'number') continue;
 		ret[i] = score;
 		
-		if(mq._highscore[i] == null
+		if(mq._highscore[i] === null
 			|| (q.highscore[i].order === 'ascending' && score < mq._highscore[i])
 			|| (q.highscore[i].order === 'descending' && score > mq._highscore[i])){
 			mq._highscore[i] = score.r(4);
@@ -153,9 +154,13 @@ Highscore.saveAllScore = function(main,cb){
 	var count = 0;
 	for(var i in main.quest){
 		for(var j in main.quest[i]._highscore){
-			maxcount++
+			maxcount++;	//need own loop otherwise fuck ++count === maxcount cuz cb can be sync if value === null
+		}
+	}
+	for(var i in main.quest){
+		for(var j in main.quest[i]._highscore){
 			Highscore.saveScore(j,main.quest[i]._highscore[j],main.username,function(err){
-				if(err) throw err;
+				if(err) ERROR.err(3,err);
 				if(++count === maxcount){
 					if(cb) cb();
 				}
@@ -169,6 +174,10 @@ Highscore.saveAllScore = function(main,cb){
 }
 
 Highscore.saveScore = function(category,value,username,cb){
+	if(value === null || Server.isAdmin(null,username,true)){	//BAD
+		if(cb) cb();
+		return;
+	}
 	db.highscore.upsert(
 		{username:username,category:category},
 		Highscore.compressDb(category,value,username),
@@ -190,4 +199,4 @@ Highscore.getHomePageRank.INFO = {};
 Highscore.getHomePageRank.LAST_UPDATE = -1;
 
 
-Highscore.update
+

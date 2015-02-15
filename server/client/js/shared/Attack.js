@@ -1,7 +1,10 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Actor','ActiveList','Bullet','Strike','Map','Debug','Collision','Combat','Sprite','Anim','AttackModel'],['Attack']));
+"use strict";
+(function(){ //}
+var Actor = require2('Actor'), ActiveList = require2('ActiveList'), Bullet = require2('Bullet'), Map = require2('Map'), Collision = require2('Collision'), Combat = require2('Combat'), Sprite = require2('Sprite'), AttackModel = require2('AttackModel');
 
-var Attack = exports.Attack = function(model,act,extra){	//model is AttackModel
+var Attack = exports.Attack = {};
+Attack.create = function(model,act,extra){	//model is AttackModel
 	var tmp = {		//+ all properties from model
 		change:{},
 		old:{},
@@ -62,7 +65,6 @@ Attack.Bullet = function(b){
 
 	b.normal = !b.sin && !b.parabole && !b.boomerang;
 	
-	Sprite.updateBumper(b);	//bad
 	Bullet.addToList(b);
 	Map.enter(b);
 		
@@ -137,9 +139,14 @@ Attack.getInitPosition = function(atk,act){
 	if(!SERVER) return goal;
 	
 	var pos = atk.ghost ? goal : Collision.strikeMap(act,goal);	//get farthest possible without touching wall
+	if(pos.collision){	//check Collision.strikeMap
+		atk.dmg = AttackModel.Dmg(0,1,0,0,0,0,0);
+		atk.hitAnim = null;
+	}
 	return pos;
 }
 			
+})(); //{
 		
 
 

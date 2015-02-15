@@ -1,6 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-eval(loadDependency(['Main','Message','Actor','Party'],['Party']));
-
+"use strict";
+(function(){ //}
+var Party = require2('Party'), Quest = require2('Quest');
+var Main = require3('Main');
 Main.party = {};
 Main.Party = function(party){
 	party = party || {};
@@ -27,17 +29,30 @@ Main.Party.uncompressClient = function(party){
 }
 
 //Start quest must change party.quest
-
+Main.party.onSignOff = function(main){
+	if(!main.questActive) return;
+	
+	var p = Party.getKeyList(Main.getParty(main));
+	if(p.length === 1) return;
+	var notGuySignOff;
+	for(var i = 0 ; i < p.length; i++){
+		notGuySignOff = p[i];
+		if(notGuySignOff !== main.id)
+			break;
+	}
+	Quest.get(main.questActive).event._signOff(notGuySignOff);
+	
+}
 
 Main.joinParty = function(main,name){ //only called directly when sign in, otherwise, use changeParty
 	main.party.id = name;
 	
 	var party = Party.get(name);
 	if(!party){
-		party = Party(name);	//create if not exist
+		party = Party.create(name);	//create if not exist
 		Party.setQuest(party,main.questActive);
 	} else if(party.quest){
-		party = Party(Math.randomId());
+		party = Party.create(Math.randomId());
 		Main.addMessage(main,"You can't join this party because they are already doing a quest.");
 	}
 	Party.addPlayer(party,main.id,main.username);
@@ -48,7 +63,7 @@ Main.joinParty = function(main,name){ //only called directly when sign in, other
 	/*
 	if(Party.testQuest(act,name) === false){
 		Message.add(act.id,"You can't join this party because one of more players do not share the same active quest than you. Abandon your active quest or make sure they are doing the same than yours. You have been moved in a temporary party instead.");
-		name = '!TEMP-' + act.name;
+		name = '!temp-' + act.name;
 		Party.creation(act,name);
 		act.party = name;
 	}
@@ -75,6 +90,5 @@ Main.getPartyId = function(main){
 	return main.party.id;
 }
 
-
-//http://puu.sh/c3bxT.txt
+})(); //{
 
