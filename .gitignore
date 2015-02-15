@@ -16,6 +16,7 @@ jshint-setting.json
 
 TODO.txt
 TODO_LOW_PRIORITY.txt
+TODO_QUEST.txt
 
 server/client/quest/tileset
 *.backup
