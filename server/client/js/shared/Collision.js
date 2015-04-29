@@ -1,7 +1,9 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+/*jshint -W018*/
 "use strict";
 (function(){ //}
-var Combat = require2('Combat'), Actor = require2('Actor'), MapModel = require2('MapModel'), Map = require2('Map');
+var Combat = require2('Combat'), Actor = require2('Actor'), MapModel = require2('MapModel'), Maps = require2('Maps');
+var Input = require4('Input');
 /*
 rect: [minx,maxx,miny, maxy]
 pt: {x:12.3,y:13.23}	//real position
@@ -115,11 +117,8 @@ Collision.getBumperBox = function(player,vx,vy){
 	}
 }
 
-Collision.getMouse = function(key){
-	return SERVER ? Actor.getMouse(Actor.get(key)) : Actor.getMouse(player);
-}
-Collision.testMouseRect = function(key,rect){
-	return Collision.testPtRect(Collision.getMouse(key),rect);
+Collision.testMouseRect = function(key,rect){	//client only
+	return Collision.testPtRect(Input.getMouse(true),rect);
 }
 
 //
@@ -151,17 +150,17 @@ Collision.bulletActor.test = function(atk,def){
 }
 
 Collision.bulletMap = function(bullet){
-	if(bullet.ghost) return 0;
-	var map = MapModel.get(bullet.map);
+	if(bullet.ghost) 
+		return 0;
+	var grid = MapModel.getFast(bullet.mapModel).grid['bullet'];
 	var pos = Collision.getPos(bullet);
-	var grid = map.grid['bullet'];
 	if(Collision.testPosGrid(pos,grid) || +Collision.MAP_MOD[bullet.map + '-' + pos.x + '-' + pos.y] )
 		bullet.toRemove = 1;
 	
 }
 
 Collision.strikeActor = function(atk){
-	var map = Map.get(atk.map);
+	var map = Maps.get(atk.map);
 	if(!map) return ERROR(3,'no map');
 	for(var j in map.list.actor){
 		var act = Actor.get(j);
@@ -173,7 +172,6 @@ Collision.strikeActor = function(atk){
 		if(--atk.maxHit <= 0) return;	//can not longer hit someone
 	}
 }
-
 
 Collision.strikeActor.test = Collision.bulletActor.test;
 
@@ -222,26 +220,27 @@ Collision.strikeMap.client = function(strike,target){	//when input mouse to move
 	return target;
 }
 
-
 Collision.testLineMap = function(map,start,end,what){
 	var path = Collision.getPath(Collision.getPos(start),Collision.getPos(end));
 	
 	for(var i = 0; i < path.length; i++){
 		var grid = MapModel.get(map).grid['bullet'];
-		if(Collision.testPosGrid(path[i],grid)) return true;	
+		if(Collision.testPosGrid(path[i],grid)) 
+			return true;	
 	}
 	return false;
 }
 
-Collision.actorMap = function(x,y,map,act){
+Collision.actorMap = function(x,y,map,act){	
 	if(act.ghost) return 0;
 	if(act.awareNpc){
-		if(typeof act.mapMod[x + '-' + y] !== 'undefined') return act.mapMod[x + '-' + y];
+		if(typeof act.mapMod[x + '-' + y] !== 'undefined') 
+			return act.mapMod[x + '-' + y];
 	} else if(typeof Collision.MAP_MOD[map + '-' + x + '-' + y] !== 'undefined'){
 		return +Collision.MAP_MOD[map + '-' + x + '-' + y];
 	}
-	var grid = MapModel.get(map).grid[act.type || 'npc'];
-	return Collision.testXYMap(x,y,grid);
+	var grid = MapModel.getFast(act.mapModel || act.map).grid[act.type || 'npc'];	//BAD || act.map for client 
+	return Collision.testXYMap(x,y,grid);	//TEMP IMPORTANT
 }
 
 Collision.loop = function(){

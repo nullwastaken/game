@@ -45,8 +45,6 @@ Button.handClickServerSide = function(socket,d){ //d format: [type,id,side]
 }
 
 //CLIENT SIDE
-if(SERVER) return;
-
 Button.onclick = function(side){	//called when clicking
 	var bool = false;
 	if(Dialog.isMouseOverDialog()) bool = true;
@@ -87,10 +85,7 @@ Button.onclick = function(side){	//called when clicking
 	return btn.preventAbility;
 }
 
-
-
-
-Button.getBtnUnderMouse = function(){	//server
+Button.getBtnUnderMouse = function(){	//client
 	var btn = null;
 	btn = Button.getBtnUnderMouse.actor(btn);
 	btn = Button.getBtnUnderMouse.drop(btn);
@@ -102,10 +97,10 @@ Button.getBtnUnderMouse.actor = function(btn){
 		var act = Actor.LIST[i];
 		if(!act || act.dead) continue;
 		
-		var vx = CST.WIDTH2 - player.x;
-		var vy = CST.HEIGHT2 - player.y;
+		var vx = Tk.absToRel.x(0);	//?
+		var vy = Tk.absToRel.y(0);
 		
-		if(Collision.testMouseRect(key,Collision.getHitBox(act,vx,vy))){
+		if(Collision.testMouseRect(null,Collision.getHitBox(act,vx,vy))){
 			btn = Button.create('actor',act.id,act.preventAbility);
 		}
 	}	
@@ -116,10 +111,10 @@ Button.getBtnUnderMouse.drop = function(btn){	//linked with Drop.drawAll for siz
 	for(var i in Drop.LIST){
 		var drop = Drop.LIST[i];
 		
-		var vx = drop.x + CST.WIDTH2 - player.x;
-		var vy = drop.y + CST.HEIGHT2 - player.y;
+		var vx = Tk.absToRel.x(drop.x);
+		var vy = Tk.absToRel.y(drop.y);
 		
-		if(Collision.testMouseRect(key,{x:vx,y:vy,width:32,height:32}))
+		if(Collision.testMouseRect(null,{x:vx,y:vy,width:32,height:32}))
 			btn = Button.create('drop',drop.id,false);
 	}
 	return btn;	

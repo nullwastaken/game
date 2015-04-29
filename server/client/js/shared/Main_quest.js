@@ -1,10 +1,11 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Actor = require2('Actor'), Server = require2('Server'), Party = require2('Party'), Debug = require2('Debug'), Main = require2('Main'), QuestVar = require2('QuestVar'), Quest = require2('Quest');
+var Server = require2('Server'), Message = require2('Message'), Debug = require2('Debug'), Main = require2('Main'), QuestVar = require2('QuestVar'), Quest = require2('Quest');
 var Main = require3('Main');
 Main.Quest = function(overwrite){
-	if(!SERVER) return {};
+	if(!SERVER) 
+		return {};
 	var tmp = {};
 	overwrite = overwrite || {};
 	var list = Quest.getMainVarList();
@@ -17,51 +18,34 @@ Main.Quest.part = function(quest,overwrite){
 	return overwrite || {
 		_rewardScore:0,
 		_complete:0,
+		_completeToday:0,
 		_started:0,
 		_startTime:0,
-		_bonus:Main.Quest.bonus(),
 		_challenge:Quest.getChallengeList(quest),
 		_challengeDone:Quest.getChallengeList(quest),
 		_highscore:Quest.getHighscoreList(quest),
 		_skillPlot:[0,0,0,0,0,0,0],
-		_enemyKilled:0,
+		_permData:null,
+		canStart:true,
 	};
 }
 
-Main.Quest.bonus = function(){
-	return {
-		cycle:Quest.RewardInfo(1,1,1),
-		challenge:Quest.RewardInfo(1,1,1),
-		challengeDone:Quest.RewardInfo(1,1,1),
-	};
-}
 
 Main.Quest.compressDb = function(quest,main,qid){	
-	quest.bonusCycleItem = quest._bonus.cycle.item;
-	quest.bonusCycleExp = quest._bonus.cycle.exp;
-	quest.bonusCycleScore = quest._bonus.cycle.score;
-	delete quest._bonus;
 	quest.username = main.username;
 	quest.quest = qid;
-	
+	delete quest.canStart;
 	return quest;
 }
 
 Main.Quest.uncompressDb = function(quest){ //quest= main.quest[i]
-	quest._bonus = Main.Quest.bonus();
-	quest._bonus.cycle.item = quest.bonusCycleItem;
-	quest._bonus.cycle.exp = quest.bonusCycleExp;
-	quest._bonus.cycle.score = quest.bonusCycleScore;
-	delete quest.bonusCycleScore;
-	delete quest.bonusCycleExp;
-	delete quest.bonusCycleItem;
+	quest.canStart = true;
 	delete quest.username;
 	delete quest.quest;
-	
 	return quest;
 }
 
-Main.Quest.uncompressDb.verifyIntegrity = function(quest){	//quest= main.quest
+Main.Quest.uncompressDb.verifyIntegrity = function(quest){	//WHOLE MAIN.QUEST, quest= main.quest
 	//If new or deleted quest
 	//check QuestVar.verifyIntegrity for custom quest variable
 	var allQuest = QuestVar.getInitVar.all();
@@ -116,6 +100,25 @@ Main.Quest.uncompressDb.verifyIntegrity = function(quest){	//quest= main.quest
 	return quest;
 }
 
+Main.KillCount = function(killCount){
+	if(!SERVER)
+		return {};
+	var tmp = Quest.getMainKillCount();
+	for(var i in killCount){
+		if(tmp[i] !== undefined)
+			tmp[i] = killCount[i];
+	}
+	return tmp;
+}
+
+Main.KillCount.compressDb = function(killCount){	
+	return killCount;
+}
+
+Main.KillCount.uncompressDb = function(killCount){
+	return Main.KillCount(killCount);
+}
+
 Main.QuestActive = function(questActive){
 	return questActive || '';
 }
@@ -129,13 +132,14 @@ Main.QuestActive.uncompressDb = function(questActive){
 }
 
 
+
 //#################
 
 Main.quest = {};
 Main.quest.haveDoneTutorial = function(main){
 	if(Debug.isActive()) return true;
 	if(Server.isAdmin(main.id)) return true;
-	return !!main.quest.Qtutorial._complete;
+	return !!Main.hasCompletedQuest(main,'Qtutorial');
 }
 
 Main.quest.onDeath = function(main,wholePartyDead,killer){
@@ -157,54 +161,51 @@ Main.updateQuestHint = function(main){
 	var old = main.questHint;
 	main.questHint = main.questActive ? 
 		Quest.get(main.questActive).event._hint(main.id) || 'None.'
-		: 'No quest active right now.';
+		: '';
 	if(old !== main.questHint)
 		Main.setFlag(main,'questHint');
 }
 
-Main.quest.updateChallengeDoneBonus = function(main,qid){
-	var mq = Main.getQuestVar(main,qid);
-	var q = Quest.get(qid);
-	var b = mq._bonus.challengeDone = Quest.RewardInfo(1,1,1);
-		
-	for(var i in mq._challengeDone){
-		if(!mq._challengeDone[i]) continue;
-		b.item *= q.challenge[i].bonus.perm.item;
-		b.exp *= q.challenge[i].bonus.perm.exp;
-		b.score *= q.challenge[i].bonus.perm.score;
-	}
+Main.setQuestPermData = function(main,qid,data){
+	main.quest[qid]._permData = data;
+}
+Main.getQuestPermData = function(main,qid,data){
+	return main.quest[qid]._permData;
 }
 
-Main.quest.updateCycleBonus = function(main){
-	var mq = main.quest;
-	for(var i in mq){
-		mq[i]._bonus.cycle.item = Math.max(mq[i]._bonus.cycle.item,1);	//incase lowered by completing it many times
-		mq[i]._bonus.cycle.exp = Math.max(mq[i]._bonus.cycle.exp,1);
-		mq[i]._bonus.cycle.score = Math.max(mq[i]._bonus.cycle.score,1);
-		/*
-		mq[i]._bonus.cycle.item += 0.02;
-		mq[i]._bonus.cycle.exp += 0.04;
-		mq[i]._bonus.cycle.score += 0.08;
-		*/
-	}
-}
-
-Main.quest.updateChallengeBonus = function(main,qid){	//only used for visual, assume success
-	var mq = main.quest[qid];
-	
-	mq._bonus.challenge = Quest.RewardInfo(1,1,1);
-	
-	var qChallenge = Quest.get(qid).challenge;
-	for(var i in mq._challenge){
-		if(!mq._challenge[i]) continue;	//active
-		for(var j in qChallenge[i].bonus.success)
-			mq._bonus.challenge[j] *= qChallenge[i].bonus.success[j];
-	}
-}
 
 Main.getQuestActive = function(main){
 	return main.questActive || null;
 }
+
+Main.hasCompletedQuest = function(main,quest){
+	return main.quest[quest]._complete;
+}
+Main.getCompletedQuestCount = function(main){
+	var questCount = 0;
+	for(var i in main.quest) 
+		if(Main.hasCompletedQuest(main,i))
+			questCount++;
+	return questCount;
+}
+
+Main.updateCanStartQuest = function(main,neverSetFlag){
+	for(var i in main.quest){
+		var q = Quest.get(i);
+		var canStart = q.requirement.canStart(main);
+		if(main.quest[i].canStart !== canStart){
+			main.quest[i].canStart = canStart;
+			if(neverSetFlag !== false){
+				var str = 'You have unlocked the quest ';
+				str += Message.generateTextLink("exports.Dialog.open('quest','" + i + "');",q.name);
+				str += '.';
+				Message.addPopup(main.id,str); 
+				Main.setFlag(main,'quest',i);
+			}
+		}
+	}
+}
+
 
 //###################
 

@@ -1,6 +1,6 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
-var Sign = require2('Sign'), Main = require2('Main'), ActiveList = require2('ActiveList'), Socket = require2('Socket'), Map = require2('Map'), Actor = require2('Actor'), Performance = require2('Performance'), Anim = require2('Anim'), Strike = require2('Strike'), Drop = require2('Drop'), Bullet = require2('Bullet');
+var Sign = require2('Sign'), Main = require2('Main'), ActiveList = require2('ActiveList'), Socket = require2('Socket'), Maps = require2('Maps'), Actor = require2('Actor'), Performance = require2('Performance'), Anim = require2('Anim'), Strike = require2('Strike'), Drop = require2('Drop'), Bullet = require2('Bullet');
 var BISON = require('./client/js/shared/BISON');
 
 var Send = exports.Send = {};
@@ -8,19 +8,23 @@ var LOOP100 = true;
 
 var DEBUG_SIMULATION_PACKAGE_LOST = NODEJITSU ? false : false;
 var DEBUG_SIMULATION_PACKAGE_LOST_GOOD = true;
+var BOT_WATCHER = null;
+var BOT_WATCHED = null;
+
 
 Send.loop = function(){		// 1/2 times
 	
 	if(DEBUG_SIMULATION_PACKAGE_LOST){
 		INFO('DEBUG_SIMULATION_PACKAGE_LOST');
 		if(DEBUG_SIMULATION_PACKAGE_LOST_GOOD)
-			if(Math.random() < 1/20) DEBUG_SIMULATION_PACKAGE_LOST_GOOD = false;	//TEMP IMPORTANT
+			if(Math.random() < 1/20) 
+				DEBUG_SIMULATION_PACKAGE_LOST_GOOD = false;
 		if(!DEBUG_SIMULATION_PACKAGE_LOST_GOOD){
-			if(Math.random() < 1/5) DEBUG_SIMULATION_PACKAGE_LOST_GOOD = true;	//TEMP IMPORTANT
+			if(Math.random() < 1/5) 
+				DEBUG_SIMULATION_PACKAGE_LOST_GOOD = true;
 			return;
 		}
 	}
-	
 	
 	Send.loop.FRAME_COUNT++;
 	if(Send.loop.FRAME_COUNT % 2 !== 0)	return;
@@ -28,16 +32,16 @@ Send.loop = function(){		// 1/2 times
 	LOOP100 = Send.loop.FRAME_COUNT % 100 === 0;
 	Socket.forEach(function(socket){
 		if(!socket.clientReady) return;
-		if(socket.key === Send.activeBotwatch.WATCHER) return;
+		if(socket.key === BOT_WATCHER) return;
 		var info = Send.sendUpdate(socket.key,socket);
 		
-		if(socket.key === Send.activeBotwatch.WATCHED){
-			var watcherSocket = Socket.get(Send.activeBotwatch.WATCHER);
+		if(socket.key === BOT_WATCHED){
+			var watcherSocket = Socket.get(BOT_WATCHER);
 			if(watcherSocket)
 				watcherSocket.emit('change', info );
 			else {
-				Send.activeBotwatch.WATCHER = null;	//logout
-				Send.activeBotwatch.WATCHED = null;
+				BOT_WATCHER = null;	//logout
+				BOT_WATCHED = null;
 			}
 		} 
 			
@@ -90,7 +94,7 @@ Send.sendUpdate = function(key,socket){
 	
 	
 	//Anim
-	var map = Map.get(player.map);
+	var map = Maps.get(player.map);
 	for(var i in map.list.anim){
 		var anim = Anim.get(i);
 		if(!Send.testIncludeAnim(player,anim)) continue;
@@ -160,11 +164,19 @@ Send.activeBotwatch = function(key,towatch){
 	Main.get(towatch).old = {};
 	Actor.get(towatch).old = {};
 	Actor.get(towatch).privateOld = {};
-	Send.activeBotwatch.WATCHER = key;
-	Send.activeBotwatch.WATCHED = towatch;
+	
+	if(key === towatch){
+		BOT_WATCHER = null;
+		BOT_WATCHED = null;
+		return;
+	}
+		
+	
+	
+	BOT_WATCHER = key;
+	BOT_WATCHED = towatch;
 }
-Send.activeBotwatch.WATCHER = null;
-Send.activeBotwatch.WATCHED = null;
+
 
 
 

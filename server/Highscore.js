@@ -8,10 +8,7 @@ var SIGN_IN_PACK = {};
 
 //QueryDb.get('highscore','Qbtt000-speedrun')
 //Socket.emit('queryDb', QueryDb.create('highscore','Qbtt000-speedrun'));
-//QueryDb.getDB().highscore['Qbtt000-speedrun']
 //ts("Quest.DB['QlureKill'].highscore['QlureKill-_score'].getScore.toString()")
-
-
 var Highscore = exports.Highscore = {};
 Highscore.create = function(quest,id,name,description,order,getScore){	//constructor
 	var tmp = {
@@ -36,11 +33,6 @@ Highscore.get = function(id){
 
 Highscore.init = function(dbLink,app){
 	db = dbLink;
-	app.post('/highscoreHomePage',function(req,res){
-		res.send({
-			highscore:Highscore.getHomePageRank()
-		});
-	});
 }
 
 Highscore.Score = function(category,rank,value,username){
@@ -132,22 +124,35 @@ Highscore.compressDb = function(category,value,username){
 }
 
 Highscore.setNewScore = function(q,main,mq){
+	/*var ret = {
+		fastestTime:{score:2,previousBestScore:2312},
+	};*/
 	var ret = {};
+	if(main.username === Server.ADMIN_RC) 	//BADDDD
+		return ret;
 	for(var i in q.highscore){
 		var score = q.highscore[i].getScore(main.id);
-		if(typeof score !== 'number') continue;
-		ret[i] = score;
+		if(typeof score !== 'number' || isNaN(score)) 
+			continue;
+		
+		ret[i] = Highscore.setNewScore.response(score,mq._highscore[i]);
 		
 		if(mq._highscore[i] === null
 			|| (q.highscore[i].order === 'ascending' && score < mq._highscore[i])
 			|| (q.highscore[i].order === 'descending' && score > mq._highscore[i])){
 			mq._highscore[i] = score.r(4);
-			
 			Highscore.saveScore(i,mq._highscore[i],main.username);
 		}
 	}
 	return ret;
 }
+Highscore.setNewScore.response = function(score,previousBestScore){
+	return {
+		score:score,
+		previousBestScore:previousBestScore
+	};
+}
+
 
 Highscore.saveAllScore = function(main,cb){
 	var maxcount = 0;
@@ -157,14 +162,15 @@ Highscore.saveAllScore = function(main,cb){
 			maxcount++;	//need own loop otherwise fuck ++count === maxcount cuz cb can be sync if value === null
 		}
 	}
+	var func = function(err){
+		if(err) ERROR.err(3,err);
+		if(++count === maxcount){
+			if(cb) cb();
+		}
+	};
 	for(var i in main.quest){
 		for(var j in main.quest[i]._highscore){
-			Highscore.saveScore(j,main.quest[i]._highscore[j],main.username,function(err){
-				if(err) ERROR.err(3,err);
-				if(++count === maxcount){
-					if(cb) cb();
-				}
-			});
+			Highscore.saveScore(j,main.quest[i]._highscore[j],main.username,func);
 		}
 	}
 	if(maxcount === 0){
@@ -190,12 +196,15 @@ Highscore.getHomePageRank = function(){
 		Highscore.getHomePageRank.update();
 	return Highscore.getHomePageRank.INFO;
 }
+
 Highscore.getHomePageRank.update = function(){
 	Highscore.fetchTopScore('Qhighscore-questCount',function(list){
 		Highscore.getHomePageRank.INFO = list;
 	},5);
 }
+
 Highscore.getHomePageRank.INFO = {};
+
 Highscore.getHomePageRank.LAST_UPDATE = -1;
 
 

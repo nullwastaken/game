@@ -49,81 +49,50 @@ Sfx.create('earthBomb','earthHit.mp3');  //http://soundbible.com/2075-RPG-Plus-S
 Sfx.create('rangeBomb','rangeBomb.mp3');  //AKA wind //http://soundbible.com/1247-Wind.html
 */
 
-Sfx.create('arrowHit','rpg/arrowHit.ogg'); 
-Sfx.create('aura','rpg/aura.ogg'); 
-Sfx.create('bind','rpg/bind.ogg'); 
-Sfx.create('boost','rpg/boost.ogg'); 
-Sfx.create('boostRed','rpg/boostRed.ogg'); 
-Sfx.create('coldBomb','rpg/coldBomb.ogg'); 
-Sfx.create('coldHit','rpg/coldHit.ogg'); 
-Sfx.create('curse','rpg/curse.ogg'); 
-Sfx.create('earthBomb','rpg/earthBomb.ogg'); 
-Sfx.create('earthHit','rpg/earthHit.ogg'); 
-Sfx.create('fireBomb','rpg/fireBomb.ogg'); 
-Sfx.create('fireBomb2','rpg/fireBomb2.ogg'); 
-Sfx.create('fireHit','rpg/fireHit.ogg'); 
-Sfx.create('fireHit2','rpg/fireHit2.ogg'); 
-Sfx.create('heal','rpg/heal.ogg'); 
-Sfx.create('lightningBomb','rpg/lightningBomb.ogg'); 
-Sfx.create('lightningBomb2','rpg/lightningBomb2.ogg'); 
-Sfx.create('lightningHit','rpg/lightningHit.ogg'); 
-Sfx.create('magicBomb','rpg/magicBomb.ogg'); 
-Sfx.create('magicHit','rpg/magicHit.ogg'); 
-Sfx.create('rangeBomb','rpg/rangeBomb.ogg'); 
-Sfx.create('scratch','rpg/scratch.ogg'); 
-Sfx.create('scratch2','rpg/scratch2.ogg'); 
-Sfx.create('slashMelee','rpg/slashMelee.ogg'); 
+Sfx.create('arrowHit','rpg/arrowHit.mp3'); 
+Sfx.create('bind','rpg/bind.mp3'); 
+Sfx.create('boost','rpg/boost.mp3');
+Sfx.create('boostRed','rpg/boostRed.mp3'); 
+Sfx.create('coldBomb','rpg/coldBomb.mp3'); 
+Sfx.create('coldHit','rpg/coldHit.mp3'); 
+Sfx.create('curse','rpg/curse.mp3'); 
+Sfx.create('earthBomb','rpg/earthBomb.mp3'); 
+Sfx.create('earthHit','rpg/earthHit.mp3'); 
+Sfx.create('fireBomb2','rpg/fireBomb2.mp3'); 
+Sfx.create('fireHit','rpg/fireHit.mp3'); 
+Sfx.create('fireHit2','rpg/fireHit2.mp3'); 
+Sfx.create('heal','rpg/heal.mp3'); 
+Sfx.create('lightningBomb','rpg/lightningBomb.mp3'); 
+Sfx.create('lightningBomb2','rpg/lightningBomb2.mp3'); 
+Sfx.create('lightningHit','rpg/lightningHit.mp3'); 
+Sfx.create('magicBomb','rpg/magicBomb.mp3'); 
+Sfx.create('magicHit','rpg/magicHit.mp3'); 
+Sfx.create('rangeBomb','rpg/rangeBomb.mp3'); 
+Sfx.create('scratch','rpg/scratch.mp3');
+Sfx.create('slashMelee','rpg/slashMelee.mp3'); 
 Sfx.create('slashFire','rpg/slashFire.mp3'); 
 Sfx.create('slashCold','rpg/slashCold.mp3'); 
 Sfx.create('slashLightning','rpg/slashLightning.mp3'); 
-Sfx.create('strikeHit','rpg/strikeHit.ogg'); 
-Sfx.create('waterBomb','rpg/waterBomb.ogg'); 
-Sfx.create('windBomb','rpg/windBomb.ogg'); 
+Sfx.create('strikeHit','rpg/strikeHit.mp3');
 
 
+Sfx.play = function(sfxInfo,volumeMod){
+	if(typeof sfxInfo === 'string')
+		sfxInfo = {id:sfxInfo,volume:1};
+	volumeMod = volumeMod === undefined ? sfxInfo.volume : volumeMod;
 
-
-
-/*
-"boostWhite":2,
-"boostPink":2,
-"boostRed":6,
-"slashMelee":3,
-"strikeHit":13,
-"splashMelee":2,
-"lightningHit":15,
-"magicBomb":2,
-"fireHit":19,
-"fireBomb":3,
-"coldHit":8,
-"lightningBomb":2,
-"aura":1,
-"earthBomb":3,
-"rangeBomb":1,
-"coldBomb":1,
-"scratch":2,
-"scratch2":2,
-"bind":4,
-"curseGreen":1,
-"cursePink":4,
-"slashLightning":1,
-"slashFire":2,
-"magicHit":1,
-"earthHit":2,
-"slashCold":1}
-*/
-
-Sfx.play = function(id,volume){
-	var sfx = DB[id];
-	if(!sfx) return ERROR(3,'no sfx with that id',id);
-	var vol = volume === undefined ? 1 : volume;
-	vol *= sfx.volume;
+	var sfxModel = DB[sfxInfo.id];
+	if(!sfxModel) 
+		return ERROR(3,'no sfx with that id',sfxInfo.id);
+	var vol = volumeMod;
+	vol *= sfxModel.volume;
 	vol *= Main.getPref(main,'volumeSfx')/100 * Main.getPref(main,'volumeMaster')/100;
-	if(vol === 0) return;
+	if(vol === 0) 
+		return;
 	
-	for(var i in sfx.list){
-		if(sfx.list[i].ended || !sfx.list[i].currentTime){	//ended or never started
-			var s = sfx.list[i];
+	for(var i in sfxModel.list){
+		var s = sfxModel.list[i];
+		if(s.ended || !s.currentTime){	//ended or never started
 			s.volume = vol;
 			s.play();
 			return;

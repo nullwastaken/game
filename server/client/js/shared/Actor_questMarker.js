@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Map = require2('Map'), MapGraph = require2('MapGraph');
+var Maps = require2('Maps'), MapGraph = require2('MapGraph');
 var Img = require4('Img');
 var Actor = require3('Actor');
 
@@ -18,7 +18,7 @@ Actor.QuestMarker = function(goal,client){
 		goal:{
 			x:goal.x || 0,
 			y:goal.y || 0,
-			map:Map.getModel(goal.map || Actor.DEFAULT_SPOT.map),		
+			map:Maps.getModel(goal.map || Actor.DEFAULT_SPOT.map),		
 		}	
 	}
 	return a;
@@ -64,8 +64,8 @@ Actor.getQuestMarkerMinimap = function(act){	//client side
 		ret.push({
 			vx:vx,
 			vy:vy,
-			icon:'minimapIcon.questMarker',
-			size:Img.getMinimapIconSize('minimapIcon.questMarker'),
+			icon:'minimapIcon-questMarker',
+			size:Img.getMinimapIconSize('minimapIcon-questMarker'),
 		});
 	}
 	return ret;

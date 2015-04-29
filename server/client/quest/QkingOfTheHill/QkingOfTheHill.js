@@ -8,6 +8,10 @@ var s = loadAPI('v1.0','QkingOfTheHill',{
 	author:"rc",
 	thumbnail:true,
 	description:"Stay on the hill as long as possible while killing rivals.",
+	category:["Combat"],
+	solo:true,
+	party:"PvP",
+	zone:"QfirstTown-south",
 	maxParty:2
 });
 var m = s.map; var b = s.boss; var g;
@@ -20,6 +24,7 @@ s.newVariable({
 	pt:0,
 	killCount:0,
 	gameOver:false,
+	startGame:false,
 });
 
 s.newHighscore('leastKill',"Least Kills","Least Kills",'ascending',function(key){
@@ -27,13 +32,13 @@ s.newHighscore('leastKill',"Least Kills","Least Kills",'ascending',function(key)
 		return s.get(key,'killCount');
 });
 
-s.newChallenge('fullTime',"Full Time","Never leave the hill for 90 seconds.",2,function(key){
+s.newChallenge('fullTime',"Full Time","Never leave the hill for 90 seconds.",function(key){
 	return true;
 });
-s.newChallenge('flowerPower',"Flower Power","You can only kill monsters while under the influence of flowers.",2,function(key){
+s.newChallenge('flowerPower',"Flower Power","You can only kill monsters while under the influence of flowers.",function(key){
 	return true;
 });
-s.newChallenge('neverAlone',"Never Alone","A monster needs to be on the hill in order to get points.",2,function(key){
+s.newChallenge('neverAlone',"Never Alone","A monster needs to be on the hill in order to get points.",function(key){
 	return true;
 });
 
@@ -41,13 +46,17 @@ s.newEvent('talkWushin',function(key){ //
 	s.startDialogue(key,'Wushin','intro');
 });
 s.newEvent('startGame',function(key){ //
+	s.set(key,'startGame',true);
 	s.teleport(key,'main','t1','party');
 	if(s.getPartySize(key) === 1){
 		var time = s.isChallengeActive(key,'fullTime') ? 90 : 60;
 		s.displayPopup(key,'Stay on the hill for ' + time + ' out of 90 seconds.');
 		s.setTimeout(key,function(){
-			s.failQuest(key);
-		},25*90);
+			if(s.isChallengeActive(key,'fullTime'))
+				s.completeQuest(key);	//failQuest not called in map loop
+			else
+				s.failQuest(key);
+		},25*90);	//+3 cuz win 3 sec later
 	} else {
 		s.enablePvp(key,true);
 		s.displayPopup(key,'First to stay on the hill for 60 seconds win.');		
@@ -59,10 +68,15 @@ s.newEvent('startGame',function(key){ //
 	}
 });
 s.newEvent('givePt',function(key){ //
-	if(s.get(key,'gameOver')) return;
+	if(s.get(key,'gameOver')) 
+		return;
 	s.add.one(key,'pt',1);
 	
-	var ptToGet = s.isChallengeActive(key,'fullTime') ? 89 : 60;
+	if(s.isChallengeActive(key,'fullTime'))
+		return;
+	
+	
+	var ptToGet = 60;
 	if(s.get.one(key,'pt') >= ptToGet){
 		if(s.getPartySize(key) !== 1){
 			s.set(key,'gameOver',true)
@@ -99,6 +113,8 @@ s.newEvent('_death',function(key){ //
 	s.setRespawn.one(key,'main',respawn.$random(),'party');
 });
 s.newEvent('_hint',function(key){ //
+	if(!s.get(key,'startGame'))
+		return 'Go talk with Wushin';
 	return 'You have been on the hill for ' + s.get.one(key,'pt') + ' seconds.';
 });
 s.newEvent('_start',function(key){ //
@@ -113,8 +129,10 @@ s.newEvent('_signOff',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-south','n1','main');
-	s.setRespawn(key,'QfirstTown-south','n1','main');
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-south','n1','main');
+		s.setRespawn(key,'QfirstTown-south','n1','main');
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
@@ -123,7 +141,7 @@ s.newEvent('killEnemy',function(key){ //
 	s.add(key,'killCount',1);
 });
 
-s.newDialogue('Wushin','Wushin','fairy.7',[ //{ 
+s.newDialogue('Wushin','Wushin','villagerFemale-6',[ //{ 
 	s.newDialogue.node('intro',"OMG! It's impossible, I can't seem to stay on the hill for long enough...",[ 
 		s.newDialogue.option("What's the matter?",'matter',''),
 		s.newDialogue.option("HAHA, you suck.",'suck','')
@@ -139,6 +157,7 @@ s.newDialogue('Wushin','Wushin','fairy.7',[ //{
 s.newMap('main',{
 	name:"The Hill",
 	lvl:0,
+	screenEffect:'weather',
 	grid:["11111111111111111111111111111111111111111111111111","11111111111111111111111111111111111111111111111111","11111111111111111111111111111111111111111111111111","11111111111111111111111111111111111111111111111111","11111111111111111111111111111111111111111111111111","11111111111111111111111111111111111111111111111111","11111111111111111111111111111111111111111111111111","11111111111111111100000000000000001111111111111111","11111111111111111100000000000000001111111111111111","00110000000000000000000000000000000000000000000110","00110000000000000000000000000000000000000000000110","01111000000000000000000000000000000000000000000110","00000000000000000000000000000000000000000000000000","00000000000000000000000000000000000000000000000000","20000000011000000001100000000001100000110000000000","22000000011000000011100000000001110000110000000000","22200000000000000111100000000001111000000000000002","22200000000000000100000000000000001000000000000022","22200000000000000000000000000000000000000000000222","22200000000000000000000000000000000000000000000222","22200000000000000000000000000000000000000000000222","22200000000000000000000000000000000000000000000222","22200000000000000000000000000000000000000000000222","22200000000000000000000000000000000000000000000222","22200000000000000000000000000000000000000000000222","22200000000000000000000000000000000000000000000222","22220000000000000001100000000001100000000000000222","22220000000000000111100000000001111000000000002222","22220000000000000111100000000001111000000000002222","22220000000000000011110000000011110000000000022222","22220001100000000001110000000011100000000000022222","22220001100000000000110000000011000000000000022222","22220000000000000000010000000010000000000000022222","22220000000000000000000000000000000000000000022222","22220000000000000000000000000000000000000000022222","22220000000000000000000000000000000000000000022222","22220000000000000000000000000000000000000000022222","22222000000000000000000000000000000000000000022222","22222200000000000000000000000000000000000000022222","22222200011000000000000000000000000000000000022222","22222220011000000000000000000000000000001100022222","22222220000000000000000000000000000000001100022222","22222222000000000000000000000000000000000000222222","22222222200000000000000000000000000000000002222222","22222222222222200000000000000000000000000022222222","22222222222222222000000000000000000000222222222222","22222222222222222222222222222222222222222222222222","22222222222222222222222222222222222222222222222222","22222222222222222222222222222222222222222222222222","22222222222222222222222222222222222222222222222222"],
 	tileset:'v1.2'
 },{
@@ -162,9 +181,10 @@ s.newMap('main',{
 			var randomPlayer = m.getRandomPlayer(spot);
 			if(guyInZone && s.getPartySize(randomPlayer) === 1){
 				var mySpot = [spot.e1,spot.e2,spot.e3,spot.e4];
-				var myModel = ['dragon','bee','bat','mushroom','gargoyle','bird','demon'];
+				var myModel = ['dragon','bee','bat','mushroom','smallWorm','bigWorm','pumpking'];
 				m.spawnActor(mySpot.$random(),myModel.$random(),{
-					deathEvent:'killEnemy'
+					deathEvent:'killEnemy',
+					moveRange:s.newNpc.moveRange(0.5,10),
 				});
 			}
 		}
@@ -183,11 +203,22 @@ s.newMap('main',{
 		
 		m.forEachActor(spot,25,function(key){	//must be last
 			if(!bool) return;
-			if(!s.isChallengeActive(key,'neverAlone') || monsterInZone){
-				if(s.callEvent.one('givePt',key))
+			if(m.isAtSpot(key,spot.b1)){
+				if(!s.isChallengeActive(key,'neverAlone') || monsterInZone){			
+					if(s.callEvent.one('givePt',key))
+						bool = false;
+				}
+			} else {
+				if(s.isChallengeActive(key,'fullTime') && !s.get(key,'gameOver')){
+					s.set(key,'gameOver',true);
+					s.displayPopup(key,'You left the hill.');
+					s.setTimeout(key,function(){
+						s.failQuest(key);
+					},25*1);
 					bool = false;
+				}			
 			}
-		},'player',spot.b1);
+		},'player');
 	}
 });
 s.newMapAddon('QfirstTown-south',{
@@ -195,7 +226,7 @@ s.newMapAddon('QfirstTown-south',{
 	load:function(spot){
 		m.spawnActor(spot.n1,'npc',{
 			name:"Wushin",
-			sprite:s.newNpc.sprite('fairy7',1),
+			sprite:s.newNpc.sprite('villagerFemale-6',1),
 			dialogue:'talkWushin',
 			angle:s.newNpc.angle('left'),
 			nevermove:true,

@@ -9,7 +9,7 @@ Ability.create = function(quest,id,ability){
 		id:'',
 		type:"attack",
 		name:"Strike",
-		icon:"attackMelee.cube",
+		icon:"attackMelee-cube",
 		description:"Regular Melee Strike",
 		periodOwn:25,
 		periodGlobal:25,
@@ -54,11 +54,11 @@ var DB = Ability.DB = {};
 
 Ability.get = function(id){
 	return DB[id] || null;	
-};	//for quest
+};
 
 Ability.createItemVersion = function(tmp){
 	//ability id === item id or quest reward fucked
-	ItemModel.create(tmp.quest,tmp.id,tmp.name,'plan.ability',[
+	ItemModel.create(tmp.quest,tmp.id,tmp.name,'plan-ability',[
 		ItemModel.Option(Ability.clickScroll,'Learn Ability','Learn Ability',[OptionList.ACTOR,tmp.id])
 	],tmp.name,{trade:false,type:'ability'});
 }

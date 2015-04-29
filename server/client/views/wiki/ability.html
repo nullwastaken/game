@@ -1,0 +1,91 @@
+<% include ../partial/header.html %>
+<div class="container">
+	<h3>Abilities</h3>
+	<p>
+	This is the list of the abilities players can unlock by completing quests.
+	</p>
+	<style>
+	#myTable tr td {
+		font-weight: 500;
+	}
+	#myTable tr td:first-child {
+		/*text-decoration:underline;*/
+		font-weight: 900;
+		font-size:1.6em;
+	}
+	</style>
+	<table id="myTable" class="CSSTableGenerator2">
+		<tr>
+			<th>Ability</th>
+			<th>Obtained from</th>
+			<th>Type</th>
+			<th>Damage</th>
+			<th>Description</th>
+		</tr>
+		<tr><td>Strike</td><td>Tutorial</td><td>Melee Attack</td><td>500</td><td>Regular Melee Strike</td></tr>
+		<tr><td>Basic Bullet</td><td>Tutorial</td><td>Range Attack</td><td>100 * 3</td><td>Very fast arrow shooting.</td></tr>
+		<tr><td>Magic Bullet</td><td>Bipolarity</td><td>Magic Attack</td><td>300</td><td>Powerful magic spell with increased chance to drain mana.</td></tr>
+		<tr><td>Fire Ball</td><td>Base Defence</td><td>Fire Attack</td><td>400</td><td>Shoot a single fireball that explodes upon hit.</td></tr>
+		<tr><td>Ice Shards</td><td>Break The Targets</td><td>Cold Attack</td><td>300 * 2</td><td>Shoot multiple ice shards.</td></tr>
+		<tr><td>Lightning Bullet</td><td>Bullet Heaven</td><td>Lightning Attack</td><td>125</td><td>Shoot piercing lightning balls at the speed of light.</td></tr>
+		<tr><td>Bleeding Blow</td><td>Collect & Fight</td><td>Melee Attack</td><td>700</td><td>Powerful Melee Strike with increased bleed chance. Cost life.</td></tr>
+		<tr><td>Wind</td><td>Lure & Kill</td><td>Range Attack</td><td>200 * 3</td><td>Defensive wind that pushes enemies away.</td></tr>
+		<tr><td>Magic Explosion</td><td>Minesweeper</td><td>Magic Attack</td><td>1200</td><td>Explosive spell that can leech life.</td></tr>
+		<tr><td>Fireball Boom</td><td>Tutorial</td><td>Fire Attack</td><td>150 * 7</td><td>Shoot multiple fireballs.</td></tr>
+		<tr><td>Freeze Bullet</td><td>Tutorial</td><td>Cold Attack</td><td>200 * 5</td><td>Defensive spell that feezes enemies.</td></tr>
+		<tr><td>Lightning Explosion</td><td>Protect Town</td><td>Lightning Attack</td><td>400</td><td>Explodes in all directions, piercing through enemies.</td></tr>
+		<tr><td>Heal</td><td>Tutorial</td><td>Heal</td><td>-</td><td>Replenish resources.</td></tr>
+		<tr><td>Fast Regen</td><td>Puzzle Bridge</td><td>Heal</td><td>-</td><td>Faster but less powerful healing.</td></tr>
+		<tr><td>Expensive Regen</td><td>RGB</td><td>Heal</td><td>-</td><td>Mana-expensive but great healing.</td></tr>
+		<tr><td>Slow Cast Regen</td><td>Darkness</td><td>Heal</td><td>-</td><td>Slow to cast but free healing.</td></tr>
+		<tr><td>Invincibility</td><td>Tutorial</td><td>Dodge</td><td>-</td><td>Dodge all damage.</td></tr>
+		<tr><td>Fast Dodge</td><td>Tower Defence</td><td>Dodge</td><td>-</td><td>Faster dodge but more mana-expensive.</td></tr>
+		<tr><td>Life Dodge</td><td>Duel League</td><td>Dodge</td><td>-</td><td>Cost Life instead of mana. Invincibility lasts longer.</td></tr>
+
+	</table>
+	<br>
+	
+	<!--
+	setTimeout(function(){
+	var arrayAb = ['start-melee',
+	'start-bullet',
+	'player-magicBullet',
+	'player-fireBullet',
+	'player-coldBullet',
+	'player-lightningBullet',
+	'player-meleeBig',
+	'player-windKnock',
+	'player-magicBomb',
+	'start-fireball',
+	'start-freeze',
+	'player-lightningBomb',
+	'start-heal','heal',
+	'player-healFast',
+	'player-healCost',
+	'player-healSlowCast',
+	'healZone',
+	'start-dodge',
+	'player-dodgeFast',
+	'player-dodgeLife'];
+	var str = '';
+
+	for(var i = 0 ; i < arrayAb.length; i++){
+		var ab = Ability.get('Qsystem-' + arrayAb[i]);
+		if(!ab) con sole.log(arrayAb[i]);
+		str += '<tr><td>' 
+			+ ab.name + '</td><td>' 
+			+ '' + '</td><td>' 
+			+ ab.type.$capitalize() + '</td><td>' 
+			+ (ab.type === 'attack' ? (ab.param.dmg.main + ' * ' + ab.param.amount) : '-') + '</td><td>' 
+			+ ab.description + '</td></tr>\r\n';
+		
+	}
+
+	con sole.log(str);
+
+},5000);
+-->
+	
+
+</div>
+<% include ../partial/footer.html %>

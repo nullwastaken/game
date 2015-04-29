@@ -9,6 +9,10 @@ var s = loadAPI('v1.0','Qfifteen',{
 	thumbnail:true,
 	description:"Place 15 blocks in the right order by pushing them.",
 	maxParty:1,
+	category:["Puzzle"],
+	solo:true,
+	zone:"QfirstTown-north",
+	party:"No",
 	scoreModInfo:"Depends on your time."
 });
 var m = s.map; var b = s.boss; var g;
@@ -22,6 +26,7 @@ s.newVariable({
 	goalOrder:'',
 	currentOrder:'',
 	lastClick:0,
+	startGame:false,
 });
 
 s.newHighscore('speedrun',"Fastest Time [Easy]","Fastest Completion",'ascending',function(key){
@@ -36,19 +41,19 @@ s.newHighscore('leastPush',"Least Push","Least Amount of Block Pushed",'ascendin
 	return s.get(key,'pushCount');
 });
 
-s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 1 minute.",2,function(key){
+s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 1 minute.",function(key){
 	return s.stopChrono(key,'timer') < 25*1*60;
 });
-s.newChallenge('wise',"Master Mind","Complete the quest in less than 125 moves.",2,function(key){
+s.newChallenge('wise',"Master Mind","Complete the quest in less than 125 moves.",function(key){
 	return s.get(key,'pushCount') < 125;
 });
-s.newChallenge('shuffle',"Shuffle","You need to order the numbers in a custom order.",2.5,function(key){
+s.newChallenge('shuffle',"Shuffle","You need to order the numbers in a custom order.",function(key){
 	return true;
 });
 
 s.newEvent('_start',function(key){ //
 	if(s.isAtSpot(key,'QfirstTown-north','n1',200))
-		s.callEvent('startGame',key);
+		s.callEvent('talkGundumb',key);
 	else s.addQuestMarker(key,'start','QfirstTown-north','n1');
 });
 s.newEvent('_signIn',function(key){ //
@@ -58,7 +63,10 @@ s.newEvent('_signOff',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-north','n1','main',false);
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-north','n1','main');
+		s.setRespawn(key,'QfirstTown-north','n1','main');
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
@@ -67,18 +75,31 @@ s.newEvent('_death',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('_hint',function(key){ //
+	if(!s.get(key,'startGame'))
+		return 'Go talk with Gundumb';
+
 	if(s.isChallengeActive(key,'shuffle')){
 		var array;
 		try {
 			array = JSON.parse(s.get(key,'goalOrder'));
 		} catch(err){ return ''; };
 	
-		return 'Place numbers in this order: <br> ' 
-			+ array[0].toString() + '<br> ' 
-			+ array[1].toString() + '<br> ' 
-			+ array[2].toString() + '<br> ' 
-			+ array[3].toString();
+		var str = 'Place numbers in this order: <br>';
+		str += '<table style="text-align:center;border-collapse:separate;border-spacing:5px;">';
+		for(var i = 0 ; i < array.length; i++){
+			str += '<tr>';
+			for(var j = 0; j < array[i].length; j++){
+				str += '<td>' + (array[i][j] === 16 ? '' : array[i][j]) + '</td>'
+			}
+			str += '</tr>';
+		}
+		str += '</table>';
+		return str;
 	}
+	if(s.isChallengeActive(key,'wise')){
+		return 'Place the blocks in ascending order.<br>Empty spot should be at bottom right.<br>Move Count: ' + s.get(key,'pushCount');
+	}
+	
 	return 'Place the blocks in ascending order.<br>Empty spot should be at bottom right.';
 });
 s.newEvent('getRandomGrid',function(){ //
@@ -110,6 +131,7 @@ s.newEvent('viewPreventBlock',function(key){ //
 	return !s.isPlayer(key);
 });
 s.newEvent('startGame',function(key){ //teleport and spawn enemy
+	s.set(key,'startGame',true);
 	s.startChrono(key,'timer',true);
 	s.teleport(key,'field','t1','party',true);
 	s.enableAttack(key,false);
@@ -155,7 +177,7 @@ s.newEvent('startGame',function(key){ //teleport and spawn enemy
 	}
 });
 s.newEvent('clickBlock',function(key,eid){ //
-	if(Date.now() - s.get(key,'lastClick') < 250)
+	if(Date.now() - s.get(key,'lastClick') < 400)
 		return;
 	s.set(key,'lastClick',Date.now());
 
@@ -204,11 +226,28 @@ s.newEvent('clickBlock',function(key,eid){ //
 	s.set(key,'currentOrder',JSON.stringify(currentOrder));
 	
 	if(s.get(key,'currentOrder') === s.get(key,'goalOrder')){	//both stringify
+		s.startDialogue(key,'Gundumb','complete');
 		s.setTimeout(key,function(key){
 			s.completeQuest(key);
-		},25*3);
+		},25*4);
 	}
 });
+s.newEvent('talkGundumb',function(key,eid){ //
+	s.startDialogue(key,'Gundumb','intro');
+});
+
+s.newDialogue('Gundumb','Gundumb','villagerFemale-7',[ //{ 
+	s.newDialogue.node('intro',"1-2-3-4-5-6-7-8-9-10-11-12-13-14-15!!! 15! 15! 15!",[ 
+		s.newDialogue.option("That fuck?",'intro2','')
+	],''),
+	s.newDialogue.node('intro2',"This puzzle is driving me insane! All you need to do is place the numbers in the right order, yet I can't do it. Apparently there's something amazing that happens if you manage to do so.",[ 
+		s.newDialogue.option("Let me give it a try.",'','startGame')
+	],''),
+	s.newDialogue.node('complete',"OMG! You are amazing!",[ 
+		s.newDialogue.option("Yeah. I know.",'','')
+	],'')
+]); //}
+
 
 s.newMap('field',{
 	name:"15-Puzzle",
@@ -224,9 +263,12 @@ s.newMap('field',{
 s.newMapAddon('QfirstTown-north',{
 	spot:{n1:{x:3152,y:2448}},
 	load:function(spot){
-		m.spawnTeleporter(spot.n1,'startGame','zone',{
-			minimapIcon:'minimapIcon.quest',
-			angle:s.newNpc.angle('right'),
+		m.spawnActor(spot.n1,'npc',{
+			name:'Gundumb',
+			dialogue:'talkGundumb',
+			nevermove:true,
+			angle:s.newNpc.angle('left'),
+			sprite:s.newNpc.sprite('villagerFemale-7',1),
 		});
 	}
 });

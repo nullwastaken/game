@@ -1,12 +1,14 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Actor = require4('Actor'), Collision = require4('Collision'), ClientPrediction = require4('ClientPrediction'), Button = require4('Button'), Socket = require4('Socket'), Main = require4('Main'), Message = require4('Message'), Dialog = require4('Dialog'), Command = require4('Command');
+var Actor = require4('Actor'), Collision = require4('Collision'), Button = require4('Button'), Socket = require4('Socket'), Main = require4('Main'), Message = require4('Message'), Dialog = require4('Dialog'), Command = require4('Command');
 var Input = exports.Input = {};
 
 //a 65,b 66,c 67,d 68,e 69,f 70,g 71,h 72,i 73,j 74,k 75,l 76,m 77,n 78,o 79,p 80,q 81,r 82,s 83,t 84,u 85,v 86,w 87,x 88,y 89,z 90,,backspace 8,tab 9,enter 13,shift 16,ctrl 17,alt 18,pause/break 19,caps lock 20,escape 27,page up 33,page down 34,end 35,home 36,left arrow 37,up arrow 38,right arrow 39,down arrow 40,insert 45,delete 46,0 48,1 49,2 50,3 51,4 52,5 53,6 54,7 55,8 56,9 57,left window key 91,right window key 92,select key 93,numpad 0 96,numpad 1 97,numpad 2 98,numpad 3 99,numpad 4 100,numpad 5 101,numpad 6 102,numpad 7 103,numpad 8 104,numpad 9 105,multiply 106,add 107,subtract 109,decimal point 110,divide 111,f1 112,f2 113,f3 114,f4 115,f5 116,f6 117,f7 118,f8 119,f9 120,f10 121,f11 122,f12 123,num lock 144,scroll lock 145,semi-colon 186,equal sign 187,comma 188,dash 189,period 190,forward slash 191,grave accent 192,open bracket 219,back slash 220,close braket 221,single quote 222,
 
 var $gameDiv; //init
+var $mainDiv; 
+var $gameBottom;
 var SETTING = null;
 var STATE = null;
 var BINDING = {move:null,ability:null};
@@ -36,6 +38,7 @@ Input.Setting = function(move,ability,custom){
 		custom:custom		
 	}
 }
+
 
 Input.Setting.move = function(right,down,left,up){
 	return [right,down,left,up];
@@ -76,6 +79,7 @@ Input.changeSetting = function(move,ability,custom){
 			$(".ui-tooltip-content").parents('div').remove();
 			return false;
 		}),
+		/*
 		Input.Setting.custom(49,function(){ 	//1
 			if(Dialog.isActive('dialogue') && main.dialogue.node.option[0]){
 				Command.execute('dialogue,option',[0]);
@@ -104,6 +108,7 @@ Input.changeSetting = function(move,ability,custom){
 				return true;
 			}
 		}),
+		*/
 	];
 	SETTING = Input.Setting(move,ability,custom);
 	Input.reset();
@@ -132,6 +137,10 @@ Input.usePreset = function(preset){
 			Input.Setting.ability(81,87,69,82,70,32) //q w e r f space
 		);	
 }
+Input.resetAbilityBinding = function(){
+	SETTING.ability = Input.Setting.ability(1,3,SHIFTKEY+1,SHIFTKEY+3,70,32);
+}	
+
 
 Input.saveSetting = function(){
 	localStorage.setItem('bindingMove',JSON.stringify(SETTING.move));
@@ -188,10 +197,16 @@ Input.isPressed = function(what,position){
 	return !!STATE[what][position];
 }	
 
-Input.getMouse = function(){
+Input.getMouse = function(absolute){
+	if(!absolute)
+		return {
+			x:STATE.mouseX,
+			y:STATE.mouseY,
+			down:STATE.mouseDown,
+		}
 	return {
-		x:STATE.mouseX,
-		y:STATE.mouseY,
+		x:STATE.mouseX + CST.WIDTH2,
+		y:STATE.mouseY + CST.HEIGHT2,
 		down:STATE.mouseDown,
 	}
 }
@@ -200,8 +215,22 @@ Input.getMouse = function(){
 //Event
 Input.init = function(){
 	$gameDiv = $('#gameDiv');
+	$mainDiv = $('#mainDiv');
+	$gameBottom = $("#gameBottom");
 	
 	Input.loadSetting();
+	$(window).resize(function(e){
+		Input.init.T = e.target;
+		if(e.target === window)
+			return Input.onResize();
+			
+		var div = $(e.target).find('.ui-dialog-content')
+		if(div){
+			div.css({width:'100%'});
+			div.height($(e.target).height()-40);	//BAD
+		}
+	});
+	Input.onResize();
 	
 	window.onblur = function(){
 		Input.reset();
@@ -227,11 +256,6 @@ Input.init = function(){
 		WINDOW_ACTIVE = false; 
 	});
 	
-	
-	window.onscroll = function(){ 
-		if(Input.getMouse().y < CST.HEIGHT) 
-		window.scrollTo(0, 0); 
-	};
 	$(document).keydown(function(event) {	
 		Input.onkeydown(event.keyCode,'down',event);
 	});
@@ -274,10 +298,11 @@ Input.onkeydown = function(code,dir,event){
 	
 	if(Input.hasFocusOnInput()) return false;
 	
+	var list = ['right','down','left','up'];
 	for(var i = 0; i < SETTING.move.length; i++){
 		if(code === SETTING.move[i]){
 			STATE.move[i] = num;
-			player.moveInput[['right','down','left','up'][i]] = num;	//TEMP
+			player.moveInput[list[i]] = num;
 		}
 	}
 	
@@ -313,10 +338,6 @@ Input.onkeydown = function(code,dir,event){
 var XBOX_SHIFT = false; //Input.controller.loop
 
 Input.onclick = function(code,dir,event){	
-	if(Date.now() - Input.onclick.LAST < 50) return;
-	Input.onclick.LAST = Date.now();
-	
-	
 	var num = dir === 'down' ? 1 : 0;
 	if(event.shiftKey || XBOX_SHIFT) 
 		code += SHIFTKEY;
@@ -362,18 +383,19 @@ Input.onclick = function(code,dir,event){
 		Input.setTarget();
 	}
 }
-Input.onclick.LAST = Date.now();
 
 Input.onwheel = function(side){
 
 }
 
 Input.onmove = function (evt){
-	STATE.mouseX = evt.clientX - ($gameDiv[0].offsetLeft - window.pageXOffset);
-	STATE.mouseY = evt.clientY - ($gameDiv[0].offsetTop - window.pageYOffset);
-	Input.onmove.COUNT++;
+	/*var factor = 1;
+	if(document.body.style.zoom)
+		factor = 100/(+document.body.style.zoom.slice(0,-1));*/
+	
+	STATE.mouseX = evt.clientX - ($gameDiv[0].offsetLeft - window.pageXOffset) - CST.WIDTH2;
+	STATE.mouseY = evt.clientY - ($gameDiv[0].offsetTop - window.pageYOffset) - CST.HEIGHT2;	
 }
-Input.onmove.COUNT = 0;
 
 Input.State.Target = function(x,y,active){
 	return {
@@ -383,21 +405,19 @@ Input.State.Target = function(x,y,active){
 	}
 }
 
-
 Input.setTarget = function(x,y){
-	x = x || Input.getMouse().x;
-	y = y || Input.getMouse().y;
+	x = x || Input.getMouse(true).x;
+	y = y || Input.getMouse(true).y;
 
 	var farthest = Collision.strikeMap.client(player,{
-		x:x-CST.WIDTH2+player.x,
-		y:y-CST.HEIGHT2+player.y,
+		x:Tk.absToRel.x(x),
+		y:Tk.absToRel.y(y),
 	},'player');
 
 	STATE.target.x = farthest.x;
 	STATE.target.y = farthest.y;
 	STATE.target.active = true;
 }
-
 
 //Send
 Input.loop = function(){
@@ -411,7 +431,7 @@ Input.loop = function(){
 	if(Input.isActiveUseMouseForMove()){
 		Input.loop.updateStateWithMouse();
 		
-		var mouse = Input.getMouse();
+		var mouse = Input.getMouse(true);
 		if(mouse.down && FRAME++ % 15 === 0){
 			Input.setTarget(mouse.x,mouse.y);
 		}
@@ -468,8 +488,7 @@ Input.loop.updateStateWithMouse = function(){
 		player.moveInput.up = 1;
 	else player.moveInput.up = 0;
 }	
-	
-	
+
 Input.loop.OLD = {key:'',mouse:[0,0],target:''};
 
 Input.isWindowActive = function(){
@@ -479,16 +498,16 @@ Input.isWindowActive = function(){
 Input.fixFirefox = function(){
 	for(var i in SETTING.ability){
 		if(SETTING.ability[i] === 1003){	//shift-right => c
-			Message.add(key,'Your Shift-Right click key binding has been changed to C becase Shift-Right click is not supported in Firefox.');
+			Message.add(null,'Your Shift-Right click key binding has been changed to C becase Shift-Right click is not supported in Firefox.');
 			SETTING.ability[i] = 67;	
 		}
 	}
 }
-			
-			
+					
 Input.isActiveUseMouseForMove = function(){
 	return USE_MOUVE_FOR_MOVE;
 }	
+
 Input.setUseMouseForMove = function(val){
 	if(!val && USE_MOUVE_FOR_MOVE){
 		USE_MOUVE_FOR_MOVE = false;
@@ -497,7 +516,7 @@ Input.setUseMouseForMove = function(val){
 		Input.reset();
 		setTimeout(function(){
 			Dialog.open('binding');
-			Message.addPopup(key,'Your Key Bindings have been changed.');
+			Message.addPopup(null,'Your Key Bindings have been changed.');
 		},500);
 	}
 	else if(val && !USE_MOUVE_FOR_MOVE){
@@ -507,12 +526,10 @@ Input.setUseMouseForMove = function(val){
 		Input.reset();
 		setTimeout(function(){
 			Dialog.open('binding');
-			Message.addPopup(key,'Your Key Bindings have been changed.<br>Use Left-Click to move around and Q-W-E-R to attack.<br>The black circle following you represents the server position.');
+			Message.addPopup(null,'Your Key Bindings have been changed.<br>Use Left-Click to move around and Q-W-E-R to attack.<br>The black circle following you represents the server position.');
 		},500);
 	}
 }
-
-
 	
 //##############
 /*
@@ -545,5 +562,34 @@ Input.controller.loop = function(){	//TOFIX bad name
 	STATE.move[1] = +(axe[1] > 0.4);
 	STATE.move[3] = +(axe[1] < -0.4);
 }
+
+var FUNC_LIST = Input.F = [];
+Input.callOnResize = function(funcORdom){	
+	FUNC_LIST.push(funcORdom);
+}
+
+Input.onResize = function(func){
+	CST.WIDTH = Math.max(700,Math.min(1920,$(window).width()));
+	CST.HEIGHT = Math.max(400,Math.min(1080,$(window).height()-35));	//-30 for gameBottom
+	
+	$mainDiv.css({width:CST.WIDTH,height:CST.HEIGHT});
+	$gameDiv.css({width:CST.WIDTH,height:CST.HEIGHT});
+	$gameBottom.css({top:CST.HEIGHT});
+	
+	CST.WIDTH2 = CST.WIDTH/2;
+	CST.HEIGHT2 = CST.HEIGHT/2;
+	
+	for(var i = 0 ; i < FUNC_LIST.length; i++){
+		if(typeof FUNC_LIST[i] !== 'function'){
+			FUNC_LIST[i].css({width:CST.WIDTH,height:CST.HEIGHT}).attr({width:CST.WIDTH,height:CST.HEIGHT});
+			Tk.smoothCanvas(FUNC_LIST[i]);
+		}
+		else
+			FUNC_LIST[i](CST.WIDTH,CST.HEIGHT);
+	}
+}
+
+
+
 
 })();

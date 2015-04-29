@@ -3,13 +3,14 @@
 var Main = require2('Main');
 
 var Party = exports.Party = {};
+Party.SOLO = '&';	//hardcoded in Dialog
 Party.create = function(id){
 	var tmp = {
 		id:id,
 		leader:null,
 		list:{},
-		maxSize:100,
 		quest:null,
+		solo:id[0] === Party.SOLO
 	};
 	LIST[id] = tmp;
 	return tmp;
@@ -18,17 +19,13 @@ var LIST = Party.LIST = {};
 
 Party.remove = function(party){
 	for(var i in party.list)
-		Main.leaveParty(Main.get(i));	//true to prevent infinite loop
+		Main.leaveParty(Main.get(i));
 	delete LIST[party.id];
 }
 
 Party.onSignIn = function(main){ //should be in Main.onSignIn... but need to be b4 teleport map
-	var newParty = Party.get(main.username) ? Math.randomId() : main.username;
-	Main.joinParty(main,newParty);	
+	Main.joinParty(main,Party.SOLO + Math.randomId(),false);	
 }
-
-
-	
 
 Party.getKeyList = function(party){
 	return Object.keys(party.list);

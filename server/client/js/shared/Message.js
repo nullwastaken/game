@@ -13,28 +13,31 @@ Message.TYPE = [ //{
 	'public', //appear in chatbox
 	//'clan', //appear in chatbox with clan name
 	'pm', //appear in pmbox
-	'report',	//logged in db
+	//'report',	//logged in db
 	'questionAnswer', //when client answers
 	'input',	//overwrite chat input
 	'contribution',	//appear in contribution box
+	'questPopup',
 	'signNotification',	//appear chatbox. called when player logs in game
 ]; //}
 
-Message.Pm = function(text,from,to){
+Message.Pm = function(text,from,to,symbol){
 	return Message.create({
 		type:'pm',
 		text:text,
 		from:from,
 		to:to,
+		symbol:symbol || '',
 	});
 }
 
 //#############
 
-Message.Contribution = function(text){
+Message.Contribution = function(text,scroll){
 	return Message.create({
 		type:'contribution',
-		text:text,
+		text:text || '',
+		scroll:scroll || false,
 	});
 }
 Message.SignNotification = function(text){
@@ -64,14 +67,21 @@ Message.Game = function(text,from){
 	})
 }
 
-Message.Public = function(text,from,customChat){
+Message.Public = function(text,from,color,symbol){
 	return Message.create({
 		type:'public',
 		text:text,
 		from:from,
-		symbol:!customChat ? 0 : customChat.symbol,
-		color:!customChat ? 0 : customChat.color,
+		color:color || 'yellow',
+		symbol:symbol || '',
 	})
+}
+
+Message.QuestPopup = function(text){
+	return Message.create({
+		type:'questPopup',
+		text:text,
+	});
 }
 
 
@@ -89,6 +99,22 @@ Message.uncompressClient = function(msg){
 		return Message.Game(msg,Message.SERVER);	//for compression
 	return msg;
 }
+
+Message.applyTempChange = function(list){
+	for(var i = 0 ; i < list.length; i++)
+		list[i] = Message.uncompressClient(list[i]);
+	
+	var str = '';
+	for(var i = 0 ; i < list.length; i++){
+		if(list[i].type === 'questPopup')
+			str += list[i].text + "<br><br>";
+		else 
+			Message.receive(list[i]);
+	}
+	if(str)
+		Message.receive(Message.QuestPopup(str.slice(0,-8)));	//-8 to remove <br><br>
+}
+		
 	
 //###############
 

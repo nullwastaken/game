@@ -53,7 +53,8 @@ Performance.init = function(){
 		color:'white',
 		font:'1em Kelly Slab',
 	},Dialog.Refresh(function(html){
-		if(!Main.getPref(main,'displayFPS')) return false;
+		if(!Main.getPref(main,'displayFPS')) 
+			return false;
 		//if overwrite old one, double tooltip...
 		
 		html.addClass('shadow');
@@ -61,7 +62,7 @@ Performance.init = function(){
 	},function(){
 		return '' + LATENCY + CLIENT_PERFORMANCE + Main.getPref(main,'displayFPS');
 	},25,function(html,variable,param){
-		var title = 'Ping: ' + LATENCY + ' ms. FPS: ' + (1000/CYCLE_TIME).r(0) + '/25.';
+		var title = 'Latency: ' + LATENCY + ' ms. FPS: ' + (1000/CYCLE_TIME).r(0) + '/25.';
 		var text = CLIENT_PERFORMANCE;
 		
 		if(variable.title !== title){
@@ -76,24 +77,5 @@ Performance.init = function(){
 	
 	
 }
-
-
-/*
-	$("#performanceDiv").css({
-		left:CST.WIDTH-CST.WIDTH/Main.getPref(main,'mapRatio')-50,
-		width:50,
-		height:30,
-		fontFamily:'Kelly Slab',
-		fontSize:'20px',
-		whiteSpace:'normal',
-		color:'white',
-	});
-	if(Main.getPref(main,'displayFPS')){
-		var text = 
-		Draw.setInn erHTML($("#performanceDiv")[0],text);
-	} else {
-		Draw.setIn nerHTML($("#performanceDiv")[0],'');
-	}
-	*/
 
 })();

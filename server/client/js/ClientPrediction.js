@@ -3,7 +3,7 @@
 
 //HEAVILY DEPENDS ON Actor.move.client, Input.loop.updateStateWithMouse
 (function(){ //}
-var Input = require4('Input'), Command = require4('Command'), Main = require4('Main'), Performance = require4('Performance'), Message = require4('Message'), Dialog = require4('Dialog'), Receive = require4('Receive');
+var Input = require4('Input'), Main = require4('Main'), Performance = require4('Performance'), Message = require4('Message'), Dialog = require4('Dialog'), Receive = require4('Receive');
 
 var ClientPrediction = exports.ClientPrediction = {};
 
@@ -57,7 +57,7 @@ ClientPrediction.loop = function(){
 		ClientPrediction.askForActivation();
 	} 
 	if(ABOVE_THRESHOLD_COUNT <= -4 && ACTIVE){
-		Message.add(key,'The client prediction system was deactivated as it seems you are lagging less.');
+		Message.add(null,'The client prediction system was deactivated as it seems you are lagging less.');
 		ClientPrediction.deactivate();
 	}
 }
@@ -65,16 +65,16 @@ ClientPrediction.loop = function(){
 ClientPrediction.activate = function(){
 	ACTIVE = true;
 	Input.setUseMouseForMove(true);
-	Message.add(key,'The client prediction system was activated. You can deactivate it via the Setting Tab.');
+	Message.add(null,'The client prediction system was activated. You can deactivate it via the Setting Tab.');
 }
 ClientPrediction.deactivate = function(){
 	ACTIVE = false;
 	Input.setUseMouseForMove(false);	
-	Message.add(key,'The client prediction system was deactivated.');
+	Message.add(null,'The client prediction system was deactivated.');
 }
 
 ClientPrediction.askForActivation = function(){
-	Message.addPopup(key,$('<div>')
+	Message.addPopup(null,$('<div>')
 		.append('It seems you are lagging.<br>')
 		.append('Do you want to activate the <u>BETA</u> client prediction system?<br><br>')
 		.append('If activated, you will <u>react faster</u> and you will <u>move using the mouse</u> instead of the keyboard.<br><br>')
@@ -92,16 +92,13 @@ ClientPrediction.askForActivation = function(){
 			.html('No')
 			.click(function(){
 				MODE = ClientPrediction.NO;
-				Message.add(key,'You can activate the Client Prediction at any time via the Setting Tab.');
+				Message.add(null,'You can activate the Client Prediction at any time via the Setting Tab.');
 				Dialog.close('questPopup');
 			})
 		)
 	);
 }
 
-ClientPrediction.updateShadow = function(act){
-	//check loop
-}
 /*
 ClientPrediction.getServerXYofLastServerStamp = function(act){
 	var ping = exports.Performance.getLatency();
@@ -167,9 +164,6 @@ ClientPrediction.updatePosition = function(act){
 	var diffX = server.x - good.x;	//serverX = where u should be
 	var diffY = server.y - good.y;	//good.x = where u are according to client calc
 		
-	var startX = act.x;
-	var startY = act.y;
-	
 	if(Math.abs(diffX) > (targetActive ? 300 : 200)){
 		act.x = server.x;
 		Input.resetTarget();

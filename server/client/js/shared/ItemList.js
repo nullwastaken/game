@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Account = require2('Account'), ItemModel = require2('ItemModel'), Main = require2('Main');
+var ItemModel = require2('ItemModel'), Main = require2('Main');
 var QueryDb = require4('QueryDb');
 /*
 
@@ -61,23 +61,11 @@ ItemList.format = function(id,amount,calledFromQuest){	//if calledFromQuest, Ite
 
 ItemList.add = function (inv,id,amount){	//only preparing
 	var list = ItemList.format(id,amount);	
-	for(var i in list) ItemList.add.action(inv,i,list[i]);	
-}
-
-ItemList.add.action = function(inv,id,amount){
-	ItemList.setFlag(inv);
-	
-	inv.data[id] = inv.data[id] || 0;
-	inv.data[id] += amount;
-}
-
-ItemList.add.offlineOrOnline = function(username,id,amount){
-	var key = Account.getKeyViaUsername(username);
-	if(key){
-		ItemList.add(Main.get(key).invList,id,amount);
-	} else {
-		ItemList.add.offline(username,id,amount);
+	for(var i in list){
+		inv.data[i] = inv.data[i] || 0;
+		inv.data[i] += list[i];
 	}
+	ItemList.setFlag(inv);
 }
 
 ItemList.setFlag = function(inv){
@@ -87,18 +75,17 @@ ItemList.setFlag = function(inv){
 	else if(inv === main.tradeList) Main.setFlag(main,'tradeList');
 }
 
-ItemList.remove = function (inv,id,amount){
+ItemList.remove = function (inv,id,amount){		
 	var list = ItemList.format(id,amount);	
-	for(var i in list) ItemList.remove.action(inv,i,list[i]);		
+	for(var i in list){
+		inv.data[i] = inv.data[i] || 0;
+		inv.data[i] -= list[i];
+		if(inv.data[i] <= 0)
+			delete inv.data[i];	
+	}
+	ItemList.setFlag(inv);
 }
 
-ItemList.remove.action = function (inv,id,amount){
-	ItemList.setFlag(inv);
-	inv.data[id] = inv.data[id] || 0;
-	inv.data[id] -= amount;
-	if(inv.data[id] <= 0)
-		delete inv.data[id];
-}
 
 ItemList.getAmount = function(inv,id){
 	return inv.data[id] || 0;
@@ -130,18 +117,18 @@ ItemList.stringify = function(list,cb){
 			var item = QueryDb.get('item',i,cb);
 			if(!item) return false;
 			if(item.type !== 'ability')
-				str += 'x' + list[i] + ' ' + item.name + ',';
+				str += 'x' + list[i] + ' ' + item.name + ', ';
 			else
-				str += '<u>x' + list[i] + ' ' + item.name + '</u>,';
+				str += '<u>x' + list[i] + ' ' + item.name + '</u>, ';
 		}
-		return str.slice(0,-1);
+		return str.slice(0,-2);
 	} else {
 		var str = '';
 		for(var i in list){
-			str += 'x' + list[i] + ' ' + ItemModel.get(i).name + ',';		
+			str += 'x' + list[i] + ' ' + ItemModel.get(i).name + ', ';		
 		}		
 		
-		return str.slice(0,-1);
+		return str.slice(0,-2);
 	}
 }
 
@@ -156,7 +143,7 @@ ItemList.combine = function(inv,inv2){
 }
 
 ItemList.getData = function(inv){
-	return inv.data;
+	return inv.data || ERROR(3,'invalid inv');
 }
 
 ItemList.getAllItemOwned = function(key){
@@ -164,6 +151,27 @@ ItemList.getAllItemOwned = function(key){
 	var bank = ItemList.getData(Main.get(key).bankList);
 		
 	return inv.$keys().concat(bank.$keys());
+}
+
+ItemList.toArray = function(data){
+	if(Array.isArray(data)){
+		//ERROR(3,'already array',data);
+		return data;
+	}
+	var res = [];
+	for(var i in data)
+		res.push({id:i,amount:data[i]});
+	return res;
+}
+ItemList.fromArray = function(data){
+	if(typeof data === 'object' && !Array.isArray(data)){
+		//ERROR(3,'already obj',data);
+		return data;
+	}
+	var res = {};
+	for(var i = 0 ; i < data.length; i++)
+		res[data[i].id] = data[i].amount;
+	return res;
 }
 
 

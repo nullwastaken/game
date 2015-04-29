@@ -2,9 +2,13 @@
 "use strict";
 var Main = require2('Main'), QuestVar = require2('QuestVar'), Equip = require2('Equip'), Actor = require2('Actor'), Challenge = require2('Challenge'), Material = require2('Material');
 var Quest = require3('Quest');
-var CHANCE_EQUIP = 1;
-var CHANCE_MAT = 3;
+var CHANCE_EQUIP = 0.5;
+var CHANCE_MAT = 5;	//check Dialog_quest
 var MAX_INV = 25;
+var BASE_EXP = 100; //check Dialog_quest
+var CHALLENGE_SUCCESS = 2;
+var MAX_COMPLETED_TODAY = 5; //BAD, duplicate in Main_quest_status
+
 
 //## START ##################
 Quest.onStart = function(quest,main){
@@ -16,9 +20,10 @@ Quest.addQuestVar = function(quest,main){
 }	
 
 Quest.onSignIn = function(main,questVar,account){
-	if(account.lastSignIn === null)
+	if(account.lastSignIn === null)	//aka first time
 		return setTimeout(function(){
-			if(!Main.get(main.id)) return;
+			if(!Main.get(main.id)) 
+				return;
 			Main.startQuest(main,'Qtutorial');
 		},1000);
 		
@@ -46,22 +51,31 @@ var QuestReward = function(score,item,exp){
 Quest.getScoreMod = function(q,main){
 	return q.event._getScoreMod(main.id) || 0;
 }
-Quest.getReward = function(q,bonus,scoreMod,firstTimeCompleted,key){
-	var finalScore = q.reward.reputation.mod * bonus.score * scoreMod;
+
+Quest.getReward = function(q,chalSuccess,scoreMod,firstTimeCompleted,key,completeToday){
+	var chalMod = 1;
+	
+	if(chalSuccess && chalSuccess.success)
+		chalMod = CHALLENGE_SUCCESS;
+	
+	var finalScore = q.reward.reputation.mod * scoreMod * chalMod;
+
 	if(firstTimeCompleted) 
 		finalScore += Quest.getFirstTimeBonus(q.reward.reputation);
 	
+	var todayMod = completeToday >= MAX_COMPLETED_TODAY ? 0 : 1;
+		
 	return QuestReward(
 		finalScore,
-		Quest.getReward.item(q,bonus.item,key),
-		100 * bonus.exp*q.reward.exp
+		Quest.getReward.item(q,chalMod * todayMod,key),
+		BASE_EXP * q.reward.exp * chalMod * todayMod
 	);
 }
 
 Quest.getReward.item = function(q,mod,key){
 	var main = Main.get(key);
 	
-	if(main.invList.data.$length() > MAX_INV){	//TEMP
+	if(Main.getInventorySlotUsed(main) > MAX_INV){
 		Main.addMessage(main,'Because you have more than ' + MAX_INV + ' items in your inventory, this quest gave you no item reward.');	
 		return {};
 	}
@@ -75,7 +89,7 @@ Quest.getReward.item = function(q,mod,key){
 	if(Math.random() / mod < CHANCE_EQUIP){
 		item[Equip.randomlyGenerateFromQuestReward(act).id] = 1;
 	}
-	for(var i in q.reward.ability){
+	for(var i in q.reward.ability){	//TEMP IMPORTANT should be changed by achievement
 		if(Actor.getAbilityList(act,'normal')[i]) continue;
 		if(Main.haveItem(Actor.getMain(act),i)) continue;
 		if(Math.random() < q.reward.ability[i]){
@@ -102,16 +116,19 @@ Quest.onAbandon = function(q,main){
 }
 
 Quest.getChallengeSuccess = function(q,main,mq){	//null:non-active
-	var tmp = {};
+	var tmp = null;
 	for(var i in mq._challenge){
-		tmp[i] = null;
 		if(!mq._challenge[i]) continue;
+		tmp = {
+			id:i,
+			name:Challenge.get(i).name,
+			success:true,	
+		};		
 		if(Challenge.testSuccess(Challenge.get(i),main.id)){	
 			mq._challengeDone[i] = 1;
-			tmp[i] = true;
-			Main.quest.updateChallengeDoneBonus(main,q.id);
+			tmp.success = true;
 		} else {
-			tmp[i] = false;
+			tmp.success = false;
 		}
 	}
 	return tmp;
@@ -165,7 +182,7 @@ Quest.onReset = function(q,main){	//undo what the quest could have done
 	Actor.changeSprite(act,{name:'normal',sizeMod:1});
 	Actor.removeAllQuestMarker(act);
 	Main.closeDialog(main,'permPopup');
-	Main.screenEffect.remove(main,Main.screenEffect.REMOVE_ALL);
+	Main.removeScreenEffect(main,Main.screenEffect.REMOVE_ALL);
 	
 }
 

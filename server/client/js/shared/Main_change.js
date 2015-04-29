@@ -4,6 +4,7 @@
 var ItemList = require2('ItemList'), Message = require2('Message');
 var QueryDb = require4('QueryDb'), Dialog = require4('Dialog');
 var Main = require3('Main');
+
 Main.getSignInPack = function(main){
 	return {
 		reputation:main.reputation,
@@ -16,6 +17,7 @@ Main.getSignInPack = function(main){
 		hudState:main.hudState,	
 		dailyTask:main.dailyTask,
 		contribution:main.contribution,
+		achievement:main.achievement,
 		party:Main.Party.compressClient(main.party),
 	}
 }
@@ -25,6 +27,7 @@ Main.setChangeAll = function(){
 	for(var i in Main.LIST)
 		Main.setChange(Main.LIST[i],frame);
 }
+
 Main.setChange = function(act,frame){
 	if(frame % 6 === 0 && Main.initFlag(act)){
 		act.change.flag = act.flag;
@@ -42,13 +45,15 @@ Main.compressDb = function(main){ //Main.Quest.compressDb separated
 		bankList:Main.ItemList.compressDb(main.bankList),
 		social:Main.Social.compressDb(main.social),
 		chrono:Main.Chrono.compressDb(main.chrono),
+		achievement:Main.Achievement.compressDb(main.achievement),
+		killCount:Main.KillCount.compressDb(main.killCount),
 		//
 		username:main.username,
 		name:main.name,
 		reputation:main.reputation,
 		questActive:main.questActive,
 		dailyTask:main.dailyTask,
-		//contribution:main.contribution,
+		contribution:main.contribution,
 	}
 }
 
@@ -57,10 +62,13 @@ Main.uncompressDb = function(main,key){
 	main.bankList = Main.ItemList.uncompressDb(main.bankList,key);
 	main.tradeList = Main.ItemList(key);
 	
+	main.killCount = Main.KillCount.uncompressDb(main.killCount);
+	
+	main.achievement = Main.Achievement.uncompressDb(main.achievement);
 	main.social = Main.Social.uncompressDb(main.social);
 	main.chrono = Main.Chrono.uncompressDb(main.chrono);
-	
 	main.questActive = Main.QuestActive.uncompressDb(main.questActive,main);
+	main.contribution = Main.Contribution(main.contribution);
 	
     return Main.create(key,main);
 }
@@ -79,9 +87,10 @@ Main.uncompressChange = function(change){
 	if(change.party) change.party = Main.Party.uncompressClient(change.party);
 	
 	if(change.questHint){	//bad
-		change.questHint = (main.questActive || change.questActive)
-			? '<span title="Hint for Active Quest: ' + QueryDb.getQuestName(main.questActive || change.questActive) + '">Hint: ' + Message.receive.parseInput(change.questHint) + '</span>'
-			: '<span title="Active a quest via the Quest Tab">No Active Quest</span>';
+		if(main.questActive || change.questActive)
+			change.questHint = '<span title="Hint for: ' + QueryDb.getQuestName(main.questActive || change.questActive) + '">Hint: ' + Message.receive.parseInput(change.questHint) + '</span>';
+		else
+			change.questHint = '<span title="Active a quest via the Quest Tab">No Active Quest</span>';
 	}
 	
 	if(change.dialogue !== undefined){	//sometimes null
@@ -103,7 +112,6 @@ Main.uncompressChange = function(change){
 Main.applyChange = function(main,change){
 	if(!change) return;
 	change = Main.uncompressChange(change);
-	//if(change.contribution) Contribution.init(false);	//bad...
 	
 	if(change.temp)	
 		Main.applyTempChange(main,change.temp);
@@ -117,12 +125,18 @@ Main.Flag = function(){
 }
 
 Main.setFlag = function(act,what,info){
-	if(what === 'quest') act.flag[info] = 1; //gonna use info[0] == Q in initFlag
-	else act.flag[what] = 1;
+	if(what === 'quest') 
+		act.flag[info] = 1; //gonna use info[0] == Q in initFlag
+	else if(what === 'achievement'){
+		act.flag[what] = act.flag[what] || [];
+		act.flag[what].push(info);
+	} else 
+		act.flag[what] = 1;
 }
 
 Main.initFlag = function(act){	//return true if not empty
-	for(var what in act.flag){
+	var what;
+	for(what in act.flag){
 		if(what === 'invList') act.flag[what] = Main.ItemList.compressClient(act.invList);
 		else if(what === 'questHint') act.flag[what] = act.questHint; 
 		else if(what === 'party') act.flag[what] = Main.Party.compressClient(act.party); 
@@ -143,10 +157,13 @@ Main.initFlag = function(act){	//return true if not empty
 		else if(what === 'social,muteList')	act.flag[what] = act.social.muteList;
 		else if(what === 'hudState') act.flag[what] = act.hudState; 
 		else if(what[0] === 'Q') act.flag['quest,' + what] = act.quest[what];
-		
+		else if(what === 'achievement'){
+			for(var j = 0; j < act.flag[what].length; j++)
+				act.flag['achievement,' + act.flag[what][j]] = act.achievement[act.flag[what][j]]; 
+			delete act.flag['achievement'];
+		}
 	}
-	for(var i in act.flag) return true;
-	return false;
+	return !!what;
 }
 
 Main.resetFlag = function(main){
@@ -160,6 +177,10 @@ Main.resetChangeForAll = function(){
 }
 
 })(); //{
+
+
+
+
 
 
 

@@ -8,8 +8,12 @@ var s = loadAPI('v1.0','QlureKill',{
 	author:"rc",
 	maxParty:2,
 	thumbnail:true,
+	category:["Combat"],
+	solo:true,
+	party:"Coop",
+	zone:"QfirstTown-north",
 	reward:{"ability":{'Qsystem-player-windKnock':0.5}},
-	description:"Kill monsters by first luring them.",
+	description:"Kill monsters by luring them on the red mat.",
 	scoreModInfo:"Depends on amount of kills. [Only for Infinite Challenge]."
 });
 var m = s.map; var b = s.boss; var g;
@@ -24,7 +28,8 @@ need to kill 100
 s.newVariable({
 	killCount:0,
 	enemyStart:3,
-	enemyToKill:15
+	enemyToKill:15,
+	startGame:false,
 });
 
 s.newHighscore('killCount',"Most Kills","Most kills without dying. Use Challenge Infinite",'descending',function(key){
@@ -39,13 +44,13 @@ s.newHighscore('timeHard',"Fastest Time [Insane]","Kill all monsters and finish 
 	return s.stopChrono(key,'timer')*40;
 });
 
-s.newChallenge('insane',"Insanity!","Fight against 10 enemies at once. Need to kill 50.",2,function(key){
+s.newChallenge('insane',"Insanity!","Fight against 10 enemies at once. Need to kill 50.",function(key){
 	return true;
 });
-s.newChallenge('infinite',"Infinite","Fight until you die for highscore. Challenge and quest successful if killed 50 or more.",2,function(key){
+s.newChallenge('infinite',"Infinite","Fight until you die for highscore. Challenge and quest successful if killed 50 or more.",function(key){
 	return true;
 });
-s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 3 minutes.",2,function(key){
+s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 3 minutes.",function(key){
 	return s.stopChrono(key,'timer') < 3*60*25;
 });
 
@@ -53,6 +58,14 @@ s.newEvent('_start',function(key){ //
 	if(s.isAtSpot(key,'QfirstTown-north','t7',200))
 		s.callEvent('talkTapis',key);
 	else s.addQuestMarker(key,'start','QfirstTown-north','t7');
+	
+	if(s.isChallengeActive(key,'insane')){
+		s.set(key,'enemyStart',10);
+		s.set(key,'enemyToKill',50);
+	}
+	if(s.isChallengeActive(key,'infinite')){
+		s.set(key,'enemyToKill',50);
+	}
 });
 s.newEvent('_debugSignIn',function(key){ //
 	s.teleport(key,'QfirstTown-north','t7','main');
@@ -62,6 +75,8 @@ s.newEvent('_getScoreMod',function(key){ //
 	return Math.pow(s.get('key','killCount')/50,1.5);
 });
 s.newEvent('_hint',function(key){ //
+	if(!s.get(key,'startGame'))
+		return 'Go talk to Tapis.';
 	return 'Killcount: ' + s.get(key,'killCount') + '/' + s.get(key,'enemyToKill') + ' | Red zone weaken monsters and yourself!';
 });
 s.newEvent('_signIn',function(key){ //
@@ -72,13 +87,16 @@ s.newEvent('_death',function(key){ //
 	else s.failQuest(key);
 });
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-north','t7','main');
-	s.setRespawn(key,'QfirstTown-north','t7','main');
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-north','t7','main');
+		s.setRespawn(key,'QfirstTown-north','t7','main');
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
 });
 s.newEvent('startGame',function(key){ //teleport and spawn enemy
+	s.set(key,'startGame',true);
 	s.removeQuestMarker(key,'start');
 	var chronoVisible = !!s.isChallengeActive(key,'speedrun');
 	s.startChrono(key,'timer',chronoVisible);
@@ -86,14 +104,6 @@ s.newEvent('startGame',function(key){ //teleport and spawn enemy
 	s.setRespawn(key,'QfirstTown-north','t7','main');
 	s.message(key,'The strange shape on the ground weakens enemies.');
 	s.message(key,'Kill ' + s.get(key,'enemyToKill') + ' enemies to complete the quest.');
-	
-	if(s.isChallengeActive(key,'insane')){
-		s.set(key,'enemyStart',10);
-		s.set(key,'enemyToKill',50);
-	}
-	if(s.isChallengeActive(key,'infinite')){
-		s.set(key,'enemyToKill',50);
-	}
 	
 	var amount = s.get(key,'enemyStart');
 	for(var i = 0; i < amount; i++){
@@ -110,7 +120,8 @@ s.newEvent('spawnEnemy',function(key){ //
 	});
 });
 s.newEvent('killEnemy',function(key,e){ //
-	var killCount = s.add(key,'killCount',1);	//increase kill count	
+	s.add(key,'killCount',1);
+	var killCount = s.get(key,'killCount');	//increase kill count	
 	if(s.isChallengeActive(key,'infinite')){
 		s.callEvent('spawnEnemy',key);		//when enemy dies, it spawns a new one
 		if(killCount > 8 && Math.sqrt(killCount) % 1 === 0)
@@ -130,7 +141,7 @@ s.newEvent('talkTapis',function(key){ //
 	s.startDialogue(key,'Tapis','intro');
 });
 
-s.newDialogue('Tapis','Tapis','villager-male.6',[ //{ 
+s.newDialogue('Tapis','Tapis','villagerMale-6',[ //{ 
 	s.newDialogue.node('intro',"Hello there. After years of hard work, I finally managed to finish the script for the Carpet2000!",[ 
 		s.newDialogue.option("Okay?",'intro2','')
 	],''),
@@ -159,18 +170,22 @@ s.newMap('main',{
 	loop:function(spot){
 		//weak actor that are in red zone. test every 10 frames
 		m.forEachActor(spot,10,'weakenActor','actor',spot.b3);
+	},
+	playerEnter:function(key){
+		s.addTorchEffect.one(key,'torch',250);
+	},
+	playerLeave:function(key){
+		s.removeTorchEffect.one(key,'torch');
 	}
 });
 s.newMapAddon('QfirstTown-north',{
 	spot:{t7:{x:1232,y:1232},n1:{x:1168,y:1296},e2:{x:2256,y:1552},e1:{x:1584,y:1936},e3:{x:2544,y:2512}},
 	load:function(spot){
-		m.spawnTeleporter(spot.t7,'talkTapis','cave',{
-			minimapIcon:'minimapIcon.quest',
-		});
+		m.spawnTeleporter(spot.t7,'talkTapis','cave',{});
 		m.spawnActor(spot.n1,'npc',{
 			dialogue:'talkTapis',
-			sprite:s.newNpc.sprite('villager-male6',1),
-			minimapIcon:'minimapIcon.quest',
+			sprite:s.newNpc.sprite('villagerMale-6',1),
+			minimapIcon:'minimapIcon-quest',
 			angle:s.newNpc.angle('right'),
 			nevermove:true,
 			name:'Tapis',
@@ -181,8 +196,8 @@ s.newMapAddon('QfirstTown-north',{
 		]);
 		
 		m.spawnActorGroup(spot.e2,[
-			m.spawnActorGroup.list("bird",1),
-			m.spawnActorGroup.list("dragon",1),
+			m.spawnActorGroup.list("bigWorm",1),
+			m.spawnActorGroup.list("smallWorm",1),
 		]);
 		/*
 		m.spawnActor(spot.e2,'npc',{
@@ -193,8 +208,7 @@ s.newMapAddon('QfirstTown-north',{
 		});
 		*/
 		m.spawnActorGroup(spot.e3,[
-			m.spawnActorGroup.list("salamander",1),
-			m.spawnActorGroup.list("larva",1),
+			m.spawnActorGroup.list("snake",2),
 		]);
 	}
 });

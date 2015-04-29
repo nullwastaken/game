@@ -8,6 +8,10 @@ var s = loadAPI('v1.0','QbulletHeaven',{
 	author:"rc",
 	thumbnail:true,
 	maxParty:4,
+	category:["Combat"],
+	solo:true,
+	zone:"QfirstTown-east",
+	party:"Coop",
 	reward:{"ability":{'Qsystem-player-lightningBullet':0.5}},
 	description:"Survive as long as you can in a cave filled with deadly towers."
 });
@@ -23,23 +27,25 @@ s.newVariable({
 	time:0,
 	timeToSurvive:1500,
 	survivedEnough:False,
-	killTower:0
+	killTower:0,
+	startGame:false,
 });
 
 s.newHighscore('killTower',"Tower Killed","Most Towers Killed",'descending',function(key){
 	return s.get(key,'killTower');
 });
 s.newHighscore('timer',"Longest Time","Longest Time Surviving",'descending',function(key){
-	return s.get(key,'time')*40;
+	if(!s.isChallengeActive(key,'killTower'))
+		return s.get(key,'time')*40;
 });
 
-s.newChallenge('killTower',"Tower Killer","Kill 50 Towers and finish the quest.",2,function(key){
+s.newChallenge('killTower',"Tower Killer","Kill 50 Towers and finish the quest.",function(key){
 	return true;
 });
-s.newChallenge('infinite',"Infinite","Last at least 2 minutes to win.",2,function(key){
+s.newChallenge('infinite',"Infinite","Last at least 2 minutes to win.",function(key){
 	return true;
 });
-s.newChallenge('powerless',"Powerless","You cannot kill Towers.",2,function(key){
+s.newChallenge('powerless',"Powerless","You cannot kill Towers.",function(key){
 	return true;
 });
 
@@ -53,12 +59,17 @@ s.newEvent('_debugSignIn',function(key){ //
 	s.teleport.force(key,1648,208,'QfirstTown-east','main');
 });
 s.newEvent('_hint',function(key){ //
+	if(!s.get(key,'startGame'))
+		return 'Enter the cave marked in your minimap';	
 	if(s.isChallengeActive(key,'killTower'))
 		return 'Tower Kill Count: ' + s.get(key,'killTower');
+	if(s.isChallengeActive(key,'powerless'))
+		return 'Try to survive for 1 minute.';
 	return "Try to destroy the towers when they turn blue.";
 });
 s.newEvent('_death',function(key){ //
-	s.set(key,'time',s.stopChrono(key,'time'));	//used for highscore only
+	if(!s.isChallengeActive(key,'killTower'))
+		s.set(key,'time',s.stopChrono(key,'time'));	//used for highscore only
 	
 	if(s.get(key,'survivedEnough')){
 		s.completeQuest(key);
@@ -68,8 +79,10 @@ s.newEvent('_death',function(key){ //
 	}
 });
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-east','a','main');
-	s.setRespawn(key,'QfirstTown-east','a','main');
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-east','a','main');
+		s.setRespawn(key,'QfirstTown-east','a','main');
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
@@ -78,6 +91,7 @@ s.newEvent('_signIn',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('startGame',function(key){ //teleport and start timer.
+	s.set(key,'startGame',true);
 	s.teleport(key,'base','e5','party',true);
 	s.setRespawn(key,'QfirstTown-east','a','main',true);
 	s.removeQuestMarker(key,'start');
@@ -92,7 +106,7 @@ s.newEvent('startGame',function(key){ //teleport and start timer.
 	}
 	if(!s.isChallengeActive(key,'killTower')){
 		s.message(key,'Try to survive for ' + s.frameToChrono(s.get(key,'timeToSurvive')) + ' and you win!');
-		s.startChrono(key,'time');		
+		s.startChrono(key,'time');
 		s.setTimeout(key,'surviveLongEnough',s.get(key,'timeToSurvive'));
 	} else {
 		s.message(key,'Kill 50 towers and you win!');
@@ -115,14 +129,15 @@ s.newEvent('spawnEnemy',function(key){ //spawn a random tower at a random spot. 
 	],null,300);			//advanced: v:300 means that the enemy will spawn +- 300 px from the spot letter
 });
 s.newEvent('killTower',function(key){ //
-	var amount = s.add(key,'killTower',1);	//used for highscore
+	s.add(key,'killTower',1);
+	var amount = s.get(key,'killTower');	//used for highscore
 	if(amount >= 50 && s.isChallengeActive(key,'killTower')) 
 		s.completeQuest(key);
 });
 
 s.newAbility('tower-red0','attack',{
 	name:"Fire Bullet",
-	icon:'attackMagic.fireball'
+	icon:'attackMagic-fireball'
 },{
 	type:'bullet',
 	amount:4,
@@ -135,7 +150,7 @@ s.newAbility('tower-red0','attack',{
 });
 s.newAbility('tower-dart0','attack',{
 	name:"Lightning Bullet",
-	icon:'attackMagic.static'
+	icon:'attackMagic-static'
 },{
 	type:'bullet',
 	aim:25,
@@ -146,7 +161,7 @@ s.newAbility('tower-dart0','attack',{
 });
 s.newAbility('tower-ice0','attack',{
 	name:"Cold Bullet",
-	icon:'attackMagic.crystal'
+	icon:'attackMagic-crystal'
 },{
 	type:'bullet',
 	aim:25,
@@ -158,7 +173,7 @@ s.newAbility('tower-ice0','attack',{
 });
 s.newAbility('tower-onMove0','attack',{
 	name:"Fire Nova",
-	icon:'attackMagic.fireball',
+	icon:'attackMagic-fireball',
 	periodOwn:50,
 	periodGlobal:50,
 	delay:5
@@ -166,13 +181,13 @@ s.newAbility('tower-onMove0','attack',{
 	type:'bullet',
 	dmg:s.newAbility.dmg(150,'fire'),
 	hitAnim:s.newAbility.anim('fireHit',0.5),
-	spd:5,
+	spd:s.newAbility.spd(0.5),
 	sprite:s.newAbility.sprite('fireball',1),
 	onMove:s.newAbility.onMove(4,3,{
 		type:'bullet',
 		dmg:s.newAbility.dmg(25,'fire'),
 		sprite:s.newAbility.sprite('fireball',1),
-		spd:10,
+		spd:s.newAbility.spd(1),
 	}),	
 });
 
@@ -224,6 +239,7 @@ s.newNpc('tower-onMove',{
 s.newMap('base',{
 	name:"Bullet Heaven",
 	lvl:0,
+	screenEffect:'lightCave',
 	grid:["00000000000000000000001100000000000000111100000110","01111110000000000000001100000000000000111100000110","11111111000000000000001100000000000000111100000110","11111111111111111111111111111111111111111110000011","01111111111111111111111111111111111111111111000001","00000001111111111111111111111111111111111111100000","00000001111111111111111111111111111111111111100000","11100001100000000000000000000000000000000001100000","00110001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100002222222222222222222222222220001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100111","00010001100002000000000000000000000000020001111111","00010001100002000000000000000000000000020001111111","00010001100002000000000000000000000000020001100111","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100110","00010001100002000000000000000000000000020001100110","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001100000","00010001100002000000000000000000000000020001111100","11110001100002000000000000000000000000020001111100","11100001100002222222222222222222222222220001100000","01000001100000000000000000000000000000000001100000","00011111100000000000000000000000000000000001100000","00011111100000000000000000000000000000000001100000","00001111100000000000000000000000000000000001100000","00000111100000000000000000000000000000000001100000","00000111100000000000000000000000000000000001100000","00111111111111111111111111111111111111111111111100","01100011111111111111111111111111111111111111111100","01000001100000000000000000000000000000000000111100","01000001100000000000000000000000000000000000111110","01000000111111111111111111111111111100000000111110","01000000000000000000000000000000000110000000111110","01000000000000000000000000000000000010000000111110","01000000000000000000000000000000000010000000011100"],
 	tileset:'v1.2'
 },{
@@ -236,13 +252,13 @@ s.newMap('base',{
 		var key = m.getRandomPlayer(spot);
 		s.callEvent('spawnEnemy',key);	//if so, spawn 2 towers
 		s.callEvent('spawnEnemy',key);
-	}
+	},
 });
 s.newMapAddon('QfirstTown-east',{
 	spot:{a:{x:1648,y:208}},
 	load:function(spot){
 		m.spawnTeleporter(spot.a,'startGame','cave',{	//add telezone so player can start the quest
-			minimapIcon:'minimapIcon.quest',
+			minimapIcon:'minimapIcon-quest',
 		});
 	}
 });

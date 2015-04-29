@@ -12,8 +12,8 @@ Message.add = function(key,textOrMsg){
 	Main.addMessage(Main.get(key),textOrMsg);
 }
 
-Message.addPopup = function(key,text,time){
-	Main.openDialog(Main.get(key),'questPopup',{text:text,time:time || 25*60});
+Message.addPopup = function(key,text){
+	Message.add(key,Message.QuestPopup(text));
 }
 		
 Message.broadcast = function(text){
@@ -46,11 +46,12 @@ Message.receive.test = function(key,msg){
 	if(!msg.type || !msg.text || typeof msg.text !== 'string') return false;
 	if(msg.to === msg.from) return Message.add(key,"Ever heard of thinking in your head?") || false;
 	if(msg.type !== 'feedback' && msg.text.length > 200) return false;	//text too long
-	if(Message.receive.ZALGO_REGEX.test(msg.text)) return false;
+	if(Message.receive.ZALGO_ACTIVE && Message.receive.ZALGO_REGEX.test(msg.text)) return false;
 	if(Main.get(key).social.muted) return false;				//player is muted
 	return true;
 }
 
+Message.receive.ZALGO_ACTIVE = false;	//prevent é
 Message.receive.ZALGO_REGEX = /[^\x20-\x7E]/;
 
 Message.receive.public = function(key,msg){
@@ -61,8 +62,9 @@ Message.receive.public = function(key,msg){
 	
     if(!msg.hasItem && !msg.hasPuush)
 		act.chatHead = Actor.ChatHead(msg.text);
-	
-	var newMsg = Message.Public(msg.text,msg.from,main.social.customChat);
+		
+	var custom = Main.contribution.getChat(main);
+	var newMsg = Message.Public(msg.text,msg.from,custom.color,custom.symbol);
 	Message.add(key,newMsg);
 	
 	//Send info
@@ -79,26 +81,19 @@ Message.receive.public = function(key,msg){
 Message.receive.pm = function(key,msg){
 	if(!Main.canSendMessage(msg.from,msg.to))
 		return Message.add(key,"This player is offline.");
-	Message.add(Account.getKeyViaName(msg.to),msg);
-	Message.add(key,msg);
+		
+	var newMsg = Message.Pm(msg.text,msg.from,msg.to,Main.contribution.getChat(Main.get(key)).symbol);
+	Message.add(Account.getKeyViaName(msg.to),newMsg);
+	Message.add(key,newMsg);
 }
 
 Message.receive.clan = function(key,msg){
-	return;/*
-    var clanName = Main.get(key).social.clanList[msg.clan];
-    if(!clanName) return Message.add(key,'You typed too many \"/\".');
-	var clan = Clan.get(clanName);
-    if(!clan) return Message.add(key,'This clan doesn\'t exist. Strange...');
-    
-	var newMsg = Message.Clan(msg.text,msg.from,clan.nick);
-	
-    for(var i in clan.memberList){	//including speaker
-    	if(Actor.isOnline(i))	//is online
-			Message.add(Account.getKeyViaUserName(i),newMsg);
-    }*/
+	return;
 }    
 
 Message.receive.report = function(key,d){
+	return;
+	/*
 	if(d.text.length > 1000 && d.title.length > 50) return Message.add(key,'Too long text or title.');
 	
 	//db.email.report(d.title || '',(d.subcategory || '') + ':' + d.text,name);
@@ -109,7 +104,7 @@ Message.receive.report = function(key,d){
 		text:d.text,
 		title:d.title,
 	});
-	
+	*/
 }
 
 Message.receive.question = function(key,msg){
@@ -139,7 +134,9 @@ Message.parseText.item = function(id){
 	']</span>';
 }
 
-
+Message.generateTextLink = function(onclick,text){
+	return '<fakea onclick="' + onclick + '">' + text + '</fakea>';
+}
 
 
 /*

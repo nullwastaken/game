@@ -1,6 +1,6 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
-var Actor = require2('Actor'), Map = require2('Map');
+var Actor = require2('Actor'), Maps = require2('Maps');
 
 var ActorGroup = exports.ActorGroup = {};
 ActorGroup.create = function(spot,list,respawn,v){
@@ -15,7 +15,7 @@ ActorGroup.create = function(spot,list,respawn,v){
 		param:Tk.deepClone([spot,list,respawn,v]),		//used to revive node appgroup
 	};
 	
-	Map.addToEntityList(Map.get(spot.map),'group',id);
+	Maps.addToEntityList(Maps.get(spot.map),'group',id);
 	
 	for(var i in list){
 		//list[i].extra.group = id;
@@ -57,8 +57,8 @@ ActorGroup.alterSpot = function(spot,v){
 		var x = spot.x + Math.randomML() * v;
 		var y = spot.y + Math.randomML() * v;
 		if(!Actor.isStuck(
-			{map:spot.map,x:spot.x,y:spot.y,type:'npc'},
-			{map:spot.map,x:x,y:y,type:'npc'})
+			{map:spot.map,mapModel:Maps.getModel(spot.map),x:spot.x,y:spot.y,type:'npc'},	//BAD
+			{map:spot.map,mapModel:Maps.getModel(spot.map),x:x,y:y,type:'npc'})
 		){
 			return {x:x,y:y,map:spot.map};
 		}
@@ -106,7 +106,7 @@ ActorGroup.remove = function(g){
 		Actor.remove(e);
 	}
 	ActorGroup.removeFromList(g.id);
-	Map.removeFromEntityList(Map.get(g.map),'group',g.id);
+	Maps.removeFromEntityList(Maps.get(g.map),'group',g.id);
 }
 
 

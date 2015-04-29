@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var SkillPlotModel = require2('SkillPlotModel'), Quest = require2('Quest'), Server = require2('Server'), ItemModel = require2('ItemModel'), Main = require2('Main'), Map = require2('Map'), Message = require2('Message'), Drop = require2('Drop'), Collision = require2('Collision'), OptionList = require2('OptionList');
+var SkillPlotModel = require2('SkillPlotModel'), Quest = require2('Quest'), ItemModel = require2('ItemModel'), Main = require2('Main'), Maps = require2('Maps'), Message = require2('Message'), Drop = require2('Drop'), Collision = require2('Collision'), OptionList = require2('OptionList');
 var Actor = require3('Actor');
 
 var TOOFAR = function(key){
@@ -9,22 +9,24 @@ var TOOFAR = function(key){
 }
 
 var TESTDISTANCE = function(act,e){	//return false = good distance
-	if(Date.now()-act.lastInteraction < 500) return true;
+	if(Date.now()-act.lastInteraction < 500) 
+		return true;
 	act.lastInteraction = Date.now();
 	
-	var myDist = act.interactionMaxRange;
-	var angle = Collision.getAnglePtPt(act,e);	//BAD TEMP, boost if click above cuz mapMod
-	if(angle > 270-45 && angle < 270+45)
-		myDist += 50;
+	var maxDist = e.interactionMaxRange;
+	var dist = Collision.getDistancePtPt(act,e);
 	
-	if(Collision.getDistancePtPt(act,e) < myDist/2) 
+	var angle = Collision.getAnglePtPt(act,e);	//BAD boost if click above cuz mapMod
+	if(angle > 90-45 && angle < 90+45)
+		maxDist += 32;
+	
+	if(dist < maxDist/2) 
 		return false;
 	
-	if(Collision.getDistancePtPt(act,e) > myDist || Collision.testLineMap(act.map,act,e)){
+	if(dist > maxDist || Collision.testLineMap(act.map,act,e)){
 		TOOFAR(act.id);
 		return true;
 	}
-	
 	return false;
 }
 
@@ -33,7 +35,7 @@ var testQuestActive = function(act,e){
 	if(e.quest && main.questActive !== e.quest){
 		var q = Quest.get(e.quest);
 		if(q.autoStartQuest){
-			Main.openDialog(main,'quest',e.quest);
+			Main.openDialog(main,'questStart',e.quest);
 			return false;
 		}
 	}
@@ -58,15 +60,24 @@ Actor.click.teleport = function(act,eid){
 	if(TESTDISTANCE(act,e)) return;
 	if(!testQuestActive(act,e)) return;
 	
-	e.teleport(act.id);
+	var main = Actor.getMain(act);
+	if(e.teleport[main.questActive])
+		e.teleport[main.questActive](act.id);
+	else
+		e.teleport.normal(act.id);
 }
 
 Actor.click.dialogue = function(act,eid){
 	var e = Actor.get(eid);
-	var dia = e.dialogue;
 	if(TESTDISTANCE(act,e)) return;
 	if(!testQuestActive(act,e)) return;
-	dia(act.id);
+	
+	var main = Actor.getMain(act);
+	if(e.dialogue[main.questActive])
+		e.dialogue[main.questActive](act.id);
+	else
+		e.dialogue.normal(act.id);
+	
 	e.move = false;
 	e.angle = Tk.atan2(act.y-e.y,act.x-e.x);
 	Actor.setTimeout(e,function(){
@@ -221,14 +232,12 @@ Actor.click.drop = function (act,id){
 
 Actor.click.drop.rightClick = function(act,pt){
 	var option = [];
-	var list = Map.get(act.map).list.drop;
+	var list = Maps.get(act.map).list.drop;
 	for(var i in list){
 		var d = Drop.get(i);
 		if(Collision.getDistancePtPt(d,pt) < 48)
 			option.push(OptionList.Option(Actor.click.drop,[OptionList.ACTOR,i],'Pick ' + ItemModel.get(d.item).name));
 	}
-	
-	//Main.setOptionList(Actor.getMain(act),OptionList.create('Pick',option,false));
 }
 
 Actor.click.bank = function(act,eid){
@@ -268,12 +277,23 @@ Actor.click.trade = function(act,eid){
 	var main = Actor.getMain(act);
 	var main2 = Main.get(eid);
 	
+	if(Main.isTrading(main2) || Main.isIgnoringPlayer(main2,act.username))
+		return Message.add(act.id,'This player is busy.');
+	
+	var requestTime = Date.now();
+	
 	Main.question(main2,function(){
 		if(!Main.get(main.id)) return;	//aka dc
+		
+		if(Date.now() - requestTime > CST.MIN)
+			return Main.addMessage(main2,'The trade request has expired.');
+			
+		if(Main.getAct(main).map !== Main.getAct(main2).map)
+			return Main.addMessage(main2,'This player is too far away.');
+		
 		Main.startTrade(main,main2);
 	},'Do you want to trade with "' + act.name + '"?','boolean');
 }	
-
 
 Actor.click.revive = function(act,eid){	//TEMP
 	var act2 = Actor.get(eid);

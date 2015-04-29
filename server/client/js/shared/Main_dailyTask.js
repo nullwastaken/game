@@ -7,7 +7,7 @@ var Main = require3('Main');
 Main.verifyDailyTask = function(main,q,challengeSuccess){	//called when quest complete
 	for(var i in main.dailyTask){
 		var task = main.dailyTask[i];
-		if(task.quest === q.id && (!task.challenge || challengeSuccess[task.challenge])){	//no challenge or success
+		if(task.quest === q.id && (!task.challenge || (challengeSuccess && challengeSuccess.id === task.challenge))){	//no challenge or success
 			Main.addMessage(main,'Daily Task #' + (+i+1) +  ' Completed!');
 			Main.addMessage(main,'Bonus: x10 Reputation, x5 Exp, x3 Item, and 1 Plan!');	//not actually x10, its +10
 			//Main.addItem(main,P lan.quickCreation(key));

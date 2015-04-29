@@ -1,4 +1,5 @@
 server/private
+admin
 node_modules/nodetime
 node_modules/nodemailer
 node_modules/jitsu
@@ -9,6 +10,7 @@ node_modules/jshint-stylish
 node_modules/pako
 server/client/rs
 server/client/pokemon
+server/client/zelda
 .npmignore
 gulpfile.js
 jshint-setting.json

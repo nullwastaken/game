@@ -6,7 +6,11 @@ var s = loadAPI('v1.0','QprotectFirstTown',{
 	name:"Protect Town",
 	author:"rc",
 	maxParty:4,
+	category:["Combat"],
+	solo:true,
+	party:"Coop",
 	thumbnail:true,
+	zone:"QfirstTown-main",
 	reward:{"ability":{'Qsystem-player-lightningBomb':0.5}},
 	description:"Protect villagers from waves of monsters.",
 });
@@ -23,14 +27,14 @@ s.newVariable({
 	timeToSurvive:1500
 });
 
-s.newChallenge('hardmode',"I want MORE!","More enemies! More villagers!",2,function(key){
+s.newChallenge('hardmode',"I want MORE!","More enemies! More villagers!",function(key){
 	return true;
 });
-s.newChallenge('longer',"Longer","Protect for 2 minutes.",2,function(key){
+s.newChallenge('longer',"Longer","Protect for 2 minutes.",function(key){
 	return true;
 });
 
-s.newChallenge('boss',"Ending Surprise!","Fun surprise at the end.",2,function(key){
+s.newChallenge('boss',"Ending Surprise!","Fun surprise at the end.",function(key){
 	return true;
 });
 
@@ -40,7 +44,8 @@ s.newEvent('_start',function(key){ //
 	else s.addQuestMarker(key,'start','QfirstTown-main','n3');
 });
 s.newEvent('_hint',function(key){ //
-	if(!s.get(key,'started')) return 'Talk with Cyber north of Town.';
+	if(!s.get(key,'started')) 
+		return 'Go talk to Cyber.';
 	return 'Protect the villagers for ' + s.frameToChrono(s.get(key,'timeToSurvive')) + '.';
 });
 s.newEvent('_signIn',function(key){ //
@@ -52,10 +57,11 @@ s.newEvent('_death',function(key){ //
 s.newEvent('_debugSignIn',function(key){ //
 	s.teleport.force(key,1650,450,'QfirstTown-main','main');
 });
-
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-main','n3','main');
-	s.setRespawn(key,'QfirstTown-main','n3','main');
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-main','n3','main');
+		s.setRespawn(key,'QfirstTown-main','n3','main');
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.message(key,'You managed to protect the village!');
@@ -65,18 +71,28 @@ s.newEvent('startGame',function(key){ //
 	s.removeQuestMarker(key,'start');
 	var LIFE = 1000;
 	
+	s.playSfx(key,'explosion',0.5);
+	s.playSong(key,'digital_insanity',0.5);
+	
+	
 	s.teleport(key,'main','n3','party',true);
 	s.setRespawn(key,'QfirstTown-main','n3','main',true);
 	s.startChrono(key,'timer');	//only used to show time to player
 	
 	if(s.isChallengeActive(key,'hardmode')){
 		s.set(key,'interval',4*25);
-		s.spawnActor(key,'main','e2','npc','playerLike',{
-			sprite:s.newNpc.sprite('villager-male4'),
+		s.spawnActor(key,'main','e2','npc-playerLike',{
+			sprite:s.newNpc.sprite('villagerMale-4'),
 			name:'Ylbeekyl',
 			deathEvent:'killNpc',
 			hp:LIFE
 		});	
+		s.spawnActor(key,'main','e3','npc-playerLike',{
+			sprite:s.newNpc.sprite('villagerMale-5'),
+			name:'Zonrose',
+			deathEvent:'killNpc',
+			hp:LIFE
+		});
 	}
 	if(s.isChallengeActive(key,'longer')){
 		s.set(key,'timeToSurvive',2*60*25);
@@ -98,19 +114,19 @@ s.newEvent('startGame',function(key){ //
 	s.displayPopup(key,'Protect the villagers.');
 	
 	s.spawnActor(key,'main','n1','npc-playerLike',{
-		sprite:s.newNpc.sprite('villager-male1'),
+		sprite:s.newNpc.sprite('villagerMale-1'),
 		name:'Imdum',
 		deathEvent:'killNpc',
 		hp:LIFE
 	});	
 	s.spawnActor(key,'main','n2','npc-playerLike',{
-		sprite:s.newNpc.sprite('villager-male2'),
+		sprite:s.newNpc.sprite('villagerMale-2'),
 		name:'Imstoopid',
 		deathEvent:'killNpc',
 		hp:LIFE
 	});
 	s.spawnActor(key,'main','n3','npc-playerLike',{
-		sprite:s.newNpc.sprite('villager-male3'),
+		sprite:s.newNpc.sprite('villagerMale-3'),
 		name:'Igonhawdye',
 		deathEvent:'killNpc',
 		hp:LIFE
@@ -126,7 +142,7 @@ s.newEvent('killNpc',function(killer,villagerId){ //
 	s.failQuest(key);
 });
 
-s.newDialogue('cyber','Cyber','villager-male.5',[ //{ 
+s.newDialogue('cyber','Cyber','villagerMale-5',[ //{ 
 	s.newDialogue.node('intro1',"There's a glitch in the town script! Monsters are going to spawn all over the place very soon. Protect the villagers!",[ 
 		s.newDialogue.option("I'll save you!",'','startGame')
 	],'')
@@ -135,6 +151,7 @@ s.newDialogue('cyber','Cyber','villager-male.5',[ //{
 s.newMap('main',{
 	name:"Town Under Attack!",
 	lvl:0,
+	screenEffect:'weather',
 	graphic:'QfirstTown-main',
 },{
 	spot:{b4:{x:1536,y:480,width:448,height:32},n3:{x:1552,y:656},e3:{x:1648,y:656},e2:{x:1584,y:816},e1:{x:1424,y:944},n2:{x:1168,y:1008},n1:{x:1744,y:1200},b3:{x:2112,y:1280,width:32,height:256},b1:{x:992,y:1312,width:384,height:32},e4:{x:1936,y:1392},b2:{x:1824,y:1536,width:320,height:32}},
@@ -153,7 +170,7 @@ s.newMap('main',{
 		if(!m.testInterval(s.get(key,'interval'))) return;
 		
 		var possibleSpot = ['e1','e2','e3','e4'];
-		var possibleEnemy = ['mummy','spirit','skeleton','death','ghost','orc-melee'];
+		var possibleEnemy = ['mummy','spirit','skeleton','eyeball','ghost','orc-melee'];
 		var randomSpot = spot[possibleSpot.$random()];
 		var randomEnemy = possibleEnemy.$random();
 		m.spawnActor(randomSpot,randomEnemy,{globalDmg:0.7});	//spawn enemy
@@ -163,10 +180,10 @@ s.newMapAddon('QfirstTown-main',{
 	spot:{b4:{x:1536,y:480,width:448,height:32},n3:{x:1552,y:656},e3:{x:1648,y:656},e2:{x:1584,y:816},e1:{x:1424,y:944},n2:{x:1168,y:1008},n1:{x:1744,y:1200},b3:{x:2112,y:1280,width:32,height:256},b1:{x:992,y:1312,width:384,height:32},e4:{x:1936,y:1392},b2:{x:1824,y:1536,width:320,height:32}},
 	load:function(spot){
 		m.spawnActor(spot.n3,'npc',{
-			sprite:s.newNpc.sprite('villager-male5'),
+			sprite:s.newNpc.sprite('villagerMale-5'),
 			dialogue:'talkCyber',
 			name:'Cyber',
-			minimapIcon:'minimapIcon.quest',
+			minimapIcon:'minimapIcon-quest',
 		});
 	}
 });

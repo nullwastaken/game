@@ -1,10 +1,10 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-var CHAT_BOX_TEXT = null;
 "use strict";
 (function(){ //}
 var Main = require4('Main'), Message = require4('Message'), Img = require4('Img'), Command = require4('Command');
 var Dialog = require3('Dialog');
 
+var CHAT_BOX_TEXT = null;
 var DIALOGUE_HEIGHT = 200;
 var DIALOGUE_WIDTH = 600;
 var CHAT_BOX_INPUT = null;
@@ -37,17 +37,17 @@ Dialog.UI('chat',{
 	var WIDTH = getWidth();
 	
 	html.css({
-		top:CST.HEIGHT-HEIGHT,
+		bottom:0,
 		width:WIDTH,
 		height:HEIGHT,
 	});
 	
 	
 	CHAT_BOX_TEXT = CHAT_BOX_TEXT || $("<div>")
-		.addClass('onlyTextScroll shadow')
+		.addClass('onlyTextScroll shadow')	//
 		.css({padding:'5px 5px'})
 		.html('Welcome!<br>');
-	
+		
 	CHAT_BOX_TEXT.css({height:HEIGHT-27});
 	html.append(CHAT_BOX_TEXT);
 	
@@ -99,7 +99,7 @@ Dialog.UI('chat',{
 			left:WIDTH-24-4,	//-4 cuz border
 			top:HEIGHT-24,
 		})
-		.append(Img.drawIcon.html("attackMelee.cube",24,'Shift-Left: Clear Chat and PM')
+		.append(Img.drawIcon.html("attackMelee-cube",24,'Shift-Left: Clear Chat and PM')
 			.click(function(e){
 				if(!e.shiftKey) return;
 				CHAT_BOX_TEXT.html('');
@@ -153,7 +153,7 @@ Dialog.chat.getInput = function(){
 	return CHAT_BOX_INPUT.val();
 }
 
-Dialog.chat.addText = function(text,time){
+Dialog.chat.addText = function(text){
 	CHAT_BOX_TEXT.append(text,'<br>');
 	CHAT_BOX_TEXT[0].scrollTop += 50;
 }
@@ -179,6 +179,7 @@ Dialog.chat.focusInput = function(){
 
 var PM_HEIGHT = 110;
 var PM_HTML = null;
+var PM_TEXT = null;
 Dialog.UI('pm',{
 	position:'absolute',
 	left:0,
@@ -189,32 +190,34 @@ Dialog.UI('pm',{
 	color:'yellow',
 	font:'1.3em Kelly Slab',
 },Dialog.Refresh(function(html){
-	html.css({	//cant put above, cuz Main not defined
-		top:CST.HEIGHT-getHeight()-PM_HEIGHT-30,
+	html.css({	//cant put above, cuz Main not defined (for getHeight)
+		bottom:PM_HEIGHT-30,
 		width:getWidth(),
 	});
 	
-	PM_HTML = html;
+	PM_HTML = PM_HTML || html;
 	html.addClass('onlyText container shadow');
-	html.append($('<div>')
-		.attr('id','pmText')
-		.css({height:PM_HEIGHT,maxHeight:PM_HEIGHT})
-	);
+	
+	PM_TEXT = PM_TEXT || $('<div>').css({height:PM_HEIGHT,maxHeight:PM_HEIGHT});
+	
+	html.append(PM_TEXT);
+},function(){
+	return "" + Main.getPref(main,'minimizeChat');
+},25*10,null,function(){	//BAD hotfix
+	PM_HTML[0].scrollTop += 5000;
 }));
 
 Dialog.pm = {};
-Dialog.pm.addText = function(text,time){
-	$("#pmText").append(text);
-	$("#pmText").append('<br>');
+Dialog.pm.addText = function(text){
+	PM_TEXT.append(text);
+	PM_TEXT.append('<br>');
 	PM_HTML[0].scrollTop += 5000;
 }
-
-//###########################
 
 Dialog.UI('dialogue',{
 	position:'absolute',
 	left:0,
-	top:CST.HEIGHT-DIALOGUE_HEIGHT,
+	bottom:0,
 	width:DIALOGUE_WIDTH,
 	height:DIALOGUE_HEIGHT,
 	background:'rgba(0,0,0,0.8)',
@@ -229,8 +232,9 @@ Dialog.UI('dialogue',{
 	var FACE = false;
 	main.dialogue = dia;
 	
-	if(dia.face && dia.face.image){
+	if(dia.face && dia.face.image){	//TEMP IMPORTANT
 		var face = Img.drawFace(dia.face,96);
+		face.find('canvas').css({border:'1px solid rgba(255, 255, 55, 0.2)'});
 		face.css({
 			position:'absolute',
 			left:3,
@@ -244,9 +248,9 @@ Dialog.UI('dialogue',{
 	var text = $('<div>')
 		.css({
 			position:'absolute',
-			left:FACE ? 105 : 0,
+			left:FACE ? 115 : 0,
 			top:5,	
-			width:FACE ? DIALOGUE_WIDTH - 105 : DIALOGUE_WIDTH,
+			width:FACE ? DIALOGUE_WIDTH - 115 : DIALOGUE_WIDTH,
 		})
 		.addClass('inline')
 		.append(dia.node.text)
@@ -259,7 +263,8 @@ Dialog.UI('dialogue',{
 		}
 	};
 	for(var i = 0 ; i < dia.node.option.length; i++){
-		text.append('&nbsp; ' + (i+1) + '- ');
+		//text.append('&nbsp; ' + (i+1) + '- ');
+		text.append('&nbsp; &nbsp; - ');
 		text.append($('<span>')
 			.html(dia.node.option[i].text + '<br>')	//padding?
 			.css({cursor:'pointer'})
@@ -271,11 +276,6 @@ Dialog.UI('dialogue',{
 	
 }));
 
-
-
-//#########
-
-
 Dialog.UI('partyClan',{
 	position:'absolute',
 	left:0,
@@ -283,18 +283,23 @@ Dialog.UI('partyClan',{
 	padding:'5px 5px',
 	color:'white',
 	font:'1.3em Kelly Slab',
-},Dialog.Refresh(function(html,variable,dia){
-	if(main.hudState.party === Main.hudState.INVISIBLE) return;
+},Dialog.Refresh(function(html){
+	if(main.hudState.party === Main.hudState.INVISIBLE) 
+		return;
+	
+	if(Dialog.isActive('dialogue') && Main.getPref(main,'minimizeChat'))
+		return;
 	
 	var HEIGHT = getHeight();
 	var WIDTH = getWidth();
 	
 	html.css({
-		top:CST.HEIGHT-HEIGHT-30,
+		bottom:HEIGHT,
 		width:WIDTH,
 	});
 	
 	var party = $('<span>');
+	html.append(party);
 	
 	var button = $('<button>')
 		.addClass('skinny');
@@ -314,15 +319,28 @@ Dialog.UI('partyClan',{
 				Command.execute('setAcceptPartyInvite',[true]);
 			});
 	}
-		
 	
 	party.append(button);	
 	
-	party.append(Img.drawIcon.html('tab.friend',20,'Click to change Party')
-		.click(function(){
-			Command.execute('party,join',[]);
-		}
-	));
+	var solo = !main.party.id || main.party.id[0] === '&'; //& is Party.SOLO
+	var icon;
+	if(solo){	
+		icon = Img.drawIcon.html('tab-friend',24,'Click to create/join party.')
+			.css({verticalAlign:'bottom',margin:'2px',cursor:'pointer'})
+			.click(function(){
+				Command.execute('party,join',[]);
+			});
+	} else {
+		icon = Img.drawIcon.html('tab-friend',24,'Click to leave party.')
+			.css({verticalAlign:'bottom',margin:'2px',cursor:'pointer'})
+			.click(function(){
+				Command.execute('party,joinSolo',[]);
+			});
+	}
+	party.append(icon);
+	if(solo)
+		return;
+
 	party.append(' Party "' + (main.party.id || '') + '": ');
 	party.append($('<u>')
 		.attr('title','Leader')
@@ -336,10 +354,9 @@ Dialog.UI('partyClan',{
 	if(main.party.list.length >= 10) str += '...';
 	party.append(str);
 	
-	html.append(party);
 	
 },function(){
-	return Tk.stringify(main.party) + Tk.stringify(main.social.clanList) + main.acceptPartyInvite + main.hudState.party + Main.getPref(main,'minimizeChat');
+	return Tk.stringify(main.party) + Tk.stringify(main.social.clanList) + Dialog.isActive('dialogue') + main.acceptPartyInvite + main.hudState.party + Main.getPref(main,'minimizeChat');
 }));
 
 

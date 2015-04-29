@@ -1,11 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-var ts;
-var myEval = function(){	//prevent memory scope
-	eval.apply(this,arguments);
-}
 "use strict";
 (function(){ //}
-var Dialog = require4('Dialog'), Socket = require4('Socket'), Game = require4('Game'), Account = require4('Account');
+var Dialog = require4('Dialog'), Socket = require4('Socket'), Dialog = require4('Dialog'), Game = require4('Game'), Account = require4('Account');
 
 var Sign = exports.Sign = {};
 
@@ -13,235 +9,47 @@ var DOWN_MSG = 'The server or your browser seems to have some difficulties...<br
 var LAST_CLICK_TIME = -1;
 var DOWN_TIMEOUT = null;
 var SERVER_RESPONDED = false;
-var HIDE_SOCIALMEDIA = true;
+
+var QUEST_DATA = {"Qsystem":{"name":"Default Name","description":"A super awesome quest!","author":"rc","id":"Qsystem"},"QfirstTown":{"name":"","description":"A super awesome quest!","author":"rc","id":"QfirstTown"},"Qtutorial":{"name":"GPS Tutorial","description":"Teaches you the basic of Raining Chain.","author":"rc","id":"Qtutorial"},"Qdebug":{"name":"Debug","description":"A super awesome quest!","author":"Admin","id":"Qdebug"},"Qhighscore":{"name":"Global Highscore","description":"A super awesome quest!","author":"rc","id":"Qhighscore"},"Qbtt000":{"name":"Break Targets","description":"Find the fastest way to break 10 targets.","author":"rc","id":"Qbtt000"},"QlureKill":{"name":"Lure & Kill","description":"Kill monsters by luring them on the red mat.","author":"rc","id":"QlureKill"},"QprotectFirstTown":{"name":"Protect Town","description":"Protect villagers from waves of monsters.","author":"rc","id":"QprotectFirstTown"},"QtowerDefence":{"name":"Tower Defence","description":"Place towers to kill waves of enemies trying to reach the bottom of the screen.","author":"rc","id":"QtowerDefence"},"QbulletHeaven":{"name":"Bullet Heaven","description":"Survive as long as you can in a cave filled with deadly towers.","author":"rc","id":"QbulletHeaven"},"QpuzzleBridge":{"name":"Puzzle & Bridge","description":"Puzzle where you need to move blocks to form a bridge.","author":"rc","id":"QpuzzleBridge"},"Qdarkness":{"name":"Darkness","description":"Retrieve a precious object lost in a mysterious cave haunted by ghosts.","author":"rc","id":"Qdarkness"},"QbaseDefence":{"name":"Defend The Base","description":"Kill waves of monsters before they reach your base using the right ability.","author":"rc","id":"QbaseDefence"},"Qminesweeper":{"name":"Minesweeper","description":"Play the puzzle game minesweeper.","author":"rc","id":"Qminesweeper"},"Qfifteen":{"name":"15-Puzzle","description":"Place 15 blocks in the right order by pushing them.","author":"rc","id":"Qfifteen"},"Qrgb":{"name":"RGB","description":"You must restore the RBG setting by activating 2 switches guarded by enemies.","author":"rc","id":"Qrgb"},"QkillTheDragon":{"name":"Kill The Dragon","description":"","author":"rc","id":"QkillTheDragon"},"QaggressiveNpc":{"name":"Bipolarity","description":"Activating a switch can have weird effects on villagers.","author":"rc","id":"QaggressiveNpc"},"QcollectFight":{"name":"Collect & Fight","description":"In a parallel universe, you're a pumpking harvesting resources to become stronger in preparation for an epic battle.","author":"rc","id":"QcollectFight"},"QduelLeague":{"name":"Duel League","description":"Kill enemies in your zone to send enemies in your rivals' zone until they die.","author":"rc","id":"QduelLeague"},"QkingOfTheHill":{"name":"King of the Hill","description":"Stay on the hill as long as possible while killing rivals.","author":"rc","id":"QkingOfTheHill"},"QcatchThemAll":{"name":"Catch Them All","description":"Catch monsters by first weakening them. When the time runs out, use them to kill the boss.","author":"rc","id":"QcatchThemAll"},"Qsoccer":{"name":"Soccer","description":"Play soccer against your friends! Push the ball in the goal to score. First to 5 points win.","author":"rc","id":"Qsoccer"},"QpuzzleSwitch":{"name":"Puzzle & Switch","description":"Activate switches and push blocks to complete 5 puzzles.","author":"rc","id":"QpuzzleSwitch"}};
+/*get QUEST_DATA: 
+var tmp = {};
+for(var i in exports.QueryDb.DB.quest.data){
+	var q = exports.QueryDb.DB.quest.data[i];
+	tmp[i] = {name:q.name,description:q.description,author:q.author,id:q.id};
+}*/
 
 Sign.init = function(){
-	var startDiv = $('#startDiv');
-	var signInUp = $('#startDiv-sign');
-	
-	var signIn = Sign.init.html(signInUp);
-	signIn.addClass("lg-container");
-	
-	if(localStorage.getItem('username') && !sessionStorage.getItem('signUpDetail')){
-		$("#lg-signInUsername").val(localStorage.getItem('username'));
-		Sign.display('in');
+	if(Game.isIndex()){
+		Sign.init.questOverview($('#questOverview'));
+		return;
 	}
+	if(localStorage.getItem('username')){
+		$("#lg-signInUsername").val(localStorage.getItem('username'));
+	}
+	$('#lg-signInForm').submit(function(e){
+		e.preventDefault();
+		Sign.in();
+		return false;
+	});
+	$('#lg-signUpForm').submit(function(e){
+		e.preventDefault();
+		Sign.up();
+		return false;
+	});
+	if(window.location.href.$contains('signUp'))
+		$('#lg-signInForm').hide();
+	else
+		$('#lg-signUpForm').hide();
 	
-	if(!Game.isIndex()){
-		$('#startDiv-about').hide();
-		Socket.init();
-		Account.init();
-		Sign.init.socket();
-		
-		var detail = sessionStorage.getItem('signInDetail');
-		if(detail){
-			sessionStorage.setItem('signInDetail','');
-			detail = JSON.parse(detail);
-			$("#lg-signInPassword").val(detail.password);
-			$("#lg-signInUsername").val(detail.username);
-			Sign.in();
-			return;
-		}
-		
-		var detail = sessionStorage.getItem('signUpDetail');
-		if(detail){
-			sessionStorage.setItem('signUpDetail','');
-			detail = JSON.parse(detail);
-			$("#lg-signUpUsername").val(detail.username);
-			$("#lg-signUpPassword").val(detail.password);
-			$("#lg-signUpPasswordConfirm").val(detail.password);
-			$("#lg-signUpEmail").val(detail.email);
-			$("#lg-signUpGeoLocation").val(detail.geoLocation);
-			$("#lg-signUpReferral").val(detail.referral);
-			$("#lg-signUpYoutube").val(detail.youtube);
-			$("#lg-signUpReddit").val(detail.reddit);
-			$("#lg-signUpTwitch").val(detail.twitch);
-			$("#lg-signUpTwitter").val(detail.twitter);
-			Sign.up();
-			return;
-		}	
-		return;		
-	}	
-	
-	//#####################
-	var high = Sign.init.html.highscore();
-	var comp = Sign.init.html.competition();
-	
-	var highcomp = $('#startDiv-highscore')
-		.addClass("lg-container")
-		.css({font: '20px Kelly Slab',textAlign:'center'})
-		.append(
-			high.addClass('inline'),
-			comp.addClass('inline')
-		)
-	
-	
-	/* done manually for seo
-	var about = Sign.init.html.about();
-	about.addClass("lg-container")
-	startDiv.append(about);
-	*/
-	
-	
-	
+	Socket.init();
+	Account.init();
+	Sign.init.socket();
 }
 
-Sign.init.html = function(full){
-	var containerDiv =  $('<div>')
-		.css({width:'auto',height:'auto',textAlign:'center',font:'20px Kelly Slab'});
-	full.append(containerDiv);
-	
-	containerDiv.append('<h1>Raining Chain<span style="font-size:25px"> Beta</h1>');
-	containerDiv.append('<br>');
-	
-	var signUpBtn = $('<button>')
-		.attr({title:"Create A New Account",id:'lg-signUpBtn'})
-		.html('Sign Up')
-		.css({textDecoration:'underline'})
-		.click(function(){
-			Sign.display('up');
-		})
-	containerDiv.append(signUpBtn);
-	
-	var signInBtn = $('<button>')
-		.attr({title:"Log In An Existing Account",id:'lg-signInBtn'})
-		.html('Sign In')
-		.css({textDecoration:'none'})
-		.click(function(){
-			Sign.display('in');
-		})
-	containerDiv.append(signInBtn);
-	containerDiv.append('<br>');
-	
-	var signUpDiv = $('<form>')
-		.attr('id','lg-signUpDiv')
-		.addClass("lg-form")
-		.submit(function(e) {
-			e.preventDefault();
-			return false;
-		});
 
-	signUpDiv.append('<br>');
-	
-	
-	var array = [
-		[
-			'Username:',
-			$('<input>').attr({id:"lg-signUpUsername",placeholder:"username",type:'text'})
-		],
-		[
-			'Password:',
-			$('<input>').attr({id:"lg-signUpPassword",placeholder:"password",type:'password'})
-		],
-		[
-			'Confirm:',
-			$('<input>').attr({id:"lg-signUpPasswordConfirm",placeholder:"confirm password",type:'password'})
-		],
-		[
-			'Email:',
-			$('<input>').attr({id:"lg-signUpEmail",placeholder:"recovery email",type:'text'})
-		],
-		[
-			$('<span>')
-				.html('Location:'),
-				//.attr('title',"Only used for latency statistics. You still play be able to play with anyone.")
-				
-			$('<select>')
-				.attr({id:"lg-signUpGeoLocation"})
-				.attr('title',"Only used for latency statistics. You still play be able to play with anyone.")
-				.append('<option value="EastCoast">East Coast</option>')
-				.append('<option value="WestCoast">West Coast</option>')
-				.append('<option value="SouthAmerica">South America</option>')
-				.append('<option value="Europe">Europe</option>')
-				.append('<option value="Asia">Asia</option>')
-				.append('<option value="Africa">Africa</option>')
-				.append('<option value="Australia">Australia</option>')
-		],
-		[
-			$('<span>')
-				.attr('title',"If you have been referred by a friend, enter his username here.")
-				.html('Referral:'),
-			$('<input>').attr({id:"lg-signUpReferral",placeholder:"friend username *optional*",type:'text'})
-		]	
-	];
-	signUpDiv.append(Tk.arrayToTable(array).addClass('center'));
-	signUpDiv.append('<br>');
-	//#############
-	
-	var socialMedia = $('<div>');
-	signUpDiv.append(socialMedia);
-	
-	socialMedia.append('<h3 class="u">Social Media: Optional</h3>');
-	socialMedia.append($('<div>')
-		.html('Posting about Raining Chain on these accounts will automatically grant you Contribution Points used for cosmetic rewards.')
-	);
-	socialMedia.append('<br>');
-	var array = [
-		[
-			'Youtube:',
-			$('<input>').attr({id:"lg-signUpYoutube",placeholder:"ex: IdkWhatsRc *optional*",type:'text'})
-		],
-		[
-			'Twitch:',
-			$('<input>').attr({id:"lg-signUpTwitch",placeholder:"*optional*",type:'text'})
-		],
-		[
-			'Reddit:',
-			$('<input>').attr({id:"lg-signUpReddit",placeholder:"*optional*",type:'text'})
-		],
-		[
-			'Twitter:',
-			$('<input>').attr({id:"lg-signUpTwitter",placeholder:"*optional*",type:'text'})
-		]
-	];
-	socialMedia.append(Tk.arrayToTable(array).addClass('center'));
-	socialMedia.append('<br>');	
-	if(HIDE_SOCIALMEDIA)
-		socialMedia.hide();
-	
-	signUpDiv.append($('<button>')
-		.html('Create Account And Play')
-		.click(function(){
-			Sign.up();
-		})
-	);
-	containerDiv.append(signUpDiv);
-	//###############################
-	
-	var signInDiv = $('<form>')
-		.attr('id','lg-signInDiv')
-		.addClass("lg-form")
-		.hide()
-		.submit(function(e) {
-			e.preventDefault();
-			Sign.in();	
-			Sign.display('in');
-			return false;
-		});
-		
-	signInDiv.append('<br>');
-	var array = [
-		[
-			'Username:',
-			$('<input>').attr({id:"lg-signInUsername",placeholder:"username",type:'text'})
-		],
-		[
-			'Password:',
-			$('<input>').attr({id:"lg-signInPassword",placeholder:"password",type:'password'})
-		],
-	];
-	signInDiv.append(Tk.arrayToTable(array).addClass('center'));
-	signInDiv.append('<br>');
-	
-	signInDiv.append($('<button>')
-		.html('Enter the Game')
-		.click(function(e){
-			e.preventDefault();
-			Sign.in();
-			return false;
-		})
-	);
-	signInDiv.append('<br>');
+
+
+/*
 	signInDiv.append($('<button>')
 		.html('Lost Password')
 		.css({fontSize:'0.8em'})
@@ -253,104 +61,8 @@ Sign.init.html = function(full){
 			return false;
 		})
 	);
-	
-	signInDiv.append('<br>');
-	
-	containerDiv.append(signInDiv);
-	containerDiv.append($('<div>')
-		.attr({id:"lg-message"})
-	);
-	return full;
 }
-
-Sign.init.html.about = function(){
-	var full = $('<div>')
-		.css({font: '20px Kelly Slab',textAlign:'center'});
-	$('#startDiv').append(full);
-	full.append($('<h2>')
-		.html('What is Raining Chain?') 
-	);
-	
-	full.append('Raining Chain is a F2P <a style="color:blue" href="https://github.com/RainingChain/rainingchain">open-source</a> MMORPG.<br><br>');
-	
-	full.append('Latest gameplay video:<br>')
-	full.append($('<object>')
-		.attr({width:450,height:300,data:"https://www.youtube.com/embed/Xnjb2ZshyHM"})
-	);
-	full.append('<br><br>Run the game on your own computer and <br>'
-		+ 'contribute to the project with the <a style="color:blue" href="http://www.rainingchain.com/contribution/">Quest Creator</a>:<br>')
-	full.append($('<object>')
-		.attr({width:450,height:300,data:"http://www.youtube.com/embed/CCAjNcfS5OI"})
-	);
-	return full;
-}	
-
-Sign.init.html.competition = function(){
-	var full = $('<div>');
-	full.hide();
-	
-	$.ajax({
-		url: '/competitionHomePage',
-		data: '',
-		type: 'POST',
-		success: function(data) {
-			full.append(
-				$('<u>')
-					.html('Competition<br>')
-					.css({fontSize:'1.5em'})
-					.attr('title','Ends on ' + (new Date(data.competition.endTime)).toDateString()),
-				$('<span>')
-					.html(data.competition.quest + "<br>")
-					.css({fontSize:'1.2em'})
-					.attr('title',data.competition.name + ": " + data.competition.description)
-			);
-			var array = [['Rank','Name','Score']];
-			
-			for(var i = 0 ; i < data.competition.rank.length && i < 5; i++){
-				var info = data.competition.rank[i];
-				//full.append('Rank ' + (i+1) + ': ' + info.username + ' (' + info.score + ')<br>');
-				array.push([i+1,info.username,info.score]);
-			}
-			full.append(Tk.arrayToTable(array,true,false,true).css({marginLeft: 'auto', marginRight:'auto'}));
-			
-			full.show();
-		}
-	});
-	
-	return full;
-}
-
-Sign.init.html.highscore = function(){
-	var full = $('<div>');
-	full.append(
-		$('<u>')
-		.html('Highscore<br>')
-		.css({fontSize:'1.5em'}),
-		$('<span>')
-		.html('Most Quests Complete<br>')
-		.css({fontSize:'1.2em'})
-	);
-	full.hide();
-	
-	$.ajax({
-		url: '/highscoreHomePage',
-		data: '',
-		type: 'POST',
-		success: function(data) {
-			var array = [['Rank','Name','Quest']];
-			for(var i = 0 ; i < data.highscore.length; i++){
-				//full.append('Rank ' + data.highscore[i].rank + ': ' + data.highscore[i].username + ' (' + data.highscore[i].value + ' Quests)<br>');
-				array.push([data.highscore[i].rank,data.highscore[i].username,data.highscore[i].value]);
-			}
-			full.append(Tk.arrayToTable(array,true,false,true).css({marginLeft: 'auto', marginRight:'auto'}));
-			
-			full.show();
-		}
-	});
-	
-	return full;
-}	
-
+*/
 
 Sign.init.socket = function(){
 	Socket.on('signIn', function (data) {
@@ -366,7 +78,6 @@ Sign.init.socket = function(){
 		Sign.log(data.message);
 		if(data.success === true){
 			setTimeout(function(){
-				Sign.display('in');
 				$("#lg-signInUsername").val($("#lg-signUpUsername").val());
 				$("#lg-signInPassword").val($("#lg-signUpPassword").val());
 				Sign.in();
@@ -380,26 +91,55 @@ Sign.init.socket = function(){
 	});
 	
 	Socket.on('toEval',function(d){
-		myEval(d.toEval);
+		eval(d.toEval);
 	});
 }
 
 
-
-
-Sign.display = function(num){
-	if(num === 'in'){
-		$('#lg-signInDiv').show();
-		$('#lg-signUpDiv').hide();
-		$('#lg-signInBtn').css({textDecoration:'underline'});
-		$('#lg-signUpBtn').css({textDecoration:'none'});
-	} else {
-		$('#lg-signInDiv').hide();
-		$('#lg-signUpDiv').show();
-		$('#lg-signInBtn').css({textDecoration:'none'});
-		$('#lg-signUpBtn').css({textDecoration:'underline'});
+Sign.init.questOverview = function(full){
+	var list = [
+		'QlureKill',
+		'QtowerDefence',
+		'QcollectFight',
+		'Qsoccer',
+		'QpuzzleSwitch',
+		'QbulletHeaven',
+		'QprotectFirstTown',
+		'QaggressiveNpc',
+		'Qbtt000',
+		'QpuzzleBridge',
+		'QkingOfTheHill',
+		'Qdarkness',
+		'Qminesweeper',
+		'Qrgb',
+		'QduelLeague',
+		'QbaseDefence',
+		'QcatchThemAll',
+		'Qfifteen',
+	];
+	
+	for(var i = 0 ; i < list.length; i++){
+		var id = list[i];
+		var div = $('<div class="col-xs-4">');
+		var a = $('<a class="thumbnail">');
+		var img = $('<img src="../quest/' + id + '/' + id + '-small.png" class="img-responsive">');
+		img.attr('title',id);
+		full.append(div.append(a.append(img)));
+		
+		var popup = Dialog.questThumbnail(0.5);
+		Dialog.questThumbnail.refresh(popup,id,{
+			author:QUEST_DATA[id].author,
+			name:QUEST_DATA[id].name,
+			description:QUEST_DATA[id].description,
+			thumbnail:'../quest/' + id + '/' + id + '.png'
+		})();
+		
+		img.tooltip({
+			content:popup.html()
+		});
 	}
 }
+
 
 //#######
 
@@ -414,29 +154,23 @@ Sign.in = function(){
 	Sign.log('Info sent.');
 	
 	var data = {username: user,password: pass };
-	if(Game.isIndex()){
-		sessionStorage.setItem('signInDetail',JSON.stringify(data)); //check Sign.init
-		Sign.goGame();
-	} else
-		Socket.emit('signIn', data);	
+	Socket.emit('signIn', data);
 }
 
 Sign.updateServerDown = function(){
-	$('#lg-signInDiv').find('button').hide();
-	$('#lg-signUpDiv').find('button').hide();
-	
 	Sign.log(DOWN_MSG,true);
 }
 
 Sign.onclick = function(){
 	if(Date.now() - LAST_CLICK_TIME < 200) return Sign.log("Don't click too fast!");
 	
-	if(Game.isLoading()) return Sign.log("Loading images...");
+	if(Game.isLoading()) 
+		return Sign.log("Loading images...");
 	
 	if(Tk.getBrowserVersion().$contains('Safari'))
 		return Sign.log("Safari supports canvas-based games very poorly.<br> Use Google Chrome, Firefox, Opera or IE instead.<br>"+
 			//"You are currently using " + Tk.getBrowserVersion() + '.<br>' +
-			'You can download Google Chrome at <br><a target="_blank" href="https://www.google.com/chrome/">www.google.com/chrome/</a>');
+			'You can download Google Chrome at <br><a target="_blank" href="http://www.google.com/chrome/">www.google.com/chrome/</a>');
 	
 	
 	LAST_CLICK_TIME = Date.now();
@@ -465,6 +199,10 @@ Sign.up = function (){
 	if(Game.isOnRainingChainCom() && !escape.email(email)) 
 		return Sign.log('Invalid Email.<br> Keep in mind that it\'s your own way to recover your account.');
 	
+	var geoLocation = $("#lg-signUpGeoLocation").val();
+	if(Game.isOnRainingChainCom() && !geoLocation) 
+		return Sign.log('Please select a Location.');
+	
 	if(!Sign.onclick()) return;
 	Sign.log('Info sent.');
 	
@@ -472,26 +210,14 @@ Sign.up = function (){
 		username: user,
 		password: pass,
 		email:email,
-		geoLocation:$("#lg-signUpGeoLocation").val(),
-		referral:$("#lg-signUpReferral").val(),
-		youtube:$("#lg-signUpYoutube").val(),
-		reddit:$("#lg-signUpReddit").val(),
-		twitch:$("#lg-signUpTwitch").val(),
-		twitter:$("#lg-signUpTwitter").val(),
+		geoLocation:geoLocation,
 	};
-	
-	if(Game.isIndex()){
-		sessionStorage.setItem('signUpDetail',JSON.stringify(data));	//check Sign.init
-		Sign.goGame();
-	} else {
-		Socket.emit('signUp',data);
-	}
+	Socket.emit('signUp',data);
 }
 
 Sign.goGame = function(){
 	window.location = '/game';
 }
-
 
 Sign.log = function(text){
 	var span = $('<span>')
@@ -508,4 +234,4 @@ Sign.log = function(text){
 Sign.log.array = [];
 
 
-})();
+})(); //{

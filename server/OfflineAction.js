@@ -15,9 +15,8 @@ ts("OfflineAction.create('aaa','removeItem',OfflineAction.Data.removeItem('Qsyst
 */
 //OfflineAction.create('aaa','addAbility',OfflineAction.Data.addAbility('Qsystem-wood-20',100));
 
-
 var OfflineAction = exports.OfflineAction = {};
-OfflineAction.create = function(username,type,data){
+OfflineAction.create = function(username,type,data,dontApplyAction){
 	if(!OfflineAction.TYPE.$contains(type)) 
 		return ERROR(3,'wrong type ' + type);
 	var oa = {
@@ -27,14 +26,18 @@ OfflineAction.create = function(username,type,data){
 		type:type,
 		data:data,
 	}
-	
-	if(Account.getKeyViaUsername(username)){
+	if(dontApplyAction)
+		return oa;
+		
+	if(Account.getKeyViaUsername(username)){	//aka online
 		OfflineAction.applyAction(oa);
 		return;
 	}
 	
-	
-	db.offlineAction.insert(oa,db.err);
+	Account.usernameExists(username,function(exist){
+		if(exist)
+			db.offlineAction.insert(oa,db.err);
+	});
 	return oa;
 }
 
@@ -50,11 +53,14 @@ OfflineAction.TYPE = [ //{
 	'addExp',
 	'addAbility',
 	'removeAbility',
+	'addCP',
 ]; //}
 
 OfflineAction.onSignIn = function(username){
 	setTimeout(function(){
 		db.offlineAction.find({username:username},{_id:0},function(err,res){
+			res = OfflineAction.concat(res);
+			
 			res.sort(function(a,b){ return a.time-b.time; });
 			for(var i = 0 ; i < res.length; i++){
 				OfflineAction.applyAction(res[i]);
@@ -62,6 +68,34 @@ OfflineAction.onSignIn = function(username){
 		});
 	},1000*5);
 }
+
+OfflineAction.concat = function(array){
+	var message = '';
+	var questPopup = '';
+	var username;
+	
+	for(var i = array.length-1; i >= 0 ; i--){
+		var oa = array[i];
+		username = oa.username;
+		if(oa.type === 'message'){
+			message += oa.data.msg + '<br>';
+			array.$removeAt(i);
+			db.offlineAction.remove({id:oa.id},db.err);
+		}
+		else if(oa.type === 'questPopup'){
+			questPopup += oa.data.msg + '<br>';
+			array.$removeAt(i);
+			db.offlineAction.remove({id:oa.id},db.err);
+		}
+	}
+	if(username && message)
+		array.push(OfflineAction.create(username,'message',OfflineAction.Data.message(message),true));
+	if(username && questPopup)
+		array.push(OfflineAction.create(username,'questPopup',OfflineAction.Data.questPopup(questPopup),true));
+	
+	return array;
+}
+
 
 OfflineAction.Data = {};
 OfflineAction.Data.message = function(msg){
@@ -97,9 +131,17 @@ OfflineAction.Data.questPopup = function(msg){
 	}
 }
 
+OfflineAction.Data.addCP = function(amount,type,comment){
+	return {
+		amount:amount,
+		type:type,
+		comment:comment,
+	}
+}
+
 OfflineAction.applyAction = function(oa){
 	var key = Account.getKeyViaUsername(oa.username);
-	if(!key) return;
+	if(!key) return;	//aka not online
 	db.offlineAction.remove({id:oa.id},db.err);
 	
 	if(oa.type === 'message')
@@ -118,7 +160,11 @@ OfflineAction.applyAction = function(oa){
 			Actor.swapAbility(Actor.get(key),oa.data.ability,oa.data.slot,true);
 	} else if(oa.type === 'removeAbility'){
 		Actor.removeAbility(Actor.get(key),oa.data.ability);
-	}
+	} else if(oa.type === 'addCP'){
+		Main.contribution.addPt(Main.get(key),oa.data.amount,oa.data.type,oa.data.comment);
+	} 
+	else 
+		return ERROR(3,'unhandled type',oa.type);
 	
 }
 

@@ -1,4 +1,4 @@
-//02/14/2015 4:10 PM
+//02/24/2015 10:17 PM
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 
@@ -7,8 +7,10 @@ var s = loadAPI('v1.0','Qsoccer',{
 	name:"Soccer",
 	author:"rc",
 	thumbnail:true,
-	description:"Play soccer against your friends! Push the ball in the goal to score. First to 5 points win.",
-	maxParty:4
+	description:"Play soccer against your friends! Push the ball in the goal to score.",
+	maxParty:4,
+	zone:"QfirstTown-south",
+	category:['Mixed']
 });
 var m = s.map; var b = s.boss; var g;
 
@@ -20,7 +22,8 @@ s.newVariable({
 	team1Pt:0,
 	team2Pt:0,
 	team:1,
-	deathCount:0
+	deathCount:0,
+	startGame:false,
 });
 
 s.newHighscore('speedrun',"speedrun","Fastest Completion of the quest",'ascending',function(key){
@@ -28,13 +31,13 @@ s.newHighscore('speedrun',"speedrun","Fastest Completion of the quest",'ascendin
 		return s.stopChrono(key,'timer');
 });
 
-s.newChallenge('speedrun',"Speedrun","Complete the quest in less than 1:30 minute",2,function(key){
+s.newChallenge('speedrun',"Speedrun","Complete the quest in less than 1:30 minute",function(key){
 	return s.stopChrono(key,'timer') < 25 * 90;
 });
-s.newChallenge('wind',"Wind Disadvantage","The wind is against you!",2,function(key){
+s.newChallenge('wind',"Wind Disadvantage","The wind is against you!",function(key){
 	return true;
 });
-s.newChallenge('deathless',"Deathless","You have 10 Hp. You can't die.",2,function(key){
+s.newChallenge('deathless',"Deathless","You have 10 Hp. You can't die.",function(key){
 	return s.get(key,'deathCount') === 0;
 });
 
@@ -50,7 +53,10 @@ s.newEvent('_signOff',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-south','n1','main',false);
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-south','n1','main');
+		s.setRespawn(key,'QfirstTown-south','n1','main');
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
@@ -74,6 +80,7 @@ s.newEvent('spawnBall',function(key){ //
 	});
 });
 s.newEvent('startGame',function(key){ //
+	s.set(key,'startGame',true);
 	var list = s.getParty(key);
 	if(list[0]){
 		s.set.one(list[0],'team',1);
@@ -118,6 +125,7 @@ s.newEvent('startGame',function(key){ //
 				hp:4,
 			});
 		}
+		s.displayPopup(key,'Score 5 times to win the game.<br>If they score once, you lose.');
 	}
 	
 	s.callEvent('spawnBall',key);
@@ -134,11 +142,13 @@ s.newEvent('startGame',function(key){ //
 s.newEvent('onGoal',function(key,team){ //
 	if(team === 1){
 		s.add(key,'team1Pt',1);
-		if(s.get(key,'team1Pt') >= 5){
-			if(s.getPartySize(key) === 1){
+		if(s.getPartySize(key) === 1){
+			s.setTimeout(key,function(){	//so doesnt fuck map loop
 				s.failQuest(key);
-				return true;
-			} else {
+			},5);
+			return true;
+		} else {
+			if(s.get(key,'team1Pt') >= 5){
 				s.displayPopup(key,'Team 1 won!');
 				s.setTimeout(key,function(){
 					s.completeQuest(key);
@@ -151,7 +161,9 @@ s.newEvent('onGoal',function(key,team){ //
 		s.add(key,'team2Pt',1);
 		if(s.get(key,'team2Pt') >= 5){
 			if(s.getPartySize(key) === 1){
-				s.completeQuest(key);
+				s.setTimeout(key,function(){ //so doesnt fuck map loop
+					s.completeQuest(key);
+				},5);
 				return true;
 			} else {
 				s.displayPopup(key,'Team 2 won!');
@@ -164,6 +176,13 @@ s.newEvent('onGoal',function(key,team){ //
 	}
 });
 s.newEvent('_hint',function(key){ //
+	if(!s.get(key,'startGame'))
+		return 'Go talk to Jaimaysh.';
+
+	if(s.getPartySize(key) === 1){
+		return 'Goal Count: ' + s.get(key,'team1Pt');
+	}
+		
 	if(s.get(key,'team') === 1)
 		return s.get(key,'team1Pt') + ' - ' + s.get(key,'team2Pt') 
 			+ '<br>Push the ball to the LEFT side to score.' ;
@@ -177,7 +196,7 @@ s.newEvent('_death',function(key){ //
 
 s.newAbility('pushBall','attack',{
 	name:"Tornado",
-	icon:'blessing.cycle',
+	icon:'attackMelee-fierce',
 	periodOwn:10,
 	periodGlobal:10,
 	delay:0
@@ -201,7 +220,7 @@ s.newAbility('closeBall','attack',{
 });
 s.newAbility('pushBallNpc','attack',{
 	name:"Tornado",
-	icon:'blessing.cycle',
+	icon:'attackMelee-fierce',
 	periodOwn:35,
 	periodGlobal:35,
 	delay:0
@@ -213,7 +232,6 @@ s.newAbility('pushBallNpc','attack',{
 	knock:s.newAbility.status(1,2,0.25),
 	sprite:s.newAbility.sprite('tornado',1)
 });
-
 s.newAbility('closeBallParty','attack',{
 	periodOwn:10,
 	periodGlobal:10
@@ -227,7 +245,7 @@ s.newAbility('closeBallParty','attack',{
 });
 s.newAbility('pushBallParty','attack',{
 	name:"Tornado",
-	icon:'blessing.cycle',
+	icon:'attackMelee-fierce',
 	periodOwn:10,
 	periodGlobal:10,
 	delay:0
@@ -239,12 +257,10 @@ s.newAbility('pushBallParty','attack',{
 	sprite:s.newAbility.sprite('tornado',1)
 });
 
-
-
 s.newPreset('soccer',s.newPreset.ability(['closeBall','pushBall','','','','']),null,False,False,False,False);
 s.newPreset('soccerParty',s.newPreset.ability(['closeBallParty','pushBallParty','','','','']),null,False,False,False,False);
 
-s.newDialogue('Jaimaysh','Jaimaysh','warrior-female.4',[ //{ 
+s.newDialogue('Jaimaysh','Jaimaysh','villagerFemale-4',[ //{ 
 	s.newDialogue.node('intro',"I'm petting a bunch of ghosts and they are bored all the time. Do you want to entertain them for me?",[ 
 		s.newDialogue.option("Sure.",'intro2',''),
 		s.newDialogue.option("What do ghosts like to do?",'intro2','')
@@ -268,7 +284,7 @@ s.newMap('main',{
 	grid:["000000000011110000000001100000000000000000011000000000000000","000110000011110000000011110000000000000000011000000000000000","001111000011110000000011110000000000000000011000000000111100","000001111111111111111111111111111111111111111111111111111100","000001111111111111111111111111111111111111111111111111111100","000011111111111111111111111111111111111111111111111111100000","000011111111111111111111111111111111111111111111111111100000","000011000000000000000000000000000000000000000000000001100000","011111000000000000000000000000000000000000000000000001111100","011111000000000000000000000000000000000000000000000001111100","000011000000000000000000000000000000000000000000000001100000","000011000000000000000000000000000000000000000000000001100000","000011000000000000000000000000000000000000000000000001100000","000011000000000000000000000000000000000000000000000001100000","000011000000000000000000000000000000000000000000000001100000","000011000000000000000000000000000000000000000000000001100000","000011000000000000000000000000000000000000000000000001111100","000011000000000000000000000000000000000000000000000001111100","000011000000000000000000000000000000000000000000000001100000","000011000000000000000000000000000000000000000000000001100000","111111000000000000000000000000000000000000000000000001100000","111111000000000000000000000000000000000000000000000001100000","111111000000000000000000000000000000000000000000000001100110","000011000000000000000000000000000000000000000000000001100110","000011000000000000000000000000000000000000000000000001100000","000001111111111111111111111111111111111111111111111111111000","000001111111111111111111111111111111111111111111111111111000","000011000011000011110000001100000000000001100000011001111000","000011000011000011110000000000000000000001100000011000000000","000000000000000011110000000000000000000000000000111100000000"],
 	tileset:'v1.2'
 },{
-	spot:{b3:{x:192,y:224,width:1504,height:64},t2:{x:528,y:368},t1:{x:1392,y:368},b1:{x:192,y:416,width:160,height:160},b2:{x:1536,y:416,width:160,height:160},e1:{x:976,y:496},t4:{x:528,y:592},t3:{x:1392,y:592},b4:{x:192,y:736,width:1504,height:64}},
+	spot:{b3:{x:192,y:224,width:1504,height:64},b5:{x:192,y:288,width:1280,height:448},t2:{x:528,y:368},t1:{x:1392,y:368},b1:{x:192,y:416,width:160,height:160},b2:{x:1536,y:416,width:160,height:160},e1:{x:976,y:496},t4:{x:528,y:592},t3:{x:1392,y:592},b4:{x:192,y:736,width:1504,height:64}},
 	load:function(spot){
 		
 	},
@@ -304,7 +320,7 @@ s.newMap('main',{
 			var key = m.getRandomPlayer(spot);
 			if(s.isChallengeActive(key,'wind'))
 				s.moveActor(eid,6,0);
-		},'npc',null,{ball:true});
+		},'npc',spot.b5,{ball:true});
 	}
 });
 s.newMapAddon('QfirstTown-south',{
@@ -315,7 +331,7 @@ s.newMapAddon('QfirstTown-south',{
 			angle:s.newNpc.angle('right'),
 			name:'Jaimaysh',
 			nevermove:true,
-			sprite:s.newNpc.sprite('warrior-female4',1),
+			sprite:s.newNpc.sprite('villagerFemale-4',1),
 		});
 	}
 });

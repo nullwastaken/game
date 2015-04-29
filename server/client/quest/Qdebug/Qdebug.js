@@ -7,6 +7,7 @@ var s = loadAPI('v1.0','Qdebug',{
 	author:'Admin',
 	dailyTask:false,
 	showInTab:false,
+	completable:false,
 });
 var m = s.map; var b = s.boss; var g;
 
@@ -32,7 +33,7 @@ s.newEvent('w00t',function(key){
 
 s.newNpc("npcBoss",{
 	name:"Dragon Boss",
-	sprite:s.newNpc.sprite("birdBlue",1.2),
+	sprite:s.newNpc.sprite("dragon",1.2),
 	mastery:s.newNpc.mastery(null,[0.2,0.2,0.2,0.2,0.2,0.2]),
 	maxSpd:s.newNpc.maxSpd(0.25),
 	moveRange:s.newNpc.moveRange(3.5,3),
@@ -49,28 +50,28 @@ s.newAbility('fireball','attack',{},{
 	sprite:s.newAbility.sprite("iceshard",1.5),
 	hitAnim:s.newAbility.anim("fireHit",0.5),
 	dmg:s.newAbility.dmg(100,'fire'),
-	spd:20,
+	spd:s.newAbility.spd(2),
 });
 s.newAbility('fireball-360','attack',{},{
 	type:"bullet",angleRange:20,amount:1,
 	sprite:s.newAbility.sprite("iceshard",1),
 	hitAnim:s.newAbility.anim("fireHit",0.5),
 	dmg:s.newAbility.dmg(200,'fire'),
-	spd:40,
+	spd:s.newAbility.spd(4),
 });
 s.newAbility('fireball-fast','attack',{},{
 	type:"bullet",angleRange:60,amount:2,
 	sprite:s.newAbility.sprite("iceshard",1),
 	hitAnim:s.newAbility.anim("fireHit",0.5),
 	dmg:s.newAbility.dmg(25,'fire'),
-	spd:40,
+	spd:s.newAbility.spd(4),
 });
 s.newAbility('fireball-oob','attack',{},{
 	type:"bullet",
 	sprite:s.newAbility.sprite("iceshard",1),
 	hitAnim:s.newAbility.anim("fireHit",0.5),
 	dmg:s.newAbility.dmg(250,'fire'),
-	spd:30,
+	spd:s.newAbility.spd(3),
 });
 
 s.newBoss('dragon',s.newBoss.variable({

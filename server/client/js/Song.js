@@ -10,7 +10,7 @@ Song.create = function(id,src,author,link,name,volume){
 		id:id,
 		src:'music/song/' + src,
 		audio:new Audio(),
-		name:name || id.replaceAll('_',' ').capitalize() ,
+		name:name || id.$replaceAll('_',' ').$capitalize() ,
 		link:link || '',
 		author:author || '',
 	}
@@ -28,27 +28,34 @@ Song.create('jur','jur.mp3','3kliksphilip','http://www.newgrounds.com/audio/list
 Song.create('super_gourmet_race','super_gourmet_race.mp3','MiguelVolkov','http://www.newgrounds.com/audio/listen/540968');
 Song.create('game_it_all_day','game_it_all_day.mp3','Getcheffy','http://www.newgrounds.com/audio/listen/476685');
 
-
 //forest http://www.newgrounds.com/audio/listen/483912
 //http://www.newgrounds.com/audio/listen/568699
 	
-Song.play = function(id,volume){
-	var song = DB[id];
-	var vol = volume === undefined ? 1 : volume;
+Song.play = function(songInfo,volumeMod){
+	if(typeof songInfo === 'string')
+		songInfo = {id:songInfo,volume:1};
+	volumeMod = volumeMod === undefined ? songInfo.volume : volumeMod;
+	
+	var song = DB[songInfo.id];
+	if(!song)
+		return ERROR(3,'invalid song id',songInfo.id);
+		
+	if(song.audio.readyState !== 4){
+		song.audio.oncanplay = function(){
+			Song.play(songInfo,volumeMod);
+		}
+		return;	
+	}
+	
+	var vol = volumeMod;
 	vol *= Main.getPref(main,'volumeSong')/100 * Main.getPref(main,'volumeMaster')/100;
 	
-	var audio = song.audio;
-	audio.volume = vol;
+	song.audio.volume = vol;
+	
 	if(BEING_PLAYED) 
 		BEING_PLAYED.audio.pause();
 	BEING_PLAYED = song;
-	
-	if(audio.readyState !== 4)
-		BEING_PLAYED.audio.oncanplay = function(){
-			Song.play(id,volume);
-		}
-	else
-		audio.play();
+	song.audio.play();
 	//$(audio).animate({volume: vol}, 2000);
 }
 

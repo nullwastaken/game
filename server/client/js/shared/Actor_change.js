@@ -40,7 +40,6 @@ Actor.doInitPack = function(act){
 }
 
 Actor.undoInitPack = function(draw,id){
-
 	var act = {};
 	act.isActor = true;
 	act.id = id;
@@ -92,7 +91,7 @@ Actor.undoInitPack.generateContext = function(act){	//use weakness	//BAD...
 	if(act.weakness.weak){
 		span.append("Weak: ");
 		span.append($('<span>')
-			.html(act.weakness.weak.capitalize())
+			.html(act.weakness.weak.$capitalize())
 			.css({color:CST.element.toColor[act.weakness.weak]})
 			.addClass('shadow')
 		);
@@ -101,7 +100,7 @@ Actor.undoInitPack.generateContext = function(act){	//use weakness	//BAD...
 	if(act.weakness.resist){
 		span.append("Resist: ");
 		span.append($('<span>')
-			.html(act.weakness.resist.capitalize())
+			.html(act.weakness.resist.$capitalize())
 			.css({color:CST.element.toColor[act.weakness.resist]})
 			.addClass('shadow')
 		);
@@ -228,13 +227,15 @@ Actor.Flag = function(){
 
 Actor.setFlag = function(act,what){
 	act.flag[what] = 'use need to edit Actor.initFlag';
+	act.hasFlag = true;
 }
 
 Actor.initFlag = function(act){	//return true if not empty.  note: data for yourself only
-	for(var what in act.flag){
+	var what;
+	for(what in act.flag){
 		//comment cuz check Actor.setFlag
-		if(what === 'curseClient') act.flag[what] = act.curseClient;		//must be first cuz public and npc
-		else if(what === 'hitHistory'){ act.flag[what] = act.hitHistory; }
+		if(what === 'hitHistory') act.flag[what] = act.hitHistory; 	
+		else if(what === 'curseClient') act.flag[what] = act.curseClient;	
 		else if(what === 'spriteFilter') act.flag[what] = act.spriteFilter;
 		else if(what === 'permBoost') act.flag[what] = act.permBoost;
 		else if(what === 'equip')	act.flag[what] = Actor.Equip.compressClient(act.equip,act);
@@ -244,8 +245,7 @@ Actor.initFlag = function(act){	//return true if not empty.  note: data for your
 		else if(what === 'abilityList')	act.flag[what] = Actor.AbilityList.compressClient(act.abilityList,act);
 		else if(what === 'skill') act.flag[what] = act.skill;
 	}
-	for(var i in act.flag) return true;
-	return false;
+	return !!what;
 }
 
 Actor.resetFlag = function(act){	//only called if was not empty, so no point in tracking if toReset

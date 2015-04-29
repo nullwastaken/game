@@ -8,6 +8,7 @@ var s = loadAPI('v1.0','Qhighscore',{
 	author:'rc',
 	showInTab:false,
 	dailyTask:false,
+	completable:false,
 	globalHighscore:true,
 });
 var m = s.map; var b = s.boss; var g;
@@ -46,7 +47,7 @@ s.newHighscore('questScoreSum',"Sum Quest Score","Sum of All Quest Scores",'desc
 	for(var i in mq)
 		sum += Math.min(mq[i]._rewardScore || 0,10000);
 		
-	return sum;
+	return Math.floor(sum);
 });
 
 

@@ -4,6 +4,8 @@
 var Quest = require2('Quest'), Equip = require2('Equip'), Main = require2('Main'), Ability = require2('Ability'), Highscore = require2('Highscore'), ItemModel = require2('ItemModel');
 var Socket = require4('Socket');
 
+var HIGHSCORE_QUEST = 'Qhighscore';
+
 var QueryDb = exports.QueryDb = {};
 QueryDb.create = function(db,id){
 	return {
@@ -134,6 +136,7 @@ QueryDb.getQuestName = function(id){
 }
 QueryDb.getQuestShowInTab = function(id){
 	if(id === 'Qtutorial') return false;	//BAD hardcoded
+	if(!DB.quest.data[id]) return ERROR(3,'invalid quest id',id);
 	return DB.quest.data[id].showInTab || false;
 }
 QueryDb.getPartialQuest = function(id){
@@ -146,9 +149,14 @@ QueryDb.getHighscoreForQuest = function(id){
 	return list;
 }
 QueryDb.getHighscoreQuestList = function(){
-	var list = {};
+	var list2 = {};
 	for(var i in DB.highscore.data)
-		list[DB.highscore.data[i].quest] = 1;
+		list2[DB.highscore.data[i].quest] = 1;
+	var list = list2.$keys();
+	list.sort();	
+		
+	list.$remove(HIGHSCORE_QUEST);
+	list.unshift(HIGHSCORE_QUEST);
 	return list;
 }
 
@@ -158,7 +166,7 @@ QueryDb.getHighscoreName = function(id){
 QueryDb.getHighscoreDescription = function(id){
 	return DB.highscore.data[id].description || '';
 }
-QueryDb.useSignInPack = function(quest,highscore,item,equip){
+QueryDb.useSignInPack = function(quest,highscore,item,equip,competition){
 	for(var i in quest)
 		DB.quest.data[i] = QueryDb.uncompressQuest(quest[i]);
 	for(var i in highscore)
@@ -167,8 +175,14 @@ QueryDb.useSignInPack = function(quest,highscore,item,equip){
 		DB.item.data[i] = ItemModel.uncompressClient(item[i]);
 	for(var i in equip)
 		DB.equip.data[i] = equip[i];
+	DB.competition = competition;
+	
+	
+	
 }
-
+QueryDb.getCompetition = function(){
+	return DB.competition;
+}
 
 QueryDb.uncompressQuest = function(quest){
 	return {
@@ -190,6 +204,7 @@ QueryDb.uncompressQuest = function(quest){
 		showInTab:quest[15],
 		isPartialVersion:quest[16],
 		category:quest[17],
+		requirement:quest[18],
 	};
 }
 QueryDb.uncompressHighscore = function(highscore){

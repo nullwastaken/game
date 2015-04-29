@@ -9,18 +9,10 @@ Main.Social = function(){
 		friendList:{},
 		muteList:{},
 		clanList:[],
-		customChat:Main.Social.customChat(),
 		status:'on',
 		muted:0,
 		allowedToSendPuush:true,	//TODO
 	};
-}
-
-Main.Social.customChat = function(symbol,color){
-	return {
-		symbol:symbol || 0,
-		color:color || 0,	
-	}
 }
 
 Main.Social.compressDb = function(social){
@@ -107,14 +99,16 @@ Main.changeStatus.ON = 'on';
 Main.changeStatus.OFF = 'off';
 Main.changeStatus.FRIEND_ONLY = 'friend';
 
+Main.isIgnoringPlayer = function(main,user){
+	return !!main.social.muteList[user];
+}
 
 Main.mutePlayer = function(main,user){
 	if(user === main.username) return Main.addMessage(main,"-.- Seriously?");
-	var social = main.social;
-	if(social.friendList[user]) return Main.addMessage(main,"This player is in your Friend List.");
-	if(social.muteList[user]) return Main.addMessage(main,"This player is alraedy in your Mute List.");
+	if(main.social.friendList[user]) return Main.addMessage(main,"This player is in your Friend List.");
+	if(main.social.muteList[user]) return Main.addMessage(main,"This player is alraedy in your Mute List.");
 
-	social.muteList[user] = true;
+	main.social.muteList[user] = true;
 	Main.addMessage(main,"Player muted.");
 	Main.setFlag(main,'social,muteList');
 }

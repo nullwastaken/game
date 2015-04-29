@@ -8,6 +8,10 @@ var s = loadAPI('v1.0','Qdarkness',{
 	author:"rc",
 	maxParty:2,
 	thumbnail:true,
+	category:["Combat"],
+	solo:true,
+	zone:"QfirstTown-north",
+	party:"Coop",
 	reward:{"ability":{'Qsystem-player-healSlowCast':0.5}},
 	description:"Retrieve a precious object lost in a mysterious cave haunted by ghosts.",
 });
@@ -43,16 +47,15 @@ s.newHighscore('tgCount',"Trapper","Least amount of traps activated to kill the 
 	return s.get(key,'tgCount');
 });
 
-s.newChallenge('strike',"Strike!","Kill at least 6 ghosts at once.",2,function(key){
+s.newChallenge('strike',"Strike!","Kill at least 6 ghosts at once.",function(key){
 	return s.get(key,'chalStrike');	 //check tgOn
 });
-s.newChallenge('survivor',"Survivor","Complete the quest without dying.",2,function(key){
+s.newChallenge('survivor',"Survivor","Complete the quest without dying.",function(key){
 	return s.get(key,'deathCount') < 1;
 });
-s.newChallenge('x2boss',"Double Trouble","Fight 2 Bat bosses at once.",2,function(key){
+s.newChallenge('x2boss',"Double Trouble","Fight 2 Bat bosses at once.",function(key){
 	return true;
 });
-
 
 s.newEvent('_start',function(key){ //
 	if(s.isChallengeActive(key,'x2boss'))
@@ -107,7 +110,8 @@ s.newEvent('doneTalkDrof',function(key){ //
 	s.addQuestMarker(key,'well','QfirstTown-main','t1');
 });
 s.newEvent('teleTownWell',function(key){ //enter well
-	if(!s.get(key,'talkDrof')) return s.message(key,'You have no reason to go down here.');
+	if(!s.get(key,'talkDrof')) 
+		return s.message(key,'You have no reason to go down here.');
 	s.teleport(key,'well','t1','party',true);
 	s.setRespawn(key,'QfirstTown-main','t2','main',true);	//incase die inside
 	s.removeQuestMarker(key,'well');
@@ -146,11 +150,13 @@ s.newEvent('viewChest',function(key){ //
 	return !s.get(key,'lootChest');
 });
 s.newEvent('lootChest',function(key){ //
-	if(s.callEvent('viewBlock',key)) return s.ERROR(4,'not supposed to be able to loot chest if block there');	//prevent glitch
+	if(s.callEvent('viewBlock',key)) 
+		return s.ERROR(4,'not supposed to be able to loot chest if block there');	//prevent glitch
 	s.addItem(key,'ring');
 	s.set(key,'lootChest',true);	
 	s.message(key,'Congratz! Now bring the ring back to Bimmy.');
 	s.removeQuestMarker(key,'cave');
+	s.addQuestMarker(key,'house','QfirstTown-high','n1');
 });
 s.newEvent('tgOn',function(key,num){ //activating switch
 	s.add(key,'tgCount',1);		//for highscore
@@ -205,14 +211,14 @@ s.newEvent('viewTg4',function(key){ //
 	return s.callEvent('viewTg',key,4);
 });
 
-s.newItem('lantern',"Lantern",'status.burn',[    //{
+s.newItem('lantern',"Lantern",'status-burn',[    //{
 ],''); //}
-s.newItem('ring',"Ring",'ring.topaz',[    //{
+s.newItem('ring',"Ring",'ring-topaz',[    //{
 ],''); //}
 
 s.newAbility('bigbat0','attack',{
 	name:"Scratch",
-	icon:'attackMelee.scar',
+	icon:'attackMelee-scar',
 	delay:10
 },{
 	type:'strike',
@@ -224,7 +230,7 @@ s.newAbility('bigbat0','attack',{
 });
 s.newAbility('bigbat1','attack',{
 	name:"Lightning Bullet",
-	icon:'attackMagic.static'
+	icon:'attackMagic-static'
 },{
 	type:'bullet',
 	amount:5,
@@ -239,7 +245,7 @@ s.newAbility('lightning','attack',{
 	amount:16,
 	angleRange:360,
 	dmg:s.newAbility.dmg(25,'lightning'),
-	spd:40,
+	spd:s.newAbility.spd(4),
 	sprite:s.newAbility.sprite('lightningball',1)
 });
 s.newAbility('curse','attack',{
@@ -265,7 +271,7 @@ s.newAbility('bat','summon',{
 
 
 
-s.newDialogue('bimmy','Bimmy','villager-male.5',[ //{ 
+s.newDialogue('bimmy','Bimmy','villagerMale-5',[ //{ 
 	s.newDialogue.node('ringdone',"OMG! You found my ring! Thanks a lot.",[ 
 		s.newDialogue.option("No problem.",'','finishQuest')
 	],''),
@@ -287,7 +293,7 @@ s.newDialogue('bimmy','Bimmy','villager-male.5',[ //{
 		s.newDialogue.option("Okay great!",'','doneTalkBimmy')
 	],'')
 ]); //}
-s.newDialogue('drof','Drof','villager-male.3',[ //{ 
+s.newDialogue('drof','Drof','villagerMale-3',[ //{ 
 	s.newDialogue.node('killbat',"Thanks a lot for killing the bat. Take my lantern.",[ 	],'gotLantern'),
 	s.newDialogue.node('gotLantern',"Thanks again.",[ 	],''),
 	s.newDialogue.node('second',"If you want my lantern, go kill all the bats in my well right outside of my house.",[ 	],''),
@@ -322,7 +328,7 @@ s.newMapAddon('QfirstTown-nwLong',{
 	spot:{n1:{x:368,y:912}},
 	load:function(spot){
 		m.spawnActor(spot.n1,'npc',{
-			sprite:s.newNpc.sprite('villager-male3'),
+			sprite:s.newNpc.sprite('villagerMale-3'),
 			name:'Drof',
 			dialogue:'talkDrof'
 		});
@@ -332,10 +338,10 @@ s.newMapAddon('QfirstTown-high',{
 	spot:{n1:{x:368,y:592}},
 	load:function(spot){
 		m.spawnActor(spot.n1,'npc',{
-			sprite:s.newNpc.sprite('villager-male5'),
+			sprite:s.newNpc.sprite('villagerMale-5'),
 			name:'Bimmy',
 			dialogue:'talkBimmy',
-			minimapIcon:'minimapIcon.quest',
+			minimapIcon:'minimapIcon-quest',
 		});
 	}
 });
@@ -348,6 +354,7 @@ s.newMapAddon('QfirstTown-main',{
 s.newMap('well',{
 	name:"Drof Well",
 	lvl:0,
+	screenEffect:'cave',
 	grid:["0000000000001101100000011011000000000000","0111100000011101100000011011100000000000","0111101111111111111111111111111111000000","0000011111111111111111111111111111100111","0000111111111111111111111111111111110111","0001111111111111111111111111111111111011","0011110000000111100000011110000000111101","0011100111111111111111111111111110011100","0011001111111111111111111111111111001100","0011011111111111111111111111111111101100","0011011111111111111111111111111111101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011011000000000000000000000000001101100","0011001111111111111111111111111111001100","0001100111111111111111111111111110011111","0000110000001111000000001100000000111111","0000011111001101100000011111111111101111","0000001111100101101100111111111111001111","0000000000110001101101111001100000000111"],
 	tileset:'v1.2'
 },{
@@ -355,16 +362,11 @@ s.newMap('well',{
 	load:function(spot){
 		m.spawnTeleporter(spot.t1,'teleWellTown','zone','up');
 	},
-	playerEnter:function(key){
-		s.addTorchEffect(key,'torch'); //dark screen
-	},
-	playerLeave:function(key){
-		s.removeTorchEffect(key,'torch');		//regular screen
-	}
 });
 s.newMap('ghost',{
 	name:"Ghosts Cave",
 	lvl:0,
+	screenEffect:'cave',
 	grid:["00000011000000000001100000000000000000000000011000","00000001111111111111000000000111100000000000011100","00000000111111111110000000000111100001100000011110","00110000111111111110000000000111100001100000011111","00000111111111111111111111111111111111111111111111","00001111111111111111111111111111111111111111111111","00011111111111111111100000001111111111111111111111","00011111111111111111100000001111111111111111111100","00011111111111111111100000001111111000000000111100","00011111111111111100000000001111111000000000111100","00011111111111111100000000001111111000000000011100","00011000000000000100000000001110001000000000001111","00011000000000000100000000001110001000000000001100","00011000000000000110000000011110001000000000001100","00011000000000000011110011111110001000000000001100","01111000000000000001110011111111111000000000001100","01111000000000000000110011111111111000000000001100","00011000000000000000010010011001110000000000001100","00011000000000000000000000011001100000000000001100","00011000000000000000000000011111000000000000001100","00011000000011111110000000001110000000000011111111","00011000000111111111000000000000000000000111111111","00011000001100000001100000000000000000001111111110","00011000011000000000110000000000000000011111111110","00011000011000000000110000000000000000011111111111","00011000011000000000110000000000000000011111111111","00011000011000000000110000000000000000011111111111","00011000011100000001110000000000000000011110001111","00011000011111000111110000000000000000011110001111","11111000011111000111100000000000000000001111111111","11111111111111000111000000000000000000000111111111","01111111111111000110000000000000000000000011111100","00111100011111000100000000000000000000000001111100","00111100001111000100000000000000000000000000001100","00111110001111000000000000000000000000000000001100","01100011001111000000000000000000000000000000001100","11000001111100000000000110001100000000000000001100","11000001111100000000001100000110000000000000001100","11000001111100000000001000000010000000000000001100","11000001111100000000001000000010000000000000001100","11000001111100000000001000000010000000000000001100","11000001111100000000001000000010000000000000001100","11100011111100000000001110000010000000000000001100","11111111111100000000011110000011000000000000001100","01111111111111111111111110000011111111111111111100","00111111111111111111111111111111111111111111111111","00011111111000110000111100000000000000000000001111","00001000000000110000111100000000000000000000000111","00000000000000000000011100000000111100000000000011","00000000000000000000001100000000111100000000000000"],
 	tileset:'v1.2'
 },{
@@ -387,13 +389,11 @@ s.newMap('ghost',{
 		m.spawnToggle(spot.s4,'viewTg4','tgOn4','tgOff');
 	},
 	playerEnter:function(key){
-		s.addTorchEffect(key,'torch');
 		s.addBoost(key,'hp-regen',10,0,'helper');
 		
 		s.enableAttack(key,false); //prevent use of ability (check q.preset.nothing)
 	},
 	playerLeave:function(key){
-		s.removeTorchEffect(key,'torch');
 		s.removeBoost(key,'helper','hp-regen');
 		s.enableAttack(key,true);		//allow ability again
 		s.set('killGhost',0);

@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Actor = require2('Actor'), Server = require2('Server'), QuestVar = require2('QuestVar'), ActorGroup = require2('ActorGroup'), Message = require2('Message'), Drop = require2('Drop');
+var Actor = require2('Actor'), Server = require2('Server'), Party = require2('Party'), QuestVar = require2('QuestVar'), ActorGroup = require2('ActorGroup'), Message = require2('Message'), Drop = require2('Drop');
 var Pref = require4('Pref');
 var Main = exports.Main = {};
 Main.create = function(key,extra){
@@ -16,8 +16,8 @@ Main.create = function(key,extra){
 		dailyTask:[],
 		questActive:'',
 		quest:Main.Quest(),
+		killCount:Main.KillCount(),
 		questHint:'',
-		//contribution:Contribution.template(),	//check Sign.enterGame
 		change:{},
 		old:{},
 		flag:Main.Flag(),
@@ -25,6 +25,8 @@ Main.create = function(key,extra){
 		bankList:Main.ItemList(),
 		tradeList:Main.ItemList(),
 		tradeInfo:Main.TradeInfo(),
+		contribution:Main.Contribution(),
+		achievement:Main.Achievement(),
 		pref:Main.Pref(),
 		hudState:Main.HudState(),
 		currentTab:"inventory",
@@ -32,6 +34,7 @@ Main.create = function(key,extra){
 		party:Main.Party(),
 		acceptPartyInvite:true,
 		lookingFor:Main.LookingFor(),
+		timestampQuestComplete:Date.now(),	//BAD for contribution
 		//part of temp
 		temp:{},
 		questRating:'',	//name of quest
@@ -40,7 +43,10 @@ Main.create = function(key,extra){
 		questComplete:null,
 		screenEffect:{},
 	};
-	for(var i in extra) main[i] = extra[i];
+	for(var i in extra){
+		if(main[i] === undefined) ERROR(4,'prop not in constructor',i);
+		main[i] = extra[i];
+	}
 	
 	return main;
 }
@@ -60,8 +66,8 @@ Main.get = function(id){
 	return Main.LIST[id] || null;
 }
 
-Main.addToList = function(bullet){
-	Main.LIST[bullet.id] = bullet;
+Main.addToList = function(main){
+	Main.LIST[main.id] = main;
 }
 
 Main.removeFromList = function(id){
@@ -78,12 +84,13 @@ Main.onSignIn = function(main){	//require act to be inited
 	Main.reputation.updateBoost(main);
 	Main.social.onSignInOff(main,'in');
 	Main.updatePlayerOnline(main,Server.getPlayerInfo());
+	Main.achievement.onSignIn(main);
+	Main.updateCanStartQuest(main,false);
 }
 
 Main.onSignOff = function(main){	//require act to be inited
 	Main.social.onSignInOff(main,'off');
 	Main.party.onSignOff(main);
-	Main.leaveParty(main);
 	QuestVar.onSignOff(main);
 }
 
@@ -106,6 +113,10 @@ Main.addMessage = function(main,msg){
 		msg = Message.Game(msg,Message.SERVER);
 	main.temp.message = main.temp.message || [];
 	main.temp.message.push(msg);
+}
+
+Main.addPopup = function(main,text){
+	Message.addPopup(main.id,text);
 }
 
 Main.dropInv = function(main,id,amount){
@@ -141,6 +152,8 @@ Main.HudState = function(){
 		'tab-feedback':0,
 		'tab-homeTele':0,
 		'tab-setting':0,
+		'tab-contribution':0,
+		'tab-achievement':0,
 		chat:0,
 		bottomChatIcon:0,
 		aboveInventory:0,

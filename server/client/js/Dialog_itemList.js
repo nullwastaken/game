@@ -1,13 +1,13 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Collision = require4('Collision'), Main = require4('Main'), Command = require4('Command'), QueryDb = require4('QueryDb'), Img = require4('Img');
+var Collision = require4('Collision'), Command = require4('Command'), QueryDb = require4('QueryDb'), Img = require4('Img');
 var Dialog = require3('Dialog');
 
 var helperBankLeft = function(i){
 	return function(e){
 		if(!e.shiftKey) Command.execute('transferBankInv',[i,1]);
-		else Command.execute('transferBankInv',[i,Main.getPref(main,'bankTransferAmount')]);
+		else Command.execute('transferBankInv',[i,1000]);
 	}
 };
 var helperBankRight = function(i){
@@ -17,78 +17,80 @@ var helperBankRight = function(i){
 	}
 };	
 
-Dialog.create('bank','Bank',Dialog.Size(500,500),Dialog.Refresh(function(html,variable,param){
-		if(!variable.x){	//first time opening
-			variable.x = player.x;
-			variable.y = player.y
-		}
-		if(Collision.getDistancePtPt(variable,player) > 100){
-			delete variable.x;
-			delete variable.y;
-			return false;
-		}
-		
-		
-		html.append('Shift-Left Click Amount: ');
-		
-		var input = $('<input>')
-			.val(Main.getPref(main,'bankTransferAmount'))
-			.attr('type','number')
-			.attr('max',999999999)
-			.attr('min',1);
-		setTimeout(function(){	//BAD
-			input.blur();
-		},100);
-		input.change(function(e){
-			var newValue = input.val();
-			Command.execute('pref',['bankTransferAmount',newValue]);
-		});
-		html.append(input);
-		
+var refreshBank = function(){
+	Dialog.refresh('bank');
+};
+var refreshTrade = function(){
+	Dialog.refresh('trade');
+};
 
-		html.append(' ');
-		html.append($('<button>')
-			.html('Bank All')
-			.addClass('myButton')
-			.click(function(){
-				Command.execute('transferInvBankAll',[]);
-			})
-		);
-		html.append('<br>');
+Dialog.create('bank','Bank',Dialog.Size(500,500),Dialog.Refresh(function(html,variable,param){
+	if(!variable.x){	//first time opening
+		variable.x = player.x;
+		variable.y = player.y
+	}
+	if(Collision.getDistancePtPt(variable,player) > 100){
+		delete variable.x;
+		delete variable.y;
+		return false;
+	}
+	
+	html.append($('<button>')
+		.html('Bank All')
+		.addClass('myButton')
+		.click(function(){
+			Command.execute('transferInvBankAll',[]);
+		})
+	);
+	html.append('<br>');
+	
+	//#############
+	
+	var div = $('<div>');
+	
+	
 		
-		//#############
+	var list = placeBankInOrder();
+	var order = ['material','equip','misc'];
+	
+	
+	for(var j = 0 ; j < order.length; j++){
 		var array = [[]];
 		var arrayPosition = 0;
-		for(var i in main.bankList.data){
+		for(var i in list[order[j]]){
+			var id = list[order[j]][i];
 			if(array[arrayPosition].length >= 10){
 				arrayPosition++;
 				array.push([]);
 			}
-			var item = QueryDb.get('item',i,function(){
-				Dialog.refresh('bank');
-			});
+			var item = QueryDb.get('item',id,refreshBank);
 			if(!item) continue;
-			var amount = main.bankList.data[i];
+			var amount = main.bankList.data[id];
 			
 			var itemHtml = Img.drawItem(item.icon,40,'Transfer ' + item.name,amount);
 			
 			
-			itemHtml.click(helperBankLeft(i))
-			.bind('contextmenu',helperBankRight(i));
+			itemHtml.click(helperBankLeft(id))
+			.bind('contextmenu',helperBankRight(id));
 				
 			array[arrayPosition].push(itemHtml);
-		}	
-		
-		html.append(Tk.arrayToTable(array,false,false,false,'4px'));	
-	},function(html,variable,param){
-		return Tk.stringify(main.bankList.data) + (Collision.getDistancePtPt(variable,player) > 100);
-	},10)
-);
+		}
+		if(array[0].length > 0){
+			var table = Tk.arrayToTable(array,false,false,false,'4px');
+			div.append('<u style="font-size:1em">' + order[j].$capitalize() + '</u><br>');
+			div.append(table);
+		}
+	}
+	
+	html.append(div);	
+},function(html,variable,param){
+	return Tk.stringify(main.bankList.data) + (Collision.getDistancePtPt(variable,player) > 100);
+},10));
 
 var helperTradeLeft = function(i){
 	return function(e){
 		if(!e.shiftKey) Command.execute('transferTradeInv',[i,1]);
-		else Command.execute('transferTradeInv',[i,Main.getPref(main,'bankTransferAmount')]);
+		else Command.execute('transferTradeInv',[i,1000]);
 	}
 };
 var helperTradeRight = function(i){
@@ -105,6 +107,26 @@ var helperOtherTradeLeft = function(i){
 	}
 };	
 	
+var placeBankInOrder = function(){
+	var list = {
+		equip:[],
+		material:[],
+		misc:[],
+	}
+	for(var i in main.bankList.data){
+		var item = QueryDb.get('item',i,refreshBank);
+		if(!item) continue;
+		if(item.type === 'equip')
+			list.equip.push(i);
+		else if(item.type === 'material')
+			list.material.push(i);
+		else
+			list.misc.push(i);
+	}
+	return list;
+}	
+	
+	
 	//button accept trade
 Dialog.create('trade','Trade',Dialog.Size(600,450),Dialog.Refresh(function(html,variable,param){	//combine trade and bank?
 		//#############
@@ -115,9 +137,7 @@ Dialog.create('trade','Trade',Dialog.Size(600,450),Dialog.Refresh(function(html,
 				arrayPosition++;
 				array.push([]);
 			}
-			var item = QueryDb.get('item',i,function(){
-				Dialog.refresh('trade');
-			});
+			var item = QueryDb.get('item',i,refreshTrade);
 			if(!item) continue;
 			var amount = main.tradeList.data[i];
 			
@@ -174,9 +194,7 @@ Dialog.create('trade','Trade',Dialog.Size(600,450),Dialog.Refresh(function(html,
 				arrayPosition++;
 				array.push([]);
 			}
-			var item = QueryDb.get('item',i,function(){
-				Dialog.refresh('trade');
-			});
+			var item = QueryDb.get('item',i,refreshTrade);
 			if(!item) continue;
 			var amount = main.tradeInfo.data[i];
 			

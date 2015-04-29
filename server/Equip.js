@@ -1,6 +1,6 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
-var Message = require2('Message'), ItemList = require2('ItemList'), Boost = require2('Boost'), OptionList = require2('OptionList'), Combat = require2('Combat'), Material = require2('Material'), CraftBoost = require2('CraftBoost'), ItemModel = require2('ItemModel'), Main = require2('Main'), Actor = require2('Actor');
+var Message = require2('Message'), Metrics = require2('Metrics'), ItemList = require2('ItemList'), Boost = require2('Boost'), OptionList = require2('OptionList'), Combat = require2('Combat'), Material = require2('Material'), CraftBoost = require2('CraftBoost'), ItemModel = require2('ItemModel'), Main = require2('Main'), Actor = require2('Actor');
 var Equip = exports.Equip = {};
 
 var DB = Equip.DB = {};
@@ -26,16 +26,16 @@ Equip.create = function(quest,id,piece,type,name,lvl,valueMod,boost,extra,addDb)
 		def:null,
 		dmg:null,	
 		defRaw:null,
-		dmgRaw:null,	
+		dmgRaw:null,
+		tier:0,
+		tierCost:0,
 		boost:boost || [],
-		masteryExp:0,
+		masteryExp:0,	//usuned anymore
 		creator:null,
 		accountBound:0,
 		color:'white',
 		salvagable:0,
-		quality:0,
-		rarity:0,
-		maxAmount:0,
+		maxBoostAmount:0,
 		creationDate:Date.now(),
 		/**/
 		upgradable:0,
@@ -50,7 +50,13 @@ Equip.create = function(quest,id,piece,type,name,lvl,valueMod,boost,extra,addDb)
 	equip.def = Tk.deepClone(equip.defRaw);
 	equip.dmg = Tk.deepClone(equip.dmgRaw);
 	
-	for(var i in extra) equip[i] = extra[i];
+	
+	for(var i in extra){
+		if(equip[i] === undefined) ERROR(4,'prop not in constructor',i);
+		equip[i] = extra[i];
+	}
+	equip.tierCost = Equip.getTierUpCost(equip);
+		
 	equip.id = id || equip.id;
 		
 	DB[equip.id] = equip;
@@ -59,7 +65,11 @@ Equip.create = function(quest,id,piece,type,name,lvl,valueMod,boost,extra,addDb)
 	if(addDb !== false) db.equip.upsert({id:equip.id}, Equip.compressDb(Tk.deepClone(equip)), db.err);
 	return equip;
 }
-
+/*
+quality:0,
+		rarity:0,
+		maxBoostAmount
+		*/
 Equip.createFromModel = function(equip,addDb){
 	return Equip.create(null,null,null,null,null,null,null,null,equip,addDb);
 }	
@@ -86,31 +96,26 @@ Equip.init = function(dbLink,cb){
 //#######################
 
 Equip.randomlyGenerateFromQuestReward = function(act){
-	return Equip.randomlyGenerate(act.username,null,Actor.getLevel(act),null,null,null,null);
+	return Equip.randomlyGenerate(act.username,null,Actor.getLevel(act));
 }
 
-Equip.randomlyGenerate = function(creator,pieceType,lvl,quality,rarity,min,max){
+Equip.randomlyGenerate = function(creator,pieceType,lvl,visibleBoost,totalBoost){
 	pieceType = pieceType || Equip.PieceType();
-	
-	quality = quality !== undefined ? quality : Equip.generateQuality(quality);
-	rarity = rarity !== undefined ? rarity : Equip.generateRarity(rarity);
-	
+
 	var id = START_ITEM_ID + Math.randomId();
 	var piece = pieceType.piece;
 	var type = pieceType.type;
 	lvl = Equip.Lvl(lvl || 0);
-	var maxAmount = typeof max === 'number' ? max : Equip.generateMaxAmount(rarity);
-	var minAmount = typeof min === 'number' ? min : Equip.generateMinAmount(rarity,maxAmount);
-	var boost = Equip.generateBoost(minAmount,piece,type);
+	var maxBoostAmount = typeof totalBoost === 'number' ? totalBoost : Equip.generateMaxBoostAmount();
+	var visibleBoostAmount = typeof visibleBoost === 'number' ? visibleBoost : Equip.generateVisibleBoostAmount(maxBoostAmount);
+	var boost = Equip.generateBoost(visibleBoostAmount,piece,type);
 	
-	var valueMod = Equip.generateValueMod(quality);
+	var valueMod = Equip.generateValueMod();
 
 	var extra = {
 		upgradable:true,
 		salvagable:true,
-		quality:quality || 0,
-		rarity:rarity || 0, 
-		maxAmount:maxAmount,
+		maxBoostAmount:maxBoostAmount,
 		creator:creator || '',
 		upgradeInfo:Equip.generateUpgradeInfo(piece,type,lvl),
 	}
@@ -122,7 +127,7 @@ Equip.randomlyGenerate = function(creator,pieceType,lvl,quality,rarity,min,max){
 Equip.PieceType = function(piece,type){
 	if(piece && type) return {piece:piece,type:type};
 	
-	if(!piece) piece = CST.equip.piece.$random();
+	if(!piece) piece = CST.equip.piece.concat(['weapon']).$random();	//weapon is 2/6, others are 1/6
 	if(piece === 'armor') piece = ['amulet','ring','body','helm'].$random();
 	if(piece === 'weapon') return {piece:'weapon',type:CST.equip.weapon.$random()};
 	if(piece === 'amulet') return {piece:'amulet',type:CST.equip.amulet.$random()};
@@ -133,24 +138,22 @@ Equip.PieceType = function(piece,type){
 }
 
 Equip.generateValueMod = function(quality){
-	quality = quality || 0;
-	return 0.9 + Math.pow(Math.random(),1/(quality+1))*0.2;
+	return 0.9 + Math.random()*0.2;
 }
 
-Equip.generateMaxAmount = function(rarity){	// 1/3 => 3, 1/9 => 4, 1/27 => 5, 1/81 => 6...
-	rarity = rarity || 0;
-	var amount = Math.pow(Math.random(),(1+(rarity)));
-	amount = -Math.logBase(3,amount);
+Equip.generateMaxBoostAmount = function(){	//2/3 => 2, 1/3 => 3, 1/9 => 4, 1/27 => 5, 1/81 => 6...
+	var amount = Math.random();
+	amount = -Math.logBase(3,amount);	//above 1/3 => 0, 1/3 => 1, 1/9 => 2, 1/27 => 3
 	amount = Math.floor(amount);
 	amount += 2;
 	if(amount > 6) amount = 6; //1/128
 	return amount;
 }
 
-Equip.generateMinAmount = function(rarity,max){
-	var random = Math.pow(Math.random(),2/(1+rarity));
+Equip.generateVisibleBoostAmount = function(max){
+	var random = Math.pow(Math.random(),2);
 	var min = 1 + Math.floor(random*max);
-	return min.mm(0,max-1);
+	return min.mm(1,max-1);
 }
 
 Equip.generateBoost = function(amount,piece,type){
@@ -218,24 +221,24 @@ Equip.generateUpgradeInfo = function(piece,type,lvl){
 Equip.Name = function(pieceType,boost){
 	var name = '';
 	if(pieceType.piece === 'weapon'){
-		name = pieceType.type.capitalize();
+		name = pieceType.type.$capitalize();
 	} else {
-		name = pieceType.type.capitalize() + ' ' + pieceType.piece.capitalize();
+		name = pieceType.type.$capitalize() + ' ' + pieceType.piece.$capitalize();
 	}
-	if(boost.length == 3 || boost.length == 4){
+	if(boost.length === 3 || boost.length === 4){
 		name = Equip.Name.PREFIX.$random() + ' ' + name
 	}
-	if(boost.length == 5 && boost.length == 6){
+	if(boost.length === 5){
 		name = name + ' ' + Equip.Name.SUFFIX.$random();
 	}
-	if(boost.length > 6)
+	if(boost.length >= 6)
 		name = Equip.Name.PREFIX.$random() + ' ' + name + ' ' + Equip.Name.SUFFIX.$random();
 	return name;
 }
 
 Equip.Name.PREFIX = ['Awesome','Super','Amazing','Great','Good','Nice','Cool','Legendary','Rare','Epic','Lame'];
 
-Equip.Name.SUFFIX = ['of Strength','of Wisdom','of Courage','of Epicness'];
+Equip.Name.SUFFIX = ['of Strength','of The Lord','of Swiftness','of The Great','of The Coward','of Wisdom','of Courage','of Epicness'];
 
 
 Equip.Lvl = function(lvl){
@@ -270,8 +273,8 @@ Equip.RawDef = function(equip,lvl,main){	//2.25 is average
 	};
 }
 
-Equip.Def = Equip.Dmg = function(rawdef,mastery){
-	var mod = Combat.getMasteryExpMod(mastery);
+Equip.Def = Equip.Dmg = function(rawdef,tier){
+	var mod = Combat.getTierMod(tier);
 	return {
 		main:rawdef.main * mod,
 		ratio:rawdef.ratio,
@@ -279,21 +282,25 @@ Equip.Def = Equip.Dmg = function(rawdef,mastery){
 }
 
 Equip.Icon = function(equip){
-	return equip.piece + '.' + equip.type;
+	return equip.piece + '-' + equip.type;	//Img.getIcon
 }
 
 Equip.Color = function(equip){
-	if(equip.maxAmount <= 1) return 'white'; 
+	if(equip.boost.length <= 1) return 'white'; 
 	if(equip.boost.length <= 3) return 'blue';  
 	if(equip.boost.length <= 5) return 'orange';  
 	return 'gold';  
 }
 
 Equip.compressDb = function(e){
+	if(e.upgradeInfo)
+		e.upgradeInfo.item = ItemList.toArray(e.upgradeInfo.item);
 	return e;
 }
 
 Equip.uncompressDb = function(e){
+	if(e.upgradeInfo)
+		e.upgradeInfo.item = ItemList.fromArray(e.upgradeInfo.item);
 	return e;
 }
 
@@ -351,7 +358,7 @@ Equip.createItemVersion = function(equip){
 		option.push(ItemModel.Option(Equip.salvage,'Salvage','Destroy equip into crafting materials.',[equip.id]));
 	else 
 		option.push(ItemModel.Option(Equip.destroy,'Destroy','Destroy the equip permanently.',[equip.id]));
-	//if(equip.upgradable && equip.boost.length < equip.maxAmount)	
+	//if(equip.upgradable && equip.boost.length < equip.maxBoostAmount)	
 	//	option.push(ItemModel.Option(Equip.upgrade.click,'Upgrade','Use crafting materials to unlock addition boost.',[equip.id]));
 		
 	ItemModel.create(equip.quest,equip.id,equip.name,Equip.Icon(equip),option,null,extra);
@@ -360,6 +367,8 @@ Equip.createItemVersion = function(equip){
 //#########################
 
 Equip.boundToAccount = function(key,eid){
+	return;
+	/*
 	//when account bound =>add 1 bonus, if self found => all boost become *1.2
 	var equip = DB[eid];
 	if(!equip) return;
@@ -376,7 +385,7 @@ Equip.boundToAccount = function(key,eid){
 	
 	//add boost
 	equip.boost.push(CraftBoost.generateBoost(equip.piece,equip.type));	//add boost
-	equip.maxAmount++;
+	equip.maxBoostAmount++;
 	equip.color = Equip.Color(equip);
 	equip.id = Math.randomId();
 	
@@ -397,6 +406,7 @@ Equip.boundToAccount = function(key,eid){
 		Actor.changeEquip(act,newEquip.id);
 		
 	Message.add(key,'Equip succesfully account bound.');
+	*/
 }
 
 Equip.removeFromDb = function(eid){
@@ -407,32 +417,28 @@ Equip.removeFromDb = function(eid){
 	db.equip.remove({'id':eid});
 }
 
-Equip.salvage = function(key,id){
+Equip.salvage = function(key,id,bypassConfirm){
 	var main = Main.get(key);
 	if(!Main.haveItem(main,id)) return ERROR(4,'salvaging item but dont own it',id);
 	var equip = DB[id];
 	if(!equip) return ERROR(3,'no equip');
 	if(!equip.salvagable) return Message.add(key,'You can\'t salvage the equip.');
 	
-	Main.question(Main.get(key),function(){
+	
+	var func = function(){
 		Main.removeItem(main,id);
 		
 		//add item
 		var item = {};
 		item[Material.getRandom(Actor.getLevel(Actor.get(key)))] = equip.boost.length + 1;
 		Main.addItem(main,item);
-		
-		//give exp
-		/*
-		var expAmount = (equip.boost.length + 1)*250;
-		var act = Actor.get(key);
-		if(equip.creator === act.username)
-			Actor.addExp(act,expAmount);
-		*/
-		
+			
 		Message.add(key,'You salvaged the equip.');
 		Equip.removeFromDb(id);
-	},'Are you sure you want to destroy this equip into crafting materials?','boolean');
+	}
+	if(!bypassConfirm)
+		Main.question(main,func,'Are you sure you want to destroy this equip into crafting materials?','boolean');
+	else func();
 }
 
 Equip.destroy = function(key,id){
@@ -487,6 +493,16 @@ Equip.getAllEquipOwned = function(key){
 	}
 	return list;
 }
+Equip.getAllEquipOwned.inventoryOnly = function(key){
+	var list = ItemList.getData(Main.get(key).invList);
+	var tmp = [];
+	for(var i in list){
+		if(Equip.get(i))
+			tmp.push(i);
+	}
+	return tmp;
+}	
+
 
 Equip.removeFromRAM = function(id){
 	if(FETCH_ALL_DB_INIT) return;
@@ -511,7 +527,7 @@ Equip.upgrade.click = function(key,eid){
 	var equip = DB[eid];
 	if(!equip.upgradable)
 		return Message.add(key,'You can\'t upgrade this equip.');
-	if(equip.boost.length >= equip.maxAmount)
+	if(equip.boost.length >= equip.maxBoostAmount)
 		return Message.add(key,'You can not longer upgrade this equip.');
 	
 	var main = Main.get(key);
@@ -538,18 +554,23 @@ Equip.upgrade.click = function(key,eid){
 	
 	if(weared)
 		Actor.changeEquip(act,newid);
-		
+	
+	Metrics.onEquipUpgrade(key);
 	Message.add(key,'You upgraded your equip. It now has an additional boost.');	
 }
 
-Equip.addMasteryExp = function(key,eid,amount){
-	var equip = DB[eid];
+Equip.increaseTier = function(key,eid){
+	var main = Main.get(key);
+	var equip = Equip.get(eid);
 	if(!equip) return;
+	
 	if(!equip.upgradable)
 		return Message.add(key,'You can\'t upgrade this equip.');
-	amount = amount.mm(0,Actor.getExp(Actor.get(key))).r(0);
-	if(!amount)
-		return Message.add(key,'You don\'t have Mastery Point to spend.');
+
+	var currentExp = Actor.getExp(Actor.get(key));
+	var cost = Equip.getTierUpCost(equip);
+	if(currentExp < cost)
+		return Message.add(key,'You don\'t have enough Exp to level up that equip.');
 	
 	var weared = false;		//if wearing the equip when modifying it. aka not in inv yet
 	var act = Actor.get(key);
@@ -558,17 +579,17 @@ Equip.addMasteryExp = function(key,eid,amount){
 		Actor.removeEquip(act,equip.piece);
 	}	
 	
-	var main = Main.get(key);
 	if(!Main.haveItem(main,eid)) 
-		return ERROR(3,'dont have equip') || Message.add(key,'You don\'t have this item.');
+		return Message.add(key,'You don\'t have this item.');	//possible cuz no prior verification
 			
 	var equip = Tk.deepClone(equip);	//case Qsystem-
-	equip.masteryExp += amount;
-	equip.def = Equip.Def(equip.defRaw,equip.masteryExp);
-	equip.dmg = Equip.Dmg(equip.dmgRaw,equip.masteryExp);
+	equip.tier++;
+	equip.def = Equip.Def(equip.defRaw,equip.tier);
+	equip.dmg = Equip.Dmg(equip.dmgRaw,equip.tier);
+	equip.tierCost = Equip.getTierUpCost(equip);
 	equip.id = Math.randomId();
 	
-	Actor.addExp(Actor.get(key),-amount);
+	Actor.removeExp(Actor.get(key),cost);
 	Main.removeItem(Main.get(key),eid);
 	Equip.removeFromDb(eid);
 	
@@ -581,34 +602,12 @@ Equip.addMasteryExp = function(key,eid,amount){
 	Message.add(key,'Your equip is now more powerful.');	
 }
 
-Equip.addMasteryExp.click = function(key,eid){
-	var main = Main.get(key);
-	Main.question(main,function(key,num){
-		num = Math.floor(+num);
-		num = Math.min(num,Actor.getExp(Actor.get(key)));
-		if(isNaN(num) || num < 1) return Message.add(key,'Not a number');
-		
-		var equip = Equip.get(eid);
-		if(!equip) return;
-		
-		var boostOld = Combat.getMasteryExpMod(equip.masteryExp);
-		var boostNew = Combat.getMasteryExpMod(equip.masteryExp + num);
-		var powerOld;
-		var powerNew;
-		if(equip.piece === 'weapon'){
-			powerOld = Combat.getVisiblePower(equip.dmg.main);
-			powerNew = Combat.getVisiblePower(equip.dmg.main / boostOld * boostNew);
-		} else {
-			powerOld = Combat.getVisiblePower(equip.def.main);
-			powerNew = Combat.getVisiblePower(equip.def.main / boostOld * boostNew);
-		}
-			
-		var str = 'Spend ' + num.r(0) + ' Exp to upgrade from <br>' + powerOld.r(2) + ' to ' + powerNew.r(2) + ' Power?';
-		Main.question(main,function(key){
-			Equip.addMasteryExp(key,eid,num);
-		},str,'boolean');
-	},'How many points do you want to invest?','number');
+Equip.getTierUpCost = function(eq){
+	var baseCost = (CST.exp[eq.lvl+1] - CST.exp[eq.lvl])/10;
+	baseCost *= Math.pow(2,eq.tier);
+	return Tk.round(baseCost);
 }
+
 
 Equip.getSignInPack = function(key){	//warning, compress everytime needed
 	var list = Equip.getAllEquipOwned(key);

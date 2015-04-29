@@ -14,27 +14,32 @@ Actor.loop = function(){	//server, for client check below
 }
 
 Actor.loop.forEach = function(act){
-	if(Actor.testInterval(act,5)) Actor.updateActive(act);
+	if(Actor.testInterval(act,5)) 
+		Actor.updateActive(act);
 	
-	if(!act.active) return;
+	if(!act.active) 
+		return;
 	act.frame++;
-	
-	if(act.dead) return Actor.death.loop(act);	
 	
 	Actor.timeout.loop(act);
 	
-	
+	if(act.dead) 
+		return Actor.death.loop(act);	
+		
 	if(act.awareNpc){
-		if(Actor.testInterval(act,25)) Actor.activeList.update(act);
-		if(Actor.testInterval(act,10)) Actor.mapMod.update(act);
+		if(Actor.testInterval(act,25))
+			Actor.activeList.update(act);
+		if(Actor.testInterval(act,10)) 
+			Actor.mapMod.update(act);
 	}
 	 
 		
 	
 	if(act.combat){
 		if(act.hp <= 0) 
-			return Actor.death.die(act);
-		if(act.boss) Boss.loop(act.boss);
+			return Actor.die(act);
+		if(act.boss) 
+			Boss.loop(act.boss);
 		Actor.ability.loop(act);
 		Actor.resource.loop(act);    
 		Actor.status.loop(act);
@@ -54,7 +59,6 @@ Actor.loop.forEach = function(act){
 }
 Actor.loop.FRAME_COUNT = 0;
 
-
 Actor.activeList = {};
 Actor.activeList.update = function(act){
 	ActiveList.update(act);
@@ -63,14 +67,10 @@ Actor.updateActive = function(act){
 	act.active = act.alwaysActive || !act.activeList.$isEmpty();	//need to be false for Send ?
 }
 
-
-
 Actor.timeout = {};
 Actor.timeout.loop = function(act){
-	//if(!Actor.testInterval(act,1)) return;
 	for(var i in act.timeout){
-		act.timeout[i].timer -= 1;
-		if(act.timeout[i].timer < 0){
+		if(--act.timeout[i].timer < 0){
 			Actor.timeout.loop.main(act,i);	
 			delete act.timeout[i];	
 		}	
@@ -110,7 +110,7 @@ Actor.summon.loop = function(act){
 	//(assume act is child)
     if(act.summoned){
 		var fat = Actor.get(act.summoned.parent);
-		if(!fat || fat.dead) return Actor.death.die(act);	//remove if parent dead
+		if(!fat || fat.dead) return Actor.die(act);	//remove if parent dead
 	    
 	    //if too far, teleport near master
 		if(Collision.getDistancePtPt(act,fat) >= act.summoned.distance){
@@ -121,7 +121,7 @@ Actor.summon.loop = function(act){
 			//act.map !== fat.map || 
 		}	
 		if(act.map !== fat.map){
-			Actor.death.die(act);
+			Actor.die(act);
 		}
 		
 		act.summoned.time -= INTERVAL_SUMMON;
@@ -212,15 +212,16 @@ if(!SERVER){ //}
 			Actor.permBoost.update(player);	
 		}
 		
-		if(!MapModel.getCurrent().imageLoaded)
+		if(!MapModel.getCurrent().imageLoaded){
 			MapModel.initImage(MapModel.getCurrent());
+		}
 		
 		if(Actor.loop.player.OLD.statusClient !== player.statusClient){
-			if(player.statusClient[0] == '1' || player.statusClient[3] == '1')	//bleed burn
+			if(player.statusClient[0] === '1' || player.statusClient[3] === '1')	//bleed burn
 				player.spriteFilter = Actor.SpriteFilter('red',10000);
-			else if(player.statusClient[1] == '1' || player.statusClient[4] == '1')	//knock chill
+			else if(player.statusClient[1] === '1' || player.statusClient[4] === '1')	//knock chill
 				player.spriteFilter = Actor.SpriteFilter('blue',10000);
-			else if(player.statusClient[2] == '1' || player.statusClient[5] == '1')	//drain stun
+			else if(player.statusClient[2] === '1' || player.statusClient[5] === '1')	//drain stun
 				player.spriteFilter = Actor.SpriteFilter('green',10000);
 			else 
 				player.spriteFilter = null;
@@ -232,7 +233,7 @@ if(!SERVER){ //}
 	
 	Actor.loop.updatePosition = function(act){	//for npc
 		if(ClientPrediction.isActive() && act === player) 
-			return ClientPrediction.updateShadow(act);
+			return; //update shadow done in ClientPrediction loop
 		
 		var diffX = act.serverX - act.x;
 		var diffY = act.serverY - act.y;

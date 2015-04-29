@@ -8,8 +8,6 @@ var RED_BAR = null;
 var BLUE_BAR = null;
 var RED_BAR_BIG = null;
 var BLUE_BAR_BIG = null;
-var LAST_HP = 0;
-var LAST_MANA = 0;
 
 Dialog.UI('resourceBar',{
 	position:'absolute',
@@ -53,7 +51,7 @@ Dialog.UI('resourceBar',{
 			RED_BAR_BIG.show();
 		}
 				
-		var title = 'Max Hp: ' + player.hpMax;
+		var title = 'Max Hp: ' + Math.floor(player.hpMax);
 		
 		if(variable.hpTitle !== title){
 			variable.hpTitle = title;
@@ -78,7 +76,7 @@ Dialog.UI('resourceBar',{
 			BLUE_BAR_BIG.show();
 		}
 				
-		var title = 'Max Mana: ' + player.manaMax;
+		var title = 'Max Mana: ' + Math.floor(player.manaMax);
 		
 		if(variable.manaTitle !== title){
 			variable.manaTitle = title;
@@ -106,7 +104,8 @@ Dialog.UI('abilityBar',{
 	height:35,
 	//padding:'0px 0px',
 },Dialog.Refresh(function(html,variable,param){
-	if(main.hudState.abilityBar === Main.hudState.INVISIBLE) return;
+	if(main.hudState.abilityBar === Main.hudState.INVISIBLE) 
+		return;
 	ARRAY_ABILITY = [];
 	
 	for(var i = 0; i < 6; i++){
@@ -118,16 +117,29 @@ Dialog.UI('abilityBar',{
 },function(){
 	return '' + Tk.stringify(player.ability) + Tk.stringify(player.abilityChange.chargeClient) + main.hudState.abilityBar + player.mana + player.hp;
 },5,function(html,variable,param){
+	if(main.hudState.abilityBar === Main.hudState.INVISIBLE){
+		variable.visible = false;
+		return html.hide();
+	} else {
+		if(variable.visible !== true){
+			variable.visible = true;
+			html.show();
+		}
+	}
+
+
 	var ability = Actor.getAbility(player);
+	var refresh = function(){
+		Dialog.refresh('abilityBar');
+	}
+	
 	for(var i = 0; i < ARRAY_ABILITY.length; i++){
 		var img = ARRAY_ABILITY[i];
 		var str = Input.getKeyName('ability',i,true);
 		
 		var ab;
 		if(ability[i]){
-			ab = QueryDb.get('ability',ability[i],function(){
-				Dialog.refresh('abilityBar');
-			});
+			ab = QueryDb.get('ability',ability[i],refresh);
 		}
 		
 		if(!ability[i] || !ab){
@@ -227,8 +239,8 @@ Dialog.UI('curseClient',{
 	}
 	var list = [];
 	for(var i = 0 ; i < player.statusClient.length; i++){
-		if(player.statusClient[i] == '1'){
-			list.push({icon:'status.' + CST.status.list[i],title:CST.status.list[i].capitalize()});
+		if(player.statusClient[i] === '1'){
+			list.push({icon:'status-' + CST.status.list[i],title:CST.status.list[i].$capitalize()});
 		}
 	}
 	for(var i in player.curseClient){
@@ -301,7 +313,7 @@ Dialog.UI('chrono',{
 		
 		if(variable.active[i] !== main.chrono[i].active){
 			variable.chrono[i].css({color:main.chrono[i].active ? 'white' : 'red',font:'1.5em Kelly Slab'})
-				.attr('title',main.chrono[i].active ? '' : ' - Click to remove')	//main.chrono[i].text + //cant put that cuz refresh too high
+				.attr('title',main.chrono[i].active ? '' : 'Click to remove')	//main.chrono[i].text + //cant put that cuz refresh too high
 		}
 			
 	}

@@ -1,6 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}	Client only
+if(SERVER) return;
+
 var Sprite = require4('Sprite'), Main = require4('Main'), ClientPrediction = require4('ClientPrediction'), SpriteModel = require4('SpriteModel'), Collision = require4('Collision'), Img = require4('Img'), Pref = require4('Pref'), QueryDb = require4('QueryDb'), Attack = require4('Attack'), Input = require4('Input');
 var Actor = require3('Actor');
 
@@ -10,9 +12,13 @@ Actor.drawAll = function (ctx){
 	Actor.drawStrikeZone(player,ctx);
 	var array = Actor.drawAll.getSortedList();
 	var context = null;
+	
+	var glow = Main.screenEffect.isActorGlowing();
 	for(var i = 0 ; i < array.length ; i++){
 		var act = array[i];
-		context = Sprite.draw(ctx,act) || context;
+		
+		var myGlow = act === player ? Main.screenEffect.isPlayerGlowing() : glow;
+		context = Sprite.draw(ctx,act,myGlow) || context;
 		if(act.combat && (Main.getPref(main,'overheadHp') || act !== player)){
 			Actor.drawStatus(act,ctx); 
 		}
@@ -28,8 +34,8 @@ Actor.drawServerPlayer = function(ctx){
 	
 	ctx.globalAlpha = 0.5;
 	ctx.beginPath();
-	var x = shadow.x-player.x+CST.WIDTH2;
-	var y = shadow.y-player.y+CST.HEIGHT2;
+	var x = Tk.absToRel.x(shadow.x);
+	var y = Tk.absToRel.y(shadow.y);
 	ctx.arc(x,y,12,0,2*Math.PI);
 	ctx.fill();
 	ctx.globalAlpha = 1;
@@ -41,14 +47,14 @@ Actor.drawAll.getSortedList = function(){
 		drawSortList.push(Actor.LIST[i]);
 	}
 	drawSortList.push(player);
-	drawSortList.sort(function (act,mort1){
+	drawSortList.sort(function (act,act2){
 		var spriteFromDb = SpriteModel.get(Actor.getSpriteName(act));
 		var sizeMod = spriteFromDb.size* act.sprite.sizeMod;
 		var y0 = act.y + spriteFromDb.legs * sizeMod
 		
-		var spriteFromDb1 = SpriteModel.get(Actor.getSpriteName(mort1));
-		var sizeMod1 = spriteFromDb1.size* mort1.sprite.sizeMod;
-		var y1 = mort1.y + spriteFromDb1.legs * sizeMod1
+		var spriteFromDb1 = SpriteModel.get(Actor.getSpriteName(act2));
+		var sizeMod1 = spriteFromDb1.size* act2.sprite.sizeMod;
+		var y1 = act2.y + spriteFromDb1.legs * sizeMod1
 		
 		return y0-y1;	
 	});	
@@ -63,15 +69,17 @@ Actor.drawChatHead = function(ctx){
 	Actor.drawChatHead.func(player,ctx);
 }	
 Actor.drawChatHead.func = function(act,ctx){
-	if(!act.chatHead) return;
-	if(act.type === 'player' && main.social.muteList[act.context]) return; //BAD assume context === username
+	if(!act.chatHead) 
+		return;
+	if(act.type === 'player' && main.social.muteList[act.context]) 
+		return; //BAD assume context === username
 	
 	var spriteServer = act.sprite;
 	var spriteFromDb = SpriteModel.get(Actor.getSpriteName(act));
 	var sizeMod = spriteFromDb.size* spriteServer.sizeMod;
 	
-	var numX = CST.WIDTH2+act.x-player.x;
-	var numY = CST.HEIGHT2+act.y-player.y - 35 + spriteFromDb.hpBar*sizeMod;
+	var numX = Tk.absToRel.x(act.x);
+	var numY = Tk.absToRel.y(act.y - 35 + spriteFromDb.hpBar*sizeMod);
 	
 	ctx.setFont(20);
 	var length = ctx.length(act.chatHead.text);
@@ -91,6 +99,7 @@ Actor.drawChatHead.func = function(act,ctx){
 		}
 	}while(bad && safe++<1000)
 	Actor.drawChatHead.list[act.id] = rect;
+	ctx.textBaseline="top"; 
 	ctx.fillStyle="black";
 	ctx.globalAlpha = 0.7;
 	ctx.roundRect(numX-5-length/2,numY-2,length+5,24);
@@ -119,8 +128,8 @@ Actor.drawStatus = function(act,ctx){	//hp + status
 	var spriteFromDb = SpriteModel.get(Actor.getSpriteName(act));
 	
 	var sizeMod = spriteFromDb.size* spriteServer.sizeMod;
-	var numX = CST.WIDTH2+act.x-player.x-50;
-	var numY = CST.HEIGHT2+act.y-player.y + spriteFromDb.hpBar*sizeMod;
+	var numX = Tk.absToRel.x(act.x-50);
+	var numY = Tk.absToRel.y(act.y + spriteFromDb.hpBar*sizeMod);
 
 	//hp
 	if(act.hp <= 0) return;
@@ -138,8 +147,8 @@ Actor.drawStatus = function(act,ctx){	//hp + status
 		var x = numX + 30*count;
 		var y = numY - 30;
 		
-		if(act.statusClient[i] == '1'){
-			Img.drawIcon(ctx,'status.' + CST.status.list[i],24,x,y);
+		if(act.statusClient[i] === '1'){
+			Img.drawIcon(ctx,Img.getIcon('status',CST.status.list[i]),24,x,y);
 			count++;
 		}
 	}
@@ -186,7 +195,6 @@ Actor.drawAll.getMinimapList = function(){	//bad...
 }
 
 Actor.drawStrikeZone = function(act,ctx){
-	
 	var list = Actor.getAbility(act);	//[id,id,id]
 	var strikeTarget = Main.getPref(main,'strikeTarget');
 	var displayStrike = Main.getPref(main,'displayStrike');
@@ -211,12 +219,12 @@ Actor.drawStrikeZone = function(act,ctx){
 		fakeStrike.point = point;
 		
 		//9 dots
-		//for(var i in point)	ctx.fillRect(point[i].x-5-act.x+CST.WIDTH2,point[i].y-5-act.y+CST.HEIGHT2,10,10);
+		//for(var i in point)	ctx.fillRect(Tk.absToRel.x(point[i].x-5),Tk.absToRel.y(point[i].y-5),10,10);
 		
 		if(displayStrike && Input.getState('ability')[j]){
 			ctx.save();
-			var x = fakeStrike.x-act.x+CST.WIDTH2;
-			var y = fakeStrike.y-act.y+CST.HEIGHT2;
+			var x = Tk.absToRel.x(fakeStrike.x);
+			var y = Tk.absToRel.y(fakeStrike.y);
 			ctx.translate(x,y);
 			ctx.rotate(fakeStrike.angle/180*Math.PI);
 			ctx.fillStyle = 'red';
@@ -235,8 +243,8 @@ Actor.drawStrikeZone = function(act,ctx){
 					target.withinStrikeRange = true;
 					
 				if(target.withinStrikeRange && strikeTarget === Pref.strikeTarget.RED_RECT){
-					var posX = target.x - player.x + CST.WIDTH2;
-					var posY = target.y - player.y + CST.HEIGHT2;
+					var posX = Tk.absToRel.x(target.x);
+					var posY = Tk.absToRel.y(target.y);
 					var model = SpriteModel.get(target.sprite.name.split(',')[0]);
 					var sizeMod = model.size * target.sprite.sizeMod;
 					

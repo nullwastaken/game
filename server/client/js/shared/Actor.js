@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Account = require2('Account'), Boss = require2('Boss'), Map = require2('Map'), ActiveList = require2('ActiveList'), ActorGroup = require2('ActorGroup'), Quest = require2('Quest'), Message = require2('Message'), Stat = require2('Stat'), OptionList = require2('OptionList'), Sprite = require2('Sprite'), Main = require2('Main'), ActorModel = require2('ActorModel');
+var Account = require2('Account'), Quest = require2('Quest'), Boss = require2('Boss'), Maps = require2('Maps'), ActiveList = require2('ActiveList'), ActorGroup = require2('ActorGroup'), Message = require2('Message'), Stat = require2('Stat'), OptionList = require2('OptionList'), Sprite = require2('Sprite'), Main = require2('Main'), ActorModel = require2('ActorModel');
 var Input = require4('Input');
 
 var Actor = exports.Actor = {};
@@ -31,7 +31,6 @@ Actor.create = function(modelId,extra){
 		bumper:Actor.Bumper(),        //true if touchs map
 
 		attackReceived:{},	//so pierce doesnt hit multiple times
-		targetSetting:Actor.TargetSetting(),
 		targetMain:Actor.TargetMain(),
 		targetSub:Actor.TargetSub(),
 		mapMod:{},
@@ -54,6 +53,7 @@ Actor.create = function(modelId,extra){
 		
 		//extra
 		map:Actor.DEFAULT_SPOT.map,
+		mapModel:Actor.DEFAULT_SPOT.mapModel,
 		x:Actor.DEFAULT_SPOT.x,	
 		y:Actor.DEFAULT_SPOT.y,	
 		spriteFilter:null,
@@ -66,20 +66,18 @@ Actor.create = function(modelId,extra){
 		bonus:Actor.Bonus(),	//Bonus applies on top of ability attack. If effect not on ability, do nothing.
 		
 		viewedIf:'true', //condition to see. check viewedIfList
-		angle:1,
 		username:"player000",     //id name
 		context:'',
 		weakness:Actor.Weakness(),	//set when creating
 		optionList:null,	
 			
-		//{Setting for Map.load extra
+		//{Setting for Maps.load extra
 		dialogue:null,
 		chatHead:null,
 		deathEvent:null,	//function param:id of each killer
 		deathEventOnce:null,	//function param:array id of killers
 		onclick:{},
 		loot:null,
-		block:null,
 		teleport:null,
 		tag:{},				//to get enemy in q.event
 		hideOptionList:false,
@@ -87,7 +85,6 @@ Actor.create = function(modelId,extra){
 		lastAbilitySkill:'',
 		skillPlot:null,
 		toggle:null,
-		bank:0,
 		signpost:'',		
 		//}	
 		
@@ -97,7 +94,6 @@ Actor.create = function(modelId,extra){
 		privateChange:{},
 		privateOld:{},
 		magicFind:Actor.MagicFind(),
-		pickRadius:250,
 		respawnLoc:Actor.RespawnLoc(),
 		respawnTimer:25,
 		questMarker:{},
@@ -105,8 +101,12 @@ Actor.create = function(modelId,extra){
 	}
 	var model = Tk.deepClone(ActorModel.get(modelId));
 	if(!model) return ERROR(2,'no model dont exist',modelId);
-	for(var i in model) act[i] = model[i];
-	for(var i in extra) act[i] = extra[i];
+	for(var i in model)
+		act[i] = model[i];
+	for(var i in extra){
+		if(act[i] === undefined) ERROR(4,'prop not in constructor',i);
+		act[i] = extra[i];
+	}
 	
 	Actor.setBoostListBase(act);
 	
@@ -115,6 +115,7 @@ Actor.create = function(modelId,extra){
 		act.clientSpdY = 0;
 		return act;
 	}
+	
 	if(act.type !== 'player')
 		Actor.setAbilityListUsingAbilityAi(act); //based on aiChance
 		
@@ -142,7 +143,8 @@ Actor.create = function(modelId,extra){
 		act.hp = 1;
 	} else {
 		for(var i in act.immune) 
-			if(act.immune) act.mastery.def[i].sum = CST.bigInt;
+			if(act.immune)
+				Actor.turnImmune(act,i);
 		Actor.setWeakness(act);
 		act.hpMax = act.hp; 
 		act.manaMax = act.mana;
@@ -159,6 +161,7 @@ Actor.create = function(modelId,extra){
 	return act;
 }
 
+
 Actor.MoveTarget = function(x,y,active){
 	return {
 		x:x || 0,
@@ -174,6 +177,8 @@ Actor.addToMap = function(act,spot,force){	//act=[Actor]
 	if(!force && !Actor.addToMap.test(act,spot)) return;
 	
 	act.map = spot.map;
+	act.mapModel = Maps.getModel(spot.map);
+	
 	act.x = act.crX = spot.x; 
 	act.y = act.crY = spot.y; 
 	act.targetMain = Actor.TargetMain(null,spot.x,spot.y);	
@@ -181,7 +186,7 @@ Actor.addToMap = function(act,spot,force){	//act=[Actor]
 	
 	Actor.addToList(act);
 	ActiveList.addToList(act);
-	Map.enter(act,force);
+	Maps.enter(act,force);
 		
 	
 	if(act.pushable || act.block) 
@@ -190,7 +195,7 @@ Actor.addToMap = function(act,spot,force){	//act=[Actor]
 	return act;
 }
 Actor.addToMap.test = function(act,spot){
-	if(!Map.get(spot.map)) return ERROR(3,'map dont exist?',spot.map);
+	if(!Maps.get(spot.map)) return ERROR(3,'map dont exist?',spot.map);
 	return true;
 }
 
@@ -209,8 +214,10 @@ Actor.getViaUserName = function(id){
 }
 
 Actor.isInMap = function(act,map){
-	return act.map.$contains(map,true);
+	return Maps.getModel(act.map) === Maps.getModel(map); 
 }
+
+
 
 Actor.addToList = function(bullet){
 	Actor.LIST[bullet.id] = bullet;
@@ -228,7 +235,7 @@ Actor.isPlayer = function(act){
 }
 
 Actor.DEFAULT_SPRITENAME = 'mace';
-Actor.DEFAULT_SPOT = {x:1550,y:550,map:'QfirstTown-main@MAIN'};
+Actor.DEFAULT_SPOT = {x:1550,y:550,map:'QfirstTown-main@MAIN',mapModel:'QfirstTown-main'};
 Actor.IDLE_ABILITY_ID = 'Qsystem-idle';
 
 //###############
@@ -317,7 +324,7 @@ Actor.generateOptionList = function(act){
 
 Actor.remove = function(act){
 	if(typeof act === 'string') act = Actor.LIST[act];
-	Map.leave(act,act.map,true);
+	Maps.leave(act,act.map,true);
 	if(Actor.isPlayer(act)) 
 		delete Actor.USERNAME_TO_ID[act.username];
 	Actor.removeFromList(act.id);
@@ -334,17 +341,20 @@ Actor.setWeakness = function(act){
 	var resist = '';
 	var weak = '';
 	
-	for(var i in act.mastery.def){
-		if(act.mastery.def[i].sum > max){
-			max = act.mastery.def[i].sum;
+	for(var index = 0 ; index < CST.element.list.length; index++){
+		var i = CST.element.list[index];
+		var val = Actor.getMasteryValue(act,'def',i);
+		if(val > max){
+			max = val;
 			resist = i;
 		}
-		if(act.mastery.def[i].sum < min){
-			min = act.mastery.def[i].sum;
+		else if(val < min){
+			min = val;
 			weak = i;
 		}
 	}
-	if(weak === resist) weak = resist = '';
+	if(weak === resist) 
+		weak = resist = '';
 	act.weakness = Actor.Weakness(resist,weak);
 }
 
@@ -369,7 +379,7 @@ Actor.Map = function(map){
 
 Actor.Map.compressClient = function(name){
 	//used for instanced. client doesnt need to know its instanced
-	return Map.getModel(name);
+	return Maps.getModel(name);
 }
 
 //####################################
@@ -416,34 +426,21 @@ Actor.Mastery.part = function(me,ra,ma,fi,co,li){
 		lightning:li || Actor.Mastery.element(),
 	}
 }
-Actor.Mastery.element = function(sum,plus,time,x,exp){
+Actor.Mastery.element = function(value){
 	return {
-		'+':plus === undefined ? 0: plus,
-		'*': time === undefined ? 1: time,
-		'x':x === undefined ? 1: x,
-		'^':exp === undefined ? 1: exp,
-		'sum':sum === undefined ? 1: sum,
-		'mod':1
+		value:value === undefined ? 1: value,
+		mod:1
 	};
 }
-
-Actor.mastery = {};
-Actor.mastery.update = function(act){
-	//Note: mod is applied in Combat.applyAttackMod.player
-	var mas = act.mastery;
-	for(var i in mas){
-		for(var j in mas[i]){
-			var m = mas[i][j];
-			m.sum = Math.pow(m['x'] * m['*'],m['^']) + m['+'];
-		}
-	}
-}
-
 
 Actor.CombatContext = function(){
 	return {ability:'normal',equip:'normal'};
 }
 
+Actor.getQuestZone = function(act){
+	if(!act.quest) return null;
+	return Quest.get(act.quest).zone || null;
+}
 
 Actor.Pushable = function(magn,time,event,onlySimulate){
 	return {
@@ -467,7 +464,7 @@ Actor.Block = function(size,value,impactPlayer,impactNpc,impactBullet){
 
 
 Actor.changeSprite = function(act,info){
-	Sprite.change(act.sprite,info);
+	Sprite.change(act,info);
 }
 
 Actor.Summon = function(){

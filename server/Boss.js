@@ -58,7 +58,6 @@ Boss.useAbility = function(boss,ab,extra){
 	if(extra.y !== undefined)
 		extra.y += Boss.getAct(boss).y;	
 		
-	
 	Actor.useAbility(Boss.getAct(boss),ab,false,false,extra);
 }
 Boss.getAct = function(boss){
@@ -142,49 +141,5 @@ Boss.getRandomTargetAngle = function(boss){
 		return boss.variable._target[i];
 	return null;
 }
-
-/*
-//to form the V
-Boss.attack(boss,'midSpear',boss.angle+boss.opening);
-Boss.attack(boss,'midSpear',boss.angle-boss.opening);
-
-//random projectiles inside the V
-if(Math.random() < 0.4){
-	Boss.attack(boss,'midSpear',boss.angle+Math.randomML()*boss.opening);
-	Boss.attack(boss,'midSpear',boss.angle+Math.randomML()*boss.opening);
-}
-//##################################
-360 with holes:
-
-boss.center = Math.random()*360;
-for(var j = 0 ; j < boss.hole ; j++){
-	for(var k = 0 ; k < (360/boss.hole-2*boss.opening) ; k+=4){
-		Boss.attack(act,'midSpear',boss.center+360/boss.hole*j+boss.opening+k);
-	}	
-}
-
-//##################################
-spiral of fire:
-
-boss.center += 4.3;
-
-if(boss.frame % 1 == 0){
-	var angle = boss.center;
-	
-	if(angle%360 < 5){ boss.hole = Math.floor(Math.random()*6) + 2;}
-	
-	for(var i = 0 ; i < 11 ; i++){
-		var dist = 0 + 55*i;
-		var middleX = Tk.cos(angle)*dist;
-		var middleY = Tk.sin(angle)*dist;
-			
-		if(i != boss.hole && i != boss.hole+1){
-			//addStrike(act,boss.attack['spiral'],{'middleX':middleX,'middleY':middleY});
-		}
-	}
-}
-
-*/
-
 
 

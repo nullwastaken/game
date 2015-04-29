@@ -1,6 +1,6 @@
 {
   "name": "rainingchain",
-  "version": "1.0.0-124",
+  "version": "1.0.0-143",
   "description": "Raining Chain",
   "main": "app.js",
   "subdomain": "rainingchain",
@@ -25,8 +25,8 @@
     "request": "2.21.x",
     "nodetime": "0.8.x",
     "nodemailer": "0.6.x",
-    "express-subdomain": "~1.0.3",
-    "ghost": "0.5.2"
+    "yargs": "3.6.x",
+    "ejs": "2.3.x"
   },
   "engines": {
     "node": "0.10.x"

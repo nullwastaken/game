@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Dialog = require4('Dialog'), MapModel = require4('MapModel'), Anim = require4('Anim'), Drop = require4('Drop'), Actor = require4('Actor'), Strike = require4('Strike'), Bullet = require4('Bullet'), Main = require4('Main');
+var Dialog = require4('Dialog'), Input = require4('Input'), LightingEffect = require4('LightingEffect'), MapModel = require4('MapModel'), Anim = require4('Anim'), Drop = require4('Drop'), Actor = require4('Actor'), Strike = require4('Strike'), Bullet = require4('Bullet'), Main = require4('Main');
 
 var Draw = exports.Draw = {};
 
@@ -10,8 +10,8 @@ Draw.init = function(){
 		position:'absolute',
 		left:0,
 		top:0,
-		width:CST.WIDTH,
-		height:CST.HEIGHT,
+		width:'100%',
+		height:'100%',
 		zIndex:Dialog.ZINDEX.LOW,
 	},Dialog.Refresh(function(html,variable){
 		var canvas = $('<canvas>')
@@ -33,18 +33,15 @@ Draw.init = function(){
 			
 		html.append(canvas);
 		
+		Input.callOnResize(canvas);
+		Tk.smoothCanvas(canvas);
 		var ctx = canvas[0].getContext("2d");
 		ctx.font = '20px Kelly Slab';
 		ctx.fillStyle = 'black';
 		ctx.textAlign = 'left';
 		ctx.textBaseline = 'top';
 		ctx.save();
-		variable.ctx = ctx;
-		
-		//#############
-		
-		
-		
+		variable.ctx = ctx;		
 	},null,1,null,function(html,variable){	//loop
 		// !main.hudState.minimap 
 		Draw.loop(variable.ctx);
@@ -53,24 +50,25 @@ Draw.init = function(){
 }
 Draw.loop = function(ctx){
 	ctx.clearRect(0, 0, CST.WIDTH, CST.HEIGHT);
-	
+	LightingEffect.loop();	//BAD
 	//Draw
 	
 	MapModel.draw(ctx,'b');   //below player
 	
-	Anim.draw(ctx,'b');  //below player
+	Anim.drawAll(ctx,'b');  //below player
 	
 	
 	var context = Drop.drawAll(ctx);
 	context = Actor.drawAll(ctx) || context;
 	
-	Dialog.refresh('context',context);
+	Dialog.quickContextRefresh(context);
 	
-	Strike.drawAll(ctx);
+	Strike.drawAll(ctx);	
 	Bullet.drawAll(ctx);
-	Anim.draw(ctx,'a');  //above player
+	Anim.drawAll(ctx,'a');  //above player
 	MapModel.draw(ctx,'a');   //above player
 	Actor.drawChatHead(ctx);
+	
 	Main.screenEffect.loop(main,ctx);
 	
 	

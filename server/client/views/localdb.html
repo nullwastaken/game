@@ -1,0 +1,35 @@
+<% include partial/header.html %>
+<div class="container">
+	To run Raining Chain on your computer, you can either use the public online database or a local database.<br>
+	This is what you need to do in order to install and use a local database.<br>
+	<br>
+	1. Install Mongodb<br>
+		<a href="http://www.mongodb.org/">http://www.mongodb.org/</a><br>
+	<br>
+	2. Create database named test on port 27017 (default port) <br>
+		Should be connectable via localhost:27017/test<br>
+	<br>
+	3. Create those collections: 		<br>
+	<br>
+		db.createCollection("pingData");<br>
+		db.createCollection("report");<br>
+		db.createCollection("player");<br>
+		db.createCollection("offlineAction");<br>
+		db.createCollection("main");<br>
+		db.createCollection("equip");<br>
+		db.createCollection("account");<br>
+		db.createCollection("competition");<br>
+		db.createCollection("questRating");<br>
+		db.createCollection("clan");<br>
+		db.createCollection("highscore");<br>
+		db.createCollection("questVar");<br>
+		db.createCollection("mainQuest");<br>
+		db.createCollection("contributionHistory");<br>
+		db.createCollection("socialMedia");<br>
+	<br>
+	4. Select Local Db below Start Server in the Quest Creator<br>
+</div>
+<% include partial/footer.html %>
+
+
+

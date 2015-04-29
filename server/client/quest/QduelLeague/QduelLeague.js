@@ -1,4 +1,4 @@
-//02/08/2015 1:41 AM
+//02/24/2015 5:42 PM
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 
@@ -9,7 +9,11 @@ var s = loadAPI('v1.0','QduelLeague',{
 	thumbnail:true,
 	description:"Kill enemies in your zone to send enemies in your rivals' zone until they die.",
 	maxParty:4,
-	reward:{"ability":{"Qsystem-player-dodgeLife":0.5}},
+	category:["Combat"],
+	solo:true,
+	zone:"QfirstTown-eastCave",
+	party:"PvP",
+	reward:{"ability":{"Qsystem-player-dodgeLife":0.5}}
 });
 var m = s.map; var b = s.boss; var g;
 
@@ -22,17 +26,8 @@ s.newVariable({
 	zone2Key:'',
 	zone3Key:'',
 	zone4Key:'',
-	partyDeathCount:0
-});
-
-s.newChallenge('strongerBoss',"Stronger Boss","The boss has x2 Defence and x2 Damage.",2,function(key){
-	return true;
-});
-s.newChallenge('harderMinions',"Harder Minions","Minions spawned on your side are invincible for 7 seconds.",2,function(key){
-	return true;
-});
-s.newChallenge('speedrun',"Speedrun","Kill the boss in less than 1 min.",2,function(key){
-	return s.stopChrono(key,'timer') < 25*60;
+	partyDeathCount:0,
+	startGame:false,
 });
 
 s.newHighscore('speedrun',"Speedrun","Fastest completion of the quest.",'ascending',function(key){
@@ -40,12 +35,21 @@ s.newHighscore('speedrun',"Speedrun","Fastest completion of the quest.",'ascendi
 	return s.stopChrono(key,'timer');
 });
 
-
+s.newChallenge('strongerBoss',"Stronger Boss","The boss has x2 Defence and x2 Damage.",function(key){
+	return true;
+});
+s.newChallenge('harderMinions',"Harder Minions","Minions spawned on your side are invincible for 7 seconds.",function(key){
+	return true;
+});
+s.newChallenge('speedrun',"Speedrun","Kill the boss in less than 1 min.",function(key){
+	return s.stopChrono(key,'timer') < 25*60;
+});
 
 s.newEvent('talkDirewolf',function(key){ //
 	s.startDialogue(key,'Direwolf','intro');
 });
 s.newEvent('startGame',function(key){ //
+	s.set(key,'startGame',true);
 	s.startChrono(key,'timer',true);
 	var list = s.getParty(key);
 	if(list.length === 1){
@@ -67,6 +71,7 @@ s.newEvent('startGame',function(key){ //
 			targetIf:'npc',
 			damageIf:'npc',
 			tag:{
+				boss:true,
 				zone1Key:key,
 				zone2Key:'BADDD',
 			}
@@ -156,6 +161,11 @@ s.newEvent('_signOff',function(key){ //
 s.newEvent('_signIn',function(key){ //
 	s.failQuest(key);
 });
+s.newEvent('_hint',function(key){ //
+	if(!s.get(key,'startGame'))
+		return 'Go talk with Direwolf.';
+	return 'Kill monsters to spawn monsters in your rivals\' zone.';
+});
 s.newEvent('killEnemy',function(key,eid){ //
 	var killerKey = s.getTag(eid).killer;
 	var random = Math.random();
@@ -187,7 +197,7 @@ s.newEvent('spawnBigEnemy',function(key){ //
 		s.addBoost(eid,'globalDef',100,7*25,'immuneSpawn');
 });
 s.newEvent('spawnEnemy',function(key){ //
-	var possible = ['mushroom','bee','spirit','demon','goblin-melee','goblin-range','goblin-magic','orc-melee','orc-range','orc-magic'];
+	var possible = ['mushroom','bee','spirit','pumpking','goblin-melee','goblin-range','goblin-magic','orc-melee','orc-range','orc-magic'];
 	var chosen = possible.$random();
 	
 	var spot = s.callEvent('getSpotLeastEnemy',key,key);
@@ -233,8 +243,10 @@ s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
 });
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-eastCave','n1','main');
-	s.setRespawn(key,'QfirstTown-eastCave','n1','main');
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-eastCave','n1','main');
+		s.setRespawn(key,'QfirstTown-eastCave','n1','main');
+	}
 });
 s.newEvent('_start',function(key){ //
 	if(s.isAtSpot(key,'QfirstTown-eastCave','n1',200))
@@ -242,7 +254,7 @@ s.newEvent('_start',function(key){ //
 	else s.addQuestMarker(key,'start','QfirstTown-eastCave','n1');
 });
 
-s.newDialogue('Direwolf','Direwolf','bad-human.0',[ //{ 
+s.newDialogue('Direwolf','Direwolf','villagerFemale-4',[ //{ 
 	s.newDialogue.node('intro',"You seem very weak... And dumb. You'll never beat that quest.",[ 
 		s.newDialogue.option("I'm not weak!",'introNotWeak',''),
 		s.newDialogue.option("I'm not dumb!",'introNotDumb','')
@@ -261,19 +273,31 @@ s.newDialogue('Direwolf','Direwolf','bad-human.0',[ //{
 s.newMap('main',{
 	name:"Arena",
 	lvl:0,
+	screenEffect:'cave',
 	grid:["000000000000000000000000000000000000000000000000000000000000","000111111111111111111111111000000111111111111111111111111111","001111111111111111111111111100001111111111111111111111111110","011111111111111111111111111110011111111111111111111111111110","011111111111111111111111111110011111111111111111111111111110","011000000000000000000001111110011111111110000000000000000110","011000000000000000000001111110011111111110000000000000000110","011000000000000000000000111110011111111100000000000000000110","011000000000000000000000011110011111000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011111111111111111111111111110011111111111111111111111111100","011111111111111111111111111111111111111111111111111111111100","000000000000000000000000001111111100000000000000000000001111","000000000000000000000000001111111100000000000000000000001111","000111111111111111111111111111111111111111111111111111111111","001111111111111111111111111110011111111111111111111111111111","011111111111111111111111111110011111111111111111111111111110","011111111111111111111111111110011111111111111111111111111110","011111100000000000000000000110011000000000000000000000000110","011111100000000000000000000110011000000000000000000000000110","011110000000000000000000000110011000000000000000000000000110","011110000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000000110","011000000000000000000000000110011000000000000000000000111110","011000000000000000000000000110011000000000000000000001111110","011000000000000000000000000110011000000000000000000001111110","011000000000000000000000000110011000000000000000000001111110","001111111111111111111111111111111111111111111111111111111100","000111111111111111111111111111111111111111111111111111111000","000000000000000000000000000001110000000000000000000000000000"],
 	tileset:'v1.2'
 },{
-	spot:{q1:{x:96,y:160,width:768,height:704},q2:{x:1056,y:160,width:768,height:704},t1:{x:464,y:496},e1:{x:464,y:528},t2:{x:1456,y:528},e2:{x:1456,y:560},g1:{x:48,y:976},q3:{x:96,y:1120,width:768,height:704},q4:{x:1056,y:1120,width:768,height:704},t4:{x:1456,y:1488},t3:{x:496,y:1520},e4:{x:1456,y:1520},e3:{x:496,y:1552}},
+	spot:{q1:{x:96,y:160,width:768,height:704},q2:{x:1056,y:160,width:768,height:704},b1:{x:1152,y:256,width:576,height:32},b3:{x:1152,y:288,width:32,height:480},b2:{x:1696,y:288,width:32,height:480},t1:{x:464,y:496},e1:{x:464,y:528},t2:{x:1456,y:528},e2:{x:1456,y:560},b4:{x:1184,y:736,width:512,height:32},g1:{x:48,y:976},q3:{x:96,y:1120,width:768,height:704},q4:{x:1056,y:1120,width:768,height:704},t4:{x:1456,y:1488},t3:{x:496,y:1520},e4:{x:1456,y:1520},e3:{x:496,y:1552}},
 	load:function(spot){
-		
-	}
+		m.spawnBlock(spot.b1,function(key){
+			return s.hasTag(key,{boss:true});
+		});
+		m.spawnBlock(spot.b2,function(key){
+			return s.hasTag(key,{boss:true});
+		});
+		m.spawnBlock(spot.b3,function(key){
+			return s.hasTag(key,{boss:true});
+		});
+		m.spawnBlock(spot.b4,function(key){
+			return s.hasTag(key,{boss:true});
+		});
+	},
 });
 s.newMapAddon('QfirstTown-eastCave',{
 	spot:{n1:{x:48,y:1616}},
 	load:function(spot){
 		m.spawnActor(spot.n1,'npc',{
-			sprite:s.newNpc.sprite('bad-human0',1),
+			sprite:s.newNpc.sprite('villagerFemale-4',1),
 			name:'Direwolf',
 			angle:s.newNpc.angle('right'),
 			nevermove:true,

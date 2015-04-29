@@ -13,6 +13,7 @@ CST.ASYNC_LOOP = true;
 
 CST.FRICTION = 0.50;
 CST.FRICTIONNPC = 0.80;
+CST.BULLETSPD = 10;
 
 CST.NPCSPD = 5;
 CST.PLAYERSPD = 8;
@@ -28,7 +29,7 @@ CST.DAY = CST.HOUR*24;
 CST.WEEK = CST.DAY*7;
 
 CST.UNARMED = 'Qsystem-unarmed';
-
+CST.ADMIN = 'rc';
 
 CST.NPC_RESPAWN = 25*60;
 
@@ -111,7 +112,11 @@ CST.color = {
 	yellow:'yellow',
 	red:'#FF6666',
 	green:'#11FF11',
+	bronze:'#CD7F32',
+	silver:'#C0C0C0',
+	gold:'#FFD700',
 }
+
 
 
 

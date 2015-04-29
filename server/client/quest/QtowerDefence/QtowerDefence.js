@@ -8,6 +8,10 @@ var s = loadAPI('v1.0','QtowerDefence',{
 	author:"rc",
 	maxParty:1,
 	thumbnail:true,
+	category:["Puzzle"],
+	solo:true,
+	zone:"QfirstTown-east",
+	party:"No",
 	reward:{"ability":{"Qsystem-player-dodgeFast":0.5},"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
 	description:"Place towers to kill waves of enemies trying to reach the bottom of the screen.",
 });
@@ -24,7 +28,8 @@ s.newVariable({
 	wave:0,
 	amountWave:15,
 	pt:125,
-	life:5
+	life:5,
+	startGame:false,
 });
 
 s.newHighscore('remainingpteasy',"Remaining Pts [Easy]","Most points at the end of the game.",'descending',function(key){
@@ -36,13 +41,13 @@ s.newHighscore('remainingpthard',"Remaining Pts [Hard]","Most points at the end 
 	return null;
 });
 
-s.newChallenge('hardmode',"Hardmode!","Only 3 Lifes. Survive 20 waves.",2,function(key){
+s.newChallenge('hardmode',"Hardmode!","Only 3 Lifes. Survive 20 waves.",function(key){
 	return true;
 });
-s.newChallenge('pt400',"400+ Pts","End the quest with 400 remaining points.",2,function(key){
+s.newChallenge('pt400',"400+ Pts","End the quest with 400 remaining points.",function(key){
 	return s.get(key,'pt') > 400;
 });
-s.newChallenge('tempTower',"Temp Tower","Towers only last for 45 seconds before being destroyed.",2,function(key){
+s.newChallenge('tempTower',"Temp Tower","Towers only last for 45 seconds before being destroyed.",function(key){
 	return true;
 });
 
@@ -52,6 +57,8 @@ s.newEvent('_start',function(key){ //
 	else s.addQuestMarker(key,'start','QfirstTown-east','t2');
 });
 s.newEvent('_hint',function(key){ //
+	if(!s.get(key,'startGame'))
+		return 'Go talk to Toor.';
 	return 'Pt: ' + s.get(key,'pt') + ' | Wave: ' + s.get(key,'wave') + '/' + s.get(key,'amountWave') + ' | Life: ' + s.get(key,'life');
 });
 s.newEvent('_debugSignIn',function(key){ //
@@ -64,13 +71,16 @@ s.newEvent('_death',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('_abandon',function(key){ //
-	if(s.isInQuestMap(key))
-		s.teleport(key,'QfirstTown-east','t2','main',false);
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-east','t2','main');
+		s.setRespawn(key,'QfirstTown-east','t2','main');
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
 });
 s.newEvent('startGame',function(key){ //
+	s.set(key,'startGame',true);
 	s.removeQuestMarker(key,'start');
 	s.teleport(key,'main','t1','party',true);
 	s.addItem(key,'basic');
@@ -105,7 +115,8 @@ s.newEvent('nextWave',function(key){ //
 	],function(eid){
 		s.followPath(eid,'myPath',function(){	//no key in param cuz using key of nextWave
 			s.killActor(eid);
-			if(s.add(key,'life',-1) <= 0)
+			s.add(key,'life',-1)
+			if(s.get(key,'life') <= 0)
 				s.failQuest(key);
 		},true);	
 	});
@@ -120,15 +131,15 @@ s.newEvent('getWaveInfo',function(num){ //
 	if(num === 3) return {amount:4,time:7,model:'enemy'};
 	if(num === 4) return {amount:4,time:7,model:'enemy'};
 	if(num === 5) return {amount:5,time:6,model:'enemy'};
-	if(num === 6) return {amount:5,time:6,model:'enemy'};
-	if(num === 7) return {amount:6,time:6,model:'enemy2'};
-	if(num === 8) return {amount:6,time:6,model:'enemy2'};
-	if(num === 9) return {amount:7,time:5,model:'enemy2'};
-	if(num === 10) return {amount:7,time:5,model:'enemy2'};
-	if(num === 11) return {amount:8,time:5,model:'enemy2'};
-	if(num === 12) return {amount:8,time:5,model:'enemy2'};
-	if(num === 13) return {amount:10,time:5,model:'enemy2'};
-	if(num === 14) return {amount:12,time:15,model:'enemy2'};
+	if(num === 6) return {amount:5,time:8,model:'enemy'};
+	if(num === 7) return {amount:3,time:8,model:'enemy2'};
+	if(num === 8) return {amount:5,time:6,model:'enemy2'};
+	if(num === 9) return {amount:5,time:6,model:'enemy2'};
+	if(num === 10) return {amount:6,time:6,model:'enemy2'};
+	if(num === 11) return {amount:7,time:6,model:'enemy2'};
+	if(num === 12) return {amount:7,time:6,model:'enemy2'};
+	if(num === 13) return {amount:8,time:6,model:'enemy2'};
+	if(num === 14) return {amount:8,time:15,model:'enemy2'};
 	//if challenge
 	if(num === 15) return {amount:8,time:3,model:'enemy2'};
 	if(num === 16) return {amount:9,time:3,model:'enemy2'};
@@ -225,19 +236,19 @@ s.newEvent('talkToor',function(key){	//
 	s.startDialogue(key,'Toor','intro');
 });
 
-s.newItem('basic',"Basic",'element.range2',[    //{
+s.newItem('basic',"Basic",'element-range2',[    //{
 	s.newItem.option('placeTowerRegular',"Basic Tower","Place 1 basic tower. (25 Pts)")
 ],''); //}
-s.newItem('aoe',"Fire",'element.fire2',[    //{
+s.newItem('aoe',"Fire",'element-fire2',[    //{
 	s.newItem.option('placeTowerAoe',"AoE Tower","Place 1 AoE tower. (35 Pts)")
 ],''); //}
-s.newItem('ice',"Ice",'element.cold2',[    //{
+s.newItem('ice',"Ice",'element-cold2',[    //{
 	s.newItem.option('placeTowerIce',"Ice Tower","Place 1 Ice tower. (50 Pts)")
 ],''); //}
 
 s.newAbility('tower-normal0','attack',{
 	name:"dart",
-	icon:'attackRange.head',
+	icon:'attackRange-head',
 	periodOwn:10,
 	periodGlobal:10,
 	delay:5
@@ -245,12 +256,12 @@ s.newAbility('tower-normal0','attack',{
 	type:'bullet',
 	dmg:s.newAbility.dmg(200,'range'),
 	hitAnim:s.newAbility.anim('strikeHit',0.5),
-	spd:40,
+	spd:s.newAbility.spd(4),
 	sprite:s.newAbility.sprite('dart',1)
 });
 s.newAbility('tower-ice0','attack',{
 	name:"Cold Bullet",
-	icon:'attackMagic.crystal'
+	icon:'attackMagic-crystal'
 },{
 	type:'bullet',
 	amount:5,
@@ -258,12 +269,12 @@ s.newAbility('tower-ice0','attack',{
 	dmg:s.newAbility.dmg(1,'cold'),
 	hitAnim:s.newAbility.anim('coldHit',0.5),
 	chill:s.newAbility.status(1,2,1),
-	spd:40,
+	spd:s.newAbility.spd(4),
 	sprite:s.newAbility.sprite('iceshard',1)
 });
 s.newAbility('tower-aoe0','attack',{
 	name:"fireBomb",
-	icon:'attackMagic.fireball',
+	icon:'attackMagic-fireball',
 	periodOwn:50,
 	periodGlobal:50,
 	delay:5
@@ -272,7 +283,7 @@ s.newAbility('tower-aoe0','attack',{
 	dmg:s.newAbility.dmg(500,'fire'),
 	initPosition:s.newAbility.initPosition(0,200),
 	maxHit:3,
-	preDelayAnim:s.newAbility.anim('fireBomb',1)
+	preDelayAnim:s.newAbility.anim('fireBomb2',1)
 });
 
 s.newNpc('enemy',{
@@ -336,7 +347,7 @@ s.newNpc('tower-aoe',{
 	])
 });
 
-s.newDialogue('Toor','Toor','villager-male.0',[ //{ 
+s.newDialogue('Toor','Toor','villagerMale-0',[ //{ 
 	s.newDialogue.node('intro',"Help me! We are getting invaded by mushrooms! By chance, they are dumb and just follow a straight path. Just make you to kill them before they reach the bottom of the screen.",[ 
 		s.newDialogue.option("Okay, I got it.",'intro2','')
 	],''),
@@ -348,12 +359,19 @@ s.newDialogue('Toor','Toor','villager-male.0',[ //{
 s.newMap('main',{
 	name:"Tower Defence",
 	lvl:0,
+	screenEffect:'weather',
 	grid:["0110000110000000110011000","1110001110000000111111000","1100011110000000111111111","0001111100000000011111111","0011111000000000001111110","0111110000000000000111110","0111100000000000000011110","0110000000000000000011110","0110000000000000000111110","0110000000000000000111110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0111111111111110000000110","0111111111111110000000110","0111111111111110000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000111111111111110","0110000000111111111111110","0110000000111111111111110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0111111100000000000000110","0111111100000000000000110","0110000000000000000000110","0110000000000000000000110","0110000000000000000000110","0111111100000000001111110","0111111110000000011111110","0110000011000000110011110","0000000001100001100011110"],
 	tileset:'v1.2'
 },{
 	spot:{e1:{x:400,y:80},blue0:{x:400,y:240},blue1:{x:592,y:432},b1:{x:96,y:640,width:608,height:288},blue3:{x:208,y:784},blue2:{x:592,y:784},blue4:{x:208,y:1200},blue5:{x:432,y:1328},t1:{x:400,y:1584},blue6:{x:432,y:1616}},
 	load:function(spot){
 	
+	},
+	playerEnter:function(key){
+		s.addTorchEffect.one(key,'torch',250);
+	},
+	playerLeave:function(key){
+		s.removeTorchEffect.one(key,'torch');
 	}
 });
 s.newMapAddon('QfirstTown-east',{
@@ -361,8 +379,8 @@ s.newMapAddon('QfirstTown-east',{
 	load:function(spot){
 		m.spawnActor(spot.t2,'npc',{
 			dialogue:'talkToor',
-			sprite:s.newNpc.sprite('villager-male0',1),
-			minimapIcon:'minimapIcon.quest',
+			sprite:s.newNpc.sprite('villagerMale-0',1),
+			minimapIcon:'minimapIcon-quest',
 			angle:s.newNpc.angle('down'),
 			nevermove:true,
 			name:'Toor',

@@ -77,14 +77,15 @@ Main.question.init = function(){
 		if(msg.option.length){
 			var option = $('<span>');
 			
+			var click = function(answer){	
+				return function(){
+					submitAnswer(answer);
+				}
+			}
 			for(var i in msg.option){
 				option.append($('<button>')
 					.html(msg.option[i])
-					.click((function(answer){	
-						return function(){
-							submitAnswer(answer);
-						}
-					})(msg.option[i]))
+					.click(click(msg.option[i]))
 				);
 			}
 			html.append(option);
@@ -98,6 +99,9 @@ Main.question.init = function(){
 					submitAnswer(input.val());
 					return false;
 				});
+			setTimeout(function(){
+				input.focus();
+			},100);
 			html.append(form);
 		}
 		

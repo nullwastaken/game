@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en">
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="description" content="Raining Chain HTML5 MMORPG">
+		<meta name="author" content="Samuel Magnan">
+		<meta name="google" value="notranslate" />
+		<link rel="icon" type="image/png" href="/img/ui/interface/favicon.png?v=7">
+	
+		<script src="../bower_components/jquery/dist/jquery.min.js"></script>
+		
+		<script src="../bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+		<link href="../bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+		<script src="../bower_components/jquery-ui/jquery-ui-1.10.4.custom.min.js"></script>
+		<!-- 
+		if i use default (1.11) zIndex is fucked when opening multi dialog
+		<script src="../bower_components/jquery-ui/jquery-ui.min.js"></script>
+		-->
+		
+		<link href="../bower_components/jquery-ui-bootstrap/jquery.ui.theme.css" rel="stylesheet">
+		<link href="../bower_components/jquery-ui/themes/rainingchain/jquery-ui.css" rel="stylesheet">
+		
+		
+		<link href='http://fonts.googleapis.com/css?family=Kelly Slab' rel='stylesheet' type='text/css'>
+			  
+		<!--
+		<link href="../bower_components/fontawesome/font-awesome.min.css" rel="stylesheet">
+		-->
+        
+		<link rel="stylesheet" href="../css/CSSTableGenerator.css" type="text/css" />
+		<link rel="stylesheet" href="../css/button.css" type="text/css" />
+	  
+		<title>Raining Chain MMORPG HTML5 Open Source</title>
+		
+	</head>
+	<body>
+		<style>
+			body {
+				background-image: url("../css/img/white_wall_hash.png");
+			}
+		</style>
+		<nav id="myNavbar" style="z-index:10" class="navbar navbar-default navbar-static-top">	<!-- zindex so below jqueryui-->
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="/">Raining Chain</a>
+				</div>
+				<div id="navbar" class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li class="<%- ["patchNotes"].indexOf(location) !== -1 ? "active" : "" %>"><a href="/patchNotes">Patch Notes</a></li>
+						<li class="<%- ["contribution","localdb"].indexOf(location) !== -1 ? "active" : "" %>"><a href="/contribution">Contribute</a></li>
+						
+						<li class="dropdown <%- ["wiki"].indexOf(location) !== -1 ? "active" : ""%>">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Game Info <b class="caret"></b></a>
+				
+							<ul class="dropdown-menu">
+								<li><a href="/wiki/lore">Lore</a></li>
+								<li><a href="/wiki/ability">Ability</a></li>
+								<li><a href="/wiki/map">Map</a></li>
+								<li><a href="/wiki/monster">Monsters</a></li>
+								<li><a href="/wiki/exp">Experience</a></li>
+								<li><a href="/wiki/equip">Equipment</a></li>
+								<li><a href="/wiki/stat">Stats</a></li>
+								<li><a href="/wiki/material">Materials</a></li>
+							</ul>
+						</li>
+						
+						<li class=""><a href="/tutorial/html5">Code Tutorial</a></li>
+						<li class=""><a target="_blank" href="http://github.com/rainingchain/rainingchain">Source Code</a></li>
+						
+						
+						<li class="dropdown <%- ["rs","zelda","pokemon"].indexOf(location) !== -1 ? "active" : ""%>">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Other <b class="caret"></b></a>
+				
+							<ul class="dropdown-menu">
+								<li><a target="_blank" href="http://blog.rainingchain.com">Blog</a></li>
+								<li><a href="/rs">Runescape</a></li>
+								<li><a href="/zelda">Zelda</a></li>
+								<li><a href="/pokemon">Pokemon</a></li>
+							</ul>
+						</li>
+					</ul>
+				</div><!--/.nav-collapse -->
+			</div>
+		</nav>
+		

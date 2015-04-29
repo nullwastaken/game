@@ -109,29 +109,29 @@ ReputationConverter.findGroup = function(conv){
 
 (function(){ //}
 	ReputationConverter.create('dmgMeleeRange','Dmg ML -> Dmg RG','Convert every Dmg Melee Boost into Dmg Range Boost',
-		helper('dmg-melee-+','dmg-range-+'),
-		function(){ return helper2(Stat.get('dmg-melee-+').icon,Stat.get('dmg-range-+').icon); }
+		helper('dmg-melee','dmg-range'),
+		function(){ return helper2(Stat.get('dmg-melee').icon,Stat.get('dmg-range').icon); }
 	);
 	ReputationConverter.create('dmgRangeMagic','Dmg RG -> Dmg MG','Convert every Dmg Range Boost into Dmg Magic Boost',
-		helper('dmg-range-+','dmg-magic-+'),
-		function(){ return helper2(Stat.get('dmg-range-+').icon,Stat.get('dmg-magic-+').icon); }
+		helper('dmg-range','dmg-magic'),
+		function(){ return helper2(Stat.get('dmg-range').icon,Stat.get('dmg-magic').icon); }
 	);
 	ReputationConverter.create('dmgMagicMelee','Dmg MG -> Dmg ML','Convert every Dmg Magic Boost into Dmg Melee Boost',
-		helper('dmg-magic-+','dmg-melee-+'),
-		function(){ return helper2(Stat.get('dmg-magic-+').icon,Stat.get('dmg-melee-+').icon); }
+		helper('dmg-magic','dmg-melee'),
+		function(){ return helper2(Stat.get('dmg-magic').icon,Stat.get('dmg-melee').icon); }
 	);
 
 	ReputationConverter.create('dmgFireCold','Dmg FR -> Dmg CD','Convert every Dmg Fire Boost into Dmg Cold Boost',
-		helper('dmg-fire-+','dmg-cold-+'),
-		function(){ return helper2(Stat.get('dmg-fire-+').icon,Stat.get('dmg-cold-+').icon); }
+		helper('dmg-fire','dmg-cold'),
+		function(){ return helper2(Stat.get('dmg-fire').icon,Stat.get('dmg-cold').icon); }
 	);
 	ReputationConverter.create('dmgColdLightning','Dmg CD -> Dmg LG','Convert every Dmg Cold Boost into Dmg Lightning Boost',
-		helper('dmg-cold-+','dmg-lightning-+'),
-		function(){ return helper2(Stat.get('dmg-cold-+').icon,Stat.get('dmg-lightning-+').icon); }
+		helper('dmg-cold','dmg-lightning'),
+		function(){ return helper2(Stat.get('dmg-cold').icon,Stat.get('dmg-lightning').icon); }
 	);
 	ReputationConverter.create('dmgFireLightning','Dmg LG -> Dmg FR','Convert every Dmg Lightning Boost into Dmg Fire Boost',
-		helper('dmg-lightning-+','dmg-fire-+'),
-		function(){ return helper2(Stat.get('dmg-lightning-+').icon,Stat.get('dmg-fire-+').icon); }
+		helper('dmg-lightning','dmg-fire'),
+		function(){ return helper2(Stat.get('dmg-lightning').icon,Stat.get('dmg-fire').icon); }
 	);
 
 	ReputationConverter.create('hpLeech','Hp -> Life Leech','Convert every Hp Boost into Life Leech Boost',
@@ -160,17 +160,31 @@ ReputationConverter.findGroup = function(conv){
 		function(){ return helper2(Stat.get('atkSpd').icon,Stat.get('crit-magn').icon);}
 	);
 
+	ReputationConverter.create('changeMagn','Chance -> Magn','Convert every Status Chance into Status Magn Boost',
+		helper(['burn-chance','chill-chance','stun-chance','bleed-chance','knock-chance','drain-chance'],
+			['burn-magn','chill-magn','stun-magn','bleed-magn','knock-magn','drain-magn']),
+		function(){ return helper2(Stat.get('burn-chance').icon,Stat.get('stun-magn').icon);}
+	);
+	ReputationConverter.create('magnTime','Magn -> Time','Convert every Status Magn into Status Time Boost',
+		helper(['burn-magn','chill-magn','stun-magn','bleed-magn','knock-magn','drain-magn'],
+			['burn-time','chill-time','stun-time','bleed-time','knock-time','drain-time']),
+		function(){ return helper2(Stat.get('stun-magn').icon,Stat.get('chill-time').icon);}
+	);
+	
+	ReputationConverter.create('timeChance','Time -> Chance','Convert every Status Time into Status Chance Boost',
+		helper(['burn-time','chill-time','stun-time','bleed-time','knock-time','drain-time'],
+			['burn-chance','chill-chance','stun-chance','bleed-chance','knock-chance','drain-chance']),
+		function(){ return helper2(Stat.get('chill-time').icon,Stat.get('burn-chance').icon);}
+	);
+	
+	
 	ReputationConverter.Group(3,['dmgMeleeRange','dmgRangeMagic','dmgMagicMelee']);
 	ReputationConverter.Group(6,['dmgFireCold','dmgColdLightning','dmgFireLightning']);
 	ReputationConverter.Group(10,['hpLeech','leechMana','manaHp']);
 	ReputationConverter.Group(14,['critAmount','amountSpd','spdCrit']);
+	//ReputationConverter.Group(19,['changeMagn','magnTime','timeChance']);	//TODO
 })(); //{
 /*
-
-Lvl	14:
-	crit -> bullet amount
-	bullet amount -> atk spd
-	atk spd -> crit
 
 Lvl 19:	
 	chance -> magn

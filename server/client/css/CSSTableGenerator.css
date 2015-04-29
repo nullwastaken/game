@@ -1,6 +1,6 @@
 .CSSTableGenerator {
 	width:auto;
-	box-shadow: 10px 10px 5px #888888;
+	/*box-shadow: 10px 10px 5px #888888;*/
 	border:1px solid #000000;
 }
 .CSSTableGenerator table{
@@ -10,6 +10,14 @@
 .CSSTableGenerator tobdy tr:hover td{
 	background-color:#cccc99;
 }
+.CSSTableGenerator tr .redBackground :hover td {
+	background-color:#FF0000;
+}
+
+.CSSTableGenerator tr .yellowBackground:hover td {
+	background-color:#FFFF00;
+}
+
 .CSSTableGenerator td{
 	background-color:#cccccc;
 	border:1px solid #000000;
@@ -19,9 +27,19 @@
 	padding:1px;
 	font-size:20px;
 	font-family:Kelly Slab;
-	font-weight:bold;
+	/*font-weight:bold;*/
 	color:#000000;
 }
+.redBackground td {
+	background-color:#FFCCCC;
+}
+.yellowBackground td {
+	background-color:#FFFFCC;
+}
+.greenBackground td {
+	background-color:#CCFFCC;
+}
+
 .tableHead, .tableHead td{
 	background:-o-linear-gradient(bottom, #003366 5%, #003f7f 100%);
 	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #003366), color-stop(1, #003f7f) );
@@ -35,7 +53,7 @@
 	border-width:0px 0px 1px 1px;
 	font-size:20px;
 	font-family:Kelly Slab;
-	font-weight:bold;
+	/*font-weight:bold;*/
 	color:#ffffff;
 }
 
@@ -48,4 +66,45 @@
 .arrayToTable td {
 	padding:1px 10px;
 }
+/* ################### */
+.CSSTableGenerator2 {
+	width:auto;
+	border:1px solid #000000;
+}
+.CSSTableGenerator2 table{
+	width:auto;
+}
+.CSSTableGenerator2 tr:hover td {
+	background-color:#cccc99;
+}
+.CSSTableGenerator2 td {
+	background-color:#cccccc;
+	border:1px solid #000000;
+	border-width:0px 1px 1px 0px;
+	text-align:center;
+	vertical-align:middle;	
+	padding:1px;
+	font-size:20px;
+	font-family:Kelly Slab;
+	/*font-weight:bold;*/
+	color:#000000;
+	padding: 1px 5px;
+}
 
+.CSSTableGenerator2  th {
+	background:-o-linear-gradient(bottom, #003366 5%, #003f7f 100%);
+	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #003366), color-stop(1, #003f7f) );
+	background:-moz-linear-gradient( center top, #003366 5%, #003f7f 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#003366", endColorstr="#003f7f");	background: -o-linear-gradient(top,#003366,003f7f);
+
+	background-color:#336699;
+	border:0px solid #000000;
+	text-align:center;
+	vertical-align:middle;
+	border-width:0px 0px 1px 1px;
+	font-size:20px;
+	font-family:Kelly Slab;
+	/*font-weight:bold;*/
+	color:#ffffff;
+	padding: 1px 5px;
+}

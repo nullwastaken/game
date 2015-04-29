@@ -72,58 +72,11 @@ var StatGroup = function(id,baseValue,list){
 };
 
 (function(){	//StatGroup Init
-	StatGroup('dmg',0.01,['dmg-melee-+','dmg-range-+','dmg-magic-+','dmg-fire-+','dmg-cold-+','dmg-lightning-+']);
-	StatGroup('dmg-+',0.01,['dmg-melee-+','dmg-range-+','dmg-magic-+','dmg-fire-+','dmg-cold-+','dmg-lightning-+']);
-		
-	StatGroup('dmg-melee',0.01,['dmg-melee-+']);
-	StatGroup('dmg-range',0.01,['dmg-range-+']);
-	StatGroup('dmg-magic',0.01,['dmg-magic-+']);
-	StatGroup('dmg-fire',0.01,['dmg-fire-+']);
-	StatGroup('dmg-cold',0.01,['dmg-cold-+']);
-	StatGroup('dmg-lightning',0.01,['dmg-lightning-+']);
+	StatGroup('dmg',0.01,['dmg-melee','dmg-range','dmg-magic','dmg-fire','dmg-cold','dmg-lightning']);
 
 	//Def
-	StatGroup('def',0.01,['def-melee-+','def-range-+','def-magic-+','def-fire-+','def-cold-+','def-lightning-+']);
-	StatGroup('def-+',0.01,['def-melee-+','def-range-+','def-magic-+','def-fire-+','def-cold-+','def-lightning-+']);
+	StatGroup('def',0.01,['def-melee','def-range','def-magic','def-fire','def-cold','def-lightning']);
 		
-	StatGroup('def-melee',0.01,['def-melee-+']);
-	StatGroup('def-range',0.01,['def-range-+']);
-	StatGroup('def-magic',0.01,['def-magic-+']);
-	StatGroup('def-fire',0.01,['def-fire-+']);
-	StatGroup('def-cold',0.01,['def-cold-+']);
-	StatGroup('def-lightning',0.01,['def-lightning-+']);
-	
-		
-	
-	/*
-	StatGroup('dmg',0.01,['dmg-melee-+','dmg-melee-+','dmg-melee-+','dmg-melee-+','dmg-range-+','dmg-range-+','dmg-range-+','dmg-range-+','dmg-magic-+','dmg-magic-+','dmg-magic-+','dmg-magic-+','dmg-fire-+','dmg-fire-+','dmg-fire-+','dmg-fire-+','dmg-cold-+','dmg-cold-+','dmg-cold-+','dmg-cold-+','dmg-lightning-+','dmg-lightning-+','dmg-lightning-+','dmg-lightning-+']);
-	StatGroup('dmg-+',0.01,['dmg-melee-+','dmg-range-+','dmg-magic-+','dmg-fire-+','dmg-cold-+','dmg-lightning-+']);
-	StatGroup('dmg-+',0.01,['dmg-melee-+','dmg-range-+','dmg-magic-+','dmg-fire-+','dmg-cold-+','dmg-lightning-+']);
-	StatGroup('dmg-+',0.01,['dmg-melee-+','dmg-range-+','dmg-magic-+','dmg-fire-+','dmg-cold-+','dmg-lightning-+']);
-	StatGroup('dmg-+',0.01,['dmg-melee-+','dmg-range-+','dmg-magic-+','dmg-fire-+','dmg-cold-+','dmg-lightning-+']);
-		
-	StatGroup('dmg-melee',0.01,['dmg-melee-+','dmg-melee-+','dmg-melee-+','dmg-melee-+']);
-	StatGroup('dmg-range',0.01,['dmg-range-+','dmg-range-+','dmg-range-+','dmg-range-+']);
-	StatGroup('dmg-magic',0.01,['dmg-magic-+','dmg-magic-+','dmg-magic-+','dmg-magic-+']);
-	StatGroup('dmg-fire',0.01,['dmg-fire-+','dmg-fire-+','dmg-fire-+','dmg-fire-+']);
-	StatGroup('dmg-cold',0.01,['dmg-cold-+','dmg-cold-+','dmg-cold-+','dmg-cold-+']);
-	StatGroup('dmg-lightning',0.01,['dmg-lightning-+','dmg-lightning-+','dmg-lightning-+','dmg-lightning-+']);
-
-	//Def
-	StatGroup('def',0.01,['def-melee-+','def-melee-+','def-melee-+','def-melee-+','def-range-+','def-range-+','def-range-+','def-range-+','def-magic-+','def-magic-+','def-magic-+','def-magic-+','def-fire-+','def-fire-+','def-fire-+','def-fire-+','def-cold-+','def-cold-+','def-cold-+','def-cold-+','def-lightning-+','def-lightning-+','def-lightning-+','def-lightning-+']);
-	StatGroup('def-+',0.01,['def-melee-+','def-range-+','def-magic-+','def-fire-+','def-cold-+','def-lightning-+']);
-	StatGroup('def-+',0.01,['def-melee-+','def-range-+','def-magic-+','def-fire-+','def-cold-+','def-lightning-+']);
-	StatGroup('def-+',0.01,['def-melee-+','def-range-+','def-magic-+','def-fire-+','def-cold-+','def-lightning-+']);
-	StatGroup('def-+',0.01,['def-melee-+','def-range-+','def-magic-+','def-fire-+','def-cold-+','def-lightning-+']);
-		
-	StatGroup('def-melee',0.01,['def-melee-+','def-melee-+','def-melee-+','def-melee-+']);
-	StatGroup('def-range',0.01,['def-range-+','def-range-+','def-range-+','def-range-+']);
-	StatGroup('def-magic',0.01,['def-magic-+','def-magic-+','def-magic-+','def-magic-+']);
-	StatGroup('def-fire',0.01,['def-fire-+','def-fire-+','def-fire-+','def-fire-+']);
-	StatGroup('def-cold',0.01,['def-cold-+','def-cold-+','def-cold-+','def-cold-+']);
-	StatGroup('def-lightning',0.01,['def-lightning-+','def-lightning-+','def-lightning-+','def-lightning-+']);
-	*/
-	
 	//Weapon
 	StatGroup('weapon',0.01,['weapon-mace','weapon-spear','weapon-sword','weapon-bow','weapon-boomerang','weapon-crossbow','weapon-wand','weapon-staff','weapon-orb']);		
 	StatGroup('weapon-melee',0.01,['weapon-mace','weapon-spear','weapon-sword']);
@@ -170,66 +123,66 @@ CraftBoost.create('weaponFirstBoost',CraftBoost.Type([ //{
 	]),{
 	mace:CraftBoost.Type([ 
 		CraftBoost.Sub(CraftBoost.Stat('bleed-chance'),30,1),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-range-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-range'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-magic'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-cold'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning'),50,1/5),
 	]),
 	spear:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('bleed-chance'),30,1),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-range-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-range'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-magic'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-fire'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning'),50,1/5),
 	]),
 	sword:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('bleed-chance'),30,1),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-range-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-range'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-magic'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-fire'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-cold'),50,1/5),
 	]),
 	bow:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('knock-chance'),30,1),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-melee'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-magic'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-cold'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning'),50,1/5),
 	]),
 	crossbow:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('knock-chance'),30,1),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-melee'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-magic'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-fire'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning'),50,1/5),
 	]),
 	boomerang:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('knock-chance'),30,1),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-magic-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-melee'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-magic'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-fire'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-cold'),50,1/5),
 	]),
 	wand:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('drain-chance'),30,1),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-range-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-melee'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-range'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-cold'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning'),50,1/5),
 	]),
 	staff:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('drain-chance'),30,1),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-range-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-melee'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-range'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-fire'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-lightning'),50,1/5),
 	]),
 	orb:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('drain-chance'),30,1),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-melee-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-range-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-fire-+'),50,1/5),
-		CraftBoost.Sub(CraftBoost.Stat('dmg-cold-+'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-melee'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-range'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-fire'),50,1/5),
+		CraftBoost.Sub(CraftBoost.Stat('dmg-cold'),50,1/5),
 	])	
 }); //}
 	
@@ -279,8 +232,8 @@ CraftBoost.create('weapon',CraftBoost.Type([ //{
 });	//}
 
 CraftBoost.create('amulet',CraftBoost.Type([ //{
-		CraftBoost.Sub(CraftBoost.Stat('dmg-+'),2,1),
-		CraftBoost.Sub(CraftBoost.Stat('def-+'),2,1),
+		CraftBoost.Sub(CraftBoost.Stat('dmg'),2,1),
+		CraftBoost.Sub(CraftBoost.Stat('def'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('status-all'),1,1),
 	]),{
 	ruby:CraftBoost.Type([
@@ -298,10 +251,9 @@ CraftBoost.create('amulet',CraftBoost.Type([ //{
 }); //}`
 
 CraftBoost.create('ring',CraftBoost.Type([ //{
-		CraftBoost.Sub(CraftBoost.Stat('dmg-+'),2,1),
-		CraftBoost.Sub(CraftBoost.Stat('def-+'),2,1),
+		CraftBoost.Sub(CraftBoost.Stat('dmg'),2,1),
+		CraftBoost.Sub(CraftBoost.Stat('def'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('status-all'),1,1),
-		CraftBoost.Sub(CraftBoost.Stat('magicFind-quantity'),1,0.5),
 	]),{
 	ruby:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('burn-all'),1.5,1),
@@ -321,9 +273,8 @@ CraftBoost.create('ring',CraftBoost.Type([ //{
 }); //}
 
 CraftBoost.create('helm',CraftBoost.Type([ //{
-		CraftBoost.Sub(CraftBoost.Stat('dmg-+'),2,1),
-		CraftBoost.Sub(CraftBoost.Stat('def-+'),2,1),
-		CraftBoost.Sub(CraftBoost.Stat('summon-all'),1,1),
+		CraftBoost.Sub(CraftBoost.Stat('dmg'),2,1),
+		CraftBoost.Sub(CraftBoost.Stat('def'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('atkSpd'),1,1),
 		CraftBoost.Sub(CraftBoost.Stat('pickRadius'),1,1),
 	]),{
@@ -331,27 +282,23 @@ CraftBoost.create('helm',CraftBoost.Type([ //{
 		CraftBoost.Sub(CraftBoost.Stat('hp-max'),1.5,1),
 		CraftBoost.Sub(CraftBoost.Stat('leech-magn'),1,1),
 		CraftBoost.Sub(CraftBoost.Stat('leech-chance'),1,1),
-		CraftBoost.Sub(CraftBoost.Stat('summon-amount'),2,1),
 		
 	]),
 	wood:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('hp-regen'),1.5,1),
 		CraftBoost.Sub(CraftBoost.Stat('crit-magn'),1,1),	
-		CraftBoost.Sub(CraftBoost.Stat('crit-chance'),1,1),	
-		CraftBoost.Sub(CraftBoost.Stat('summon-atk'),2,1),	
+		CraftBoost.Sub(CraftBoost.Stat('crit-chance'),1,1),
 	]),
 	bone:CraftBoost.Type([
 		CraftBoost.Sub(CraftBoost.Stat('mana-max'),1,1),
 		CraftBoost.Sub(CraftBoost.Stat('mana-regen'),1.5,1),
-		CraftBoost.Sub(CraftBoost.Stat('maxSpd'),1,1),	
-		CraftBoost.Sub(CraftBoost.Stat('summon-def'),2,1),	
+		CraftBoost.Sub(CraftBoost.Stat('maxSpd'),1,1),
 	])	
 }); //}
 	
 CraftBoost.create('body',CraftBoost.Type([ //{
-		CraftBoost.Sub(CraftBoost.Stat('dmg-+'),2,1),
-		CraftBoost.Sub(CraftBoost.Stat('def-+'),2,1),
-		CraftBoost.Sub(CraftBoost.Stat('def'),1.5,1),
+		CraftBoost.Sub(CraftBoost.Stat('dmg'),2,1),
+		CraftBoost.Sub(CraftBoost.Stat('def'),2,1),
 		CraftBoost.Sub(CraftBoost.Stat('weapon'),1,1),
 	]),{
 	metal:CraftBoost.Type([

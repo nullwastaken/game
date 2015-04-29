@@ -1,36 +1,40 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
-var Quest = require2('Quest'), OfflineAction = require2('OfflineAction'), Highscore = require2('Highscore'), Main = require2('Main');
+var Quest = require2('Quest'),Achievement = require2('Achievement'), Actor = require2('Actor'), Material = require2('Material'), OfflineAction = require2('OfflineAction'), Highscore = require2('Highscore'), Main = require2('Main');
 
 var db;
 
 var CURRENT = null;
 
-
 var Competition = exports.Competition = {};
-Competition.create = function(highscore,end,reward){	//rename highscore to category?
+Competition.create = function(highscore,end){	//rename highscore to category?
 	var high = Highscore.get(highscore);
+	var quest = Highscore.getQuest(highscore);
+	if(!high || !quest) return ERROR(3,'invalid quest or highscore',quest,highscore);
+	
 	var a = {
 		id:Math.randomId(),
 		startTime:Date.now(),
 		endTime:end || 0,
 		name:high.name,
 		description:high.description,
-		rank:[],
+		rewardGiven:false,
+		score:[],
 		order:high.order,
 		highscore:highscore || '',
-		quest:Quest.get(Highscore.getQuest(highscore)).name,
-		reward:reward || [],	
-	}
+		quest:quest,
+		questName:Quest.get(quest).name,
+	};
 	CURRENT = a;
 	return a;
 }
 
-Competition.Rank = function(username,score){
+Competition.Score = function(username,value,lvl){	//BAD saving lvl here is bad...
 	return {
 		username:username || '',
-		score:score || 0,	
-	}
+		value:value || 0,
+		lvl: lvl || 0,
+	};
 }
 
 Competition.Reward = function(item,exp){
@@ -40,22 +44,42 @@ Competition.Reward = function(item,exp){
 	}
 }
 
-Competition.Reward.randomlyGenerate = function(){
-	return [
-		Competition.Reward({'wood-0':20},2000),
-		Competition.Reward({'wood-0':16},1600),
-		Competition.Reward({'wood-0':12},1200),
-		Competition.Reward({'wood-0':8},800),
-		Competition.Reward({'wood-0':4},400),	
-	];
+Competition.Reward.randomlyGenerate = function(lvl,place){
+	var item = {};
+	if(place === 0){
+		item[Material.getRandom(lvl)] = 20;
+		item['competition-1'] = 1;
+		return Competition.Reward(item,2000);
+	}
+	if(place === 1){
+		item[Material.getRandom(lvl)] = 16;
+		item['competition-any'] = 1;
+		return Competition.Reward(item,1600);
+	}
+	if(place === 2){
+		item[Material.getRandom(lvl)] = 12;
+		item['competition-any'] = 1;
+		return Competition.Reward(item,1200);
+	}
+	if(place === 3){
+		item[Material.getRandom(lvl)] = 8;
+		item['competition-any'] = 1;
+		return Competition.Reward(item,800);
+	}
+	if(place === 4){
+		item[Material.getRandom(lvl)] = 4;
+		item['competition-any'] = 1;
+		return Competition.Reward(item,400);
+	}
+	ERROR(3,'invalid place');
+	return Competition.Reward(item,0);
 }
-
 
 Competition.init = function(dbLink,app){
 	db = dbLink;
-	db.competition.findOne({},{_id:0},function(err,res){
-		if(res)
-			CURRENT = res;
+	db.competition.find({rewardGiven:false},{_id:0},function(err,res){
+		if(res[0])
+			CURRENT = res[0];
 		else {
 			Competition.generateRandom();
 		}
@@ -64,18 +88,12 @@ Competition.init = function(dbLink,app){
 		setTimeout(function(){
 			Competition.end(comp);
 		},timeDiff);
-	});
-	app.post('/competitionHomePage',function(req,res){
-		res.send({
-			competition:Competition.getHomePage()
-		});
-	});
-	
+	}).sort({endTime:-1}).limit(1);
 	
 }
 
 Competition.generateRandom = function(){
-	Competition.create(Competition.getNext(),Date.now()+CST.WEEK,Competition.Reward.randomlyGenerate());
+	Competition.create(Competition.getNext(),Date.now()+CST.WEEK);
 }
 
 Competition.save = function(){
@@ -91,32 +109,35 @@ Competition.onQuestComplete = function(key,highscoreInfo){
 		if(j !== comp.highscore)
 			continue;
 		var username = Main.get(key).username;
-			
+		var lvl = Actor.getLevel(Actor.get(key));
+		
 		var alreadyThere = false;
-		for(var i = 0 ; i < comp.rank.length; i++){
-			if(comp.rank[i].username === username){
+		for(var i = 0 ; i < comp.score.length; i++){
+			if(comp.score[i].username === username){
 				alreadyThere = true;
-				if((comp.order === 'ascending' && highscoreInfo[j] > comp.rank[i].score)
-					|| (comp.order === 'descending' && highscoreInfo[j] < comp.rank[i].score)
+				if((comp.order === 'ascending' && highscoreInfo[j].score > comp.score[i].value)
+					|| (comp.order === 'descending' && highscoreInfo[j].score < comp.score[i].value)
 				){
-					comp.rank[i].score = highscoreInfo[j];
+					comp.score[i].value = highscoreInfo[j].score;
 					Competition.updateRank(comp);
 					Competition.save();
 				}		
 			}
 		}
 		if(alreadyThere === false){
-			comp.rank.push(Competition.Rank(username,highscoreInfo[j]));
+			comp.score.push(Competition.Score(username,highscoreInfo[j].score,lvl));
 			Competition.updateRank(comp);
 			Competition.save();
 		}
+		
+		Achievement.onCompetitionEntry(Main.get(key),Competition.getRankViaUsername(comp,username));
 	}	
 }
 
 Competition.removePlayer = function(comp,username){
-	for(var i = 0 ; i < comp.rank.length; i++){
-		if(comp.rank[i].username === username){
-			comp.rank.splice(i,1);
+	for(var i = 0 ; i < comp.score.length; i++){
+		if(comp.score[i].username === username){
+			comp.score.splice(i,1);
 			INFO('Player removed from competition');
 			Competition.save();
 			return;
@@ -127,13 +148,20 @@ Competition.removePlayer = function(comp,username){
 
 Competition.updateRank = function(comp){
 	if(comp.order === 'ascending')
-		comp.rank.sort(function(a,b){
-			return a.score-b.score;
+		comp.score.sort(function(a,b){
+			return a.value-b.value;
 		});
 	else 
-		comp.rank.sort(function(a,b){
-			return b.score-a.score;
+		comp.score.sort(function(a,b){
+			return b.value-a.value;
 		});
+}
+
+Competition.getRankViaUsername = function(comp,username){
+	for(var i = 0 ; i < comp.score.length; i++)
+		if(comp.score[i].username === username)
+			return i;
+	return null;
 }
 
 Competition.getCurrent = function(){
@@ -153,33 +181,37 @@ Competition.getNext = function(){
 
 Competition.end = function(comp){
 	//give reward
-	for(var i = 0; i < comp.reward.length; i++){
-		if(comp.rank[i]){
-			OfflineAction.create(comp.rank[i].username,'message',OfflineAction.Data.message(
-				'Congratulation! You finished #' + (i+1) + ' in the competition! You win ' + comp.reward[i].exp + ' exp and a bunch of items.'
+	for(var i = 0; i < 5; i++){
+		if(comp.score[i]){
+			var reward = Competition.Reward.randomlyGenerate(comp.score[i].lvl,i);
+		
+			OfflineAction.create(comp.score[i].username,'message',OfflineAction.Data.message(
+				'Congratulations! You finished #' + (i+1) + ' in the competition! You win ' + reward.exp + ' exp and a bunch of items.'
 			));
-			OfflineAction.create(comp.rank[i].username,'questPopup',OfflineAction.Data.message(
-				'Congratulation! You finished #' + (i+1) + ' in the competition! You win ' + comp.reward[i].exp + ' exp and a bunch of items.'
+			OfflineAction.create(comp.score[i].username,'questPopup',OfflineAction.Data.message(
+				'Congratulations! You finished #' + (i+1) + ' in the competition! You win ' + reward.exp + ' exp and a bunch of items.'
 			));
-			OfflineAction.create(comp.rank[i].username,'addExp',OfflineAction.Data.addExp(comp.reward[i].exp,false));
-			OfflineAction.create(comp.rank[i].username,'addItem',OfflineAction.Data.addItem(comp.reward[i].item));
+			OfflineAction.create(comp.score[i].username,'addExp',OfflineAction.Data.addExp(reward.exp,false));
+			OfflineAction.create(comp.score[i].username,'addItem',OfflineAction.Data.addItem(reward.item));
 		}
 	}
-	db.competition.remove({id:comp.id},db.err);
+	db.competition.update({id:comp.id},{$set:{rewardGiven:true}});
 	Competition.generateRandom();
 }
 
-Competition.getHomePage = function(){
+Competition.getHomePageContent = function(scoreMaxLength){
+	scoreMaxLength = scoreMaxLength || 5;
+	
 	var cur = Competition.getCurrent();
 	var temp = {};
-	for(var i in cur){	//only want to compress rank
-		if(i === 'rank')
-			temp[i] = cur[i].slice(0,5);
+	for(var i in cur){	//only want to compress score
+		if(i === 'score')
+			temp[i] = cur[i].slice(0,scoreMaxLength);
 		else
 			temp[i] = cur[i];
 	}
 	return temp;
-}	
+}
 
 
 

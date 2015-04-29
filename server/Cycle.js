@@ -19,7 +19,7 @@ Cycle.init = function(){
 
 Cycle.onSignIn = function(key,account){
 	if(account.lastSignIn === null || Date.nowDate(account.lastSignIn) !== Date.nowDate()){
-		Main.quest.updateCycleBonus(Main.get(key));
+		Main.quest.updateQuestDoneToday(Main.get(key));
 		Main.updateDailyTask(Main.get(key));
 	}
 }

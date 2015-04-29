@@ -1,10 +1,12 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Socket = require4('Socket'), Dialog = require4('Dialog');
+var Socket = require4('Socket'), Dialog = require4('Dialog'), Game = require4('Game');
 var Account = exports.Account = {};
 
 var ALREADY_INIT = false;
+
+var LOG = $('<div>');
 
 Account.init = function(){
 	if(ALREADY_INIT) return;	//cuz called when click Lost password
@@ -15,27 +17,24 @@ Account.init = function(){
 	});
 	
 	//Dialog.open('account')
-	Dialog.create('account','Account Management',Dialog.Size(550,700),Dialog.Refresh(function(html,variable,param){
+	Dialog.create('account','Account Management',Dialog.Size(550,700),Dialog.Refresh(function(html){
 		html.append('<h2>Account Management</h2>');
-		html.append('Log: <div id="accountLog"></div>');
+		html.append('Log: ',LOG);
 		
-		if(param){
+		if(Game.getActive()){
 			//###############
+			/*
 			html.append('<h3>Confirm Email</h3>');
 			html.append('The Activation Key was sent to your email. Check in the Spam Folder too.<br>');
-			html.append('Activation Key: <input id="accountActivationKey"></input><br>');
 			html.append($('<button>')
-				.html('Send Key To Server')
-				.click(function(){ Account.sendActivationKey(); }));
-			html.append('<br>');
-			html.append($('<button>')
-				.html('What Key?')
-				.attr('title','Click so server sends the key to your email.')
+				.html('Send again.')
 				.click(function(){ Account.requestActivationKey(); }));
 			html.append('<br>');
+			*/
+			
 			//###############
 			html.append('<h3>Change Email</h3>');
-			html.append('You will be able to change it 7 days after the request. <br>');
+			html.append('You will be able to change it 3 days after the request. <br>');
 			html.append('Current Password: <input type="password" id="accountCurrentPasswordEmail"></input><br>');
 			html.append('New Email: <input id="accountNewEmail"></input><br>');
 			html.append($('<button>')
@@ -56,32 +55,34 @@ Account.init = function(){
 				.click(function(){ Account.changePassword(); }));
 			html.append('<br>');
 		}
-		//###############
-		html.append('<h3>Request Reset Password</h3>');
-		html.append('This will send a Reset Key to the email address linked with the account.<br>');
-		html.append('Username: <input id="accountRequestName"></input><br>');
-		html.append('Email: <input id="accountRequestEmail"></input><br>');
-		html.append($('<button>')
-			.html('Go!')
-			.click(function(){ Account.requestResetPassword(); }));
-		html.append('<br>');
-		
-		//###############
-		html.append('<h3>Reset Password</h3>');
-		html.append('Enter the Reset Key you received via email from "Request Reset Password" to reset your password.<br>');
-		html.append('Username: <input id="accountResetName"></input><br>');
-		html.append('Reset Key: <input id="accountResetKey"></input><br>');
-		html.append($('<button>')
-			.html('Go!')
-			.click(function(){ Account.resetPassword(); }));
-		html.append('<br>');
+		if(!Game.getActive()){
+			//###############
+			html.append('<h3>Request Reset Password</h3>');
+			html.append('This will send a Reset Key to the email address linked with the account.<br>');
+			html.append('Username: <input id="accountRequestName"></input><br>');
+			html.append('Email: <input id="accountRequestEmail"></input><br>');
+			html.append($('<button>')
+				.html('Go!')
+				.click(function(){ Account.requestResetPassword(); }));
+			html.append('<br>');
+			
+			//###############
+			html.append('<h3>Reset Password</h3>');
+			html.append('Enter the Reset Key you received via email from "Request Reset Password" to reset your password. The new randomly-generated password will be sent to you by email.<br>');
+			html.append('Username: <input id="accountResetName"></input><br>');
+			html.append('Reset Key: <input id="accountResetKey"></input><br>');
+			html.append($('<button>')
+				.html('Go!')
+				.click(function(){ Account.resetPassword(); }));
+			html.append('<br>');
+		}
 	}));
 	
 
 }
 
 Account.log = function(text){
-	$("#accountLog").html(text);
+	LOG.html(text);
 }
 
 Account.changePassword = function(){

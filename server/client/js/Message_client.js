@@ -9,7 +9,9 @@ Message.sendChatToServer = function(text){
 	
 	Dialog.chat.setInput('',false);
 	if(text[0] === '$'){
-		Command.execute(Command.textToCommand(text.slice(1)));
+		var cmd = Command.textToCommand(text.slice(1));
+		if(cmd)
+			Command.execute();
 		return;
 	}
 	
@@ -17,15 +19,6 @@ Message.sendChatToServer = function(text){
 }
 
 Message.sendChatToServer.textToMessage = function(txt){
-	//Clan Chat
-	/*if(txt[0] === '/'){ 
-		var count = 0;
-		while(txt[count] === '/') count++;
-		var text = txt.slice(count);
-		
-		return Message.Clan(text,player.name,--count);
-	}*/
-		
 	//Strict Pm
 	if(txt.indexOf('@@') === 0){ 
 		txt = txt.slice(2); 
@@ -64,7 +57,7 @@ Message.sendToServer = function(msg){
 
 Message.reply = function(){
 	if(Message.reply.HISTORY.length){
-		Message.setInputForPM(key,Message.reply.HISTORY[0].from);
+		Message.setInputForPM(null,Message.reply.HISTORY[0].from);
 	}
 	if(Message.reply.HISTORY.length > 20){
 		Message.reply.HISTORY = Message.reply.HISTORY.slice(0,10);
@@ -84,8 +77,10 @@ Message.add = function(key,msg){
 		msg = Message.Game(msg,Message.CLIENT);
 	Message.receive(msg);
 }
-Message.addPopup = function(key,text,time){
-	Dialog.open('questPopup',{text:text,time:time || 25*60});	
+Message.addPopup = function(key,text){
+	Message.receive(Message.QuestPopup(text));
 }
+
+
 
 })(); //{

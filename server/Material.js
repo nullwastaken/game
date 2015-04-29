@@ -67,15 +67,6 @@ Material.getRandom = function(lvl){
 	return random + '-' + lvl;
 }
 
-Material.getMaterialRelatedToSkill = function(skill,lvl){
-	lvl = Material.roundLevel(lvl);
-	if(skill === 'metalwork') return 'metal-' + lvl;
-	if(skill === 'woodwork') return 'wood-' + lvl;
-	if(skill === 'leatherwork') return 'bone-' + lvl;
-	
-	return Material.getRandom(lvl);	
-}
-
 Material.roundLevel = function(lvl){
 	lvl = Math.min(lvl,80);
 	return Math.round((lvl ||0)/20)*20;
@@ -91,41 +82,41 @@ Material.DROP_RATE = {
 };
 
 Material.init = function(){	//init requires cuz call ItemModel which require st00f
-	Material.create('metal','Bronze Metal','metal.metal','mining',0);
-	Material.create('metal','Iron Metal','metal.metal','mining',20);
-	Material.create('metal','Steel Metal','metal.metal','mining',40);
-	Material.create('metal','Gold Metal','metal.metal','mining',60);
-	Material.create('metal','Crystal Metal','metal.metal','mining',80);
+	Material.create('metal','Bronze Metal','metal-metal','mining',0);
+	Material.create('metal','Iron Metal','metal-metal','mining',20);
+	Material.create('metal','Steel Metal','metal-metal','mining',40);
+	Material.create('metal','Gold Metal','metal-metal','mining',60);
+	Material.create('metal','Crystal Metal','metal-metal','mining',80);
 
-	Material.create('wood','Red Wood','wood.wood','woodcutting',0);
-	Material.create('wood','Yellow Wood','wood.wood','woodcutting',20);
-	Material.create('wood','Blue Wood','wood.wood','woodcutting',40);
-	Material.create('wood','Grey Wood','wood.wood','woodcutting',60);
-	Material.create('wood','Dark Wood','wood.wood','woodcutting',80);
+	Material.create('wood','Red Wood','wood-wood','woodcutting',0);
+	Material.create('wood','Yellow Wood','wood-wood','woodcutting',20);
+	Material.create('wood','Blue Wood','wood-wood','woodcutting',40);
+	Material.create('wood','Grey Wood','wood-wood','woodcutting',60);
+	Material.create('wood','Dark Wood','wood-wood','woodcutting',80);
 
-	Material.create('bone','Squirrel Bone','bone.bone','hunting',0);
-	Material.create('bone','Rabbit Bone','bone.bone','hunting',20);
-	Material.create('bone','Fox Bone','bone.bone','hunting',40);
-	Material.create('bone','Wolf Bone','bone.bone','hunting',60);
-	Material.create('bone','Dragon Bone','bone.bone','hunting',80);
+	Material.create('bone','Squirrel Bone','bone-bone','hunting',0);
+	Material.create('bone','Rabbit Bone','bone-bone','hunting',20);
+	Material.create('bone','Fox Bone','bone-bone','hunting',40);
+	Material.create('bone','Wolf Bone','bone-bone','hunting',60);
+	Material.create('bone','Dragon Bone','bone-bone','hunting',80);
 
-	Material.create('ruby','Chipped Ruby','orb.ruby','',0);
-	Material.create('ruby','Flawed Ruby','orb.ruby','',20);
-	Material.create('ruby','Normal Ruby','orb.ruby','',40);
-	Material.create('ruby','Flawless Ruby','orb.ruby','',60);
-	Material.create('ruby','Perfect Ruby','orb.ruby','',80);
+	Material.create('ruby','Chipped Ruby','orb-ruby','',0);
+	Material.create('ruby','Flawed Ruby','orb-ruby','',20);
+	Material.create('ruby','Normal Ruby','orb-ruby','',40);
+	Material.create('ruby','Flawless Ruby','orb-ruby','',60);
+	Material.create('ruby','Perfect Ruby','orb-ruby','',80);
 
-	Material.create('sapphire','Chipped Sapphire','orb.sapphire','',0);
-	Material.create('sapphire','Flawed Sapphire','orb.sapphire','',20);
-	Material.create('sapphire','Normal Sapphire','orb.sapphire','',40);
-	Material.create('sapphire','Flawless Sapphire','orb.sapphire','',60);
-	Material.create('sapphire','Perfect Sapphire','orb.sapphire','',80);
+	Material.create('sapphire','Chipped Sapphire','orb-sapphire','',0);
+	Material.create('sapphire','Flawed Sapphire','orb-sapphire','',20);
+	Material.create('sapphire','Normal Sapphire','orb-sapphire','',40);
+	Material.create('sapphire','Flawless Sapphire','orb-sapphire','',60);
+	Material.create('sapphire','Perfect Sapphire','orb-sapphire','',80);
 
-	Material.create('topaz','Chipped Topaz','orb.topaz','',0);
-	Material.create('topaz','Flawed Topaz','orb.topaz','',20);
-	Material.create('topaz','Normal Topaz','orb.topaz','',40);
-	Material.create('topaz','Flawless Topaz','orb.topaz','',60);
-	Material.create('topaz','Perfect Topaz','orb.topaz','',80);
+	Material.create('topaz','Chipped Topaz','orb-topaz','',0);
+	Material.create('topaz','Flawed Topaz','orb-topaz','',20);
+	Material.create('topaz','Normal Topaz','orb-topaz','',40);
+	Material.create('topaz','Flawless Topaz','orb-topaz','',60);
+	Material.create('topaz','Perfect Topaz','orb-topaz','',80);
 }
 
 

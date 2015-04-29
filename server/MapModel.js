@@ -1,10 +1,11 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+/*jshint -W018*/
 "use strict";
-var Map = require2('Map');
+var Maps = require2('Maps'), Weather = require2('Weather');
 var astar = require('astar');
 
-var TEMP_ADDON = {};	//when trying to add addon to not-yet loaded map
-var TEMP_GRID = {};		//graphic:whoNeeds
+var INIT_ADDON = {};	//when trying to add addon to not-yet loaded map
+var INIT_GRID = {};		//graphic:whoNeeds
 
 var SIGN_IN_PACK = {};
 
@@ -19,6 +20,7 @@ MapModel.create = function(Q,mapId,map,addon){
 		tileset : 'v1.1',
 		grid:MapModel.Grid([[]]),
 		lvl:0,
+		screenEffect:map.screenEffect || '',
 		fall:null,
 		isTown:map.isTown,
 		width:0,
@@ -28,23 +30,24 @@ MapModel.create = function(Q,mapId,map,addon){
 	m.graphic = map.graphic || m.id;
 	DB[m.id] = m;
 	MapModel.MapAddon(m.id,Q,addon);	//MapAddon will add to m.addon
-	if(TEMP_ADDON[m.id])	//could be done at the end for all maps
-		for(var i in TEMP_ADDON[m.id]) 
-			DB[m.id].addon[i] = TEMP_ADDON[m.id][i];
+	if(INIT_ADDON[m.id])	//could be done at the end for all maps
+		for(var i in INIT_ADDON[m.id]) 
+			DB[m.id].addon[i] = INIT_ADDON[m.id][i];
 	if(!MapModel.isDuplicate(m)){	//map made for this quest
 		MapModel.setGrid(m,MapModel.Grid(map.grid));
-		for(var i in TEMP_GRID[m.graphic])	//give grid to those who needed
+		for(var i in INIT_GRID[m.graphic])	//give grid to those who needed
 			MapModel.setGrid(MapModel.get(i),m.grid);
 	} else {
 		var model = MapModel.get(m.graphic);
 		if(model) 
 			MapModel.setGrid(m,model.grid);	//model already loaded
 		else {
-			TEMP_GRID[m.graphic] = TEMP_GRID[m.graphic] || {};	//add in temp list
-			TEMP_GRID[m.graphic][m.id] = 1;
+			INIT_GRID[m.graphic] = INIT_GRID[m.graphic] || {};	//add in temp list
+			INIT_GRID[m.graphic][m.id] = 1;
 		}
 	}
-	
+	if(!Weather.SCREEN_EFFECT.$contains(m.screenEffect))
+		return ERROR(3,'invalid screenEffect',m.screenEffect);
 	SIGN_IN_PACK[m.id] = MapModel.compressClient(m);
 	
 	return m.id;
@@ -76,9 +79,9 @@ MapModel.Grid = function(rawgrid){
 	
 	var goodgrid = {
 		astar:new astar.Graph(astargrid),
-		player:JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','0').replaceAll('a','1')),
-		npc:JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','0').replaceAll('a','1').replaceAll('4','0')),
-		bullet:JSON.parse(strGrid.replaceAll('0','a').replaceAll('1','0').replaceAll('2','1').replaceAll('a','1')),	
+		player:JSON.parse(strGrid.$replaceAll('0','a').$replaceAll('1','0').$replaceAll('2','0').$replaceAll('a','1')),
+		npc:JSON.parse(strGrid.$replaceAll('0','a').$replaceAll('1','0').$replaceAll('2','0').$replaceAll('a','1').$replaceAll('4','0')),
+		bullet:JSON.parse(strGrid.$replaceAll('0','a').$replaceAll('1','0').$replaceAll('2','1').$replaceAll('a','1')),	
 	};
 	
 	
@@ -96,8 +99,10 @@ MapModel.MapAddon = exports.MapAddon = function(mapid,addonid,extra){	//addonid 
 		variable:{},
 	};
 	extra = extra || {};
-	for(var i in extra) 
+	for(var i in extra){
+		if(a[i] === undefined) ERROR(4,'prop not in constructor',i);
 		a[i] = extra[i];
+	}
 	for(var i in a.spot){
 		a.spot[i].map = mapid;	//will be overwrite for exact map. used for questMarker tho
 	}
@@ -105,8 +110,8 @@ MapModel.MapAddon = exports.MapAddon = function(mapid,addonid,extra){	//addonid 
 	if(DB[mapid])	
 		DB[mapid].addon[addonid] = a;
 	else {
-		TEMP_ADDON[mapid] = TEMP_ADDON[mapid] || {};
-		TEMP_ADDON[mapid][addonid] = a;
+		INIT_ADDON[mapid] = INIT_ADDON[mapid] || {};
+		INIT_ADDON[mapid][addonid] = a;
 	}
 	return a;
 }
@@ -126,9 +131,11 @@ MapModel.compressClient = function(map){
 }
 //MapModel.uncompressClient is in MapModel_client
 MapModel.get = function(name){
-	return DB[Map.getModel(name)] || null;
+	return DB[Maps.getModel(name)] || null;
 }
-
+MapModel.getFast = function(name){
+	return DB[name];
+}
 
 
 
@@ -164,7 +171,7 @@ MapModel.Path.Spot.raw = function(letter,wait,event,spdMod,timeLimit){
 
 MapModel.Grid.compress = function(grid){	//uncompress in MapModel_client
 	var oneD = grid.player.join('');
-	oneD = oneD.replaceAll('2','1').replaceAll('3','1').replaceAll('4','1');
+	oneD = oneD.$replaceAll('2','1').$replaceAll('3','1').$replaceAll('4','1');
 	return Tk.baseConverter.toAscii(oneD);	
 }
 

@@ -30,7 +30,7 @@ Main.dialogue.end = function(main){
 	Main.setFlag(main,'dialogue');
 }
 
-Main.dialogue.selectOption = function(main,option){
+Main.dialogue.selectOption = function(main,option,dontCallEvent){	//dontCallEvent for IntegrityTest
 	//if(main.questActive && !Party.isLeader(main.id))
 	//	return Message.addPopup(main.id,'Only the leader can choose dialogue options.');
 	
@@ -41,7 +41,7 @@ Main.dialogue.selectOption = function(main,option){
 		else Main.dialogue.end(main2);
 	});
 	
-	if(option.event)	//after end so can trigger another dialogue
+	if(dontCallEvent !== false && option.event)	//after end so can trigger another dialogue
 		option.event(main.id);
 }
 

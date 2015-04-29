@@ -1,0 +1,59 @@
+########Credits#########
+
+Game Engine: 
+	Samuel Magnan (Idk Whats Rc)
+
+Icons:
+	http://game-icons.net/ (Lorc, Delapouite & contributors) http://creativecommons.org/licenses/by/3.0/
+	
+Sprite:
+	Villagers and player: http://charas-project.net/charas2/index.php
+	Orcs: cingin from http://charas-project.net/resources.php
+	Robot/Inquisitor: echorev and bulletxt from https://rmgamematerial.wordpress.com/tag/rpg-maker-vx/
+	Various: http://lpc.opengameart.org/
+	Various: https://www.themanaworld.org/
+	shadowball: http://mohsin-kun.deviantart.com/art/Shadow-Ball-73303663
+	Chest: Lunchpoliceaao
+	
+Background: 
+	http://subtlepatterns.com
+		
+Software:
+    Tiled:  http://www.mapeditor.org/
+	Pngquant: http://pngquant.org/
+	ImageMagick: http://www.imagemagick.org/script/binary-releases.php
+	MP3 Quality Modifier: http://www.inspire-soft.net/software/mp3-quality-modifier
+	Nodejs: http://nodejs.org/download/
+	
+Songs:
+	Evil-Dog, Darknessbreaker, DJM4C, K-Pone, 3kliksphilip, MiguelVolkov, Getcheffy
+	Check /server/client/js/Song.js file for more details.
+	
+Sfx: 
+	http://www.soundjay.com/
+	http://browserquest.mozilla.org/
+	
+Tileset:
+	Editing: Jerome T.
+	http://www.pixeljoint.com/pixelart/45616.htm	Pandora'sSecret 
+
+Face:
+	Asset: http://foxrichards.deviantart.com/art/FaceMaker-52755515 by FoxRichards
+	Helper: Dabeastlybro, T3hpoundcake, Dafreaki
+	
+	
+Last Update: 2015-04-06
+
+
+
+
+
+
+
+
+
+
+
+
+
+

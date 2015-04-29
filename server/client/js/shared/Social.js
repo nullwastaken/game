@@ -1,7 +1,0 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-"use strict";
-(function(){ //}
-var Social = exports.Social = {};
-})(); //{
-
-

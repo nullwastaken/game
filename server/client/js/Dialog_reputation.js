@@ -25,6 +25,7 @@ Dialog.reputation = function (html){
 	html.append(conv.css({float:'right'}));
 	
 }
+
 Dialog.reputation.converterPreview = function(id,mouseout){
 	return function(){
 		GRID.html('');
@@ -82,7 +83,6 @@ Dialog.reputation.grid = function(extraConv){
 			lineHeight:iconSize/2 + 'px',
 		});
 	
-	var grid = Main.reputation.getGrid(main);
 	
 	//Draw Stat	
 	var gridBase = ReputationGrid.getConverted(main,extraConv).base;
@@ -101,6 +101,18 @@ Dialog.reputation.grid = function(extraConv){
 		}
 	}
 
+	
+	var canvasClick = function(i,j){
+		return function(){
+			Command.execute('win,reputation,add' ,[main.reputation.activeGrid,i,j]);
+		};
+	}
+	var canvasContextMenu = function(i,j){
+		return function(){
+			Command.execute('win,reputation,remove',[main.reputation.activeGrid,i,j]);
+		};
+	}	
+	var grid = Main.reputation.getGrid(main);
 	for(var i = 0 ; i < grid.length ; i++){
 		array.push([]);
 		for(var j = 0 ; j < grid[i].length ; j++){
@@ -124,16 +136,8 @@ Dialog.reputation.grid = function(extraConv){
 			ctx.fillRect(0,0,ic,ic);
 			
 			//Boost
-			canvas.click((function(i,j){
-				return function(){
-					Command.execute('win,reputation,add' ,[main.reputation.activeGrid,i,j]);
-				};
-			})(i,j));
-			canvas.bind('contextmenu',(function(i,j){
-				return function(){
-					Command.execute('win,reputation,remove',[main.reputation.activeGrid,i,j]);
-				};
-			})(i,j));
+			canvas.click(canvasClick(i,j));
+			canvas.bind('contextmenu',canvasContextMenu(i,j));
 			
 			canvas.hover(helper(base.stat),function(){});
 			
@@ -176,13 +180,14 @@ Dialog.reputation.grid = function(extraConv){
 		.prop('checked',true)
 		.change(helper(''));
 	el.append(showSameCheckbox);
-	el.append('Highlight Same Node');
+	el.append($('<span>')
+		.html('Highlight Same Node')
+		.click(function(){
+			showSameCheckbox.prop("checked", !showSameCheckbox.prop("checked"));
+		})
+	);
 	return el;
 }
-
-
-
-
 
 Dialog.reputation.converter = function(){
 	var div = $('<div>');
@@ -192,6 +197,16 @@ Dialog.reputation.converter = function(){
 	);
 	
 	var groupList = ReputationConverter.getGroup();
+	
+	var buttonClick = function(conv,isSelected){
+		return function(){
+			if(isSelected)
+				Command.execute('win,reputation,converterRemove',[main.reputation.activeGrid,conv.id]);
+			else
+				Command.execute('win,reputation,converterAdd',[main.reputation.activeGrid,conv.id]);
+		}
+	}
+	
 	for(var i in groupList){
 		var g = groupList[i];
 		var el = $('<div>');
@@ -201,14 +216,7 @@ Dialog.reputation.converter = function(){
 			var isSelected = Main.reputation.get(main).converter.$contains(conv.id);
 			var button = conv.getButtonAppend()
 				.attr('title',conv.description)
-				.click((function(conv,isSelected){
-					return function(){
-						if(isSelected)
-							Command.execute('win,reputation,converterRemove',[main.reputation.activeGrid,conv.id]);
-						else
-							Command.execute('win,reputation,converterAdd',[main.reputation.activeGrid,conv.id]);
-					}
-				})(conv,isSelected))
+				.click(buttonClick(conv,isSelected))
 				
 			if(isSelected)
 				button.css({border:'4px solid red'});

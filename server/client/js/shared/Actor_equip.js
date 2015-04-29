@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Message = require2('Message'), Equip = require2('Equip'), Combat = require2('Combat'), Main = require2('Main');
+var Message = require2('Message'), Achievement = require2('Achievement'), Equip = require2('Equip'), Combat = require2('Combat'), Main = require2('Main');
 var Actor = require3('Actor');
 
 Actor.Equip = function(normal,quest){
@@ -86,6 +86,7 @@ Actor.changeEquip = function(act,eid){
 	Actor.getEquip(act).piece[equip.piece] = equip.id;
 	Main.removeItem(Actor.getMain(act),equip.id);
 	Actor.equip.update(act);
+	Achievement.onEquipChange(Actor.getMain(act),eid);
 }
 
 Actor.removeEquip = function(act,piece){

@@ -1,6 +1,8 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 //kinda linked with Input but client only
-if(typeof exports === 'undefined') exports = {};
+//linked with player for Tk.abs to rela
+if(typeof exports === 'undefined') 
+	exports = {};
 
 INFO = function(){ //so doesnt show in search all
 	var cons = SERVER ? global['cons' + 'ole'] : window['cons' + 'ole'];
@@ -13,25 +15,58 @@ toDateString 		Tue Apr 08 2014
 toGMTString 		Tue, 08 Apr 2014 23:05:05 GMT
 toISOString 		2014-04-08T23:05:05.249Z
 toJSON 				2014-04-08T23:05:05.249Z
-toLocaleDateString 	4/8/2014
-toLocaleTimeString 	7:05:05 PM
-toLocaleString 		4/8/2014 7:05:05 PM
+toLocaleDateString 	4/8/2014		DOESNT WORK SERVER
+toLocaleTimeString 	7:05:05 PM		DOESNT WORK SERVER	
+toLocaleString 		4/8/2014 7:05:05 PM		DOESNT WORK SERVER
 toString 			Tue Apr 08 2014 19:05:05 GMT-0400 (Eastern Daylight Time)
 toTimeString 		19:05:05 GMT-0400 (Eastern Daylight Time)
 toUTCString 		Tue, 08 Apr 2014 23:05:05 GMT
 valueOf 			1396998305249
 
+new Date((new Date('2015/04/24')).valueOf() + 1000*60*60*24*90)
 */
 
-Date.prototype.toLocaleDateString = function(){	//cuz nodejs sucks
-	return this.getMonth()+1 + '/' + this.getDate() + '/' + this.getFullYear();
-}
 Date.nowDate = function(num){
-	return new Date(num || Date.now()).toLocaleDateString();
+	var date = new Date(num || Date.now());
+	return date.getMonth()+1 + '/' + date.getDate() + '/' + date.getFullYear();
+}
+Date.niceFormat = function(num){
+	var date = new Date(num || Date.now());
+	return date.getMonth()+1 + '/' + date.getDate() + " " + (date.toTimeString()).slice(0,5);
 }
 
 //Math
-Tk = exports.Tk = {};	//TEMP global
+Tk = exports.Tk = {};
+
+Tk.getWidth = function(){
+	return CST.WIDTH;
+}
+Tk.getHeight = function(){
+	return CST.HEIGHT;
+}
+Tk.absToRel = function(pt){
+	return {
+		x:Tk.absToRel.x(pt.x),
+		y:Tk.absToRel.y(pt.y),
+	}
+}
+Tk.absToRel.x = function(x){
+	return x - player.x + CST.WIDTH2;
+}
+Tk.absToRel.y = function(y){
+	return y - player.y + CST.HEIGHT2;
+}
+
+Tk.crossDomainAjax = function(url,func){
+	$.ajax( {
+		url: url,
+		dataType: 'jsonp',
+		type: 'GET',
+		crossDomain: true,
+		success: func,
+	});
+}
+
 //var Tk = exports.Tk = {};
 Tk.sin = function (number){
 	return (Math.sin(number/180*Math.PI))
@@ -113,7 +148,6 @@ Math.randomId.getChars = function(num, res) {
   return Math.randomId.getChars(remaining, chars);
 };
 
-
 Tk.getBrowserVersion = function(){
     var ua= navigator.userAgent, tem, 
     M= ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*([\d\.]+)/i) || [];
@@ -126,7 +160,6 @@ Tk.getBrowserVersion = function(){
     return M.join(' ');
 };
 
-
 Math.roundRandom = function(num){
 	if(num%1 > Math.random()) num++;
 	return Math.floor(num);
@@ -138,15 +171,6 @@ Math.randomML = function(num){
 Math.probability = function(base,mod){
 	return 1 - Math.pow(1-base,mod);
 }
-	
-Object.defineProperty(Number.prototype, "mm", {
-    enumerable: false,
-    value: function(min,max) {
-		if(min === undefined){ return this; }
-		if(max === undefined){ return Math.max(min,this); }
-		return Math.min(max,Math.max(min,this));
-	}
-});	
 
 Tk.frameToChrono = function(num){
 	return Tk.msToChrono(num*40);
@@ -168,13 +192,6 @@ Tk.msToChrono = function(time){
 	if(+min) return min + ':' + sec + '.' + milli;	
 	return sec + '.' + milli;
 }
-
-Object.defineProperty(Number.prototype, "r", {
-    enumerable: false,
-    value: function(num) {
-		return Tk.round(this,num || 0);
-	}
-});	
 
 Tk.argumentsToArray = function(arg){
 	return [].slice.call(arg);
@@ -198,6 +215,12 @@ Tk.deepClone = function(obj){
     return temp;
 }
 
+Tk.smoothCanvas = function(canvas){
+	var ctx = $(canvas)[0].getContext('2d');
+	ctx.mozImageSmoothingEnabled = false;
+	ctx.msImageSmoothingEnabled = false;
+	ctx.imageSmoothingEnabled = false;
+}	
 
 Tk.deepClone.partial = function(obj,toExclude){
 	if(obj === null || typeof(obj) !== 'object')
@@ -286,14 +309,12 @@ Tk.formatNum = function(num){
 	 return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-
-
 //Misc
 escape.quote = function(str){
 	if(typeof str !== 'string'){ return '' }
 	
-	str.replaceAll('"','\"');
-	str.replaceAll("'","\'");
+	str.$replaceAll('"','\"');
+	str.$replaceAll("'","\'");
 	return str;
 }
 
@@ -362,11 +383,63 @@ Tk.arrayToTable = function(array,top,left,CSSTableGenerator,spacing){
 	return table;
 }
 
+Tk.arrayToTable2 = function(array){
+	var table = $('<table>');
+	
+	var thead = $('<thead>');
+	var tbody = $('<tbody>');
+	table.append(thead,tbody);
+	
+	for(var i=0; i<array.length; i++){
+		var row = $('<tr>');		
+		for(var j=0; j<array[i].length; j++){
+			var cell = i === 0 ? $('<th>') : $('<td>');
+			cell.append(array[i][j]);	//can be text or html
+			row.append(cell);
+		}
+		if(i === 0)
+			thead.append(row);
+		else
+			tbody.append(row);
+	}
+	return table;
+}
+
+
 Tk.arrayToTable.access = function(what,row,column){
 	return $(what.children().children()[row]).children()[column].innerHTML;
 }
 
+Tk.abbreviateNumber = function(num){
+	if(num > 10000000)
+		num = Tk.round(num/1000000,0) + 'M';
+	else if(num > 10000)
+		num = Tk.round(num/1000,0) + 'K';
+	return '' + num;
+}
 
+Tk.flashDOM = function(html,time){
+	var bool = true;
+	var interval = setInterval(function() {
+		if(bool)
+			html.css({border:'2px solid white'});
+		else html.css({border:'2px solid black'});
+		bool = !bool;
+	},time || 2000);
+	
+	return function(){
+		clearInterval(interval);
+		html.css({border:'2px solid black'});
+	};
+}
+
+Tk.centerDOM = function(html){
+	if(typeof html === 'string')
+		html = $('<span>').html(html);
+	return $('<div>')
+		.css({width:'100%',textAlign:'center'})
+		.append(html);
+}
 
 Tk.arrayfy = function(a){
 	return (a instanceof Array) ? a : [a];
@@ -389,6 +462,9 @@ Tk.rotatePt = function(pt,angle,anchor){
 	}	
 }
 
+
+
+
 //Prototype
 Object.defineProperty(Array.prototype, "$random", {	// !name: return random element || name:  [{name:10},{name:1}] and return obj
     enumerable: false,
@@ -406,11 +482,14 @@ Object.defineProperty(Array.prototype, "$random", {	// !name: return random elem
 Object.defineProperty(Object.prototype, "$random", {	//return attribute, must be {attribute:NUMBER}, chance of being picked depends on NUMBER
     enumerable: false,
     value: function(name){
-		if(!Object.keys(this).length) return null;
+		if(!Object.keys(this).length) 
+			return null;
 		
 		var ratioed = {}; 
-		if(name) for(var i in this)	ratioed[i] = this[i][name]; 
-		else var ratioed = this;
+		if(name) 
+			for(var i in this)	
+				ratioed[i] = this[i][name]; 
+		else ratioed = this;
 		
 		for(var i in ratioed)
 			if(typeof ratioed[i] !== 'number'){
@@ -419,7 +498,8 @@ Object.defineProperty(Object.prototype, "$random", {	//return attribute, must be
 		ratioed = Tk.convertRatio(ratioed);		
 		var a = Math.random();
 		for(var i in ratioed){
-			if(ratioed[i] >= a) return i;
+			if(ratioed[i] >= a)
+				return i;
 			a -= ratioed[i];
 		}
 		
@@ -446,7 +526,8 @@ Object.defineProperty(Object.prototype, "$count", {
 Object.defineProperty(Object.prototype, "$isEmpty", {
     enumerable: false,
     value: function(){
-		for(var i in this)
+		var i;
+		for(i in this)
 			return false;
 		return true;
 	}
@@ -521,55 +602,48 @@ Object.defineProperty(Array.prototype, "$removeAt", {
 	}
 });
 
-Object.defineProperty(Object.prototype, "$getMax", {
+Object.defineProperty(Number.prototype, "r", {
     enumerable: false,
-    value: function() {
-		var attr = Object.keys(this)[0];
-		var max = this[attr];	//-.-
-		
-		for(var i in this){
-			if(this[i] >= max){
-				max = this[i];
-				attr = i;
-			}				
-		}
-		return attr;
+    value: function(num,count) {
+		return Tk.round(this,num || 0,count);
 	}
-});
-
-Object.defineProperty(Object.prototype, "$getMin", {
+});	
+	
+Object.defineProperty(Number.prototype, "mm", {
     enumerable: false,
-    value: function() {
-		var attr = Object.keys(this)[0];
-		var min = this[attr];	//-.-
-		
-		for(var i in this){
-			if(this[i] <= min){
-				min = this[i];
-				attr = i;
-			}				
-		}
-		return attr;
+    value: function(min,max) {
+		if(min === undefined){ return this; }
+		if(max === undefined){ return Math.max(min,this); }
+		return Math.min(max,Math.max(min,this));
 	}
-});
+});	
 
-
-Tk.baseConverter = {	//https://gist.github.com/eyecatchup/6742657
-  toAscii: function(bin) {
-    return bin.replace(/\s*[01]{8}\s*/g, function(bin) {
-      return String.fromCharCode(parseInt(bin, 2))
-    })
-  },
-  toBinary: function(str, spaceSeparatedOctets) {
-    return str.replace(/[\s\S]/g, function(str) {
-      str = Tk.baseConverter.zeroPad(str.charCodeAt().toString(2));
-      return str;	//OLD: return !1 == spaceSeparatedOctets ? str : str + " "
-    })
-  },
-  zeroPad: function(num) {
-    return "00000000".slice(String(num).length) + num
-  }
+Tk.baseConverter = {};	//http://gist.github.com/eyecatchup/6742657
+Tk.baseConverter.toAscii = function(bin) {
+	return bin.replace(/\s*[01]{8}\s*/g, function(bin) {
+		return String.fromCharCode(parseInt(bin, 2))
+	});
 };
+Tk.baseConverter.toBinary = function(str, spaceSeparatedOctets) {
+	return str.replace(/[\s\S]/g, function(str) {
+		str = Tk.baseConverter.zeroPad(str.charCodeAt().toString(2));
+		return str;	//OLD: return !1 == spaceSeparatedOctets ? str : str + " "
+	})
+};
+Tk.baseConverter.zeroPad = function(num) {
+	return "00000000".slice(String(num).length) + num
+};
+
+Tk.removeComment = function(str){
+	return str.replace(/(?:\/\*(?:[\s\S]*?)\*\/)|(?:([\s;])+\/\/(?:.*)$)/gm, '$1');
+}
+
+Tk.getGlyph = function(id,jqueryObj){
+	if(jqueryObj)
+		return $('<span>').addClass("glyphicon glyphicon-" + id);
+	else
+		return '<span class="glyphicon glyphicon-' + id + '"></span>';
+}
 
 
 //String
@@ -668,10 +742,11 @@ Tk.keyFullName = function(str){
 }
 
 Tk.replaceBracketPattern = function(data,func){	//only works like [[sdadsa]]
+	var func = function(match, p1, p2, p3) {
+		return p1 + func(p2) + p3;
+	};
 	for(var i = 0; i < 100; i++){
-		var data2 = data.replace(/(.*?)\[\[(.*?)\]\](.*)/, function(match, p1, p2, p3) {
-			return p1 + func(p2) + p3;
-		});
+		var data2 = data.replace(/(.*?)\[\[(.*?)\]\](.*)/,func);
 		if(data2 === data) break;
 		data = data2;
 	}
@@ -698,16 +773,17 @@ Tk.chronoToTime = function(str,func){	//1:04:10.10
 	return time;
 }
 
-String.prototype.replaceAll = function (find, replace) {
+String.prototype.$replaceAll = function (find, replace) {
     return this.replace(new RegExp(find, 'g'), replace);
 };
 
-String.prototype.capitalize = function() {
+String.prototype.$capitalize = function() {
 	if(!this.$contains(' '))   
 		return this.charAt(0).toUpperCase() + this.slice(1);
 	
 	var array = this.split(' ');
-	for(var i in array) array[i] = array[i].capitalize();
+	for(var i in array) 
+		array[i] = array[i].$capitalize();
 	return array.join(' ');
 }
 
@@ -725,9 +801,53 @@ String.prototype.q = function () {
     return '&quot;' + this + '&quot;';
 };
 
-
-
-
+Tk.rgbaToObject = function(color){	//http://snipplr.com/view.php?codeview&id=60570
+	var values = {red:null,green:null,blue:null,alpha:null};
+	if( typeof color == 'string' ){
+		/* hex */
+		if( color.indexOf('#') === 0 ){
+			color = color.substr(1)
+			if( color.length == 3 )
+				values = {
+					red:   parseInt( color[0]+color[0], 16 ),
+					green: parseInt( color[1]+color[1], 16 ),
+					blue:  parseInt( color[2]+color[2], 16 ),
+					alpha: 1
+				}
+			else
+				values = {
+					red:   parseInt( color.substr(0,2), 16 ),
+					green: parseInt( color.substr(2,2), 16 ),
+					blue:  parseInt( color.substr(4,2), 16 ),
+					alpha: 1
+				}
+		/* rgb */
+		}else if( color.indexOf('rgb(') === 0 ){
+			var pars = color.indexOf(',');
+			values = {
+				red:   parseInt(color.substr(4,pars)),
+				green: parseInt(color.substr(pars+1,color.indexOf(',',pars))),
+				blue:  parseInt(color.substr(color.indexOf(',',pars+1)+1,color.indexOf(')'))),
+				alpha: 1
+			}
+		/* rgba */
+		}else if( color.indexOf('rgba(') === 0 ){
+			var pars = color.indexOf(','),
+				repars = color.indexOf(',',pars+1);
+			values = {
+				red:   parseInt(color.substr(5,pars)),
+				green: parseInt(color.substr(pars+1,repars)),
+				blue:  parseInt(color.substr(color.indexOf(',',pars+1)+1,color.indexOf(',',repars))),
+				alpha: parseFloat(color.substr(color.indexOf(',',repars+1)+1,color.indexOf(')')))
+			}
+		/* verbous */
+		}
+	}
+	return values
+}
+Tk.rgbaToString = function(rgba){
+	return 'rgba(' + Math.floor(rgba.red) + ',' + Math.floor(rgba.green) + ',' + Math.floor(rgba.blue) + ',' + rgba.alpha + ')';
+}
 
 if(typeof $ !== 'undefined' && typeof CanvasRenderingContext2D !== 'undefined'){ //}
 	$.fn.selectRange = function(start, end) {
@@ -787,17 +907,6 @@ if(typeof $ !== 'undefined' && typeof CanvasRenderingContext2D !== 'undefined'){
 
 
 } //{
-
-Audio = typeof Audio !== 'undefined' ? Audio : function(){	//quick fix QUICKFIX for safari... and opera
-	return {
-		src:'',
-		play:function(){},
-		currentTime:0,
-		ended:false,	
-		fake:true,
-		addEventListener:function(){},
-	}
-};
 
 
 

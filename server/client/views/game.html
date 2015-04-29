@@ -1,0 +1,190 @@
+<% include partial/header.html %>
+
+<link rel="stylesheet" href="/css/game.css"/>
+<link rel="stylesheet" href="/css/signin-bootstrap.css"/>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script src="/js/shared/BISON.js"></script>
+<script src="/js/main.js"></script>
+<script src="/js/Socket_client.js"></script>
+<script src="/js/SpriteFilter.js"></script>
+<script src="/js/Sign_client.js"></script>
+
+<script src="/js/Game.js"></script>
+<script src="/js/Account.js"></script>
+
+<script src="/js/Dialog.js"></script>
+
+<script src="/js/shared/CST.js"></script>
+<script src="/js/shared/ERROR.js"></script>
+<script src="/js/shared/Tk.js"></script>
+<script src="/js/shared/Stat.js"></script>
+
+<script src="/js/shared/Combat_shared.js"></script>
+<script src="/js/ClientPrediction.js"></script>
+
+<script src="/js/Draw.js"></script>
+
+<script src="/js/Img.js"></script>
+
+<script src="/js/Sfx.js"></script>
+<script src="/js/Song.js"></script>
+<script src="/js/Input_client.js"></script>
+<script src="/js/Receive.js"></script>
+
+<script src="/js/shared/Actor.js"></script>
+<script src="/js/shared/ActorModel.js"></script>
+<script src="/js/shared/Actor_combat.js"></script>
+<script src="/js/shared/Actor_move.js"></script>
+<script src="/js/shared/Actor_boost.js"></script>
+<script src="/js/shared/Actor_status.js"></script>
+<script src="/js/shared/Actor_interaction.js"></script>
+<script src="/js/shared/Actor_questMarker.js"></script>
+<script src="/js/shared/Actor_death.js"></script>
+<script src="/js/shared/Actor_ability.js"></script>
+<script src="/js/shared/Actor_equip.js"></script>
+<script src="/js/shared/Actor_loop.js"></script>
+<script src="/js/shared/Actor_ai.js"></script>
+<script src="/js/shared/Actor_change.js"></script>
+<script src="/js/shared/Actor_teleport.js"></script>
+<script src="/js/shared/Actor_skill.js"></script>
+<script src="/js/shared/Actor_draw.js"></script>
+
+<script src="/js/shared/Attack.js"></script>
+<script src="/js/shared/AttackModel.js"></script>
+<script src="/js/shared/Bullet.js"></script>
+<script src="/js/shared/Strike.js"></script>
+<script src="/js/shared/Drop.js"></script>
+<script src="/js/shared/LightingEffect.js"></script>
+
+<script src="/js/shared/ActiveList.js"></script>
+
+<script src="/js/shared/Boost.js"></script>
+<script src="/js/shared/Button.js"></script>
+<script src="/js/shared/OptionList.js"></script>
+<script src="/js/shared/ItemList.js"></script>
+<script src="/js/shared/ItemModel.js"></script>
+
+<script src="/js/Performance_client.js"></script>
+<script src="/js/Dialog_reputation.js"></script>
+<script src="/js/Dialog_itemList.js"></script>
+<script src="/js/Dialog_stat.js"></script>
+<script src="/js/Dialog_ability.js"></script>
+<script src="/js/Dialog_binding.js"></script>
+<script src="/js/Dialog_highscore.js"></script>
+<script src="/js/Dialog_quest.js"></script>
+<script src="/js/Dialog_questList.js"></script>
+<script src="/js/Dialog_friend.js"></script>
+<script src="/js/Dialog_equip.js"></script>
+<script src="/js/Dialog_setting.js"></script>
+<script src="/js/Dialog_misc.js"></script>
+<script src="/js/Dialog_bottomRight.js"></script>
+<script src="/js/Dialog_bottomLeft.js"></script>
+<script src="/js/Dialog_topLeft.js"></script>
+<script src="/js/Dialog_topRight.js"></script>
+<script src="/js/Dialog_contribution.js"></script>
+<script src="/js/Dialog_achievement.js"></script>
+
+<script src="/js/shared/Main.js"></script>
+<script src="/js/shared/Main_loop.js"></script>
+<script src="/js/shared/Main_chrono.js"></script>
+<script src="/js/shared/Main_itemlist.js"></script>
+<script src="/js/shared/Main_social.js"></script>
+<script src="/js/shared/Main_reputation.js"></script>
+<script src="/js/shared/Main_change.js"></script>
+<script src="/js/shared/Main_quest.js"></script>
+<script src="/js/shared/Main_quest_status.js"></script>
+<script src="/js/shared/Main_temp.js"></script>
+<script src="/js/shared/Main_question.js"></script>	
+<script src="/js/shared/Main_party.js"></script>
+<script src="/js/shared/Main_contribution.js"></script>
+<script src="/js/shared/Main_achievement.js"></script>
+<script src="/js/shared/Main_screenEffect.js"></script>
+<script src="/js/shared/ClientError.js"></script>
+<script src="/js/shared/Achievement.js"></script>
+
+<script src="/js/shared/Message.js"></script>
+<script src="/js/Message_client.js"></script>
+<script src="/js/Message_receive.js"></script>
+
+<script src="/js/Anim_client.js"></script>
+<script src="/js/shared/AnimModel.js"></script>
+<script src="/js/shared/Collision.js"></script>
+<script src="/js/shared/Sprite.js"></script>
+<script src="/js/shared/SpriteModel.js"></script>
+<script src="/js/shared/IconModel.js"></script>
+
+<script src="/js/shared/Command.js"></script>
+<script src="/js/Pref.js"></script>
+<script src="/js/shared/ReputationGrid.js"></script>
+<script src="/js/shared/ReputationConverter.js"></script>
+
+<script src="/js/MapModel_client.js"></script>
+<script src="/js/shared/QueryDb.js"></script>
+
+
+<div id="startDiv" class="container">
+	<form id="lg-signInForm" class="form-signin">
+		<h2 class="form-signin-heading">Please sign in</h2>
+		<label for="lg-signInUsername" class="sr-only">Username</label>
+		<input type="text" id="lg-signInUsername" class="form-control" placeholder="Username" autofocus="">
+		<label for="lg-signInPassword" class="sr-only">Password</label>
+		<input type="password" id="lg-signInPassword" class="form-control" placeholder="Password">
+		<br>
+		<button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+		
+		<p class="form-signin" style="display: block;cursor:pointer;">
+			<a onclick="$('#lg-signInForm').hide();$('#lg-signUpForm').show();">Create an account</a><br>
+			<a style="position:relative;top:5px;" onclick="exports.Dialog.open('account');">Forgot your password?</a>
+		</p>
+		
+	</form>
+	
+	<form id="lg-signUpForm" class="form-signin">
+		<h2 class="form-signin-heading">Account Creation</h2>
+		
+		<label for="lg-signUpUsername" class="sr-only">Username</label>
+		<input type="text" id="lg-signUpUsername" class="form-control" placeholder="Username" autofocus="">
+		
+		<label for="lg-signUpPassword" class="sr-only">Password</label>
+		<input type="password" id="lg-signUpPassword" class="form-control" placeholder="Password" >
+		
+		<label for="lg-signUpPasswordConfirm" class="sr-only">Confirm</label>
+		<input type="password" id="lg-signUpPasswordConfirm" class="form-control" placeholder="Confirm Password">
+		
+		<label for="lg-signUpEmail" class="sr-only">Email</label>
+		<input type="email" id="lg-signUpEmail" class="form-control" placeholder="Email">
+		
+		<label for="lg-signUpGeoLocation" class="sr-only">Location:</label>
+		<select id="lg-signUpGeoLocation" class="form-control">
+			<option value='' disabled selected style='display:none;'>Location:</option>
+			<option value="EastCoast">North America (East)</option>
+			<option value="WestCoast">North America (West)</option>
+			<option value="SouthAmerica">South America</option>
+			<option value="Europe">Europe</option>
+			<option value="Asia">Asia</option>
+			<option value="Africa">Africa</option>
+			<option value="Australia">Australia</option>
+		</select>
+		<span class="glyphicon glyphicon-question-sign" title="Location only used for latency statistics. You will still be able to play with anyone."></span>
+		<br>
+		<button class="btn btn-lg btn-primary btn-block" type="submit">Sign up</button>
+		<a class="form-signin" style="display: block;cursor:pointer;" onclick="$('#lg-signInForm').show();$('#lg-signUpForm').hide();">Have an account?</a>
+	</form>
+	<div class="form-signin" <%- serverDown ? "" : "hidden" %> >
+		Server Status: <span class="shadow" style="color:red;">Down</span>
+	</div>	
+	<div id="lg-message" class="form-signin"></div>
+</div>
+
+<div id="mainDiv" style="display:none; border:2px solid black; top:0px; width: 100%;  height:100%; overflow-x:hidden; margin: 0px auto;">
+	<div id="gameDiv" style="position:absolute; top:0px; width:100%; height:100%; "></div>
+	
+	<div id="gameBottom" style="position:absolute; white-space:normal; width:100%; font:30px Kelly Slab; color:white;">
+		<div id="playerOnline"></div>
+		<!--<div id="infoDay"></div>-->
+	</div>
+</div>
+		
+<% include partial/footer.html %>

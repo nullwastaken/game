@@ -13,11 +13,11 @@
 	-moz-border-radius:6px;
 	-webkit-border-radius:6px;
 	border-radius:6px;
-	border:1px solid #dcdcdc;
-	display:inline-block;
+	border:1px solid #111111;
+	/*display:inline-block;*/
 	cursor:pointer;
 	color:#666666;
-	font-family:arial;
+	font-family:Kelly Slab;
 	font-size:18px;
 	font-weight:bold;
 	padding:6px 24px;
@@ -43,9 +43,6 @@
 	font-size:0.8em;
 }
 
-
-
-
 .myButtonGreen {
 	-moz-box-shadow:inset 0px 1px 0px 0px #a4e271;
 	-webkit-box-shadow:inset 0px 1px 0px 0px #a4e271;
@@ -66,7 +63,7 @@
 	display:inline-block;
 	cursor:pointer;
 	color:#ffffff;
-	font-family:arial;
+	font-family:Kelly Slab;
 	font-size:15px;
 	font-weight:bold;
 	padding:6px 24px;
@@ -88,7 +85,6 @@
 	top:1px;
 }
 
-
 .myButtonRed {
 	-moz-box-shadow:inset 0px 1px 0px 0px #f5978e;
 	-webkit-box-shadow:inset 0px 1px 0px 0px #f5978e;
@@ -109,7 +105,7 @@
 	display:inline-block;
 	cursor:pointer;
 	color:#ffffff;
-	font-family:arial;
+	font-family:Kelly Slab;
 	font-size:15px;
 	font-weight:bold;
 	padding:6px 24px;

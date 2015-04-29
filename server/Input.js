@@ -1,17 +1,14 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+/*jshint -W018*/
 "use strict";
-var Actor = require2('Actor'), Collision = require2('Collision');
+var Actor = require2('Actor');
 var Input = exports.Input = {};
 
 //mouse in Button.handClickServerSide
 Input.key = function(socket,d){
 	socket.timer = 0;
 	var act = Actor.get(socket.key);
-	
-	if(act.usingClientPrediction){
-				
-	}
-	
+		
 	if(act.useUpdateInput) return;
 	if(d.i){
 		//d.i format: right,down,left,up,ability0,ability1...
@@ -31,10 +28,10 @@ Input.key = function(socket,d){
 	}
 	
 	if(d.m){
-		act.mouseX = Math.min(Math.max(d.m[0],0),CST.WIDTH);
-		act.mouseY = Math.min(Math.max(d.m[1],0),CST.HEIGHT);
+		act.mouseX = Math.min(Math.max(d.m[0],-CST.WIDTH),CST.WIDTH);
+		act.mouseY = Math.min(Math.max(d.m[1],-CST.HEIGHT),CST.HEIGHT);
 	}
-	act.angle = Tk.atan2(act.mouseY - CST.HEIGHT/2,act.mouseX - CST.WIDTH/2);	
+	act.angle = Tk.atan2(act.mouseY,act.mouseX);	
 }
 
 var callback = function(key){

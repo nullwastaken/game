@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Actor = require4('Actor'), Anim = require4('Anim'), ActiveList = require4('ActiveList'), Main = require4('Main'), Game = require4('Game'), Socket = require4('Socket'), Strike = require4('Strike'), Bullet = require4('Bullet'), Drop = require4('Drop'), Sfx = require4('Sfx');
+var Actor = require4('Actor'), Anim = require4('Anim'), ActiveList = require4('ActiveList'), Main = require4('Main'), Game = require4('Game'), Socket = require4('Socket'), Strike = require4('Strike'), Bullet = require4('Bullet'), Drop = require4('Drop');
 
 var Receive = exports.Receive = {};
 
@@ -133,15 +133,13 @@ Receive.initEntity.bullet = function(obj,id){
 
 Receive.initEntity.drop = function(obj,id){
 	var b = Drop.undoInitPack(obj,id);
-	if(b.color === 'yellow')
-		Sfx.play('explosion');
 	Drop.addToList(b);	
 	ActiveList.addToList(b);
 }
 
 Receive.freeze = function(){
 	Receive.freeze.ACTIVE = true;
-	Main.screenEffect.add(main,Main.ScreenEffect.fadeout('mapTransition',25));
+	Main.addScreenEffect(main,Main.ScreenEffect.fadeout('mapTransition',25));
 	setTimeout(function(){
 		Receive.unfreeze();
 	},500);

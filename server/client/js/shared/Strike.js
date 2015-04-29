@@ -60,9 +60,8 @@ Strike.drawAll = function(ctx){	//unused cuz no longer send strike info to clien
 		var s = LIST[i];
 		var p = s.point;
 		
-		var x = CST.WIDTH2 - player.x;
-		var y = CST.HEIGHT2 - player.y;
-		
+		var x = Tk.absToRel.x(0);
+		var y = Tk.absToRel.y(0);
 		
 		ctx.globalAlpha = Math.min(0.5,1/Math.abs(s.delay));
 		
@@ -75,7 +74,8 @@ Strike.drawAll = function(ctx){	//unused cuz no longer send strike info to clien
 		ctx.closePath();
 		ctx.fill();
 		
-		if(--s.delay < -4) ActiveList.removeAny(s);
+		if(--s.delay < -4) 
+			ActiveList.removeAny(s);
 	}
 	ctx.fillStyle = 'black';
 	ctx.globalAlpha = 1;	

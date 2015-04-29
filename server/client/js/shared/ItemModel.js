@@ -2,7 +2,7 @@
 "use strict";
 (function(){ //}
 
-var OptionList = require2('OptionList'), ItemList = require2('ItemList'), Message = require2('Message'), Main = require2('Main');
+var OptionList = require2('OptionList'), IconModel = require2('IconModel'), ItemList = require2('ItemList'), Message = require2('Message'), Main = require2('Main');
 
 var ItemModel = exports.ItemModel = {};
 ItemModel.create = function(quest,id,name,icon,option,description,extra){	//implements OptionList
@@ -11,24 +11,32 @@ ItemModel.create = function(quest,id,name,icon,option,description,extra){	//impl
 	var item = {
 		id:id || '',
 		name:name || 'buggedItem',
-		icon:icon || 'system.square',
+		icon:icon || 'system-square',
 		description:description || name || '',
 		trade:true, 
 		drop:true,
 		destroy:false,
+		adminOnly:false,
 		bank:true,
 		option:option ||  [],
 		type:'item',	//equip or ability
 		quest:quest || '',
 	};
 	extra = extra || {};
-	for(var i in extra) item[i] = extra[i];
+	for(var i in extra){
+		if(item[i] === undefined) 
+			ERROR(4,'prop not in constructor',i);
+		item[i] = extra[i];
+	}
 	
 	if(item.drop && (!item.option[item.option.length-1] || item.option[item.option.length-1].name !== 'Drop'))	//BAD
 		item.option.push(ItemModel.Option(Main.dropInv,'Drop',null,[OptionList.MAIN,item.id]));
 	if(item.destroy && (!item.option[item.option.length-1] || item.option[item.option.length-1].name !== 'Destroy')) 	//BAD
 		item.option.push(ItemModel.Option(Main.destroyInv,'Destroy',null,[OptionList.MAIN,item.id]));
 	DB[item.id] = item;
+	
+	IconModel.testIntegrity(item.icon);
+	
 	
 	return item;
 }
@@ -51,16 +59,8 @@ ItemModel.getId = function(id,noError){
 	return;
 }
 
-ItemModel.use = function(item,key,opPos,notDrop){
-	var option = item.option[opPos];
-	if(!option || !option.func) return;
-	
-	if(notDrop && (option.name === 'Drop' || option.name === 'Destroy')) return;
-	OptionList.executeOption(Main.get(key),option);
-}
-
-ItemModel.displayInChat = function(item,key){	//client
-	Message.add(key,Message.Input('[[' + item.id + ']]',true));
+ItemModel.displayInChat = function(item){	//client
+	Message.add(null,Message.Input('[[' + item.id + ']]',true));
 }
 
 ItemModel.compressClient = function(item){

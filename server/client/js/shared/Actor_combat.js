@@ -37,6 +37,16 @@ Actor.changeResource = function(act,heal){
 	Actor.resource.add(act,heal.hp,heal.mana);
 }
 
+Actor.getMasteryValue = function(act,what,element,useMod){
+	if(!useMod)
+		return act.mastery[what][element].value;
+	return act.mastery[what][element].value * act.mastery[what][element].mod;		
+}
+Actor.turnImmune = function(act,element){
+	act.mastery.def[element].value = CST.bigInt;
+}
+	
+				
 
 Actor.resource = {};
 Actor.resource.loop = function(act){
@@ -59,7 +69,7 @@ Actor.getDef = function(act){
 		ratio:Tk.deepClone(defratio)
 	};
 	for(var i in def.ratio){
-		def.ratio[i] *= act.mastery.def[i].mod * act.mastery.def[i].sum;
+		def.ratio[i] *= Actor.getMasteryValue(act,'def',i,true);
 		def.ratio[i].mm(1);
 	}
 	return def;
@@ -150,7 +160,7 @@ Actor.updatePreset = function(act,s){
 			Actor.setCombatContext(act,'ability','quest',true);
 			for(var i = 0 ; i < preset.ability.length; i++){
 				if(preset.ability[i]){
-					Actor.addAbility(act,preset.ability[i],false); 	//based on s.addAbility.one
+					Actor.addAbility(act,preset.ability[i]); 	//based on s.addAbility.one
 					Actor.swapAbility(act,preset.ability[i],i);
 				}
 			}

@@ -50,8 +50,12 @@ Actor.AbilityList.compressClient = function(abilityList,act){
 
 Actor.AbilityList.uncompressClient = function(abilityList){
 	var tmp = {};
-	for(var i in abilityList)
-		tmp[abilityList[i]] = 1;
+	for(var i in abilityList){
+		if(SERVER && !Ability.get(abilityList[i]))
+			ERROR(3,'ability dont exist',abilityList[i]);
+		else
+			tmp[abilityList[i]] = 1;
+	}
 	return Actor.AbilityList(tmp);
 }
 
@@ -190,7 +194,7 @@ Actor.swapAbility = function(act,name,position,strict){
 
 Actor.swapAbility.test = function(act,name,position){
 	if(act.combatContext.ability !== 'normal') 
-		return Message.add(act.id,'You can\'t change your ability at this point of the quest.');
+		return Message.addPopup(act.id,'You can\'t change your ability at this point of the quest.');
 	
 	if(!Actor.getAbilityList(act)[name]) 
 		return Message.add(act.id,'You don\'t have this ability');
@@ -198,15 +202,16 @@ Actor.swapAbility.test = function(act,name,position){
 	var ability = Ability.functionVersion(name);
 	
 	if(position === 4 && ability.type !== 'heal') 
-		return Message.add(act.id,'This ability slot can only support Healing abilities.');
+		return Message.addPopup(act.id,'This ability slot can only support Healing abilities.');
 	if(position === 5 && ability.type !== 'dodge') 
-		return Message.add(act.id,'This ability slot can only support Dodge abilities.');
+		return Message.addPopup(act.id,'This ability slot can only support Dodge abilities.');
 	
 	return true;
 }
 
 Actor.addAbility = function(act,name){
-	if(!Ability.get(name)) return ERROR(3,'ability not exist',name);
+	if(!Ability.get(name)) 
+		return ERROR(3,'ability not exist',name);
 	Actor.getAbilityList(act)[name] = 1;
 
 	Actor.setFlag(act,'ability');

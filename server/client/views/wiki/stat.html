@@ -1,0 +1,66 @@
+<% include ../partial/header.html %>
+<div class="container">
+	<h3>Stat</h3>
+	<p>
+	This is the list of character stats. They can be increased via equipment boosts and the Reputation Grid.
+	</p>
+	<table class="CSSTableGenerator2">		
+		<tr><th>Stat</th><th>Description</th><th>Default Value</th></tr>
+		<tr><td>Max Speed</td><td>Movement Speed.</td><td>8</td></tr>
+		<tr><td>Regen Life</td><td>Life Regeneration per frame.</td><td>1</td></tr>
+		<tr><td>Regen Mana</td><td>Mana Regeneration per frame.</td><td>0.4</td></tr>
+		<tr><td>Max Life</td><td>Maximum Life Points.</td><td>1000</td></tr>
+		<tr><td>Max Mana</td><td>Maximum Mana Points.</td><td>100</td></tr>
+		<tr><td>Leech Life Magn.</td><td>Affect %Life recovered if the Life Leech is successful. Leech is not affected by damage dealt.</td><td>0.01</td></tr>
+		<tr><td>Leech Life Chance</td><td>Affect Chance to Life Leech when hitting an enemy.</td><td>0</td></tr>
+		<tr><td>Pick Radius</td><td>Maximum distance that you can still pick items on the ground.</td><td>250</td></tr>
+		<tr><td>Atk Speed</td><td>Affect how fast your character can use abilities.</td><td>1</td></tr>
+		<tr><td>Crit Chance</td><td>Affect chance to do a Critical Hit.</td><td>0.05</td></tr>
+		<tr><td>Crit Magn</td><td>Affect Additional Damage when doing a Critical Hit.</td><td>1.5</td></tr>
+		<tr><td>Proj. Amount</td><td>Shoot x times additional bullets.  If amount is not whole, it is rounded up or down randomly.</td><td>1</td></tr>
+		<tr><td>Proj. Spd</td><td>Affect speed at which your bullet travels.</td><td>1</td></tr>
+		<tr><td>Strike Range</td><td>Affect the minimum and maximum distance where you can strike.</td><td>1</td></tr>
+		<tr><td>AoE Size</td><td>Affect the width and height of your strike.</td><td>1</td></tr>
+		<tr><td>Burn Time</td><td>Affect Burn Duration.</td><td>100</td></tr>
+		<tr><td>Burn Magn</td><td>Affect damage dealt to a burnt enemy.</td><td>0.005</td></tr>
+		<tr><td>Burn Chance</td><td>Affect chance to burn enemy.</td><td>1</td></tr>
+		<tr><td>Chill Time</td><td>Affect Chill Duration.</td><td>50</td></tr>
+		<tr><td>Chill Magn</td><td>Affect how much speed and attack speed with be reduced.</td><td>2</td></tr>
+		<tr><td>Chill Chance</td><td>Affect chance to chill enemy.</td><td>1</td></tr>
+		<tr><td>Stun Time</td><td>Affect Stun Duration.</td><td>10</td></tr>
+		<tr><td>Stun Magn</td><td>Affect how reduced the sight of view of stund enemy is.</td><td>2</td></tr>
+		<tr><td>Stun Chance</td><td>Affect chance to stun enemy.</td><td>1</td></tr>
+		<tr><td>Bleed Time</td><td>Affect Bleed Duration.</td><td>25</td></tr>
+		<tr><td>Bleed Magn</td><td>Affect damage dealt by bleeding enemy.</td><td>4</td></tr>
+		<tr><td>Bleed Chance</td><td>Affect chance to bleed enemy.</td><td>1</td></tr>
+		<tr><td>Drain Time</td><td>USELESS. Affect how long the enemy will be drained.</td><td>100</td></tr>
+		<tr><td>Drain Magn</td><td>Affect how much mana is drained from enemy.</td><td>25</td></tr>
+		<tr><td>Drain Chance</td><td>Affect chance to drain enemy.</td><td>1</td></tr>
+		<tr><td>Knock Time</td><td>Affect how long the enemy will be pushed back.</td><td>15</td></tr>
+		<tr><td>Knock Magn</td><td>Affect how far away the enemy will be pushed.</td><td>10</td></tr>
+		<tr><td>Knock Chance</td><td>Affect chance to push enemy with your attack.</td><td>1</td></tr>
+		<tr><td>Melee Def</td><td>Reduce Melee Damage Taken</td><td>0</td></tr>
+		<tr><td>Range Def</td><td>Reduce Range Damage Taken</td><td>0</td></tr>
+		<tr><td>Magic Def</td><td>Reduce Magic Damage Taken</td><td>0</td></tr>
+		<tr><td>Fire Def</td><td>Reduce Fire Damage Taken</td><td>0</td></tr>
+		<tr><td>Cold Def</td><td>Reduce Cold Damage Taken</td><td>0</td></tr>
+		<tr><td>Lightning Def</td><td>Reduce Lightning Damage Taken</td><td>0</td></tr>
+		<tr><td>Melee Dmg</td><td>Increase Melee Damage Dealt</td><td>0</td></tr>
+		<tr><td>Range Dmg</td><td>Increase Range Damage Dealt</td><td>0</td></tr>
+		<tr><td>Magic Dmg</td><td>Increase Magic Damage Dealt</td><td>0</td></tr>
+		<tr><td>Fire Dmg</td><td>Increase Fire Damage Dealt</td><td>0</td></tr>
+		<tr><td>Cold Dmg</td><td>Increase Cold Damage Dealt</td><td>0</td></tr>
+		<tr><td>Lightning Dmg</td><td>Increase Lightning Damage Dealt</td><td>0</td></tr>
+		<tr><td>Dmg Mace</td><td>Increase Damage Dealt with Mace</td><td>0</td></tr>
+		<tr><td>Dmg Spear</td><td>Increase Damage Dealt with Spear</td><td>0</td></tr>
+		<tr><td>Dmg Sword</td><td>Increase Damage Dealt with Sword</td><td>0</td></tr>
+		<tr><td>Dmg Bow</td><td>Increase Damage Dealt with Bow</td><td>0</td></tr>
+		<tr><td>Dmg Boomerang</td><td>Increase Damage Dealt with Boomerang</td><td>0</td></tr>
+		<tr><td>Dmg Crossbow</td><td>Increase Damage Dealt with Crossbow</td><td>0</td></tr>
+		<tr><td>Dmg Wand</td><td>Increase Damage Dealt with Wand</td><td>0</td></tr>
+		<tr><td>Dmg Staff</td><td>Increase Damage Dealt with Staff</td><td>0</td></tr>
+		<tr><td>Dmg Orb</td><td>Increase Damage Dealt with Orb</td><td>0</td></tr>
+	</table>
+</div>
+<% include ../partial/footer.html %>
+

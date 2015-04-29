@@ -1,4 +1,4 @@
-//02/10/2015 12:14 AM
+//02/24/2015 5:37 PM
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 
@@ -8,7 +8,11 @@ var s = loadAPI('v1.0','QcatchThemAll',{
 	author:"rc",
 	thumbnail:true,
 	description:"Catch monsters by first weakening them. When the time runs out, use them to kill the boss.",
-	maxParty:4
+	maxParty:4,
+	category:["Combat"],
+	zone:"QfirstTown-south",
+	solo:true,
+	party:"PvP",
 });
 var m = s.map; var b = s.boss; var g;
 
@@ -25,7 +29,7 @@ s.newVariable({
 	gameOver:False,
 	talkAytia:False,
 	killBoss:0,
-	deathLess:true,
+	deathLess:True,
 	monsterCount:0
 });
 
@@ -37,19 +41,19 @@ s.newHighscore('speedrun',"Fastest Boss Kill","Fastest Boss Kill",'ascending',fu
 		return s.stopChrono(key,'boss')*40;
 });
 
-s.newChallenge('catchAll',"Catch Them All","Catch every type of monster.",2,function(key){
+s.newChallenge('catchAll',"Catch Them All","Catch every type of monster.",function(key){
 	var caught = s.get(key,'monsterCaught');
 	if(!caught.$contains('dragon')) return false;
 	if(!caught.$contains('bee')) return false;
 	if(!caught.$contains('bat')) return false;
 	if(!caught.$contains('plant')) return false;
-	if(!caught.$contains('demon')) return false;
+	if(!caught.$contains('pumpking')) return false;
 	return true;
 });
-s.newChallenge('doubleTrouble',"Double Trouble","Fight 2 bosses at once.",2,function(key){
+s.newChallenge('doubleTrouble',"Double Trouble","Fight 2 bosses at once.",function(key){
 	return true;
 });
-s.newChallenge('deathLess',"Deathless","No death. That include you and your monsters. No potions allowed.",2,function(key){
+s.newChallenge('deathLess',"Deathless","No death. That include you and your monsters. No potions allowed.",function(key){
 	return s.get(key,'deathLess');
 });
 
@@ -65,14 +69,19 @@ s.newEvent('_signOff',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-south','n1','main',false);
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-south','n1','main',false);
+		s.setRespawn(key,'QfirstTown-south','n1','main');
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
 });
 s.newEvent('_hint',function(key){ //
-	if(!s.get(key,'talkAytia')) return 'Talk with Aytia';
-	if(!s.get(key,'timeout')) return 'Weaken monsters with [$0] then catch them with [$1]';
+	if(!s.get(key,'talkAytia')) 
+		return 'Talk with Aytia';
+	if(!s.get(key,'timeout')) 
+		return 'Weaken monsters with [$0] then catch them with [$1]';
 	return 'Kill your rival. Use Hyper Potions if you found any.';
 });
 s.newEvent('collisionBulletEnemy',function(eid,key){ //
@@ -105,12 +114,12 @@ s.newEvent('updatePermPopup',function(key){ //
 	var str = 'Caught (Max 5):<br>';
 	for(var i = 0 ; i < caught.length; i++)
 		if(caught[i])
-			str += ' - ' + caught[i].capitalize() + '<br>'
+			str += ' - ' + caught[i].$capitalize() + '<br>'
 	s.displayPermPopup.one(key,str);
 });
 s.newEvent('startGame',function(key){ //
 	s.set(key,'talkAytia',true);
-	s.setTimeout(key,'timeout',25*60);	//TEMP
+	s.setTimeout(key,'timeout',25*60);
 	s.startChrono(key,'timer');
 	s.usePreset(key,'trainer');
 	
@@ -158,12 +167,13 @@ s.newEvent('timeout',function(key){ //
 		
 		var count = s.isChallengeActive(key,'doubleTrouble') ? 2 : 1;
 		for(var i = 0 ; i < count; i++){
-			s.spawnActor(key,'fight','e1','death',{
-				sprite:s.newNpc.sprite('death',1.7),
+			s.spawnActor(key,'fight','e1','eyeball',{
+				sprite:s.newNpc.sprite('eyeball',1.7),
 				atkSpd:4,
 				globalDef:4,
 				hpRegen:0,
 				globalDmg:1,
+				tag:{boss:true},
 				statusResist:s.newNpc.statusResist(1,1,1,1,1,1),
 				deathEvent:'killBoss',
 			});
@@ -193,7 +203,6 @@ s.newEvent('killBoss',function(eid,bossId){ //
 		s.completeQuest(key);
 	if(s.isChallengeActive(key,'doubleTrouble') && s.get(key,'killBoss') >= 2)
 		s.completeQuest(key);
-	
 });
 s.newEvent('deathMonster',function(killer,eid){ //
 	var key = s.getRandomPlayer(eid,'fight');
@@ -203,13 +212,13 @@ s.newEvent('_death',function(key){ //
 	s.set(key,'deathLess',false);
 });
 
-s.newItem('hyperPotion',"Hyper Potion",'heal.vial',[    //{
+s.newItem('hyperPotion',"Hyper Potion",'heal-vial',[    //{
 	s.newItem.option('itemHyperPotion',"Heal Party","Heal all caught monsters.")
 ],'Heal all caught monsters.'); //}
 
 s.newAbility('pokeball','attack',{
 	name:"Pokesphere",
-	icon:'skill.mining',
+	icon:'resource-mana',
 	description:"Throw at weak monsters."
 },{
 	type:'bullet',
@@ -220,7 +229,7 @@ s.newAbility('pokeball','attack',{
 });
 s.newAbility('regularAttack','attack',{
 	name:"Spore",
-	icon:'resource.dodge',
+	icon:'defensive-speed',
 	description:"Weaken monsters.",
 	periodOwn:10,
 	periodGlobal:10
@@ -239,7 +248,7 @@ s.newAbility('regularAttack','attack',{
 
 s.newPreset('trainer',s.newPreset.ability(['regularAttack','pokeball','','','','']),null,False,True,False,False);
 
-s.newDialogue('Aytia','Aytia','fairy.3',[ //{ 
+s.newDialogue('Aytia','Aytia','villagerFemale-5',[ //{ 
 	s.newDialogue.node('intro',"Hey! I just found something really cool!",[ 
 		s.newDialogue.option("What is it?",'intro2','')
 	],''),
@@ -257,6 +266,7 @@ s.newDialogue('Aytia','Aytia','fairy.3',[ //{
 s.newMap('main',{
 	name:"Tall Grass",
 	lvl:0,
+	screenEffect:'weather',
 	graphic:'QfirstTown-south',
 },{
 	spot:{t1:{x:1744,y:176},e1:{x:1264,y:656},q4:{x:2416,y:880},e2:{x:624,y:944},ec:{x:2128,y:1104},q1:{x:144,y:1232},q3:{x:2896,y:1232},t4:{x:1552,y:1264},e3:{x:624,y:1520},e8:{x:2000,y:1648},q5:{x:1008,y:1680},e4:{x:784,y:1712},ed:{x:1136,y:1904},t2:{x:208,y:2192},eb:{x:2704,y:2192},e5:{x:848,y:2256},e6:{x:1584,y:2416},ea:{x:2544,y:2640},t3:{x:2320,y:2960},e7:{x:1168,y:3024},q2:{x:1488,y:3088}},
@@ -268,7 +278,7 @@ s.newMap('main',{
 		
 		var monsterList = [
 			'dragon',
-			'demon',
+			'pumpking',
 			'plant','plant','plant',
 			'bee','bee','bee',
 			'bat','bat','bat','bat',
@@ -315,7 +325,7 @@ s.newMapAddon('QfirstTown-south',{
 	spot:{n1:{x:368,y:816}},
 	load:function(spot){
 		m.spawnActor(spot.n1,'npc',{
-			sprite:s.newNpc.sprite('fairy3',1),
+			sprite:s.newNpc.sprite('villagerFemale-5',1),
 			name:"Aytia",
 			dialogue:'talkAytia'
 		});
@@ -324,11 +334,23 @@ s.newMapAddon('QfirstTown-south',{
 s.newMap('fight',{
 	name:"Arena",
 	lvl:0,
+	screenEffect:'lightCave',
 	graphic:'QcollectFight-fight',
 },{
-	spot:{t2:{x:1200,y:432},t3:{x:656,y:496},e1:{x:1008,y:656},t1:{x:816,y:784},t4:{x:1072,y:1008},t5:{x:1264,y:1488}},
+	spot:{b3:{x:480,y:416,width:32,height:704},b1:{x:512,y:416,width:640,height:32},b2:{x:1152,y:416,width:32,height:704},t3:{x:656,y:496},t2:{x:1104,y:528},e1:{x:1008,y:656},t1:{x:816,y:784},t4:{x:1072,y:1008},b4:{x:512,y:1088,width:640,height:32},t5:{x:1264,y:1488}},
 	load:function(spot){
-		
+		m.spawnBlock(spot.b1,function(key){
+			return s.hasTag(key,{boss:true});
+		});
+		m.spawnBlock(spot.b2,function(key){
+			return s.hasTag(key,{boss:true});
+		});
+		m.spawnBlock(spot.b3,function(key){
+			return s.hasTag(key,{boss:true});
+		});
+		m.spawnBlock(spot.b4,function(key){
+			return s.hasTag(key,{boss:true});
+		});
 	},
 	loop:function(spot){
 		if(!m.testInterval(25)) return;
@@ -373,7 +395,7 @@ s.newMap('fight',{
 				s.completeQuest(key);
 			},25*3);
 		}
-	}
+	},
 });
 
 s.exports(exports);

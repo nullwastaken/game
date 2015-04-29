@@ -1,4 +1,3 @@
-
 ERROR = exports.ERROR = function(lvl,p0,p1,p2,p3,p4,p5,p6){ 
 	//1: fatal, reset server || 2: shouldnt happen || 3: warn, somewhat possible
 	
@@ -24,11 +23,13 @@ ERROR.err = function(lvl,err,p0,p1,p2,p3,p4,p5,p6){
 	if(p4) str += ' -- ' + JSON.stringify(p4) + '\n';
 	if(p5) str += ' -- ' + JSON.stringify(p5) + '\n';
 	if(p6) str += ' -- ' + JSON.stringify(p6) + '\n and possibly more...';
-	if(typeof err === 'string')	str += err;
-	else if(err && typeof err === 'object') str += err.stack || err.message;
+	if(typeof err === 'string')	
+		str += err;
+	else if(err && typeof err === 'object') 
+		str += err.stack || err.message;
 	
-	str = str.replace('at Function.ERROR.getStack (C:\rc\rainingchain\server\client\js\shared\ERROR.js:','');
-	str = str.replace('at exports.ERROR (C:\rc\rainingchain\server\client\js\shared\ERROR.js:','');
+	str = str.replace('at Function.ERROR.getStack (C:\\rc\\rainingchain\\server\\client\\js\\shared\\ERROR.js:','');
+	str = str.replace('at exports.ERROR (C:\\rc\\rainingchain\\server\\client\\js\\shared\\ERROR.js:','');
 	
 	if(!ERROR.display) return;
 	if(ERROR.count > ERROR.resetAt) return;
@@ -36,15 +37,19 @@ ERROR.err = function(lvl,err,p0,p1,p2,p3,p4,p5,p6){
 	if(ERROR.last === str) return all['con' + 'sole'].log('Same: x' + ERROR.count);
 	ERROR.last = str;
 	
-	if(ERROR.LOG.length < 100000){
+	if(lvl < 5 && ERROR.LOG.length < 100000){
 		if(!str.$contains('RS_server') && !str.$contains('Debug.ts')){
-			str = str.replace('at Function.ERROR.getStack (/opt/run/snapshot/package/server/client/js/shared/ERROR.js:')
-			str = str.replace('at exports.ERROR (/opt/run/snapshot/package/server/client/js/shared/ERROR.js:','');
-			str = str.replace('/opt/run/snapshot/package/server/','');
-			str = str.replace('Error at Function.ERROR.getStack (client/js/shared/ERROR.js:')
-			str = str.replace('at exports.ERROR (client/js/shared/ERROR.js:','');
-			str = str.replace('Error at Function.ERROR.getStack','');
-			ERROR.LOG += '<br>\r\nNEW' + (new Date()) + str.slice(50,600);
+			for(var i= 0 ; i < 10; i++){
+				str = str.replace('at Function.ERROR.getStack (/opt/run/snapshot/package/server/client/js/shared/ERROR.js:')
+				str = str.replace('at exports.ERROR (/opt/run/snapshot/package/server/client/js/shared/ERROR.js:','');
+				str = str.replace('/opt/run/snapshot/package/server/','');
+				str = str.replace('Error at Function.ERROR.getStack (client/js/shared/ERROR.js:')
+				str = str.replace('at exports.ERROR (client/js/shared/ERROR.js:','');
+				str = str.replace('Error at Function.ERROR.getStack','');
+				str = str.replace('/opt/run/snapshot/package/server/','');
+			}
+			
+			ERROR.LOG = '<br>\r\n<br>\r\nNEW ' + (new Date()) + str.slice(50,5000) + ERROR.LOG;
 		}
 	}
 		
@@ -79,7 +84,7 @@ ERROR.last = '';
 ERROR.display = true;
 ERROR.resetAt = 100;
 
-ERROR.LOG = '';
+ERROR.LOG = 'None\r\n';
 
 ERROR.getStack = function(){
 	if(SERVER || window.chrome) return (new Error()).stack;

@@ -8,6 +8,10 @@ var s = loadAPI('v1.0','QbaseDefence',{
 	author:"rc",
 	maxParty:2,
 	thumbnail:true,
+	category:["Combat"],
+	solo:true,
+	zone:"QfirstTown-east",
+	party:"Coop",
 	reward:{"ability":{'Qsystem-player-fireBullet':0.5},"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
 	description:"Kill waves of monsters before they reach your base using the right ability.",
 });
@@ -26,7 +30,8 @@ s.newVariable({
 	pt:125,
 	life:5,
 	upgradeAmount:0,
-	upgradeSpd:0
+	upgradeSpd:0,
+	startGame:false,
 });
 
 s.newHighscore('remainingpteasy',"Remaining Pts [Easy]","Most points at the end of the game.",'descending',function(key){
@@ -42,13 +47,13 @@ s.newHighscore('remainingpt4',"Remaining Pts [4 Colors]","Most points at the end
 	return null;
 });
 
-s.newChallenge('hardmode',"Hardmode!","Only 3 Life. Survive 20 waves.",2,function(key){
+s.newChallenge('hardmode',"Hardmode!","Only 3 Life. Survive 20 waves.",function(key){
 	return true;
 });
-s.newChallenge('pt400',"400+ Pts","End the quest with 400 remaining points.",2,function(key){
+s.newChallenge('pt400',"400+ Pts","End the quest with 400 remaining points.",function(key){
 	return s.get(key,'pt') > 400;
 });
-s.newChallenge('color4',"4 Types","There are 4 types of enemies.",2,function(key){
+s.newChallenge('color4',"4 Types","There are 4 types of enemies.",function(key){
 	return true;
 });
 
@@ -58,6 +63,8 @@ s.newEvent('_start',function(key){ //
 	else s.addQuestMarker(key,'start','QfirstTown-east','t4');
 });
 s.newEvent('_hint',function(key){ //
+	if(!s.get(key,'startGame'))
+		return 'Go talk with Poppy';	
 	return 'Pt: ' + s.get(key,'pt') + ' | Wave: ' + s.get(key,'wave') + '/' + s.get(key,'amountWave') + ' | Life: ' + s.get(key,'life');
 });
 s.newEvent('_debugSignIn',function(key){ //
@@ -70,13 +77,16 @@ s.newEvent('_death',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-east','t4','main');
-	s.setRespawn(key,'QfirstTown-east','t4','main');
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-east','t4','main');
+		s.setRespawn(key,'QfirstTown-east','t4','main');
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
 });
 s.newEvent('startGame',function(key){ //
+	s.set(key,'startGame',true);
 	s.removeQuestMarker(key,'start');
 	s.teleport(key,'base','t1','party',true);
 	s.addItem(key,'upgradeSpd');
@@ -152,7 +162,8 @@ s.newEvent('spawnEnemy',function(key){ //
 	
 	s.followPath(eid,'myPath',function(){	//no key in param cuz using key of nextWave
 		s.killActor(eid);
-		if(s.add(key,'life',-1) <= 0)
+		s.add(key,'life',-1);
+		if(s.get(key,'life') <= 0)
 			s.failQuest(key);
 	},true);
 });
@@ -200,7 +211,9 @@ s.newEvent('upgradeAmount',function(key){ //
 	s.message(key,'You shoot ' + boost + ' at a time now.');
 });
 s.newEvent('reachEnd',function(key){ //when mushroom reach end
-	if(s.add(key,'life',-1) <= 0){
+	s.add(key,'life',-1);
+	if(s.get(key,'life') <= 0){
+		s.failQuest(key);
 		s.message(key,"You lost because too many enemies past through your defence.");
 		s.failQuest(key);
 		return true;	//stops the loop in the map loop
@@ -210,16 +223,16 @@ s.newEvent('talkPoppy',function(key){ //when mushroom reach end
 	s.startDialogue(key,'Poppy','intro');
 });
 
-s.newItem('upgradeAmount',"Amount",'element.range',[    //{
+s.newItem('upgradeAmount',"Amount",'element-range',[    //{
 	s.newItem.option('upgradeAmount',"Upgrade Amount","Increase how many bullet you shoot.")
 ],''); //}
-s.newItem('upgradeSpd',"Speed",'defensive.speed',[    //{
+s.newItem('upgradeSpd',"Speed",'defensive-speed',[    //{
 	s.newItem.option('upgradeSpd',"Upgrade Spd","Upgrade Attack Speed.")
 ],''); //}
 
 s.newAbility('green','attack',{
 	name:"Green",
-	icon:'offensive.bullet',
+	icon:'offensive-bullet',
 	description:"This is an ability.",
 	periodOwn:15,
 	periodGlobal:15
@@ -231,7 +244,7 @@ s.newAbility('green','attack',{
 });
 s.newAbility('red','attack',{
 	name:"Red",
-	icon:'attackMagic.fireball',
+	icon:'attackMagic-fireball',
 	description:"This is an ability.",
 	periodOwn:15,
 	periodGlobal:15
@@ -243,7 +256,7 @@ s.newAbility('red','attack',{
 });
 s.newAbility('blue','attack',{
 	name:"Blue",
-	icon:'attackMagic.crystal',
+	icon:'attackMagic-crystal',
 	description:"This is an ability.",
 	periodOwn:15,
 	periodGlobal:15
@@ -255,7 +268,7 @@ s.newAbility('blue','attack',{
 });
 s.newAbility('yellow','attack',{
 	name:"Yellow",
-	icon:'attackMagic.static',
+	icon:'attackMagic-static',
 	description:"This is an ability.",
 	periodOwn:15,
 	periodGlobal:15
@@ -314,7 +327,7 @@ s.newNpc('green',{
 	damageIf:'false'
 });
 
-s.newDialogue('Poppy','Poppy','villager-female.3',[ //{ 
+s.newDialogue('Poppy','Poppy','villagerFemale-3',[ //{ 
 	s.newDialogue.node('intro',"Hello. Some weird-ass coloured squares appeared out of nowhere and tried to kill me! Exterminate them please, they don't belong to this game!",[ 
 		s.newDialogue.option("Sure",'intro2','')
 	],''),
@@ -326,13 +339,14 @@ s.newDialogue('Poppy','Poppy','villager-female.3',[ //{
 s.newMap('base',{
 	name:"Base",
 	lvl:0,
+	screenEffect:'lightCave',
 	grid:["00000000000111100110011000000000000001100000000000","00000000000011111111111000000000000001110001100000","00000000000001111111111000000000000001111001100000","00000000000000111111110000000000000000111111111110","10000000000000011111100000000000000000011111111110","11000000000000001111000000000000000000001111111111","01100000000000000110000000000000000000000111111111","00110000000000000000000000000000000000000001111111","00011000000000000000000000000000000000000001111111","00001100000000000000000000000000000000000001111111","00001110000000000000000000000000000000000000111111","01111111000000000000000000000000000000000000011111","01111111000000000000000000000000000000000000001111","00011111000000000000000000000000000000000000000111","00011110000000000000000000000000000000000000000000","01111100000000000000000000000000000000000000000000","11111000000000000000000000000000000000000000000000","11110000000000000000000000000000000000000000000000","11100000000000000000000000000000000000000000000000","10000000000000000000000000000000000000000000011111","00000000000000000000000022222220000000000000111111","00000000000000000000000222222222000000000001111111","00000000000000000000000220000022000000000011111111","00000000000000000000000220000022000000000011111111","00000000000000000000000220000022000000000011111100","00000000000000000000000220000022000000000001111100","00000000000000000000000220000022000000000000111110","00000000000000000000000222222222000000000000011111","00000000000000000000000022222220000000000000001111","11000000000000000000000000000000000000000000000011","11100000000000000000000000000000000000000000000001","11110000000000000000000000000000000000000000000000","11111000000000000000000000000000000000000000000000","01111000000000000000000000000000000000000000000000","01111000000000000000000000000000000000000000000000","11110000000000000000000000000000000000000000000000","11100000000000000000000000000000000000000000000000","11000000000000000000000000000000000000000000000000","10000000000000000000000000000000000000000000000011","00000000000000000000000000000000000000000000000111","00000000000000000000000000000000000000000000001100","00000000000000000000000000000000000000000000011000","00000000000000000000000000000000000000000000011000","00000000000000000000000000000000000000000000011000","00000000000000000000000000000000000000000011111000","00000000000000011111100000000000000000000111111110","00000000000111111111110000000000000000001111111111","00000000001111111111111000000000000000011111111111","00000000011000001111001100000000000000011001111110","00000000110000001111001100000000000000011000000000"],
 	tileset:'v1.2'
 },{
 	spot:{c:{x:272,y:48},d:{x:816,y:48},e:{x:944,y:48},f:{x:1072,y:48},b:{x:176,y:80},a:{x:112,y:144},g:{x:1488,y:464},s:{x:48,y:688},r:{x:48,y:784},blue0:{x:880,y:784},t1:{x:880,y:816},q:{x:48,y:880},h:{x:1552,y:1072},i:{x:1552,y:1168},p:{x:48,y:1392},o:{x:80,y:1488},n:{x:144,y:1552},m:{x:848,y:1552},l:{x:944,y:1552},k:{x:1040,y:1552},j:{x:1168,y:1552}},
 	load:function(spot){
 		
-	}
+	},
 });
 s.newMapAddon('QfirstTown-east',{
 	spot:{e1:{x:1136,y:720},e2:{x:2000,y:1008},t4:{x:1680,y:1552}},
@@ -340,18 +354,18 @@ s.newMapAddon('QfirstTown-east',{
 		m.spawnActor(spot.t4,'npc',{
 			dialogue:'talkPoppy',
 			name:'Poppy',
-			sprite:s.newNpc.sprite('villager-female3',1),
-			minimapIcon:'minimapIcon.quest',
+			sprite:s.newNpc.sprite('villagerFemale-3',1),
+			minimapIcon:'minimapIcon-quest',
 			angle:s.newNpc.angle('up'),
 			nevermove:true,
 		});
 		
 		m.spawnActorGroup(spot.e1,[
 			m.spawnActorGroup.list("slime",1),
-			m.spawnActorGroup.list("death",1),
+			m.spawnActorGroup.list("eyeball",1),
 		]);
 		m.spawnActorGroup(spot.e2,[
-			m.spawnActorGroup.list("demon",1),
+			m.spawnActorGroup.list("pumpking",1),
 			m.spawnActorGroup.list("spirit",1),
 		]);
 	}

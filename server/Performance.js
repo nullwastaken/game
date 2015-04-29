@@ -4,6 +4,8 @@ var Sign = require2('Sign'), Server = require2('Server');
 
 var Performance = exports.Performance = {};
 
+Performance.LAST_CONSOLE_LOG = '';
+
 Performance.loop = function(){
 	Performance.loop.FRAME_COUNT++;
 	Performance.cpu();
@@ -18,7 +20,8 @@ Performance.cpu = function(){
 	
     if(Performance.cpu.DISPLAY && Performance.loop.FRAME_COUNT % Performance.cpu.FREQUENCE === 0){
         var d = Date.now();	
-        INFO('Performance (Include Server + Client Lag): ' + Math.round(40*Performance.cpu.FREQUENCE/(d - Performance.cpu.OLD_TIME)*100+15) + '%');	//+15 cuz weird glitch making 85% them max
+		Performance.LAST_CONSOLE_LOG = 'Performance (Include Server + Client Lag): ' + Math.round(40*Performance.cpu.FREQUENCE/(d - Performance.cpu.OLD_TIME)*100+15) + '%'
+        INFO(Performance.LAST_CONSOLE_LOG);	//+15 cuz weird glitch making 85% them max
         Performance.cpu.OLD_TIME = d;
     }
 };
@@ -58,7 +61,14 @@ Performance.bandwidth.display = function(){
 	
 	if(Performance.bandwidth.UPLOAD.display) INFO('Upload: ' + Math.round(Performance.bandwidth.UPLOAD.size/1000) + ' K bytes');
 	if(Performance.bandwidth.DOWNLOAD.display) INFO('Download: ' + Math.round(Performance.bandwidth.DOWNLOAD.size/1000) + ' K bytes');
-	if(Performance.DISPLAY_PLAYER_AMOUNT)	INFO("Player Count: " + Server.getPlayerAmount());		
+	if(Performance.DISPLAY_PLAYER_AMOUNT)	INFO("Player Count: " + Server.getPlayerCount());		
 }
+
+
+
+
+
+
+
 
 

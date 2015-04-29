@@ -17,8 +17,6 @@ Actor.Boost.list = function(type){
 	return Stat.actorBoostList(type || 'player');
 }
 
-
-
 //#################
 
 Actor.boost = function(act, boost){
@@ -88,6 +86,12 @@ Actor.boost.loop = function(act){
 }
 Actor.boost.loop.INTERVAL = {fast:2,reg:5,slow:25}; //fast = 2, no idea if good
 
+Actor.boost.getBase = function(act,stat){
+	if(!act.boost.list[stat])
+		return ERROR(3,'stat dont exist',stat);
+	return act.boost.list[stat].base;
+}
+
 Actor.boost.update = function(act,statName){	// !statName means all
 	if(!statName){ for(var i in act.boost.list) Actor.boost.update(act,i); return; }
 	
@@ -119,9 +123,6 @@ Actor.permBoost = function(act,source,boost){
 		delete act.permBoost[source];
 	
 	Actor.permBoost.update(act);
-	
-	if(Actor.isPlayer(act))	//otherwise overwrite...
-		Actor.mastery.update(act);
 }
 
 Actor.permBoost.update = function(act){

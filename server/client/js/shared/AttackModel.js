@@ -13,12 +13,12 @@ AttackModel.create = function(info,addDefaultStatus){
 		amount:1,	//# bullets shot
 		aim:0,
 		angleRange:5,
-		bleed:AttackModel.Status(),	//magn and time act as modifier
-		knock:AttackModel.Status(),
-		drain:AttackModel.Status(),
-		burn:AttackModel.Status(),
-		chill:AttackModel.Status(),
-		stun:AttackModel.Status(),
+		bleed:null,	//magn and time act as modifier
+		knock:null,
+		drain:null,
+		burn:null,
+		chill:null,
+		stun:null,
 		crit:AttackModel.Status(),	//100% will be multiplied by the 0.05 of player
 		leech:AttackModel.Status(),	
 		curse:null,	//not in IDE yet
@@ -131,10 +131,7 @@ AttackModel.OnHitHeal = function(hp,mana){
 AttackModel.addDefaultStatus = function(model){	//select 1st element, if no status, add 5% status default
 	var el = AttackModel.getElement(model);
 	var status = CST.element.toStatus[el];
-	/*if(!model.knock || model.knock.chance === 0){
-		model.knock = AttackModel.Status(1,2,0.1);
-	}*/
-	if(!model[status] || model[status].chance === 0)
+	if(!model[status])
 		model[status] = AttackModel.Status(0.05,1,1);
 		
 }

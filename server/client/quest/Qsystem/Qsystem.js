@@ -10,274 +10,80 @@ var s = loadAPI('v1.0','Qsystem',{
 	inMain:false,
 	alwaysActive:true,
 	admin:true,
+	completable:false,
 });
 var m = s.map; var b = s.boss; var g;
 
-(function(){	//Sprite
-	if(typeof SERVER === 'undefined') return;
-	s.newSprite("mace","actor/main.png",[-12,12,-3,20],{
-		size:2.7,side:[1,2,3,0],hpBar:-17,legs:20,hitBox:s.newSprite.hitBox(-12,12,-3,20),
-	},[s.newSprite.anim("move",4,24,32,0.5),s.newSprite.anim("attack",4,24,32,0.5)]);	
-	
-	/*
-	var tmp = {
-		body:[205,206,207,208,209,210,211,221,222,223,224,225,325,326,327,328,410,411,412,413,680],
-		helm:[
-			//120,
-			132,133,134,135,136,137,138,139,140,141,15085,15088,15191,15192,15193,15194,15195,15196,15197,15198,15199,15200,15201,15202,15203,15204,15205,168,169,170,171,172,173,174,175,176,177,178,179,
-			1389,1507,230,253,254,255,256,257,361,641
-		],
-		skin:[115,291,432,434],
-	};
-	for(var i in tmp) for(var j in tmp[i]) 
-		s.newSprite.player(tmp[i][j],"player/" + i + '/' + tmp[i][j] + ".png");
-	*/
-	
-	var list = {'warrior-male':6,'warrior-female':5,'villager-male':10,'villager-female':9,'villager-child':6,'fairy':8,'bad-monster':3,'bad-human':5};
-	for(var i in list)	for(var j = 0; j < list[i]; j++) 
-		s.newSprite.rpgvx(i + j,"actor/" + i + j + ".png");
 
-	s.newSprite("slimeJerome","actor/slimeJerome.png",[-55,55,-15,80],{
-		size:1,side:[0,1,2,3],hpBar:-110,legs:70,
-	},[s.newSprite.anim("move",5,200,200,0.5)]);	
-	s.newSprite("troll","actor/troll.png",[-33,33,-30,64],{
-		size:1,side:[0,1,2,3],hpBar:-70,legs:35,
-	},[s.newSprite.anim("move",9,128,128,0.5)]);
-	s.newSprite("orc-magic","actor/orc-magic.png",[-20,20,-10,25],{
-		size:2,side:[2,0,1,3],hpBar:-30,legs:25,
-	},[s.newSprite.anim("move",4,32,48,0.25)]);
-	s.newSprite("orc-melee","actor/orc-melee.png",[-20,20,-10,25],{
-		size:2,side:[2,0,1,3],hpBar:-30,legs:25,
-	},[s.newSprite.anim("move",4,32,48,0.25)]);
-	s.newSprite("orc-range","actor/orc-range.png",[-20,20,-10,25],{
-		size:2,side:[2,0,1,3],hpBar:-30,legs:25,
-	},[s.newSprite.anim("move",4,32,48,0.25)]);
-	s.newSprite.rpgvx("aquanite","actor/aquanite.png");
-	s.newSprite.rpgvx("bat","actor/bat.png");
-	s.newSprite.rpgvx("bee","actor/bee.png");
-	s.newSprite.rpgvx("demon","actor/demon.png");
-	s.newSprite.rpgvx("dragon","actor/dragon.png");
-	s.newSprite.rpgvx("dragonBaby","actor/dragonBaby.png");
-	s.newSprite.rpgvx("death","actor/death.png");
-	s.newSprite.rpgvx("larva","actor/larva.png");
-	s.newSprite.rpgvx("gargoyle","actor/gargoyle.png");
-	s.newSprite.rpgvx("ghost","actor/ghost.png");
-	s.newSprite.rpgvx("goblin","actor/goblin.png");
-	s.newSprite.rpgvx("goddessFire","actor/goddessFire.png");
-	s.newSprite.rpgvx("goddessIce","actor/goddessIce.png");
-	s.newSprite.rpgvx("plant","actor/plant.png");
-	s.newSprite.rpgvx("mushroom","actor/mushroom.png");
-	s.newSprite.rpgvx("skeleton","actor/skeleton.png");
-	s.newSprite.rpgvx("mosquito","actor/mosquito.png");
-	s.newSprite.rpgvx("spirit","actor/spirit.png");
-	s.newSprite("aquagoblin","actor/aquagoblin.png",[-15,15,-15,32],{
-		size:2,side:[2,0,1,3],hpBar:-40,legs:35,
-	},[s.newSprite.anim("move",3,48,64,0.5)]);	
-	s.newSprite("basilisk","actor/basilisk.png",[-15,15,-15,32],{
-		size:1,side:[2,0,1,3],hpBar:-40,legs:35,
-	},[s.newSprite.anim("move",3,64,64,0.5)]);	
-	s.newSprite("draco","actor/draco.png",[-30,30,-30,40],{
-		size:1,side:[2,0,1,3],hpBar:-55,legs:50,
-	},[s.newSprite.anim("move",3,96,96,0.5)]);	
-	s.newSprite("dragonKing","actor/dragonKing.png",[-30,30,-30,40],{
-		size:1,side:[2,0,1,3],hpBar:-55,legs:50,
-	},[s.newSprite.anim("move",3,96,96,0.5)]);	
-	s.newSprite("scorpion","actor/scorpion.png",[-15,15,-15,20],{
-		size:2,side:[2,0,1,3],hpBar:-30,legs:50,
-	},[s.newSprite.anim("move",3,64,64,0.5)]);
-	s.newSprite("mummy","actor/mummy.png",[-30,30,-20,40],{
-		size:1.5,side:[2,0,1,3],hpBar:-40,legs:40,
-	},[s.newSprite.anim("move",4,80,80,0.5)]);
-	s.newSprite("birdBlue","actor/birdBlue.png",[-30,30,-20,40],{
-		size:1,side:[2,0,1,3],hpBar:-50,legs:50,
-	},[s.newSprite.anim("move",4,96,96,0.5)]);
-	s.newSprite("salamander","actor/salamander.png",[-30,30,-20,30],{
-		size:2,side:[2,0,1,3],hpBar:-40,legs:40,
-	},[s.newSprite.anim("move",3,64,48,0.25)]);	
-	s.newSprite("slime","actor/slime.png",[-20,20,-10,20],{
-		size:1.5,side:[2,0,1,3],hpBar:-30,legs:30,
-	},[s.newSprite.anim("move",3,48,48,0.5)]);
-	s.newSprite("snake","actor/snake.png",[-20,20,-10,20],{
-		size:1,side:[2,0,1,3],hpBar:-30,legs:30,
-	},[s.newSprite.anim("move",3,48,48,0.5)]);
-	s.newSprite("birdRed","actor/birdRed.png",[-40,40,-30,40],{
-		size:1,side:[2,0,1,3],hpBar:-50,legs:50,
-	},[s.newSprite.anim("move",3,96,96,0.5)]);
-	s.newSprite("taurus","actor/taurus.png",[-60,60,-40,60],{
-		size:1.5,side:[2,0,1,3],hpBar:-55,legs:50,
-	},[s.newSprite.anim("move",3,96,96,0.5)]);
-	s.newSprite("werewolf","actor/werewolf.png",[-30,30,-20,30],{
-		size:2,side:[2,0,1,3],hpBar:-55,legs:50,
-	},[s.newSprite.anim("move",3,64,48,0.5)]);
-
-	s.newSprite.bullet("fireball","bullet/fireball.png",32,32,1,1,{size:0.8});
-	s.newSprite.bullet("iceshard","bullet/iceshard.png",32,32,1,1,{size:0.8});
-	s.newSprite.bullet("lightningball","bullet/lightningball.png",32,32,1,1,{size:0.8});    	
-	s.newSprite.bullet("bullet-pony","bullet/bullet-pony.png",32,32,1,0,{side:[0,1]});
-	s.newSprite.bullet("bullet-happyface","bullet/bullet-happyface.png",32,32);
-	s.newSprite.bullet("bullet-penguin","bullet/bullet-penguin.png",32,32);
-	s.newSprite.bullet("arrow","bullet/arrow.png",42,11,1,1,{size:0.9});
-	s.newSprite.bullet("bullet-cannon","bullet/bullet-cannon.png",42,11,1,1);
-	s.newSprite.bullet("dart","bullet/dart.png",16,16,1,1,{size:2});
-	s.newSprite.bullet("boomerang","bullet/boomerang.png",52,52,8);
-	s.newSprite.bullet("bone","bullet/bone.png",48,48,8);
-	s.newSprite.bullet("spore","bullet/spore.png",48,48,1,0,{size:0.8});
-	s.newSprite.bullet("rock","bullet/rock.png",48,48,1,0,{size:0.8});
-	s.newSprite.bullet("shadowball","bullet/shadowball.png",48,48,1,0,{size:0.8,link:'http://mohsin-kun.deviantart.com/art/Shadow-Ball-73303663'});
-	s.newSprite.bullet("tornado","bullet/tornado.png",48,48,5,0,{size:0.8});
-
-
-	for(var i = 0 ; i <= 15; i++)
-		s.newSprite.picture("number-" + i,"picture/number" + i + ".png",32,32,2,{legs:-100});	//rename to number-flag
-	s.newSprite.picture("number-empty","picture/number-empty.png",32,32,2,{legs:-100});	//rename to number-flag
-	s.newSprite.picture("number-flag","picture/number-flag.png",32,32,2,{legs:-100});	//rename to number-flag
-	s.newSprite.picture("system-sign","picture/sign.png",32,32,2);
-	s.newSprite.picture("system-target","picture/target.png",96,96,0.5);
-	s.newSprite.picture("pushable-rock1x1","picture/pushable-rock2x2.png",64,64,0.5);
-
-	s.newSprite.picture("waypoint-grave","picture/waypoint-grave.png",32,32,2);
-	s.newSprite.picture("loot-chestOn","picture/loot-chestOn.png",32,32,2);
-	s.newSprite.picture("loot-chestOff","picture/loot-chestOff.png",32,32,2);
-	s.newSprite.picture("tree-down","picture/tree-down.png",64,80,2,{legs:40});
-	s.newSprite.picture("tree-red","picture/tree-red.png",64,80,2,{legs:40});
-	s.newSprite.picture("rock-down","picture/rock-down.png",64,64,1.5,{legs:30});
-	s.newSprite.picture("rock-bronze","picture/rock-bronze.png",64,64,1.5,{legs:30});
-	
-	
-	s.newSprite.picture("green-down","picture/green-down.png",32,32,2,{legs:-1000});
-	s.newSprite.picture("green-up","picture/green-up.png",32,32,2,{legs:30});
-	s.newSprite.picture("red-down","picture/red-down.png",32,32,2,{legs:-1000});
-	s.newSprite.picture("red-up","picture/red-up.png",32,32,2,{legs:30});
-	s.newSprite.picture("yellow-down","picture/yellow-down.png",32,32,2,{legs:-1000});
-	s.newSprite.picture("yellow-up","picture/yellow-up.png",32,32,2,{legs:30});
-
-	s.newSprite.picture("toggle-greenOn","picture/toggle-greenOn.png",32,32,2);
-	s.newSprite.picture("toggle-greenOff","picture/toggle-greenOff.png",32,32,2);
-	s.newSprite.picture("toggle-yellowOn","picture/toggle-yellowOn.png",32,32,2);
-	s.newSprite.picture("toggle-yellowOff","picture/toggle-yellowOff.png",32,32,2);
-	
-	s.newSprite.picture("toggle-greenOn-bronze","picture/toggle-greenOn-bronze.png",32,32,2);
-	s.newSprite.picture("toggle-greenOff-bronze","picture/toggle-greenOff-bronze.png",32,32,2);
-	s.newSprite.picture("toggle-yellowOn-bronze","picture/toggle-yellowOn-bronze.png",32,32,2);
-	s.newSprite.picture("toggle-yellowOff-bronze","picture/toggle-yellowOff-bronze.png",32,32,2);
-	
-	s.newSprite.picture("toggle-boxOn","picture/toggle-boxOn.png",32,32,2);
-	s.newSprite.picture("toggle-boxOff","picture/toggle-boxOff.png",32,32,2);
-	s.newSprite.picture("toggle-boxOn-bronze","picture/toggle-boxOn-bronze.png",32,32,2);
-	s.newSprite.picture("toggle-boxOff-bronze","picture/toggle-boxOff-bronze.png",32,32,2);
-	
-	s.newSprite.picture("toggle-redOn","picture/toggle-boxOn.png",32,32,2);
-	s.newSprite.picture("toggle-redOff","picture/toggle-boxOff.png",32,32,2);
-	s.newSprite.picture("toggle-redOn-bronze","picture/toggle-boxOn-bronze.png",32,32,2);
-	s.newSprite.picture("toggle-redOff-bronze","picture/toggle-boxOff-bronze.png",32,32,2);
-	
-	s.newSprite.picture("toggle-wallOff","picture/toggle-wallOff.png",32,32,2);
-	s.newSprite.picture("toggle-wallOn","picture/toggle-wallOn.png",32,32,2);
-	
-	s.newSprite("hunt-squirrel","actor/squirrel.png",[-12,12,-12,12],{
-		size:2,side:[1,2,3,0],link:"http://charas-project.net/resources_download.php?id=15580&file=resources%2FCharasets%2F1%2F10052_1098590341.png",
-	},[s.newSprite.anim("move",3,24,24,0.4)]);
-	s.newSprite.picture("hunt-down","picture/hunt-down.png",32,64,1.5,{legs:35});
-
-	
-	s.newSprite.picture("teleport-door","picture/teleport-door.png",32,48,2,{offsetY:-16});
-	s.newSprite.picture("teleport-cave","picture/teleport-cave.png",128,102,1,{offsetY:-32});
-	
-	s.newSprite.picture("teleport-zone","picture/teleport-zone.png",32,32,1.5,{legs:-1000,side:[0,1,2,3]});
-	s.newSprite.picture("teleport-zoneLight","picture/teleport-zoneLight.png",32,32,1.5,{legs:-1000,side:[0,1,2,3]});
-	s.newSprite.picture("teleport-underground","picture/teleport-underground.png",32,32,2.5);
-	s.newSprite.picture("teleport-well","picture/teleport-well.png",48,48,2);
-		
-	s.newSprite.picture("block-rock1x1","picture/block-rock2x2.png",63,63,0.5);	//size and bumperbox not same
-	s.newSprite.picture("block-barrier","picture/block-barrier.png",127,64,1,{hpBar:-40});	//size and bumperbox not same
-			
-	s.newSprite.picture("block-spike","picture/block-spike1x1.png",16,32,2,{showBorder:false});
-	s.newSprite.picture("block-spike1x1","picture/block-spike1x1.png",16,32,2,{showBorder:false});
-	s.newSprite.picture("block-spike1x3","picture/block-spike1x3.png",16,64,2,{showBorder:false,offsetY:16});
-	s.newSprite.picture("block-spike1x5","picture/block-spike1x5.png",16,96,2,{showBorder:false,offsetY:32});
-	s.newSprite.picture("block-spike1x9","picture/block-spike1x9.png",16,160,2,{showBorder:false,offsetY:64});	
-	
-	s.newSprite.picture("block-spike3x1","picture/block-spike3x1.png",48,32,2,{showBorder:false,offsetX:16});
-	s.newSprite.picture("block-spike5x1","picture/block-spike5x1.png",80,32,2,{showBorder:false,offsetX:32});
-	s.newSprite.picture("block-spike9x1","picture/block-spike9x1.png",144,32,2,{showBorder:false,offsetX:64});
-
-	s.newSprite.picture("block-bridgeH","picture/block-bridgeH.png",32,32,2,{legs:-50});
-	s.newSprite.picture("block-bridgeV","picture/block-bridgeV.png",32,32,2,{legs:-50});
-	s.newSprite.picture("invisible","picture/invisible.png",32,32);
-	s.newSprite.picture("loot-flowerOn","picture/loot-flowerOn.png",32,32,4);
-	s.newSprite.picture("loot-flowerOff","picture/loot-flowerOff.png",32,32,4);
-
-	s.newSprite.picture("tower-green","picture/tower-green.png",64,64);
-	s.newSprite.picture("tower-yellow","picture/tower-yellow.png",64,64);
-	s.newSprite.picture("tower-red","picture/tower-red.png",64,64);
-	s.newSprite.picture("tower-blue","picture/tower-blue.png",64,64);
-	s.newSprite.picture("tower-enemy","picture/tower-enemy.png",32,32,2);
-})();
 
 //{ General Item
-s.newItem('bugged-drop','I AM ERR0R','system.square');
-s.newItem('test','Test','system.square');
+s.newItem('bugged-drop','I AM ERR0R','system-square');
+s.newItem('test','Test','system-square');
 
-s.newItem('orb-removal','Orb of Removal','orb.removal',[
+s.newItem('orb-removal','Orb of Removal','orb-removal',[
 	s.newItem.option(function(key){
 		Main.reputation.addRemovePt(Main.get(key),1);
 		Main.removeItem(Main.get(key),'Qsystem-orb-removal',1);
 	},"Use","Get a Reputation Remove Point.")
 ],null,{destroy:1,trade:1});
 
+s.newItem('competition-1','Gold Medal','orb-boost',[
+],'Medal for finishing first in competition.',{destroy:1,trade:0});
+s.newItem('competition-any','Medal','orb-boost',[
+],'Medal for participating in a competition.',{destroy:1,trade:0});
 
 //}
 
 //{ Equip
-s.newEquip('unarmed','weapon','mace','Mace',1);
+s.newEquip('unarmed','weapon','mace','Mace',0.8);
 s.newEquip('start-body','body','metal','Body',1,[ //{
 	s.newEquip.boost('hp-regen',0.05,'*'),
 ],{ //}
 	upgradable:true,
-	maxAmount:2,
+	maxBoostAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
 s.newEquip('start-helm','helm','wood','Helm',1,[ //{
-	s.newEquip.boost('def-melee-+',0.05,'*'),
+	s.newEquip.boost('def-melee',0.05,'+'),
 ],{ //}
 	upgradable:true,
-	maxAmount:2,
+	maxBoostAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
 s.newEquip('start-amulet','amulet','ruby','Amulet',1,[ //{
 	s.newEquip.boost('maxSpd',0.05,'*'),
 ],{ //}
 	upgradable:true,
-	maxAmount:2,
+	maxBoostAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
 s.newEquip('start-ring','ring','sapphire','Ring',1,[ //{
-	s.newEquip.boost('magicFind-quantity',0.15,'*'),
+	s.newEquip.boost('atkSpd',0.05,'*'),
 ],{ //}
 	upgradable:true,
-	maxAmount:2,
+	maxBoostAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
 s.newEquip('start-weapon','weapon','mace','Mace',1,[ //{
-	s.newEquip.boost('dmg-melee-+',0.15,'*'),
+	s.newEquip.boost('dmg-melee',0.15,'+'),
 ],{ //}
 	upgradable:true,
-	maxAmount:2,
+	maxBoostAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
 
 s.newEquip('start-bow','weapon','bow','Bow',1,[ //{
-	s.newEquip.boost('dmg-range-+',0.15,'*'),
+	s.newEquip.boost('dmg-range',0.15,'+'),
 ],{ //}
 	upgradable:true,
-	maxAmount:2,
+	maxBoostAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
 s.newEquip('start-staff','weapon','staff','Staff',1,[
-	s.newEquip.boost('dmg-magic-+',0.15,'*'),	
+	s.newEquip.boost('dmg-magic',0.15,'+'),	
 ],{ //}
 	upgradable:true,
-	maxAmount:2,
+	maxBoostAmount:2,
 	upgradeInfo:Equip.UpgradeInfo(1000,Equip.UpgradeInfo.item([['Qsystem-wood-0',1]])),
 });
 
@@ -287,8 +93,6 @@ s.newEquip('start-staff','weapon','staff','Staff',1,[
 
 //####################################
 
-
-
 s.newAbility('boost','boost',{},{});
 s.newAbility('attack','attack',{},{type:'bullet'});
 s.newAbility('idle','idle',{},{});
@@ -297,8 +101,10 @@ s.newAbility('event','event',{},{});
 s.newAbility('heal','heal',{},{});
 s.newAbility('dodge','dodge',{},{});
 
+var MAXTIMER = 18;
+
 s.newAbility('start-melee','attack',{
-	name:'Strike',icon:'attackMelee.cube',
+	name:'Strike',icon:'attackMelee-cube',
 	description:'Regular Melee Strike',
 	periodOwn:10,periodGlobal:10,
 },{
@@ -310,58 +116,63 @@ s.newAbility('start-melee','attack',{
 	knock:s.newAbility.status(1,3,0.1),
 });
 s.newAbility('start-bullet','attack',{
-	name:'Basic Bullet',icon:'attackRange.steady',
+	name:'Basic Bullet',icon:'attackRange-steady',
 	description:'Very fast arrow shooting.',
 	periodOwn:10,periodGlobal:10,
 },{
 	type:"bullet",
+	maxTimer:MAXTIMER,
 	amount:3,angleRange:5,
 	sprite:s.newAbility.sprite("arrow",1),
 	hitAnim:s.newAbility.anim("arrowHit",0.5),
 	dmg:s.newAbility.dmg(100,'range'),	
 });
 s.newAbility('player-magicBullet','attack',{
-	name:'Magic Bullet',icon:'attackMagic.ball',
+	name:'Magic Bullet',icon:'attackMagic-ball',
 	description:'Powerful magic spell with increased chance to drain mana.',
 	periodOwn:12,periodGlobal:12,
 },{
 	type:"bullet",
+	maxTimer:MAXTIMER,
 	sprite:s.newAbility.sprite("shadowball",1),
 	hitAnim:s.newAbility.anim("lightningHit",0.5),
 	dmg:s.newAbility.dmg(300,'magic'),
 	drain:s.newAbility.status(0.25,1,1),
 });
 s.newAbility('player-fireBullet','attack',{
-	name:'Fire Ball',icon:'attackMagic.meteor',
+	name:'Fire Ball',icon:'attackMagic-meteor',
 	description:'Shoot a single fireball that explodes upon hit.',
 	periodOwn:20,periodGlobal:20,
 },{
 	type:"bullet",
+	maxTimer:MAXTIMER,
 	sprite:s.newAbility.sprite("fireball",1),
 	hitAnim:s.newAbility.anim("fireHit",0.5),
 	dmg:s.newAbility.dmg(400,'fire'),
 	onHit:s.newAbility.onHit(1,{
 		type:"strike",width:200,height:200,delay:0,
-		preDelayAnim:s.newAbility.anim("fireBomb",1),
+		preDelayAnim:s.newAbility.anim("fireBomb2",1),
 		dmg:s.newAbility.dmg(100,'fire'),
 	}),
 });
 s.newAbility('player-coldBullet','attack',{
-	name:'Ice Shards',icon:'attackMagic.crystal',
+	name:'Ice Shards',icon:'attackMagic-crystal',
 	description:'Shoot multiple ice shards.',
 	periodOwn:20,periodGlobal:20,
 },{
 	type:"bullet",angleRange:5,amount:2,
+	maxTimer:MAXTIMER,
 	sprite:s.newAbility.sprite("iceshard",1),
 	hitAnim:s.newAbility.anim("coldHit",0.5),
 	dmg:s.newAbility.dmg(300,'cold'),
 });
 s.newAbility('player-lightningBullet','attack',{
-	name:'Lightning Bullet',icon:'attackMagic.static',
+	name:'Lightning Bullet',icon:'attackMagic-static',
 	description:'Shoot piercing lightning balls at the speed of light.',
 	periodOwn:3,periodGlobal:3,
 },{
 	type:"bullet",
+	maxTimer:MAXTIMER,
 	sprite:s.newAbility.sprite("lightningball",0.7),
 	hitAnim:s.newAbility.anim("lightningHit",0.5),
 	dmg:s.newAbility.dmg(125,'lightning'),
@@ -369,7 +180,7 @@ s.newAbility('player-lightningBullet','attack',{
 });
 
 s.newAbility('player-meleeBig','attack',{
-	name:'Bleeding Blow',icon:'attackMelee.cube',
+	name:'Bleeding Blow',icon:'attackMelee-cube',
 	description:'Powerful Melee Strike with increased bleed chance. Cost life.',
 	periodOwn:20,periodGlobal:20,costHp:100,
 },{
@@ -382,18 +193,19 @@ s.newAbility('player-meleeBig','attack',{
 	bleed:s.newAbility.status(0.25,1,1),
 });
 s.newAbility('player-windKnock','attack',{
-	name:'Wind',icon:'attackRange.steady',
+	name:'Wind',icon:'attackRange-steady',
 	description:'Defensive wind that pushes enemies away.',
 	periodOwn:20,periodGlobal:20,costMana:50,
 },{
 	type:"bullet",angleRange:30,amount:3,
+	maxTimer:MAXTIMER,
 	sprite:s.newAbility.sprite("tornado",1),
 	hitAnim:s.newAbility.anim("strikeHit",0.5),
 	dmg:s.newAbility.dmg(200,'range'),
 	knock:s.newAbility.status(1,1.5,1.5),
 });
 s.newAbility('player-magicBomb','attack',{
-	name:'Magic Explosion',icon:'attackMagic.ball',
+	name:'Magic Explosion',icon:'attackMagic-ball',
 	description:'Explosive spell that can leech life.',
 	periodOwn:20,periodGlobal:20,costMana:75,
 },{
@@ -405,28 +217,30 @@ s.newAbility('player-magicBomb','attack',{
 	leech:s.newAbility.status(0.25,1,1),
 });
 s.newAbility('start-fireball','attack',{
-	name:'Fireball Boom',icon:'attackMagic.meteor',
+	name:'Fireball Boom',icon:'attackMagic-meteor',
 	description:'Shoot multiple fireballs.',
 	periodOwn:20,periodGlobal:20,costMana:50,
 },{
 	type:"bullet",angleRange:35,amount:7,
+	maxTimer:MAXTIMER,
 	sprite:s.newAbility.sprite("fireball",1.2),
 	hitAnim:s.newAbility.anim("fireHit",0.5),
 	dmg:s.newAbility.dmg(150,'fire'),
 });
 s.newAbility('start-freeze','attack',{
-	name:'Freeze Bullet',icon:'attackMagic.crystal',
+	name:'Freeze Bullet',icon:'attackMagic-crystal',
 	description:'Defensive spell that feezes enemies.',
 	periodOwn:25,periodGlobal:25,costMana:40,
 },{
 	type:"bullet",angleRange:25,amount:5,
+	maxTimer:MAXTIMER,
 	sprite:s.newAbility.sprite("iceshard",1),
 	hitAnim:s.newAbility.anim("coldHit",0.5),
 	dmg:s.newAbility.dmg(200,'cold'),
 	chill:s.newAbility.status(0.5,4,1),
 });
 s.newAbility('player-lightningBomb','attack',{
-	name:'Lightning Explosion',icon:'attackMagic.static',
+	name:'Lightning Explosion',icon:'attackMagic-static',
 	description:'Explodes in all directions, piercing through enemies.',
 	periodOwn:20,periodGlobal:20,costMana:75,
 },{
@@ -473,12 +287,12 @@ s.newAbility('player-healSlowCast','heal',{
 });
 
 s.newAbility('healZone','attack',{
-	name:'Heal Zone',icon:'heal.plus',
+	name:'Heal Zone',icon:'heal-plus',
 	periodOwn:50,periodGlobal:50,
 },{
 	type:"strike",width:400,height:400,delay:0,
 	initPosition:s.newAbility.initPosition(0,0),
-	postDelayAnim:s.newAbility.anim("aura",2),
+	postDelayAnim:s.newAbility.anim("boostRed",2),
 	dmg:s.newAbility.dmg(0,'lightning'),
 	damageIfMod:1,
 	onHitHeal:s.newAbility.onHitHeal(200),
@@ -510,7 +324,7 @@ s.newAbility('player-dodgeLife','dodge',{
 });
 
 s.newAbility('superNiceLooking','attack',{
-	name:'Basic Bullet',icon:'attackRange.steady',
+	name:'Basic Bullet',icon:'attackRange-steady',
 	description:'Very fast arrow shooting.',
 	periodOwn:10,periodGlobal:10,
 },{
@@ -519,21 +333,19 @@ s.newAbility('superNiceLooking','attack',{
 	sprite:s.newAbility.sprite("fireball",1.5),
 	hitAnim:s.newAbility.anim("strikeHit",0.5),
 	dmg:s.newAbility.dmg(300,'fire'),
-	spd:2,
+	spd:s.newAbility.spd(0.1),
 	onMove:s.newAbility.onMove(2,3,{
 		sprite:s.newAbility.sprite("fireball",1),
 		type:"bullet",
 		amount:8,
-		spd:5,
+		spd:s.newAbility.spd(0.5),
 		angleRange:360,	
 		dmg:s.newAbility.dmg(300,'fire'),
 	}),
 });
 
-
-
 s.newAbility('meleeBullet','attack',{
-	name:'Bone Throw',icon:'weapon.boomerang',
+	name:'Bone Throw',icon:'weapon-boomerang',
 	periodOwn:25,periodGlobal:25,
 	//spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -543,7 +355,7 @@ s.newAbility('meleeBullet','attack',{
 	dmg:s.newAbility.dmg(150,'melee'),
 });
 s.newAbility('rangeBullet','attack',{
-	name:'Rock Throw',icon:'offensive.bullet',
+	name:'Rock Throw',icon:'offensive-bullet',
 	periodOwn:25,periodGlobal:25,
 	//spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -553,7 +365,7 @@ s.newAbility('rangeBullet','attack',{
 	dmg:s.newAbility.dmg(150,'range'),
 });
 s.newAbility('magicBullet','attack',{
-	name:'Magic Bullet',icon:'resource.dodge',
+	name:'Magic Bullet',icon:'defensive-speed',
 	periodOwn:25,periodGlobal:25,
 	//spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -563,7 +375,7 @@ s.newAbility('magicBullet','attack',{
 	dmg:s.newAbility.dmg(150,'magic'),
 });
 s.newAbility('fireBullet','attack',{
-	name:'Fire Bullet',icon:'attackMagic.fireball',
+	name:'Fire Bullet',icon:'attackMagic-fireball',
 	periodOwn:25,periodGlobal:25,
 	//spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -573,7 +385,7 @@ s.newAbility('fireBullet','attack',{
 	dmg:s.newAbility.dmg(150,'fire'),
 });
 s.newAbility('coldBullet','attack',{
-	name:'Cold Bullet',icon:'attackMagic.crystal',
+	name:'Cold Bullet',icon:'attackMagic-crystal',
 	periodOwn:25,periodGlobal:25,
 	//spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -583,7 +395,7 @@ s.newAbility('coldBullet','attack',{
 	dmg:s.newAbility.dmg(150,'cold'),
 });
 s.newAbility('lightningBullet','attack',{
-	name:'Lightning Bullet',icon:'attackMagic.static',
+	name:'Lightning Bullet',icon:'attackMagic-static',
 	periodOwn:25,periodGlobal:25,
 	//spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -594,17 +406,16 @@ s.newAbility('lightningBullet','attack',{
 });
 		
 s.newAbility('meleeBomb','attack',{
-	name:'Ground Break',icon:'system1.less',
+	name:'Ground Break',icon:'system1-less',
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
 	type:"strike",width:100,height:100,delay:5,
 	initPosition:s.newAbility.initPosition(0,200),
-	preDelayAnim:s.newAbility.anim("boostWhite",1),
 	dmg:s.newAbility.dmg(250,'melee'),
 });
 s.newAbility('rangeBomb','attack',{
-	name:'Tornado',icon:'misc.disync',
+	name:'Tornado',icon:'attackRange-rain',
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -614,7 +425,7 @@ s.newAbility('rangeBomb','attack',{
 	dmg:s.newAbility.dmg(250,'range'),
 });
 s.newAbility('magicBomb','attack',{
-	name:'Magic Explosion',icon:'attackMagic.fireball',
+	name:'Magic Explosion',icon:'attackMagic-fireball',
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -624,18 +435,18 @@ s.newAbility('magicBomb','attack',{
 	dmg:s.newAbility.dmg(250,'magic'),
 });
 s.newAbility('fireBomb','attack',{
-	name:'Fire Explosion',icon:'attackMagic.fireball',
+	name:'Fire Explosion',icon:'attackMagic-fireball',
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
 	type:"strike",width:100,height:100,delay:5,
 	initPosition:s.newAbility.initPosition(0,200),
-	preDelayAnim:s.newAbility.anim("fireBomb",0.6),
+	preDelayAnim:s.newAbility.anim("fireBomb2",0.6),
 	dmg:s.newAbility.dmg(250,'fire'),
 });
 
 s.newAbility('coldBomb','attack',{
-	name:'Cold Explosion',icon:'attackMagic.crystal',
+	name:'Cold Explosion',icon:'attackMagic-crystal',
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -645,7 +456,7 @@ s.newAbility('coldBomb','attack',{
 	dmg:s.newAbility.dmg(250,'cold'),
 });	
 s.newAbility('lightningBomb','attack',{
-	name:'Lightning Explosion',icon:'attackMagic.static',
+	name:'Lightning Explosion',icon:'attackMagic-static',
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -656,7 +467,7 @@ s.newAbility('lightningBomb','attack',{
 });	
 	
 s.newAbility('fireNova','attack',{
-	name:'Fire Nova',icon:'attackMagic.fireball',
+	name:'Fire Nova',icon:'attackMagic-fireball',
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('blue',5),delay:5,
 },{
@@ -664,7 +475,7 @@ s.newAbility('fireNova','attack',{
 	sprite:s.newAbility.sprite("fireball",1),
 	hitAnim:s.newAbility.anim("fireHit",0.5),
 	dmg:s.newAbility.dmg(150,'fire'),
-	spd:4,
+	spd:s.newAbility.spd(0.5),
 	onMove:s.newAbility.onMove(1,3,{
 		type:"bullet",
 		sprite:s.newAbility.sprite("fireball",0.5),
@@ -673,7 +484,7 @@ s.newAbility('fireNova','attack',{
 	}),
 });
 s.newAbility('coldNova','attack',{
-	name:'Cold Nova',icon:'attackMagic.crystal',
+	name:'Cold Nova',icon:'attackMagic-crystal',
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('blue',5),delay:5,
 },{
@@ -681,7 +492,7 @@ s.newAbility('coldNova','attack',{
 	sprite:s.newAbility.sprite("iceshard",1),
 	hitAnim:s.newAbility.anim("coldHit",0.5),
 	dmg:s.newAbility.dmg(150,'cold'),
-	spd:4,
+	spd:s.newAbility.spd(0.5),
 	maxTimer:80,
 	onMove:s.newAbility.onMove(4,3,{
 		type:"bullet",angleRange:360,amount:4,
@@ -692,7 +503,7 @@ s.newAbility('coldNova','attack',{
 	}),
 });
 s.newAbility('lightningNova','attack',{
-	name:'Lightning Nova',icon:'attackMagic.fireball',
+	name:'Lightning Nova',icon:'attackMagic-fireball',
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('blue',5),delay:5,
 },{
@@ -711,7 +522,7 @@ s.newAbility('lightningNova','attack',{
 });
 
 s.newAbility('scratch','attack',{
-	name:'Scratch',icon:'attackMelee.scar',
+	name:'Scratch',icon:'attackMelee-scar',
 	periodOwn:25,periodGlobal:25,
 	spriteFilter:s.newAbility.spriteFilter('red',5),delay:10,
 },{
@@ -721,18 +532,18 @@ s.newAbility('scratch','attack',{
 	dmg:s.newAbility.dmg(150,'melee'),
 });
 s.newAbility('scratchBig','attack',{
-	name:'Multi Scratch',icon:'attackMelee.scar',
+	name:'Multi Scratch',icon:'attackMelee-scar',
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('red',5),delay:10,
 },{
 	type:"strike",width:100,height:100,
 	initPosition:s.newAbility.initPosition(0,50),
-	preDelayAnim:s.newAbility.anim("scratch2",0.5),
+	preDelayAnim:s.newAbility.anim("scratch",0.5),
 	hitAnim:s.newAbility.anim("strikeHit",0.25),
 	dmg:s.newAbility.dmg(200,'melee'),
 });	
 s.newAbility('arrowBullet','attack',{
-	name:'Arrow',icon:'skill.range',
+	name:'Arrow',icon:'element-range',
 	periodOwn:25,periodGlobal:25,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -742,7 +553,7 @@ s.newAbility('arrowBullet','attack',{
 	dmg:s.newAbility.dmg(150,'range'),
 });
 s.newAbility('dart','attack',{
-	name:'Dart',icon:'attackRange.head',
+	name:'Dart',icon:'attackRange-head',
 	periodOwn:25,periodGlobal:25,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -752,7 +563,7 @@ s.newAbility('dart','attack',{
 	dmg:s.newAbility.dmg(150,'range'),
 });	
 s.newAbility('windBullet','attack',{
-	name:'Wind',icon:'attackRange.head',
+	name:'Wind',icon:'attackRange-head',
 	periodOwn:25,periodGlobal:25,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -763,7 +574,7 @@ s.newAbility('windBullet','attack',{
 });
 
 s.newAbility('bind','attack',{
-	name:'Binding',icon:'curse.stumble',
+	name:'Binding',icon:'curse-stumble',
 	periodOwn:50,periodGlobal:50,
 	spriteFilter:s.newAbility.spriteFilter('red',5),delay:10,
 },{
@@ -775,18 +586,18 @@ s.newAbility('bind','attack',{
 	chill:s.newAbility.status(1,1,1),
 });
 s.newAbility('mine','attack',{
-	name:'Mine',icon:'attackRange.head',
+	name:'Mine',icon:'attackRange-head',
 	periodOwn:25,periodGlobal:25,
 },{
 	type:"bullet",
-	spd:0,
+	spd:s.newAbility.spd(0),
 	maxTimer:250,
 	sprite:s.newAbility.sprite("dart",1),
-	hitAnim:s.newAbility.anim("curseGreen",0.5),
+	hitAnim:s.newAbility.anim("cursePink",0.5),
 	dmg:s.newAbility.dmg(150,'magic'),
 });
 s.newAbility('boomerang','attack',{
-	name:'Boomerang',icon:'weapon.boomerang',
+	name:'Boomerang',icon:'weapon-boomerang',
 	periodOwn:25,periodGlobal:25,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -799,7 +610,7 @@ s.newAbility('boomerang','attack',{
 	pierce:s.newAbility.pierce(1,0.8,5),
 });
 s.newAbility('boneBoomerang','attack',{
-	name:'Bone Boomerang',icon:'attackMagic.fireball',
+	name:'Bone Boomerang',icon:'attackMagic-fireball',
 	periodOwn:25,periodGlobal:25,
 	spriteFilter:s.newAbility.spriteFilter('green',5),delay:5,
 },{
@@ -826,16 +637,15 @@ s.newAbility('healModel','heal',{
 //}
 
 //{ NPC needs to be after s.newAbility so can use their templates
-s.newNpc("player",{
+/*s.newNpc("player",{
 	type:"player",
 	damageIf:'npc',
 	awareNpc:1,
 	alwaysActive:1,
-	minimapIcon:'color.yellow',
-	party:'bugged',
+	minimapIcon:'color-yellow',
 	pickRadius:250,
 	friction:CST.FRICTION,
-});
+});*/
 
 s.newNpc("bat",{
 	name:"Bat",
@@ -898,7 +708,7 @@ s.newNpc("mushroom",{
 	sprite:s.newNpc.sprite("mushroom"),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability(s.newAbility(null,'magicBullet',{},{
-			spd:0.1,
+			spd:s.newAbility.spd(0.01),
 			maxTimer:250,
 			stun:s.newAbility.status(1,1,1),
 			dmg:s.newAbility.dmg(200,'magic'),
@@ -978,7 +788,7 @@ s.newNpc("slime",{
 	moveRange:s.newNpc.moveRange(1,1),	
 }); 
 s.newNpc("slime-child",{
-	name:"Small Slime",
+	name:"Slime Minion",
 	sprite:s.newNpc.sprite("slime",0.5),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability(s.newAbility(null,'coldBullet',{},{
@@ -991,9 +801,9 @@ s.newNpc("slime-child",{
 	hp:100,
 	moveRange:s.newNpc.moveRange(0.1,1),
 });
-s.newNpc("salamander",{
-	name:"Salamander",
-	sprite:s.newNpc.sprite("salamander"),
+s.newNpc("snake",{
+	name:"Snake",
+	sprite:s.newNpc.sprite("snake"),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability(s.newAbility(null,'fireBullet',{},{
 			dmg:s.newAbility.dmg(10,'fire'),
@@ -1025,7 +835,7 @@ s.newNpc("salamander",{
 	moveRange:s.newNpc.moveRange(1.5,1),
 });
 s.newNpc("goblin-melee",{
-	name:"Goblin",
+	name:"Goblin Warrior",
 	sprite:s.newNpc.sprite("goblin"),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability(s.newAbility(null,'scratch',{},{
@@ -1043,7 +853,7 @@ s.newNpc("goblin-melee",{
 	moveRange:s.newNpc.moveRange(0.5,1),
 });
 s.newNpc("goblin-range",{
-	name:"Goblin",
+	name:"Goblin Ranger",
 	sprite:s.newNpc.sprite("goblin"),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability(s.newAbility(null,'arrowBullet',{},{
@@ -1062,7 +872,7 @@ s.newNpc("goblin-range",{
 	moveRange:s.newNpc.moveRange(1.5,1),
 });
 s.newNpc("goblin-magic",{
-	name:"Goblin",
+	name:"Goblin Mage",
 	sprite:s.newNpc.sprite("goblin"),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability(s.newAbility(null,'fireBomb',{},{
@@ -1081,7 +891,7 @@ s.newNpc("goblin-magic",{
 	moveRange:s.newNpc.moveRange(2.5,1),
 });
 s.newNpc("orc-melee",{
-	name:"Orc",
+	name:"Orc Warrior",
 	sprite:s.newNpc.sprite("orc-melee"),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability(s.newAbility(null,'scratch',{},{
@@ -1105,11 +915,11 @@ s.newNpc("orc-melee",{
 	moveRange:s.newNpc.moveRange(0.5,1),
 });
 s.newNpc("orc-range",{
-	name:"Orc",
+	name:"Orc Ranger",
 	sprite:s.newNpc.sprite("orc-range"),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability(s.newAbility(null,'arrowBullet',{},{
-			sprite:s.newAbility.sprite("arrow",1.5),
+			sprite:s.newAbility.sprite("arrow",1),
 			amount:3,angleRange:30,
 			pierce:s.newAbility.pierce(1,0.8,5),
 			dmg:s.newAbility.dmg(200,'range'),
@@ -1127,7 +937,7 @@ s.newNpc("orc-range",{
 	moveRange:s.newNpc.moveRange(1.5,1),
 }); 
 s.newNpc("orc-magic",{
-	name:"Orc",
+	name:"Orc Mage",
 	sprite:s.newNpc.sprite("orc-magic"),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability(s.newAbility(null,'coldBomb',{},{
@@ -1145,9 +955,9 @@ s.newNpc("orc-magic",{
 	mastery:s.newNpc.mastery([2,0.5,1,1,1,1]),
 	moveRange:s.newNpc.moveRange(2.5,1),
 });
-s.newNpc("gargoyle",{
-	name:"Gargoyle",
-	sprite:s.newNpc.sprite("gargoyle"),
+s.newNpc("smallWorm",{
+	name:"Worm",
+	sprite:s.newNpc.sprite("smallWorm"),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability('lightningBomb',[0.5,0.5,1]),
 		s.newNpc.abilityAi.ability(s.newAbility(null,'scratch',{},{
@@ -1181,9 +991,9 @@ s.newNpc("ghost",{
 	mastery:s.newNpc.mastery([2,1,1,1,0.5,1]),
 	moveRange:s.newNpc.moveRange(1.5,1),
 });
-s.newNpc("death",{
-	name:"Death",
-	sprite:s.newNpc.sprite("death"),
+s.newNpc("eyeball",{
+	name:"Eyeball",
+	sprite:s.newNpc.sprite("eyeball"),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability(s.newAbility(null,'magicBullet',{},{
 			drain:s.newAbility.status(1,1,1),
@@ -1264,9 +1074,9 @@ s.newNpc("spirit",{
 	mastery:s.newNpc.mastery([1,1,1,2,1,0.5]),
 	moveRange:s.newNpc.moveRange(2,1),
 });
-s.newNpc("demon",{
-	name:"Demon",
-	sprite:s.newNpc.sprite("demon"),
+s.newNpc("pumpking",{
+	name:"Pumpking",
+	sprite:s.newNpc.sprite("pumpking"),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability('fireNova',[0,0.4,0.4]),
 		s.newNpc.abilityAi.ability(s.newAbility(null,'fireBullet',{},{
@@ -1292,7 +1102,7 @@ s.newNpc("taurus",{
 			bleed:s.newAbility.status(0.5,1,1),
 		}),[0,0.4,0.4]),		
 		s.newNpc.abilityAi.ability(s.newAbility(null,'scratchBig',{},{
-			postDelayAnim:s.newAbility.anim('scratch2',1.5),
+			postDelayAnim:s.newAbility.anim('scratch',1.5),
 			dmg:s.newAbility.dmg(200,'melee'),
 			onDamagePhase:s.newAbility.onDamagePhase(0.5,{
 				type:"bullet",angleRange:360,amount:8,
@@ -1342,9 +1152,9 @@ s.newNpc("mummy",{
 	mastery:s.newNpc.mastery([1,1,1,0.5,2,1]),
 	moveRange:s.newNpc.moveRange(0.5,1),
 });
-s.newNpc("bird",{ 
-	name:"Bird",
-	sprite:s.newNpc.sprite("birdRed",0.8),
+s.newNpc("bigWorm",{ 
+	name:"Worm",
+	sprite:s.newNpc.sprite("bigWorm",0.8),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability('rangeBomb',[0.5,0.5,0.5]),
 		s.newNpc.abilityAi.ability(s.newAbility(null,'scratch',{},{
@@ -1363,7 +1173,7 @@ s.newNpc("bird",{
 });
 s.newNpc("dragon",{
 	name:"Dragon",
-	sprite:s.newNpc.sprite("dragonKing",0.8),
+	sprite:s.newNpc.sprite("dragon",0.8),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability(s.newAbility(null,'windBullet',{},{
 			angleRange:360,amount:9,
@@ -1383,25 +1193,19 @@ s.newNpc("dragon",{
 
 //#################
 
-s.newNpc("warrior",{
-	name:"Ringo",
-	sprite:s.newNpc.sprite("warrior-male0"),
-	nevercombat:1,
-	maxSpd:s.newNpc.maxSpd(0.5),
-});
 s.newNpc("npc",{
 	name:"Ringo",
-	sprite:s.newNpc.sprite("villager-male0"),
+	sprite:s.newNpc.sprite("villagerMale-0"),
 	nevercombat:1,
 	angle:90,
 	targetSetting:s.newNpc.targetSetting(null,25*4),
 	moveRange:s.newNpc.moveRange(3,1,3),
 	maxSpd:s.newNpc.maxSpd(0.35),
-	minimapIcon:'color.green',
+	minimapIcon:'color-green',
 });
 s.newNpc("npc-playerLike",{
 	name:"Ringo",
-	sprite:s.newNpc.sprite("villager-male0"),
+	sprite:s.newNpc.sprite("villagerMale-0"),
 	targetIf:'false',
 	maxSpd:s.newNpc.maxSpd(0.35),
 	targetSetting:s.newNpc.targetSetting(null,25*4),
@@ -1409,14 +1213,21 @@ s.newNpc("npc-playerLike",{
 	combatType:'player',
 	awareNpc:1,
 	angle:90,
-	minimapIcon:'color.green',
+	minimapIcon:'color-green',
 });
 
+s.newNpc("genericEnemy",{
+	name:"Enemy",
+	sprite:s.newNpc.sprite("bat"),
+	abilityAi:s.newNpc.abilityAi([
+		s.newNpc.abilityAi.ability('idle',[1,1,1]),
+	]),
+});
 
 
 s.newNpc("loot-chestOff",{
 	name:"Chest",
-	minimapIcon:'minimapIcon.loot',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("loot-chestOff"),
 	nevercombat:1,
 	nevermove:1,
@@ -1424,7 +1235,7 @@ s.newNpc("loot-chestOff",{
 });
 s.newNpc("loot-chestOn",{
 	name:"Chest",
-	minimapIcon:'minimapIcon.loot',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("loot-chestOn"),
 	nevercombat:1,
 	nevermove:1,
@@ -1432,7 +1243,7 @@ s.newNpc("loot-chestOn",{
 });
 s.newNpc("loot-flowerOff",{
 	name:"Flower",
-	minimapIcon:'minimapIcon.loot',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("loot-flowerOff"),
 	nevercombat:1,
 	nevermove:1,
@@ -1440,7 +1251,7 @@ s.newNpc("loot-flowerOff",{
 });
 s.newNpc("loot-flowerOn",{
 	name:"Flower",
-	minimapIcon:'minimapIcon.loot',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("loot-flowerOn"),
 	nevercombat:1,
 	nevermove:1,
@@ -1448,7 +1259,7 @@ s.newNpc("loot-flowerOn",{
 });
 s.newNpc("toggle-boxOff",{
 	name:"Lever",
-	minimapIcon:'minimapIcon.toggle',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("toggle-boxOff"),
 	nevercombat:1,
 	nevermove:1,
@@ -1456,7 +1267,7 @@ s.newNpc("toggle-boxOff",{
 });
 s.newNpc("toggle-boxOn",{
 	name:"Lever",
-	minimapIcon:'minimapIcon.toggle',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("toggle-boxOn"),
 	nevercombat:1,
 	nevermove:1,
@@ -1465,7 +1276,7 @@ s.newNpc("toggle-boxOn",{
 
 s.newNpc("waypoint-grave",{
 	name:"Grave",
-	minimapIcon:'minimapIcon.waypoint',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("waypoint-grave"),
 	waypoint:1,
 	nevercombat:1,
@@ -1481,14 +1292,14 @@ s.newNpc("target",{
 s.newNpc("system-sign",{
 	name:"Sign",
 	sprite:s.newNpc.sprite("system-sign"),
-	minimapIcon:'minimapIcon.loot',
+	minimapIcon:'color-orange',
 	nevermove:1,
 	nevercombat:1,
 	block:s.newNpc.block(s.newNpc.block.size(2,2),1),
 });
 s.newNpc("system-bank",{
 	name:"Bank",
-	minimapIcon:'minimapIcon.loot',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("loot-chestOff",1.5),
 	nevercombat:1,
 	nevermove:1,
@@ -1540,7 +1351,7 @@ s.newNpc("block-template",{	//used for quest when want change sprite
 s.newNpc("block-rock2x2",{ 
 	name:"Block",
 	minimapIcon:'',
-	sprite:s.newNpc.sprite("block-rock1x1",2),
+	sprite:s.newNpc.sprite("pushable-rock1x1",2),
 	nevercombat:1,
 	nevermove:1,
 	block:s.newNpc.block(s.newNpc.block.size(2,2),1),
@@ -1588,7 +1399,7 @@ s.newNpc("block-bridgeV",{
 
 s.newNpc("tree-red",{
 	name:"Red Tree",
-	minimapIcon:'minimapIcon.tree',
+	minimapIcon:'minimapIcon-tree',
 	sprite:s.newNpc.sprite("tree-red"),
 	nevercombat:1,
 	nevermove:1,
@@ -1596,7 +1407,7 @@ s.newNpc("tree-red",{
 });
 s.newNpc("tree-down",{
 	name:"Cut Tree",
-	minimapIcon:'minimapIcon.tree',
+	minimapIcon:'minimapIcon-tree',
 	sprite:s.newNpc.sprite("tree-down"),
 	nevercombat:1,
 	nevermove:1,
@@ -1604,7 +1415,7 @@ s.newNpc("tree-down",{
 });
 s.newNpc("rock-bronze",{
 	name:"Bronze Rock",
-	minimapIcon:'minimapIcon.rock',
+	minimapIcon:'minimapIcon-rock',
 	sprite:s.newNpc.sprite("rock-bronze"),
 	nevercombat:1,
 	nevermove:1,
@@ -1612,7 +1423,7 @@ s.newNpc("rock-bronze",{
 });
 s.newNpc("rock-down",{
 	name:"Empty Rock",
-	minimapIcon:'minimapIcon.rock',
+	minimapIcon:'minimapIcon-rock',
 	sprite:s.newNpc.sprite("rock-down"),
 	nevercombat:1,
 	nevermove:1,
@@ -1620,14 +1431,14 @@ s.newNpc("rock-down",{
 });
 s.newNpc("hunt-squirrel",{
 	name:"Squirrel",
-	minimapIcon:'minimapIcon.trap',
+	minimapIcon:'minimapIcon-trap',
 	sprite:s.newNpc.sprite("hunt-squirrel"),
 	nevercombat:1,
 	maxSpd:s.newNpc.maxSpd(0.5),
 });
 s.newNpc("hunt-down",{
 	name:"Creature Grave",
-	minimapIcon:'minimapIcon.trap',
+	minimapIcon:'minimapIcon-trap',
 	sprite:s.newNpc.sprite("hunt-down"),
 	nevercombat:1,
 	nevermove:1,
@@ -1636,35 +1447,35 @@ s.newNpc("hunt-down",{
 
 s.newNpc("teleport-door",{
 	name:"Door",
-	minimapIcon:'minimapIcon.door',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("teleport-door"),
 	nevercombat:1,
 	nevermove:1,
 });
 s.newNpc("teleport-zone",{  
 	name:"Map Transition",
-	minimapIcon:'minimapIcon.door',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("teleport-zone",1.5),
 	nevercombat:1,
 	nevermove:1,
 });
 s.newNpc("teleport-zoneLight",{  
 	name:"Map Transition",
-	minimapIcon:'minimapIcon.door',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("teleport-zoneLight",1.5),
 	nevercombat:1,
 	nevermove:1,
 });
 s.newNpc("teleport-underground",{
 	name:"Underground",
-	minimapIcon:'minimapIcon.door',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("teleport-underground"),
 	nevercombat:1,
 	nevermove:1,
 }); 
 s.newNpc("teleport-well",{
 	name:"Well",
-	minimapIcon:'minimapIcon.door',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("teleport-well"),
 	nevercombat:1,
 	nevermove:1,
@@ -1672,7 +1483,7 @@ s.newNpc("teleport-well",{
 });
 s.newNpc("teleport-cave",{
 	name:"Cave",
-	minimapIcon:'minimapIcon.door',
+	minimapIcon:'color-orange',
 	sprite:s.newNpc.sprite("teleport-cave"),
 	nevercombat:1,
 	nevermove:1,

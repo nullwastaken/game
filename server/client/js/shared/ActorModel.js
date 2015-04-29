@@ -25,7 +25,7 @@ ActorModel.create = function(id,info){
 		model:"Qsystem-bat",   //for enemy
 		lvl:0,
 		name:"Goblin",     //visible name
-		minimapIcon:'color.red',     //icon used for minimap
+		minimapIcon:'color-red',     //icon used for minimap
 		quest:'',
 		sprite:Sprite.create(Actor.DEFAULT_SPRITENAME,1),
 		moveRange:Actor.MoveRange(),
@@ -46,8 +46,7 @@ ActorModel.create = function(id,info){
 		acc:CST.PLAYERACC,
 		immune:{},
 		abilityAi:Actor.AbilityAi(),	
-		interactionMaxRange:150,
-		
+		interactionMaxRange:100,
 		waypoint:null, 		//right click:setRespawn
 		combat:1,
 		damageIf:'player',
@@ -55,6 +54,12 @@ ActorModel.create = function(id,info){
 		targetIf:'player',  //condition used by monsters to find their target. check targetIfList
 		statusResist:Actor.StatusResist(),
 		pvpEnabled:false,
+		pickRadius:250,	
+		targetSetting:Actor.TargetSetting(),
+		block:null,
+		angle:1,
+		bank:0,
+		pushable:null,
 		
 		//BAD
 		combatContext:Actor.CombatContext(),		//only there cuz need it to access ability... -.-
@@ -62,8 +67,10 @@ ActorModel.create = function(id,info){
 		globalMod:null,
 		hideOptionList:false,
 	}
-	for(var i in info) tmp[i] = info[i];
-	
+	for(var i in info){
+		if(tmp[i] === undefined) return ERROR(4,'prop undefined',i);
+		tmp[i] = info[i];
+	}
 	if(!SERVER) return tmp;
 	
 	DB[id] = tmp;
@@ -82,7 +89,7 @@ ActorModel.init = function(){
 		targetIf:'npc',	//important for summon
 		awareNpc:1,
 		alwaysActive:1,
-		minimapIcon:'color.yellow',
+		minimapIcon:'color-yellow',
 		pickRadius:250,
 		useUpdateInput:false,
 		useMouseForMove:false,

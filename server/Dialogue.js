@@ -1,5 +1,6 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
+var IconModel = require2('IconModel');
 
 var Dialogue = exports.Dialogue = {};
 Dialogue.create = function(Q,id,name,image,list){
@@ -10,7 +11,8 @@ Dialogue.create = function(Q,id,name,image,list){
 		image:image,
 		nodeList:{},
 	};
-	for(var i in list)	tmp.nodeList[list[i].id] = list[i];
+	for(var i in list)	
+		tmp.nodeList[list[i].id] = list[i];
 	
 	//set npc to
 	for(var i in tmp.nodeList){
@@ -19,8 +21,11 @@ Dialogue.create = function(Q,id,name,image,list){
 			tmp.nodeList[i].option[j].npc = id;
 	}
 	
-	DB[Q] = DB[Q] || {};	//bad
-	DB[Q][id] = tmp;	//bad, should change for new Dialogue()	
+	if(image)
+		IconModel.testIntegrity(image);
+	
+	DB[Q] = DB[Q] || {};
+	DB[Q][id] = tmp;
 };
 
 var DB = Dialogue.DB = {};

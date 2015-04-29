@@ -1,31 +1,38 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Collision = require4('Collision');
+var Collision = require4('Collision'), Command = require4('Command');
 var Dialog = exports.Dialog = {};
-Dialog.create = function(id,title,size,refresh,variable,notDialog){
+
+Dialog.create = function(id,title,size,refresh,variable,notJDialog){
 	var html = $('<div>')
 		.attr('title',title||'')
 		
-	if(!notDialog)
+	if(!notJDialog){
 		html.dialog({
 			autoOpen: false,
 			width:size.width, 
 			height:size.height,
-			close: function( event, ui ) {
+			open:function(){
+				html.find('*').blur();	//hax
+			},
+			close: function() {
 				Dialog.close(id);
+				$('button').blur();	//hax
 			},
 		});
+	}
 	
 	LIST[id] = {
 		html:html,
 		parentDiv:'#gameDiv',
 		refresh:refresh || Dialog.Refresh(),
+		wasCreated:false,
 		variable:variable || {},
 		param:null,
-		isDialog:!notDialog,
+		isJDialog:!notJDialog,	//jqueryui
 	}	
-	if(id !== 'stage')
+	if(id !== 'stage' || id !== 'stageMask')	//BAD
 		html.css({zIndex:Dialog.ZINDEX.NORMAL});
 	
 	return html;
@@ -35,9 +42,11 @@ var ACTIVE = Dialog.ACTIVE = {};
 var FRAME_COUNT = 0;
 var $gameDiv;	//init
 var FREQUENCY = {};
-var LEFT_CLICK_MOVE_EXCEPTION = ['stage','pm','chat'];
+var LEFT_CLICK_MOVE_EXCEPTION = ['stage','stageMask','pm','chat','context'];
 
-
+Dialog.setParent = function(id,parentDiv){
+	LIST[id].parentDiv = parentDiv;
+}	
 Dialog.Size = function(width,height){
 	return {
 		width:width || 600,
@@ -61,41 +70,56 @@ Dialog.getFrequency = function(){
 	return FREQUENCY;
 }
 
-Dialog.open = function(name,param){
+var EXE_COMMAND_FOR = ['questList','achievement'];
+Dialog.open = Dialog.refresh = function(name,param,forceCreate){
 	FREQUENCY[name] = FREQUENCY[name] || 0;
 	FREQUENCY[name]++;
-	var dialog = LIST[name];
-	dialog.param = param || null;
-	dialog.html.html('');	//reset
+	var dia = LIST[name];
+	dia.param = param || null;
 	
-	var ret = dialog.refresh.create(dialog.html,dialog.variable,dialog.param);
-	
+	var ret;	//true = call update/create, false = close, null = not show (for context)
+	if(forceCreate !== false && (forceCreate || !dia.wasCreated || dia.refresh.create === dia.refresh.update)){
+		dia.wasCreated = true;
+		dia.html.html('');	//reset
+		ret = dia.refresh.create(dia.html,dia.variable,dia.param);
+		if(ret === true)
+			Dialog.open(name,param,false);
+	} else { //custom update
+		ret = dia.refresh.update(dia.html,dia.variable,dia.param);
+		if(ret === true)
+			Dialog.open(name,param,true);	//call .create
+	}
 	if(ret === false) 
 		return Dialog.close(name);
-	if(ret === true)
-		ret = Dialog.refresh(name,param);
+		
+	dia.param = ret || dia.param;
+	dia.refresh.oldValue = dia.refresh.getOld(dia.html,dia.variable,dia.param);
 	
-	
-	dialog.param = ret || dialog.param;
-	
-	dialog.refresh.oldValue = dialog.refresh.getOld(dialog.html,dialog.variable,dialog.param);
-	
-	if(dialog.isDialog){
-		dialog.html.dialog('open');
+	if(dia.isJDialog){
+		dia.html.dialog('open');
 		$('.toolTipDetails').remove();
 	} else {
-		$(dialog.parentDiv).append(dialog.html);
-		if(ret !== null)
-			dialog.html.show();
+		$(dia.parentDiv).append(dia.html);
+		if(ret !== null)	//important for reputation and others
+			dia.html.show();
 	}
 	
 	ACTIVE[name] = true;
+	
+	if(main.questActive === 'Qtutorial' && EXE_COMMAND_FOR.$contains(name)){	//to call dialogOpen quest event
+		Command.execute('dialogOpen',[name]);
+	}
+}
+
+Dialog.quickContextRefresh = function(text){
+	var dia = LIST['context'];
+	dia.refresh.update(dia.html,dia.variable,text);
 }
 
 Dialog.close = function(name){
 	if(!ACTIVE[name]) return;
 	var dialog = LIST[name];
-	if(dialog.isDialog)
+	if(dialog.isJDialog)
 		dialog.html.dialog('close');
 	else dialog.html.hide();
 	dialog.refresh.close();
@@ -105,7 +129,7 @@ Dialog.close = function(name){
 Dialog.closeAll = function(){
 	var alreadyAllClosed = true;
 	for(var i in LIST){
-		if(LIST[i].isDialog){
+		if(LIST[i].isJDialog){
 			if(ACTIVE[i]){
 				alreadyAllClosed = false;
 				Dialog.close(i);
@@ -136,21 +160,6 @@ Dialog.loop.forEach = function(i){	//chrome says faster...
 	}
 }
 
-
-Dialog.refresh = function(name,param){
-	var dia = LIST[name];
-	if(dia.refresh.create === dia.refresh.update)
-		Dialog.open(name,param);
-	else {
-		var ret = dia.refresh.update(dia.html,dia.variable,param);
-		if(ret === false)
-			Dialog.close(name);
-		if(ret === true)
-			Dialog.open(name,param);
-		return ret;
-	}
-}
-
 Dialog.get = function(name){
 	return LIST[name].html;
 }
@@ -158,9 +167,10 @@ Dialog.get = function(name){
 Dialog.init = function(){
 	$gameDiv = $('#gameDiv');
 	for(var i in LIST){
-		if(!LIST[i].isDialog)
+		if(!LIST[i].isJDialog)
 			Dialog.open(i);
 	}
+	LIST['context'].html.hide();
 }
 
 Dialog.isActive = function(name){
@@ -175,24 +185,7 @@ Dialog.UI = function(id,css,refresh,variable){
 	myDialog.css(css || {});
 	return myDialog;
 }
-/*
-Dialog.isMouseOverOptionList = function(){	//BAD but working good
-	var offX = $gameDiv[0].offsetLeft - window.pageXOffset;
-	var offY = $gameDiv[0].offsetTop - window.pageYOffset;
-	
-	for(var i in ACTIVE){
-		if(!LIST[i].isDialog) continue;
-		var html = LIST[i].html.parent();
-		var rect = html[0].getBoundingClientRect();
-		var rect2 = {width:rect.width,height:rect.height,x:rect.left-offX,y:rect.top-offY};
-		
-		if(Collision.testMouseRect(key,rect2))
-			return true;		
-	}
-	return false;
-	//document.querySelectorAll( ":hover" );
-}
-*/
+
 Dialog.isMouseOverDialog = function(){	//BAD but working good
 	var offX = $gameDiv[0].offsetLeft - window.pageXOffset;
 	var offY = $gameDiv[0].offsetTop - window.pageYOffset;
@@ -200,11 +193,11 @@ Dialog.isMouseOverDialog = function(){	//BAD but working good
 	for(var i in ACTIVE){
 		if(LEFT_CLICK_MOVE_EXCEPTION.$contains(i)) 
 			continue;
-		var html = LIST[i].isDialog ? LIST[i].html.parent() : LIST[i].html;	//if Dialog, take whole jqueryui
+		var html = LIST[i].isJDialog ? LIST[i].html.parent() : LIST[i].html;	//if Dialog, take whole jqueryui
 		var rect = html[0].getBoundingClientRect();
 		var rect2 = {width:rect.width,height:rect.height,x:rect.left-offX,y:rect.top-offY};
 		
-		if(Collision.testMouseRect(key,rect2)){
+		if(Collision.testMouseRect(null,rect2)){
 			return true;
 		}
 	}
@@ -212,12 +205,12 @@ Dialog.isMouseOverDialog = function(){	//BAD but working good
 	//document.querySelectorAll( ":hover" );
 }
 
-Dialog.ZINDEX = {
-	LOW:0,
-	NORMAL:10,
-	jqueryDialog:50,	//Check css.css		.ui-dialog { z-index: 50 !important ;}
-	HIGH:100,
-}
+Dialog.ZINDEX = {};
+Dialog.ZINDEX.LOW = 0;
+Dialog.ZINDEX.NORMAL = 10;
+Dialog.ZINDEX.jqueryDialog = 50;	//Check game.css		.ui-dialog { z-index: 50 !important ;}
+Dialog.ZINDEX.HIGH = 100;
+
 
 
 })();

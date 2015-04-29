@@ -1,13 +1,13 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Map = require2('Map'), Sprite = require2('Sprite'), Combat = require2('Combat'), ActiveList = require2('ActiveList'), Actor = require2('Actor'), Collision = require2('Collision');
+var Maps = require2('Maps'), Sprite = require2('Sprite'), Combat = require2('Combat'), ActiveList = require2('ActiveList'), Actor = require2('Actor'), Collision = require2('Collision');
 var Bullet = exports.Bullet = {};
 var LIST = Bullet.LIST = {};	//Bullet.LIST only for debug
 
 Bullet.remove = function(b){
 	if(typeof b === 'string') b = LIST[b];
-	Map.leave(b);
+	Maps.leave(b);
 	Bullet.removeFromList(b.id);
 	ActiveList.removeFromList(b.id);
 }
@@ -93,10 +93,14 @@ Bullet.onMove = function(b){ //A bullet that shoots other bullets/strikes
 }
 
 Bullet.move = function(b){
-	if(b.normal) return Bullet.move.normal(b);
-	if(b.sin) return Bullet.move.sin(b);
-	if(b.parabole) Bullet.move.parabole(b);
-	if(b.boomerang) Bullet.move.boomerang(b);
+	if(b.normal) 
+		return Bullet.move.normal(b);
+	if(b.sin) 
+		return Bullet.move.sin(b);
+	if(b.parabole) 
+		Bullet.move.parabole(b);
+	if(b.boomerang) 
+		Bullet.move.boomerang(b);
 }
 
 Bullet.move.normal = function(b){

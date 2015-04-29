@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 //ts
 (function(){ //}
-var ClientPrediction = require4('ClientPrediction'), AnimModel = require4('AnimModel'), Socket = require4('Socket'), Command = require4('Command'), Draw = require4('Draw'), Performance = require4('Performance'), QueryDb = require4('QueryDb'), Receive = require4('Receive'), Message = require4('Message'), Input = require4('Input'), Song = require4('Song'), Dialog = require4('Dialog'), Main = require4('Main'), ActorModel = require4('ActorModel'), Actor = require4('Actor'), ReputationGrid = require4('ReputationGrid'), MapModel = require4('MapModel'), SpriteModel = require4('SpriteModel'), Bullet = require4('Bullet'), Anim = require4('Anim');
+var ClientError = require4('ClientError'), Achievement = require4('Achievement'), ClientPrediction = require4('ClientPrediction'), AnimModel = require4('AnimModel'), Socket = require4('Socket'), Command = require4('Command'), Draw = require4('Draw'), Performance = require4('Performance'), QueryDb = require4('QueryDb'), Receive = require4('Receive'), Message = require4('Message'), Input = require4('Input'), Song = require4('Song'), Dialog = require4('Dialog'), Main = require4('Main'), ActorModel = require4('ActorModel'), Actor = require4('Actor'), MapModel = require4('MapModel'), SpriteModel = require4('SpriteModel'), Bullet = require4('Bullet'), Anim = require4('Anim');
 var Game = exports.Game = {};
 
 var REST_PREF_DATE = (new Date(2015,2,1,0,0,0)).getTime();
@@ -26,29 +26,43 @@ Game.isLoading = function(){
 
 Game.init = function (data) {
 	ACTIVE = true;
+	Game.rezoom();
 	Socket.init();
 	Game.init.other(data);
 	Game.init.main(data);	//after, cuz need quest info
 	Command.init();	//Dialog...
-	
-	//Contribution.init(true);
+	ClientError.init();
+	Achievement.init();
 	AnimModel.init();
 	Draw.init();
 	Performance.init();
 	QueryDb.init();
 	Receive.init();
-		
-	$("#startDiv").hide();
-	$("#mainDiv").show();  //show game
+	Main.screenEffect.init();
+	
+	$('#myNavbar').fadeOut();
+	var d = $('<div>').css({position:'absolute',zIndex:-100000000,left:0,top:0,background:'black',minHeight:'100%',minWidth:'100%'}).fadeIn(2000,function(){
+		$('body').css({backgroundImage:"url(../css/img/blackmamba.png)"});
+		d.fadeOut(2000,function(){
+			d.remove();
+		});
+	});
+	$('body').append(d);
+	
+	$("#startDiv").fadeOut();
+	$("#mainDiv").fadeIn(2000);  //show game
 	
 	if(!Game.isChrome()){
 		setTimeout(function(){
-			Message.add(key,'Consider switching to <a target="_blank" href="https://www.google.com/chrome/">Google Chrome</a> for optimal gameplay experience.');
+			Message.add(null,'Consider switching to <a target="_blank" href="http://www.google.com/chrome/">Google Chrome</a> for optimal gameplay experience.');
 			if(navigator.userAgent.search("Firefox") > -1)
 				Input.fixFirefox();
 		},100);
 	}
 
+	setTimeout(Game.checkIfSizeCorrect,30*1000);
+	
+	
 	localStorage.setItem('username',$("#lg-signInUsername")[0].value);
 	
 	Game.init.player(data);
@@ -62,7 +76,7 @@ Game.init = function (data) {
 	if(CST.ASYNC_LOOP)
 		setInterval(Game.loop,40);
 		
-	if(Game.isOnRainingChainCom()){	//BAD
+	if(Game.isOnRainingChainCom()){
 		window.onbeforeunload = function() {
 			if(!ACTIVE) return;
 			return 'Quit Raining Chain? Click X at top-right corner to log out safely.';
@@ -85,25 +99,17 @@ Game.init.player = function(data){
 	Actor.applyChange(player,data.player);
 }
 Game.init.other = function(data){
-	
-	QueryDb.useSignInPack(data.quest,data.highscore,data.item,data.equip);
+	QueryDb.useSignInPack(data.quest,data.highscore,data.item,data.equip,data.competition);
 	
 	MapModel.useSignInPack(data.map);
-	
-	if(data.DEV_MESSAGE){
-		setTimeout(function(){
-			Message.addPopup(key,data.DEV_MESSAGE);
-		},10000);
-	}
+	SpriteModel.init();
 		
-	
-	$("#infoDay").html('Info of the day: ' + data.infoDay);
+	/*$("#infoDay").html('Info of the day: ' + data.infoDay);
 	
 	setTimeout(function(){
 		$("#infoDay").html('');
-	},30000);
+	},30000);*/
 	
-	SpriteModel.useSignInPack(data.spriteModel);
 }
 
 Game.init.pref = function(){
@@ -126,7 +132,6 @@ Game.isChrome = function(){
 Game.isIndex = function(){
 	return window.location.pathname !== '/game';
 }
-
 
 Game.loop = function(){
 	ClientPrediction.loop();
@@ -154,6 +159,31 @@ Game.getFPSAverage = function(){
 Game.getLastTickInfo = function(){
 	return LAST_TICK_LENGTH + 'ms = ' + 1000/LAST_TICK_LENGTH + ' FPS';
 }
+
+Game.removeTooltip = function(){
+	$(".ui-tooltip-content").parents('div').remove();
+}
+
+Game.rezoom = function(){
+	return;
+	/*
+	if($(window).height() < 740){
+		var ratio = $(window).height() / 740;
+		ratio = Math.floor(ratio * 100) + "%";
+		document.body.style.zoom = ratio;
+	}
+	*/
+}
+
+Game.checkIfSizeCorrect = function(){
+	if($(window).height() < 540){
+		Message.addPopup(null,'Press Ctrl- so the game fits your screen.');
+	}	
+}
+
+
+
+
 
 })(); //{
 

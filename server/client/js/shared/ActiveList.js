@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Actor = require2('Actor'), Bullet = require2('Bullet'), Strike = require2('Strike'), Sign = require2('Sign'), Map = require2('Map'), Drop = require2('Drop'), Collision = require2('Collision');
+var Actor = require2('Actor'), Bullet = require2('Bullet'), Strike = require2('Strike'), Sign = require2('Sign'), Maps = require2('Maps'), Drop = require2('Drop'), Collision = require2('Collision');
 var ActiveList = exports.ActiveList = {};	//Actor.loop.activeList is where the update happens
 
 //activelist used: boss, target, mapMod, chat, button, send
@@ -43,7 +43,7 @@ ActiveList.test.main = function(act,obj){
 	if(typeof act.viewedIf === 'object' && act.viewedIf.indexOf(obj.id) === -1)
 		return false;
 	
-	return Collision.testPtRect.fast(obj,act.x-800,act.y-600,1600,1200);
+	return Collision.testPtRect.fast(obj,act.x-CST.WIDTH,act.y-CST.HEIGHT,CST.WIDTH*2,CST.HEIGHT*2);
 }
 
 
@@ -65,7 +65,7 @@ ActiveList.update = function(act){	//called by npc in loop
 	}
 	
 	//Add New Boys
-	var map = Map.get(act.map);
+	var map = Maps.get(act.map);
 	for(var j in map.list.entity){
 		if(tested[j]) continue;	//no need to test again
 
@@ -76,8 +76,8 @@ ActiveList.update = function(act){	//called by npc in loop
 	}
 }
 
-ActiveList.init = function(act){	//when Map.enter
-	var map = Map.get(act.map);
+ActiveList.init = function(act){	//when Maps.enter
+	var map = Maps.get(act.map);
 	if(!map) return ERROR(3,'no map');
 	if(act.type === 'bullet'){
 		for(var j in map.list.actor){	//attack only need to check actor

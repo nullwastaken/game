@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Message = require2('Message'), Actor = require2('Actor'), OptionList = require2('OptionList'), ItemModel = require2('ItemModel'), ItemList = require2('ItemList');
+var Message = require2('Message'), Achievement = require2('Achievement'), Sign = require2('Sign'), Server = require2('Server'), Actor = require2('Actor'), OptionList = require2('OptionList'), ItemModel = require2('ItemModel'), ItemList = require2('ItemList');
 var Main = require3('Main');
 
 
@@ -12,10 +12,11 @@ Main.ItemList = function(key,list){
 }
 
 Main.ItemList.compressDb = Main.ItemList.compressDb = function(list){
-	return list.data;
+	return ItemList.toArray(list.data);
 }
 
 Main.ItemList.uncompressDb = function(list,key){
+	list = ItemList.fromArray(list);
 	var inv = Main.ItemList(key,list);
 	
 	//checkIntegrity is done in Sign.in.loadMain
@@ -35,7 +36,7 @@ Main.ItemList.compressClient = function(list){
 }
 
 Main.ItemList.uncompressClient = function(list){
-	return ItemList.create(key,list);
+	return ItemList.create(null,list);
 }
 
 Main.ItemList.checkIntegrity = function(inv){
@@ -131,7 +132,9 @@ Main.startTrade = function(main,main2){	//shoul be requesting first
 	Main.openDialog(main2,'trade');
 }
 
-
+Main.getInventorySlotUsed = function(main){
+	return main.invList.data.$length();
+}
 
 Main.isTrading = function(main){
 	return !!Main.getTradingWith(main);
@@ -144,6 +147,7 @@ Main.canUseBank = function(main){
 }
 
 Main.addItem = function(main,id,amount){
+	Achievement.onItemAdd(main,id,amount);	//idk if id is correctly formatted yet...
 	return ItemList.add(main.invList,id,amount);
 }
 
@@ -231,6 +235,11 @@ Main.useItem = function(main,id,slot){
 	if(!item) return;
 	var option = item.option[slot];
 	if(!option) return;
+	
+	if(item.adminOnly && !Server.isAdmin(main.id)){
+		Sign.off(main.id,"Not allowed to use admin tools.");
+		return ERROR(2,'regular player using admin tools',main.username,item.id);
+	}
 	OptionList.executeOption(main,option);
 }
 

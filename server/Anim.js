@@ -1,7 +1,6 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
-var Map = require2('Map'), Actor = require2('Actor');
-var Sfx = require4('Sfx');
+var Maps = require2('Maps'), Actor = require2('Actor');
 
 var Anim = exports.Anim = {}; //server only, check below for client Anim
 Anim.create = function(base,target){
@@ -14,7 +13,7 @@ Anim.create = function(base,target){
 		type:'anim',
 	}
 	
-	Map.addToEntityList(Map.get(Anim.getMap(tmp)),'anim',tmp.id);
+	Maps.addToEntityList(Maps.get(Anim.getMap(tmp)),'anim',tmp.id);
 	LIST[tmp.id] = tmp;
 	return tmp;
 }
@@ -65,7 +64,7 @@ Anim.get = function(id){
 	return LIST[id] || null;
 }
 Anim.remove = function(id){
-	Map.removeFromEntityList(Map.get(Anim.getMap(LIST[id])),'anim',id);
+	Maps.removeFromEntityList(Maps.get(Anim.getMap(LIST[id])),'anim',id);
 	delete LIST[id];
 }
 Anim.getMap = function(anim){
@@ -74,6 +73,6 @@ Anim.getMap = function(anim){
 	return anim.target.map;
 }	
 Anim.removeAll = function(){
-	Map.removeAllAnim();
+	Maps.removeAllAnim();
 	LIST = {};
 }

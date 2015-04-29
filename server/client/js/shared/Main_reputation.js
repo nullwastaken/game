@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Actor = require2('Actor'), Stat = require2('Stat'), ReputationConverter = require2('ReputationConverter'), Boost = require2('Boost'), ReputationGrid = require2('ReputationGrid');
+var Actor = require2('Actor'), Achievement = require2('Achievement'), Stat = require2('Stat'), Message = require2('Message'), ReputationConverter = require2('ReputationConverter'), Boost = require2('Boost'), ReputationGrid = require2('ReputationGrid');
 var Main = require3('Main');
 /*
 0 - dont have
@@ -67,6 +67,7 @@ Main.reputation.modify = function(main,num,i,j,newvalue){
 	grid[i] = grid[i].set(j,'' + newvalue);
 	Main.reputation.updatePt(main);
 	Main.reputation.updateBoost(main);
+	Achievement.onReputationChange(main);
 }
 Main.reputation.BOOST_NAME = 'Reputation';
 
@@ -80,7 +81,12 @@ Main.reputation.get = function(main,num){
 	return main.reputation.list[num];	
 }
 
-
+Main.reputation.allowChange = function(main){
+	var q = Main.getQuestActive(main);
+	if(q !== null && q !== 'Qtutorial') 
+		return Message.addPopup(main.id,'Finish the quest you\'re doing before modifying your Reputation.');
+	return true;
+}	
 Main.reputation.remove = function(main,num,i,j){
 	//maybe system where cost nothing if lvl less than 20
 	
@@ -197,6 +203,7 @@ Main.reputation.addConverter = function(main,num,name){
 	if(!ReputationConverter.canSelect(main,num,name)) return;	//message sending done inside
 	Main.reputation.get(main,num).converter.push(name);
 	Main.reputation.updateBoost(main);
+	Achievement.onReputationChange(main);
 	Main.setFlag(main,'reputation');
 	
 }
@@ -205,20 +212,12 @@ Main.reputation.removeConverter = function(main,num,name){
 	Main.reputation.updateBoost(main);
 	Main.setFlag(main,'reputation');
 }
-	
-/*
-Main.reputation.useRemovalOrb = function(main,num){
-	num = num || 1;
-	Main.removeItem(main,'orb-removal',num);	//bad... should in use use orb removal
-	Main.reputation.grantRemovePt(main,num);
-}
-*/
 
 //###############
 Main.reputation.updatePt = function(main){
 	var mp = main.reputation;
-	for(var i in mp.list)
-		mp.list[i].usedPt = Main.reputation.getUsedPt(mp.list[i].grid);
+	for(var i = 0 ; i < mp.list.length; i++)
+		mp.list[i].usedPt = Main.reputation.getUsedPt(main,i);
 		
 	mp.lvl = Main.reputation.getLvl(main);
 	mp.usablePt = Main.reputation.getUsablePt(main);
@@ -226,11 +225,11 @@ Main.reputation.updatePt = function(main){
 }
 
 Main.reputation.getUnusedPt = function(main,num){
-	var grid = Main.reputation.getGrid(main,num);
-	return Main.reputation.getUsablePt(main)-Main.reputation.getUsedPt(grid);
+	return Main.reputation.getUsablePt(main)-Main.reputation.getUsedPt(main,num);
 }
 
-Main.reputation.getUsedPt = function(grid){
+Main.reputation.getUsedPt = function(main,num){
+	var grid = Main.reputation.getGrid(main,num);
 	var used = 0;
 	for(var i in grid)
 		for(var j = 0; j < grid[i].length;j++)
@@ -247,7 +246,9 @@ Main.reputation.getLvl = function(main){
 	return Actor.getLevel(Main.getAct(main));
 }
 
-
+Main.reputation.getConverter = function(main){
+	return Main.reputation.get(main).converter;
+}
 //###############
 
 Main.reputation.getBoost = function(main,grid){	//convert the list of reputation owned by player into actual boost.
@@ -269,6 +270,28 @@ Main.reputation.getBoost = function(main,grid){	//convert the list of reputation
 Main.reputation.updateBoost = function(main){
 	var grid = Main.reputation.getGrid(main);
 	Actor.permBoost(Main.getAct(main),Main.reputation.BOOST_NAME,Main.reputation.getBoost(main,grid));
+}
+
+
+
+Main.reputation.getMostCommonBoostCount = function(main){
+	var grid = Main.reputation.getGrid(main);
+	var tmp = {};
+	var base = ReputationGrid.getConverted(main).base;
+	for(var i = 0 ; i < grid.length ; i++){
+		for(var j = 0 ; j < grid[i].length ; j++){
+			if(+grid[i][j] !== ReputationGrid.HAVE) 
+				continue;
+			var slot = base[i][j];
+			tmp[slot.stat] = tmp[slot.stat] || 0;
+			tmp[slot.stat]++;
+		}
+	}
+	var max = 0;
+	for(var i in tmp)
+		max = Math.max(max,tmp[i]);
+	
+	return max;
 }
 
 })(); //{

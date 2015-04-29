@@ -31,12 +31,18 @@ Actor.StatusResist = function(bleed,knock,drain,burn,chill,stun){
 //#################
 
 Actor.status = {};
-//Afflict
+
 Actor.status.afflict = function(dmg,b,target){
 	for(var i in CST.element.toStatus){
 		var el = CST.element.toStatus[i];
 		if(b[el] && b[el].chance >= Math.random()){
-			Actor.status.afflict[el](target,b,dmg);
+			if(el === 'burn') Actor.status.afflict.burn(target,b,dmg);
+			else if(el === 'stun') Actor.status.afflict.stun(target,b,dmg);
+			else if(el === 'bleed') Actor.status.afflict.bleed(target,b,dmg);
+			else if(el === 'chill') Actor.status.afflict.chill(target,b,dmg);
+			else if(el === 'drain') Actor.status.afflict.drain(target,b,dmg);
+			else if(el === 'knock') Actor.status.afflict.knock(target,b,dmg);
+			else return ERROR(3,'invalid el',el);
 		}
 	}	
 }
@@ -114,7 +120,6 @@ Actor.status.afflict.drain = function(act,b){
 	
 }
 
-
 //Loop
 Actor.status.loop = function(act){
 	if(!Actor.testInterval(act,INTERVAL_STATUS)) return;
@@ -168,8 +173,6 @@ Actor.status.loop.bleed = function(act){
 	}
 }
 
-
-
 //Clear
 Actor.status.clear = function(act){
 	Actor.status.clear.burn(act);
@@ -207,8 +210,6 @@ Actor.status.clear.drain = function(act){
 	act.status.drain.time = 0;
 	Actor.boost.removeById(act,'mana-max','drainBad');
 }
-
-
 
 })();
 

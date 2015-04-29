@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Actor = require2('Actor'), ActiveList = require2('ActiveList'), Bullet = require2('Bullet'), Map = require2('Map'), Collision = require2('Collision'), Combat = require2('Combat'), Sprite = require2('Sprite'), AttackModel = require2('AttackModel');
+var Actor = require2('Actor'), ActiveList = require2('ActiveList'), Bullet = require2('Bullet'), Main = require2('Main'), Maps = require2('Maps'), Collision = require2('Collision'), Combat = require2('Combat'), AttackModel = require2('AttackModel');
 
 var Attack = exports.Attack = {};
 Attack.create = function(model,act,extra){	//model is AttackModel
@@ -26,6 +26,7 @@ Attack.create = function(model,act,extra){	//model is AttackModel
 		mouseY:act.mouseY || 0,
 		
 		map:act.map || 'QfirstTown-main@MAIN',
+		mapModel:act.mapModel || 'QfirstTown-main',
 		viewedIf:act.viewedIf || 'true',
 		damageIf:act.damageIf || 'player',
 		parent:act.parent || act.id || null,		
@@ -39,12 +40,13 @@ Attack.create = function(model,act,extra){	//model is AttackModel
 		//for onMove onHit onDamagePhase
 		bonus:act.bonus || Actor.Bonus(),
 		mastery:act.mastery || Actor.Mastery(),
-		globalDmg:1,
+		globalDmg:act.globalDmg || 0,
 		combatContext:act.combatContext || Actor.CombatContext(),
 		equip:act.equip || '',
 		
 	}
-	for(var i in model) tmp[i] = model[i];	//adds property, doesnt overwrite tho at least not supposed to...
+	for(var i in model) 
+		tmp[i] = model[i];	//adds property, doesnt overwrite tho at least not supposed to...
 	
 	
 	if(tmp.type === 'strike') 
@@ -57,16 +59,20 @@ Attack.create = function(model,act,extra){	//model is AttackModel
 
 Attack.Bullet = function(b){
 	if(b.parabole){
-		var diff = Math.pyt(b.mouseX - CST.WIDTH2,b.mouseY - CST.HEIGHT2);
+		var diff = Math.pyt(b.mouseX,b.mouseY);
 		b.parabole.dist = diff.mm(b.parabole.min,b.parabole.max);
 		b.parabole.timer *= b.parabole.dist/b.parabole.max;
 	}
-	if(b.onMove){ b.angle = Math.random()*360;}	//otherwise, circle always the same. moveAngle is same tho
+	if(b.onMove)
+		b.angle = Math.random()*360;	//otherwise, circle always the same. moveAngle is same tho
 
 	b.normal = !b.sin && !b.parabole && !b.boomerang;
 	
+	if(b.parent && Actor.isPlayer(b.parent))
+		b.sprite.name = Main.contribution.getBullet(Actor.getMain(Actor.get(b.parent)),b.sprite.name);
+	
 	Bullet.addToList(b);
-	Map.enter(b);
+	Maps.enter(b);
 		
 	return b;
 }; 
@@ -131,7 +137,7 @@ Attack.testInterval = function(b,num){
 
 Attack.getInitPosition = function(atk,act){
 	var mouse = Actor.getMouse(act);
-	var diff = Math.pyt(mouse.x - CST.WIDTH2,mouse.y - CST.HEIGHT2); //difference between actor and mouse
+	var diff = Math.pyt(mouse.x,mouse.y); //difference between actor and mouse
 	diff = diff.mm(atk.initPosition.min,atk.initPosition.max);
 	
 	var goal = {x:diff * Tk.cos(act.angle) + act.x,y:diff * Tk.sin(act.angle) + act.y};

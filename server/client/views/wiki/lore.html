@@ -1,0 +1,66 @@
+<% include ../partial/header.html %>
+
+<style>
+  .thumbnail.with-caption {
+    display: inline-block;
+    background: #f5f5f5;
+  }
+  .thumbnail.with-caption p {
+    margin: 0;
+    padding-top: 0.5em;
+  }
+  .thumbnail.with-caption small:before {
+    content: '\2014 \00A0';
+  }
+  .thumbnail.with-caption small {
+    width: 100%;
+    text-align: right;
+    display: inline-block;
+    color: #999;
+  }
+</style>
+
+<div class="container">
+	<h3>Overview</h3>
+	<div class="col-md-10">
+		<p>
+		Raining Chain is a video game about a video game. 
+		You have been hired by the NPC Genetos to fix various problems about the game.
+		This includes testing out experimental features, patching glitches and helping NPCs. 
+		Those NPCs are aware that they are part of a video game and they worship two divinities: The Creator and The RNG God.
+		</p>
+	</div>	
+</div>	
+<div class="container">
+	<h3>The Creator</h3>
+	<div class="col-md-10">
+		<p>The Creator has the full control over the game code and data.
+		He forged the maps one by one and gave life to every NPC in the game.
+		He has the power to create and destroy anything.
+		He often materializes in the game as the player "rc" to greet newcomers and check the game state.
+		Using His special tools, He has the power to alter the game state while it's running.
+		</p>
+	</div>
+	<div class="thumbnail with-caption" style="text-align:center;">
+	  <img src="../views/wiki/TheCreator.png" width="60px">
+	  <p>The Creator</p>
+	</div>
+</div>
+	
+<div class="container">
+	<h3>The RNG God</h3>
+	<div class="col-md-10">
+		<p>
+		The Random Number Generator God is the one who decides everything related with randomness. 
+		This includes but is not limited to enemy behaviour, stats on new weapons and damage dealt.
+		Not much is known about how his decision-making works. 
+		His secret lies deep within the core engine, under the function Math.random().
+		</p>
+	</div>
+	<div class="thumbnail with-caption" style="text-align:center;">
+	  <img src="../views/wiki/RNGGod.png" width="60px">
+	  <p>The RNG God</p>
+	</div>
+</div>
+<% include ../partial/footer.html %>
+

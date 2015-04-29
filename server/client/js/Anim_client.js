@@ -1,13 +1,13 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Sfx = require4('Sfx'), Collision = require4('Collision'), AnimModel = require4('AnimModel'), Actor = require4('Actor');
+var Sfx = require4('Sfx'), LightingEffect = require4('LightingEffect'), Collision = require4('Collision'), Img = require4('Img'), AnimModel = require4('AnimModel'), Actor = require4('Actor');
 var Anim = exports.Anim = {};
 Anim.create = function(pack){
 	var anim = Anim.undoInitPack(pack);
 	
-	Anim.LIST[anim.id] = anim;
-
+	LIST[anim.id] = anim;
+	
 	if(anim.sfx)
 		Anim.playSfx(anim);
 }
@@ -43,51 +43,72 @@ Anim.undoInitPack = function(compressAnim){	//check Anim.doInitPack
 }
 
 Anim.remove = function(anim){	
-	if(typeof anim === 'string') anim = Anim.LIST[anim.id];	//kinda dumb lol..
-	delete Anim.LIST[anim.id];
+	if(typeof anim === 'string') anim = LIST[anim.id];	//kinda dumb lol..
+	delete LIST[anim.id];
 }
 
+
 Anim.playSfx = function(anim){
-	var sfx = AnimModel.get(anim.modelId).sfx;
-	if(!sfx) return;
+	var model = AnimModel.get(anim.modelId);
+	if(!model) 
+		return ERROR(3,'invalid anim model',anim.modelId);
+	if(!model.sfx) 
+		return;
 	var dist = Collision.getDistancePtPt(player,anim.target);
 	var mod = 1;
 	if(dist > 200) mod = 0.75;
 	if(dist > 400) mod = 0.5;
 	if(dist > 600) mod = 0.25;
-	var volume = sfx.volume * mod;
-	Sfx.play(sfx.id,volume);
+	Sfx.play(model.sfx,mod);
 }
 
 
-Anim.draw = function (ctx,layer){
-	for(var i in Anim.LIST){
-		var anim = Anim.LIST[i];
+Anim.draw = function(anim,ctx){
+	var model = AnimModel.get(anim.modelId);
+	if(!model) return ERROR(2,"anim model not found",anim.modelId);
+	var image = model.img;
+	if(!image){
+		model.img = Img.load(model.src);
+		return;
+	}
+	if(!image.complete || !image.naturalWidth) return;
+
+	var sizeX = image.width / model.frameX;
+	var slotX = anim.slot % model.frameX;
+	var slotY = Math.floor(anim.slot / model.frameX);
+	var sizeY = image.height / Math.ceil(model.frame / model.frameX);
+	var sizeMod = model.size*anim.sizeMod;
+	var startY = model.startY;
+	
+	var posX = Tk.absToRel.x(anim.target.x);
+	var posY = Tk.absToRel.y(anim.target.y);
+	
+	ctx.drawImage(image,
+		sizeX*slotX,sizeY*slotY+startY,
+		sizeX,sizeY,
+		posX-sizeX/2*sizeMod,
+		posY-sizeY/2*sizeMod,
+		sizeX*sizeMod,sizeY*sizeMod
+	);
+	
+	if(model.lightingEffect && model.lightingEffect[anim.slot])
+		LightingEffect.drawEntity(model.lightingEffect[anim.slot],ctx,posX,posY,sizeMod);
+	
+}
+
+Anim.drawAll = function (ctx,layer){
+	for(var i in LIST){
+		var anim = LIST[i];
 		var model = AnimModel.get(anim.modelId);
 		if(!model) return ERROR(2,"anim model not found",anim.modelId);
 		if(model.layer !== layer) return;
-		
-		var image = model.img;
-		var sizeX = image.width / model.frameX;
-		var slotX = anim.slot % model.frameX;
-		var slotY = Math.floor(anim.slot / model.frameX);
-		var sizeY = image.height / Math.ceil(model.frame / model.frameX);
-		var size = model.size*anim.sizeMod;
-		var startY = model.startY;
-				
-		ctx.drawImage(image,
-			sizeX*slotX,sizeY*slotY+startY,
-			sizeX,sizeY,
-			CST.WIDTH2+anim.target.x-player.x-sizeX/2*size,
-			CST.HEIGHT2+anim.target.y-player.y-sizeY/2*size,
-			sizeX*size,sizeY*size
-		);
+		Anim.draw(anim,ctx);
 	}
 }
 
 Anim.loop = function(){
-	for(var i in Anim.LIST){
-		Anim.loop.forEach(Anim.LIST[i]);
+	for(var i in LIST){
+		Anim.loop.forEach(LIST[i]);
 	}
 }
 

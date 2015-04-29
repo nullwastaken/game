@@ -4,33 +4,42 @@
 var Main = require4('Main'), MapModel = require4('MapModel'), Actor = require4('Actor'), Img = require4('Img'), Collision = require4('Collision'), Command = require4('Command');
 var Dialog = require3('Dialog');
 
+var getWidthMap = function(){
+	return CST.WIDTH/Main.getPref(main,'mapRatio');
+}
+var getHeightMap = function(){
+	return CST.HEIGHT/Main.getPref(main,'mapRatio');
+}
+
 Dialog.UI('minimap',{
 	position:'absolute',
 	top:0,
 },Dialog.Refresh(function(html,variable){
+	var w = getWidthMap();
+	var h = getHeightMap();
 	html.css({
-		left:CST.WIDTH - CST.WIDTH/Main.getPref(main,'mapRatio'),
-		width:CST.WIDTH/Main.getPref(main,'mapRatio'),
-		height:CST.HEIGHT/Main.getPref(main,'mapRatio')	
+		right:0,
+		width:w,
+		height:h
 	});
 
 	var canvas = $('<canvas>')
 		.css({
 			top:0,
-			width:CST.WIDTH/Main.getPref(main,'mapRatio'),
-			height:CST.HEIGHT/Main.getPref(main,'mapRatio'),
+			width:w,
+			height:h,
 			border:'4px solid #000000',
 			background:'rgba(0,0,0,1)',
 		})
 		.attr({
-			width:CST.WIDTH/Main.getPref(main,'mapRatio'),
-			height:CST.HEIGHT/Main.getPref(main,'mapRatio'),
+			width:w,
+			height:h,
 			id:'minimapCanvas'
 		});
 	html.append(canvas);
 	variable.ctx = canvas[0].getContext('2d');
 },function(){
-	return Main.getPref(main,'mapRatio');
+	return "" + Main.getPref(main,'mapRatio') + CST.WIDTH + CST.HEIGHT;
 },3,null,function(html,variable){	//loop
 	if(main.hudState.minimap === Main.hudState.INVISIBLE){
 		html.hide();
@@ -49,21 +58,21 @@ Dialog.UI.minimap = function (ctx){
 Dialog.UI.minimap.ZOOM = 16;	//difference in size between real image and minimap image, idk if x2 factor applies,,,?
 
 Dialog.UI.minimap.map = function(ctx){
-	var x = -(player.x)/Dialog.UI.minimap.ZOOM + CST.WIDTH2/Main.getPref(main,'mapRatio');	
-	var y = -(player.y)/Dialog.UI.minimap.ZOOM + CST.HEIGHT2/Main.getPref(main,'mapRatio');	
+	var x = -player.x/Dialog.UI.minimap.ZOOM + CST.WIDTH2/Main.getPref(main,'mapRatio');	
+	var y = -player.y/Dialog.UI.minimap.ZOOM + CST.HEIGHT2/Main.getPref(main,'mapRatio');	
 	ctx.drawImage(MapModel.getCurrent().img.m, x,y);
 }
 
 Dialog.UI.minimap.icon = function(ctx){
-	var cx = CST.WIDTH2/Main.getPref(main,'mapRatio')-2;
-	var cy = CST.HEIGHT2/Main.getPref(main,'mapRatio')-2;
+	var cx = getWidthMap()/2-2;
+	var cy = getHeightMap()/2-2;
 	
 	//normal icons
 	
 	
 	var list = Actor.drawAll.getMinimapList();
 	for(var i = 0 ; i < list.length; i++){
-		if(main.questActive && list[i].icon === 'minimapIcon.quest') continue;
+		if(main.questActive && list[i].icon === 'minimapIcon-quest') continue;
 		
 		var numX = cx+list[i].vx/Dialog.UI.minimap.ZOOM;
 		var numY = cy+list[i].vy/Dialog.UI.minimap.ZOOM;
@@ -75,23 +84,28 @@ Dialog.UI.minimap.icon = function(ctx){
 	//quest marker
 	var qm = Actor.getQuestMarkerMinimap(player);
 	for(var i in qm){
-		var numX = (cx+qm[i].vx/Dialog.UI.minimap.ZOOM).mm(0,CST.WIDTH/Main.getPref(main,'mapRatio'));
-		var numY = (cy+qm[i].vy/Dialog.UI.minimap.ZOOM).mm(0,CST.HEIGHT/Main.getPref(main,'mapRatio'));
+		var numX = (cx+qm[i].vx/Dialog.UI.minimap.ZOOM).mm(4,getWidthMap()-4);
+		var numY = (cy+qm[i].vy/Dialog.UI.minimap.ZOOM).mm(4,getHeightMap()-4);
+		if(numY < 15 && numX >= getWidthMap()-15){	//top right
+			numY = 15;
+			numX = getWidthMap()-15;
+		}
+		
 		var size = qm[i].size;
 		Img.drawIcon(ctx,qm[i].icon,size,numX-size/2,numY-size/2);
 	}
 	
 	
-	ctx.fillRect(CST.WIDTH2/Main.getPref(main,'mapRatio')-2,CST.HEIGHT2/Main.getPref(main,'mapRatio')-2,4,4);	//player icon
+	ctx.fillRect(getWidthMap()/2-2,getHeightMap()/2-2,4,4);	//player icon
 }
 
 Dialog.UI.minimap.isMouseOver = function(){
-	return Collision.testPtRect(Collision.getMouse(key),[
-		CST.WIDTH-CST.WIDTH/Main.getPref(main,'mapRatio'),
-		CST.WIDTH,
-		0,
-		CST.HEIGHT/Main.getPref(main,'mapRatio')
-	]);
+	return Collision.testMouseRect(null,{
+		x:CST.WIDTH-getWidthMap(),
+		width:getWidthMap(),
+		y:0,
+		height:getHeightMap(),
+	});
 }
 
 //#####################
@@ -112,14 +126,15 @@ Dialog.UI('minimapBelow',{
 	html.show();
 	
 	html.css({
-		left:CST.WIDTH - CST.WIDTH/Main.getPref(main,'mapRatio'),
-		top:CST.HEIGHT/Main.getPref(main,'mapRatio'),
-		width:CST.WIDTH/Main.getPref(main,'mapRatio'),
+		right:0,
+		top:getHeightMap(),
+		width:getWidthMap(),
 	});
 
 
 	html.append($('<span>')
 		.html(' + ')
+		.css({cursor:'pointer'})
 		.attr('title','Enlarge')
 		.click(function(){
 			Command.execute('pref',['mapRatio',(Main.getPref(main,'mapRatio') - 1)]);
@@ -127,6 +142,7 @@ Dialog.UI('minimapBelow',{
 	);
 	html.append($('<span>')
 		.html(' - ')
+		.css({cursor:'pointer'})
 		.attr('title','Minimize')
 		.click(function(){
 			Command.execute('pref',['mapRatio',(Main.getPref(main,'mapRatio') + 1)]);
@@ -135,7 +151,7 @@ Dialog.UI('minimapBelow',{
 	
 	html.append(MapModel.getCurrent().name);	
 },function(){
-	return '' + Main.getPref(main,'mapRatio') + MapModel.getCurrent().name + main.hudState.minimap;
+	return '' + Main.getPref(main,'mapRatio') + MapModel.getCurrent().name + main.hudState.minimap + CST.WIDTH + CST.HEIGHT;
 },3));
 
 Dialog.UI('hint',{
@@ -147,11 +163,10 @@ Dialog.UI('hint',{
 	if(main.hudState.minimap === Main.hudState.INVISIBLE) return;
 	
 	html.css({
-		left:CST.WIDTH - CST.WIDTH/Main.getPref(main,'mapRatio'),
-		top:CST.HEIGHT/Main.getPref(main,'mapRatio') + 25,
-		width:CST.WIDTH/Main.getPref(main,'mapRatio'),
+		right:0,
+		top:getHeightMap() + 25,
+		width:getWidthMap(),
 	});
-	
 	var hint = $('<div>')
 		.css({
 			font:'1.2em Kelly Slab',
@@ -164,17 +179,17 @@ Dialog.UI('hint',{
 	html.append(hint);
 	
 },function(){
-	return '' + Main.getPref(main,'mapRatio') + main.questHint + main.hudState.minimap + main.hudState.questHint;
+	return '' + Main.getPref(main,'mapRatio') + main.questHint + main.hudState.minimap + main.hudState.questHint + CST.WIDTH + CST.HEIGHT;
 },3));
 
 
 Dialog.UI('quitGame',{
 	position:'absolute',
 	top:0,
-	left:CST.WIDTH-18,
+	right:0,
 	zIndex:Dialog.ZINDEX.HIGH,
 },Dialog.Refresh(function(html){
-	var el = Img.drawIcon.html('system.close',18,"Shift-Left Click to safely leave the game.",1);
+	var el = Img.drawIcon.html('system-close',18,"Shift-Left Click to safely leave the game.",1);
 	el.click(function(e){
 		if(e.shiftKey)
 			Command.execute('logout');

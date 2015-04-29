@@ -13,7 +13,7 @@ Dialog.create('friend','Friend List',Dialog.Size(300,500),Dialog.Refresh(functio
 
 var helperLeft = function(i){
 	return function(){
-		Message.setInputForPM(key,i);
+		Message.setInputForPM(null,i);
 	}
 };
 var helperRight = function(i){

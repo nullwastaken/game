@@ -48,7 +48,7 @@ Combat.applyAttackMod.player = function(player,atk){
 	atk.dmg.main *= player.globalDmg;
 	
 	for(var i in atk.dmg.ratio){ 
-		atk.dmg.ratio[i] *= player.mastery.dmg[i].sum * player.mastery.dmg[i].mod;
+		atk.dmg.ratio[i] *= Actor.getMasteryValue(player,'dmg',i,true);
 	}
 	return atk;
 }
@@ -75,6 +75,10 @@ Combat.getMasteryExpMod = function(mastery){
 Combat.getMainDmgDefByLvl = function(lvl){	//in average, has 1.25 * main. in def cuz of ratio
 	return 1 + 0.01*lvl;				//but ok cuz weapon boost by 1.5 certain attack
 }
+Combat.getTierMod = function(tier){
+	return 1 + tier * 0.05;
+}
+
 
 Combat.getEnemyPower = function(act,num){
 	if(num === 1) return [];

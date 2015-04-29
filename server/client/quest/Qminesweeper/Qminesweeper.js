@@ -7,6 +7,10 @@ var s = loadAPI('v1.0','Qminesweeper',{
 	author:"rc",
 	maxParty:4,
 	thumbnail:true,
+	category:["Puzzle"],
+	solo:true,
+	party:"Coop",
+	zone:"QfirstTown-north",
 	reward:{"ability":{'Qsystem-player-magicBomb':0.5}},
 	scoreModInfo:"Depends on your time.",
 	description:"Play the puzzle game minesweeper.",
@@ -17,7 +21,8 @@ var m = s.map; var b = s.boss; var g;
 s.newVariable({
 	clickCount:0,
 	chrono:0,
-	flagCount:0
+	flagCount:0,
+	startGame:false,
 });
 s.newHighscore('speedrun',"Fastest Time [Easy]","Fastest Completion",'ascending',function(key){
 	return s.stopChrono(key,'timer') * 40;
@@ -30,13 +35,13 @@ s.newHighscore('noflag',"Fastest Time [No Flag]","Fastest Completion with Challe
 	if(!s.isChallengeActive(key,'noflag')) return null;
 	return s.stopChrono(key,'timer') * 40;
 });
-s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 60 seconds.",2,function(key){
+s.newChallenge('speedrun',"Speedrunner","Complete the quest in less than 60 seconds.",function(key){
 	return s.stopChrono(key,'timer') < 25*60;
 });
-s.newChallenge('monster',"Dodge And Mine","Complete the quest while monsters attack you.",2,function(key){
+s.newChallenge('monster',"Dodge And Mine","Complete the quest while monsters attack you.",function(key){
 	return true;
 });
-s.newChallenge('noflag',"No Flag","You can't use flag.",1.2,function(key){
+s.newChallenge('noflag',"No Flag","You can't use flag.",function(key){
 	return true;
 });
 s.newEvent('_start',function(key){ //
@@ -53,6 +58,8 @@ s.newEvent('_getScoreMod',function(key){ //
 	if(s.get(key,'chrono') < 25*60) return 1.1;
 });
 s.newEvent('_hint',function(key){ //
+	if(!s.get(key,'startGame'))
+		return 'Go talk with Yelface.';
 	return 'Left: Mine<br>Shift-Right: Flag';
 });
 s.newEvent('_debugSignIn',function(key){ //
@@ -65,8 +72,10 @@ s.newEvent('_death',function(key){ //
 	s.failQuest(key);
 });
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-north','t5','main',false);
-	s.setRespawn(key,'QfirstTown-north','t5','main',false);
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-north','t5','main',false);
+		s.setRespawn(key,'QfirstTown-north','t5','main',false);
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
@@ -136,6 +145,7 @@ s.newEvent('getBombAround',function(grid,i,j){ //
 	return count;
 });
 s.newEvent('startGame',function(key){ //teleport and spawn enemy
+	s.set(key,'startGame',true);
 	s.removeQuestMarker(key,'start');
 	s.startChrono(key,'timer',true);
 	s.teleport(key,'field','t1','party',true);
@@ -144,7 +154,7 @@ s.newEvent('startGame',function(key){ //teleport and spawn enemy
 	s.enableAttack(key,false);
 	
 	if(s.isChallengeActive(key,'monster')){
-		s.spawnActor(key,'field','t1','death');
+		s.spawnActor(key,'field','t1','eyeball');
 		s.spawnActor(key,'field','t1','bat');
 		s.spawnActor(key,'field','t1','skeleton');
 		s.spawnActor(key,'field','t1','mushroom');
@@ -162,21 +172,32 @@ s.newEvent('clickLeft',function(key,eid){ //
 		return s.failQuest(key) || false;
 	}		
 	s.add(key,'clickCount',1);
-	if(s.get(key,'clickCount') >= s.callEvent('getCst','CLICKTOWIN'))
-		return s.completeQuest(key) || false;
+	if(s.get(key,'clickCount') >= s.callEvent('getCst','CLICKTOWIN')){
+		s.setTimeout(key,function(){
+			s.completeQuest(key)
+		},25);
+		return;
+	}
 	s.setSprite(eid,'number-'+tag.value);
 	s.setTag(eid,'state','clicked');
 	
 	if(tag.value === 0){	//proliferation
 		var x = tag.positionX, y = tag.positionY;
-		if(s.callEvent('clickLeft',key,s.getRandomNpc(key,'field',{position:(x-1)+'-'+(y-1)})) === false) return;	//=== false return is to prevent bug. if complete quest, map is destroyed
-		if(s.callEvent('clickLeft',key,s.getRandomNpc(key,'field',{position:(x-1)+'-'+(y)})) === false) return;
-		if(s.callEvent('clickLeft',key,s.getRandomNpc(key,'field',{position:(x-1)+'-'+(y+1)}))=== false) return;
-		if(s.callEvent('clickLeft',key,s.getRandomNpc(key,'field',{position:(x)+'-'+(y-1)}))=== false) return;
-		if(s.callEvent('clickLeft',key,s.getRandomNpc(key,'field',{position:(x)+'-'+(y+1)})) === false) return;
-		if(s.callEvent('clickLeft',key,s.getRandomNpc(key,'field',{position:(x+1)+'-'+(y-1)})) === false) return;
-		if(s.callEvent('clickLeft',key,s.getRandomNpc(key,'field',{position:(x+1)+'-'+(y)})) === false) return;
-		if(s.callEvent('clickLeft',key,s.getRandomNpc(key,'field',{position:(x+1)+'-'+(y+1)})) === false) return;
+		
+		var array = [
+			s.getRandomNpc(key,'field',{position:(x-1)+'-'+(y-1)}),
+			s.getRandomNpc(key,'field',{position:(x-1)+'-'+(y)}),
+			s.getRandomNpc(key,'field',{position:(x-1)+'-'+(y+1)}),
+			s.getRandomNpc(key,'field',{position:(x)+'-'+(y-1)}),
+			s.getRandomNpc(key,'field',{position:(x)+'-'+(y+1)}),
+			s.getRandomNpc(key,'field',{position:(x+1)+'-'+(y-1)}),
+			s.getRandomNpc(key,'field',{position:(x+1)+'-'+(y)}),
+			s.getRandomNpc(key,'field',{position:(x+1)+'-'+(y+1)}),		
+		];
+		for(var i = 0 ; i < array.length; i++){
+			if(array[i])
+				s.callEvent('clickLeft',key,array[i]);
+		}
 	}
 });
 s.newEvent('clickRight',function(key,eid){ //
@@ -242,8 +263,8 @@ s.newMapAddon('QfirstTown-north',{
 	load: function(spot){
 		m.spawnActor(spot.t5,'npc',{
 			dialogue:'talkYelface',
-			sprite:s.newNpc.sprite('villager-male2',1),
-			minimapIcon:'minimapIcon.quest',
+			sprite:s.newNpc.sprite('villagerMale-2',1),
+			minimapIcon:'minimapIcon-quest',
 			angle:s.newNpc.angle('left'),
 			nevermove:true,
 			name:'Yelface',
@@ -251,7 +272,7 @@ s.newMapAddon('QfirstTown-north',{
 	}
 });
 
-s.newDialogue('Yelface','Yelface','villager-male.2',[ //{ 
+s.newDialogue('Yelface','Yelface','villagerMale-2',[ //{ 
 	s.newDialogue.node('intro',"Yo. I just made a Minesweeper game. It works great... I think...",[ 
 		s.newDialogue.option("You think?",'intro2','')
 	],''),

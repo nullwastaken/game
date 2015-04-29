@@ -1,0 +1,39 @@
+<% include ../partial/header.html %>
+<div class="container">
+	<h2>HTML5 Tutorials</h2>
+	<p>This tutorial series shows how to create a canvas-based video game in HTML5 using Javascript.</p>
+	<p>Don't forget to subscribe to my <a href="http://www.youtube.com/user/RainingChain" target="_blank">Youtube Channel</a> for all my videos.</p>
+	
+	<h3>Softwares</h3>
+	<ul>
+		<li><a href="http://www.google.com/intl/en/chrome/browser/" target="_blank">Google Chrome</a></li>
+		<li><a href="http://notepad-plus-plus.org/download/v6.4.2.html" target="_blank">Notepad++</a></li>
+	</ul>
+
+	
+	<h3>Episodes</h3>
+	<div class="container">
+		<% for(var i=0; i<episodeList.length; i++) { %>
+			<details style="margin:5px"> 
+				<summary><%= episodeList[i].summary %></summary> 
+				<iframe id="iFrame<%= i %>" width="640px" height="360px" src=""></iframe>
+				<p><a href="<%= episodeList[i].startCode %>" target="_blank">Start code</a></p>
+				<p><a href="<%= episodeList[i].endCode %>" target="_blank">End code</a></p>
+			</details>
+		<% } %>
+	</div>
+	
+	<script>
+		//< %= episodeList[i].videoSrc %>
+		var episodeList = <%- JSON.stringify(episodeList) %>;
+		
+		$(window).load(function(){	//doesnt work... doesnt remove lag...
+			for(var i = 0 ; i < episodeList.length; i++){
+				$("#iFrame" + i)[0].src = episodeList[i].videoSrc;
+			}
+		});
+		$('#iFrame' + (episodeList.length-1)).parent().attr('open',true);
+		$($('#iFrame' + (episodeList.length-1)).parent().find('p')[0]).hide();	//bad hide start code for first
+	</script>
+</div>
+<% include ../partial/footer.html %>

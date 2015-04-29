@@ -6,9 +6,13 @@
 var s = loadAPI('v1.0','QcollectFight',{
 	name:"Collect & Fight",
 	author:"rc",
-	thumbnail:"/quest/QcollectFight/QcollectFight.png",
-	description:"In a parallel universe, you're a fire demon harvesting resources to become stronger in preparation for an epic battle.",
+	thumbnail:true,
+	description:"In a parallel universe, you're a pumpking harvesting resources to become stronger in preparation for an epic battle.",
 	maxParty:4,
+	category:["Combat"],
+	solo:true,
+	zone:"QfirstTown-south",
+	party:"PvP",
 	reward:{"ability":{'Qsystem-player-meleeBig':0.5}},
 });
 var m = s.map; var b = s.boss; var g;
@@ -38,19 +42,21 @@ s.newHighscore('harvester',"Harvester","Most Unused Resources when finishing the
 		return s.getItemAmount(key,'resource');
 });
 
-s.newChallenge('harvester',"Harvester","Finish the quest with 25 unused resources.",2,function(key){
+s.newChallenge('harvester',"Harvester","Finish the quest with 25 unused resources.",function(key){
 	return s.haveItem(key,'resource',25);
 });
-s.newChallenge('minion',"Minion Master","The boss has minions protecting him.",2,function(key){
+s.newChallenge('minion',"Minion Master","The boss has minions protecting him.",function(key){
 	return true;
 });
-s.newChallenge('speedrun',"Speedrun","Kill the boss in less than 1 minute.",2,function(key){
+s.newChallenge('speedrun',"Speedrun","Kill the boss in less than 1 minute.",function(key){
 	return s.stopChrono(key,'timerBoss') < 25*60;
 });
 
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-south','n1','main');
-	s.setRespawn(key,'QfirstTown-south','n1','main');
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-south','n1','main');
+		s.setRespawn(key,'QfirstTown-south','n1','main');
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
@@ -316,7 +322,7 @@ s.newEvent('startGame',function(key){ //
 	
 	s.addTorchEffect(key,"red",1000,"rgba(255,0,0,0.1)",10);
 	
-	s.setSprite(key,'demon');
+	s.setSprite(key,'pumpking');
 	s.usePreset(key,'naked');
 	s.startChrono(key,'timer');
 	s.displayPopup(key,'Collect resources them use them to improve weapon, armor and abilities before time runs out.');
@@ -329,8 +335,8 @@ s.newEvent('timeout',function(key){ //
 	});
 	if(s.isChallengeActive(key,'minion')){
 		for(var i = 0 ; i < 10; i++){
-			s.spawnActor(key,'fight','e1','demon',{
-				sprite:s.newNpc.sprite('demon',0.5),
+			s.spawnActor(key,'fight','e1','pumpking',{
+				sprite:s.newNpc.sprite('pumpking',0.5),
 				globalDef:0.1,
 				globalDmg:0.1,
 			});
@@ -370,12 +376,12 @@ s.newEvent('updatePermPopup',function(key){ //
 		+ 'Armor Lv ' + s.get.one(key,'defLvl') + ' ' + s.displayPermPopup.button('def','Upgrade','Upgrade Armor Defence') + '<br>'
 		+ 'Heal Lv ' + s.get.one(key,'healLvl') + ' ' + s.displayPermPopup.button('heal','Upgrade','Upgrade Heal Ability');
 		
-	s.displayPermPopup.one(key,text,{
+	s.displayPermPopup.one(key,text,'aboveInventory',{
 		width:'250px',
 	});
 });
 
-s.newItem('resource',"Resource",'metal.metal',[    //{
+s.newItem('resource',"Resource",'metal-metal',[    //{
 ],'Used to craft equips.'); //}
 
 s.newEquip('body','body','metal','Body',0.5);
@@ -394,19 +400,19 @@ s.newEquip('dmg4','weapon','mace','Weapon Lvl 4',1.5);
 
 s.newAbility('atk0','attack',{
 	name:"Atk Lvl 0",
-	icon:'attackMagic.ball'
+	icon:'attackMagic-ball'
 },{
 	type:'bullet',
 	amount:1,
 	dmg:s.newAbility.dmg(200,'fire'),
 	hitAnim:s.newAbility.anim('fireHit',0.5),
-	burn:s.newAbility.status(0.00001,1,1),
+	burn:s.newAbility.status(0,1,1),
 	chill:s.newAbility.status(1,1,1),
 	sprite:s.newAbility.sprite('fireball',1)
 });
 s.newAbility('atk1','attack',{
 	name:"Atk Lvl 1",
-	icon:'attackMagic.ball',
+	icon:'attackMagic-ball',
 	periodOwn:10,
 	periodGlobal:10
 },{
@@ -415,13 +421,13 @@ s.newAbility('atk1','attack',{
 	angleRange:8,
 	dmg:s.newAbility.dmg(75,'fire'),
 	hitAnim:s.newAbility.anim('fireHit',0.5),
-	burn:s.newAbility.status(0.00001,1,1),
+	burn:s.newAbility.status(0,1,1),
 	chill:s.newAbility.status(1,1,1),
 	sprite:s.newAbility.sprite('fireball',1)
 });
 s.newAbility('atk2','attack',{
 	name:"Atk Lvl 2",
-	icon:'attackMagic.ball',
+	icon:'attackMagic-ball',
 	periodOwn:10,
 	periodGlobal:10
 },{
@@ -430,13 +436,13 @@ s.newAbility('atk2','attack',{
 	angleRange:8,
 	dmg:s.newAbility.dmg(100,'fire'),
 	hitAnim:s.newAbility.anim('fireHit',0.5),
-	burn:s.newAbility.status(0.00001,1,1),
+	burn:s.newAbility.status(0,1,1),
 	chill:s.newAbility.status(1,1,1),
 	sprite:s.newAbility.sprite('fireball',1)
 });
 s.newAbility('atk3','attack',{
 	name:"Atk Lvl 3",
-	icon:'attackMagic.ball',
+	icon:'attackMagic-ball',
 	periodOwn:10,
 	periodGlobal:10
 },{
@@ -445,7 +451,7 @@ s.newAbility('atk3','attack',{
 	angleRange:13,
 	dmg:s.newAbility.dmg(150,'fire'),
 	hitAnim:s.newAbility.anim('fireHit',0.5),
-	burn:s.newAbility.status(0.00001,1,1),
+	burn:s.newAbility.status(0,1,1),
 	chill:s.newAbility.status(1,1,1),
 	sprite:s.newAbility.sprite('fireball',1)
 });
@@ -460,7 +466,7 @@ s.newAbility('atk4','attack',{
 	angleRange:13,
 	dmg:s.newAbility.dmg(175,'fire'),
 	hitAnim:s.newAbility.anim('fireHit',0.5),
-	burn:s.newAbility.status(0.00001,1,1),
+	burn:s.newAbility.status(0,1,1),
 	chill:s.newAbility.status(1,1,1),
 	sprite:s.newAbility.sprite('fireball',1)
 });
@@ -501,7 +507,7 @@ s.newAbility('heal4','heal',{
 });
 s.newAbility('fireBomb2','attack',{
 	name:"Fire Explosion",
-	icon:'attackMagic.fireball',
+	icon:'attackMagic-fireball',
 	periodOwn:50,
 	periodGlobal:50
 },{
@@ -513,7 +519,7 @@ s.newAbility('fireBomb2','attack',{
 });
 s.newAbility('fireSlash','attack',{
 	name:"Scratch",
-	icon:'attackMelee.scar',
+	icon:'attackMelee-scar',
 	delay:10
 },{
 	type:'strike',
@@ -528,12 +534,12 @@ s.newAbility('fireSlash','attack',{
 
 s.newPreset('naked',s.newPreset.ability(['atk0','','','','heal0','']),s.newPreset.equip({body:'body',helm:'helm',weapon:'dmg0',ring:'ring',amulet:'def0'}),False,True,False,False);
 
-s.newDialogue('Geff','Geff','villager-child.0',[ //{ 
+s.newDialogue('Geff','Geff','villagerMale-9',[ //{ 
 	s.newDialogue.node('intro',"Hey, do you believe in parallel universes?",[ 
 		s.newDialogue.option("Yes",'intro2',''),
 		s.newDialogue.option("No",'intro2','')
 	],''),
-	s.newDialogue.node('intro2',"Really? I'll let you in on a little secret, I can see all of them, and go to any as I please. In one of them, you're a fire demon searching for resources.",[ 
+	s.newDialogue.node('intro2',"Really? I'll let you in on a little secret, I can see all of them, and go to any as I please. In one of them, you're pumpking searching for resources.",[ 
 		s.newDialogue.option("I don't believe you",'dontbelieve',''),
 		s.newDialogue.option("Why is he collecting resource?",'why',''),
 		s.newDialogue.option("Can you tell me more",'whattodo','')
@@ -548,7 +554,7 @@ s.newDialogue('Geff','Geff','villager-child.0',[ //{
 		s.newDialogue.option("That sounds cool.",'teleport','')
 	],''),
 	s.newDialogue.node('teleport',"I'm glad you like it. Because I'm about to send you in that parallel universe for 1 minute.",[ 
-		s.newDialogue.option("Nah, you kidding. I'ts impossible.",'','startGame'),
+		s.newDialogue.option("Nah, you kidding. It's impossible.",'','startGame'),
 		s.newDialogue.option("Ok, great.",'','startGame')
 	],'')
 ]); //}
@@ -557,7 +563,7 @@ s.newNpc('fireBoss',{
 	name:"Fire Boss",
 	hp:20000,
 	boss:s.newNpc.boss('myBoss'),
-	sprite:s.newNpc.sprite('demon',2),
+	sprite:s.newNpc.sprite('pumpking',2),
 	moveRange:s.newNpc.moveRange(2,10),
 	abilityAi:s.newNpc.abilityAi([
 		s.newNpc.abilityAi.ability('idle',[0.1,0.1,0.1])
@@ -567,6 +573,7 @@ s.newNpc('fireBoss',{
 s.newMap('main',{
 	name:"South",
 	lvl:0,
+	screenEffect:'weather',
 	graphic:'QfirstTown-south',
 },{
 	spot:{e2:{x:1712,y:176},a:{x:1488,y:496},b:{x:1808,y:528},t1:{x:1200,y:592},c:{x:976,y:656},e3:{x:2000,y:752},d:{x:560,y:912},e:{x:2096,y:944},e1:{x:336,y:1232},r:{x:1712,y:1264},f:{x:560,y:1360},g:{x:2064,y:1488},ec:{x:1648,y:1616},e4:{x:1808,y:1712},h:{x:1424,y:1744},eb:{x:2800,y:1744},o:{x:2960,y:1744},t4:{x:1840,y:1808},e5:{x:2416,y:1840},n:{x:1968,y:1904},i:{x:816,y:1936},e7:{x:1040,y:2032},p:{x:2704,y:2096},s:{x:240,y:2192},t3:{x:144,y:2224},j:{x:976,y:2256},e6:{x:1552,y:2352},m:{x:1520,y:2512},e8:{x:720,y:2544},k:{x:656,y:2640},t2:{x:2352,y:2864},q:{x:2480,y:2864},ea:{x:1328,y:2992},l:{x:1136,y:3024},ed:{x:2288,y:3024}},
@@ -600,6 +607,7 @@ s.newMap('main',{
 s.newMap('fight',{
 	name:"Arena",
 	lvl:0,
+	screenEffect:'lightCave',
 	grid:["00000000000000000000001100000000000000111100000010","01111110000000000000001100000000000000111100000100","11111111000000000000000000000000000000000000000110","11111111011111111111111111111111111111111110000011","01111110111111111111111111111111111111111111000001","00000001111111111111111111111111111111111111100000","00000001111111111111111111111111111111111111100000","11000001100000000000000000000000000000000001100000","00100001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100111","00010001100000000000000000000000000000000001101111","00010001100000000000000000000000000000000001101111","00010001100000000000000000000000000000000001100111","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100110","00010001100000000000000000000000000000000001100110","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001100000","00010001100000000000000000000000000000000001101100","10110001100000000000000000000000000000000001101100","11100001100000000000000000000000000000000001100000","01000001100000000000000000000000000000000001100000","00011111100000000000000000000000000000000001100000","00011111100000000000000000000000000000000001100000","00001111100000000000000000000000000000000001100000","00000111100000000000000000000000000000000001100000","00000001100000000000000000000000000000000001100000","00011100111111111111111111111111111111111111111100","00100010011111111111111111111111111111111110111100","01000001000000000000000000000000000000000000000000","01000001000000000000000000000000000000000000011100","01000000111111111111111111111111111000000000100010","01000000000000000000000000000000000100000000110110","01000000000000000000000000000000000010000000111110","01000000000000000000000000000000000010000000011100"],
 	tileset:'v1.2'
 },{
@@ -607,16 +615,13 @@ s.newMap('fight',{
 	load:function(spot){
 		
 	},
-	loop:function(spot){
-		if(!m.testInterval(50)) return;
-	}
 });
 s.newMapAddon('QfirstTown-south',{
 	spot:{n1:{x:688,y:624},e1:{x:2064,y:752},e2:{x:752,y:1712},e4:{x:1872,y:1776},e5:{x:848,y:2352},e3:{x:1616,y:2352},e6:{x:2608,y:2448}},
 	load:function(spot){
 		m.spawnActor(spot.n1,'npc',{
 			name:'Geff',
-			sprite:s.newNpc.sprite('villager-child0',1),
+			sprite:s.newNpc.sprite('villagerMale-9',1),
 			dialogue:'talkGeff',
 			angle:s.newNpc.angle('down'),
 		});

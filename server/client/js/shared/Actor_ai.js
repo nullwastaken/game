@@ -67,8 +67,8 @@ Actor.ai.updateInput.mouse = function(act){
 	var x = target.x-act.x;
 	var y = target.y-act.y;
 	act.angle = Tk.atan2(y,x);
-	act.mouseX = y+CST.WIDTH2;
-	act.mouseY = x+CST.HEIGHT2;
+	act.mouseX = y;
+	act.mouseY = x;
 } 
 
 Actor.ai.updateInput.move = function(act){
@@ -107,14 +107,6 @@ Actor.ai.updateInput.move.towardSub = function(act,sub){	//sub = where he wants 
 	}
 	
 }
-
-
-
-//ts("Actor.ai.goTo(Actor.get(key),{x:500,y:500},function(key,success){ INFO(success); },25*10)");
-
-
-
-
 
 //cutscene[ {x,y,timeLimit,spd,wait} ]	
 Actor.followPath = function(act,cutscene,callback){
@@ -254,14 +246,19 @@ Actor.ai.setTarget.updateMain = function(act){
 	if(!act.combat) return;
 	var targetList = {}; 
 	var playerCount = 0;
+	var fullHp = act.hp === act.hpMax;
 	for (var i in act.activeList){
 		var target = Actor.get(i);
-		if(!target) continue; 	//aka not player?
-		if(target.type === 'player') playerCount++;
-		if(!Combat.targetIf(act,target)) continue;
+		if(!target)  //aka not actor (ex: bullet)
+			continue; 	
+		if(target.type === 'player') 
+			playerCount++;
+		if(!Combat.targetIf(act,target)) 
+			continue;
 		
 		var dist = Collision.getDistancePtPt(act,target);
-		if(dist > act.moveRange.aggressive) continue;
+		if(!fullHp && dist > act.moveRange.aggressive) 
+			continue;
 		
 		targetList[i] = 1/(dist+100);
 	}

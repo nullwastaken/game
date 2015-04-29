@@ -53,13 +53,7 @@ QuestVar.set = function(quest,key,name,value){
 	LIST[quest][key][name] = value
 	return value;
 }
-QuestVar.add = function(quest,key,name,value){
-	if(isNaN(value)) return ERROR(3,'NaN',quest,name,value);
-	if(!LIST[quest] || !LIST[quest][key]) return ERROR(3,'invalid quest key',quest,key);
-	if(Debug.getAttr('trackQuestVar')) 
-		INFO(name,LIST[quest][key][name] + value,'[old: ' + LIST[quest][key][name] + ']');
-	return LIST[quest][key][name] += value;
-}
+
 QuestVar.get = function(quest,key,name){
 	var value = LIST[quest] && LIST[quest][key] && LIST[quest][key][name];
 	if(value === undefined) return ERROR(3,'undefined',quest,key,name);

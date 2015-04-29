@@ -42,7 +42,7 @@ Actor.bumper.update = function(act){	//HOTSPOT
 	if(act.spdY > 7) act.bumper.down = Collision.actorMap(Math.floor((act.x + act.sprite.bumperBox.down.x)/32),Math.floor((act.y + act.sprite.bumperBox.down.y)/32),act.map,act);
 	else if(act.spdY < -7) act.bumper.up = Collision.actorMap(Math.floor((act.x + act.sprite.bumperBox.up.x)/32),Math.floor((act.y + act.sprite.bumperBox.up.y)/32),act.map,act);	
 }
-Actor.moveBy = function(act,x,y){	//not testing collision
+Actor.moveBy = function(act,x,y){	//TEMP not testing collision
 	if(Math.abs(x) > 25 || Math.abs(y) > 25) 
 		return ERROR(3,'this is only meant for small variation');
 	act.x += x;
@@ -90,7 +90,7 @@ Actor.move = function(act){	//if shaking, cuz add acc vs not adding acc is too b
 		act.x += act.spdX * act.maxSpdMod;
 		act.y += act.spdY * act.maxSpdMod;
 	} else {    //aka could pass thru walls => move step by step and test bumper every time
-		for(var i = 0 ; i < amount && !act.bumper.right && !act.bumper.down && !act.bumper.left && !act.bumper.up  ; i++){
+		for(var i = 0 ; i < amount && !act.bumper.right && !act.bumper.down && !act.bumper.left && !act.bumper.up; i++){
 			act.x += act.spdX/amount * act.maxSpdMod;
 			act.y += act.spdY/amount * act.maxSpdMod;
 			Actor.bumper.update(act);
@@ -157,15 +157,15 @@ Actor.move.client = function(act){
 }
 //bumperBox is NaN
 Actor.bumper.update.client = function(act){
-	for(var i in Actor.bumper.update.client.TEMP)
+	for(var i in Actor.bumper.update.client.HARDCODED)
 		act.bumper[i] = Collision.actorMap(
-			Math.floor((act.x + Actor.bumper.update.client.TEMP[i].x)/32),
-			Math.floor((act.y + Actor.bumper.update.client.TEMP[i].y)/32),
+			Math.floor((act.x + Actor.bumper.update.client.HARDCODED[i].x)/32),
+			Math.floor((act.y + Actor.bumper.update.client.HARDCODED[i].y)/32),
 			act.map,
 			act
 		);
 }
-Actor.bumper.update.client.TEMP = {"right":{"x":32,"y":23},"down":{"x":0,"y":54},"left":{"x":-32,"y":23},"up":{"x":0,"y":-8}};	//hardcoded
+Actor.bumper.update.client.HARDCODED = {"right":{"x":32,"y":23},"down":{"x":0,"y":54},"left":{"x":-32,"y":23},"up":{"x":0,"y":-8}};	//hardcoded
 
 Actor.move.updateAimPenalty = function (act){	//BAD
 	if(act.abilityChange.press === '000000') return;	
@@ -195,7 +195,7 @@ Actor.move.testFall.ARRAY = [[1,0,0],[0,1,90],[-1,0,180],[0,-1,270],[1,1,45],[-1
 
 Actor.pushable = {};
 Actor.pushable.update = function(act){
-	if(!(act.pushable.timer-- > 0)) return;
+	if(act.pushable.timer-- <= 0) return;
 	act.x += Tk.cos(act.pushable.angle) * act.pushable.magn;
 	act.y += Tk.sin(act.pushable.angle) * act.pushable.magn;
 }

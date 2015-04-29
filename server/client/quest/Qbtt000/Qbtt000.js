@@ -7,6 +7,10 @@ var s = loadAPI('v1.0','Qbtt000',{
 	author:'rc',
 	maxParty:1,
 	thumbnail:true,
+	category:["Mixed"],
+	solo:true,
+	zone:"QfirstTown-east",
+	party:"No",
 	reward:{"ability":{'Qsystem-player-coldBullet':0.5},"exp":0.2,"item":0.2,"reputation":{"min":1,"max":2,"mod":10}},
 	description:"Find the fastest way to break 10 targets.",
 });
@@ -21,7 +25,8 @@ s.newVariable({
 	chrono:0,
 	lastReset:0,
 	countComplete:0,
-	chalTimes:0
+	chalTimes:0,
+	startGame:false,
 });
 
 s.newHighscore('speedrun','Fastest Time','Fastest Time','ascending',function(key){
@@ -32,13 +37,13 @@ s.newHighscore('fireonly','Fire Only','Fastest Time with the Challenge Fire Only
 	return null;
 });
 
-s.newChallenge('speedrun','Speedrun','Get below 8 seconds.',2,function(key){
+s.newChallenge('speedrun','Speedrun','Get below 8 seconds.',function(key){
 	return s.get(key,'chrono') < 25*8;
 });
-s.newChallenge('fireonly','Fire Only','Get below 15 seconds only using the fire attack.',2,function(key){
+s.newChallenge('fireonly','Fire Only','Get below 15 seconds only using the fire attack.',function(key){
 	return s.get(key,'chrono') < 25*15;
 });
-s.newChallenge('fivetimes','5 Times!','Get below 10 seconds five times in a row.',2,function(key){
+s.newChallenge('fivetimes','5 Times!','Get below 10 seconds five times in a row.',function(key){
 	return true;
 });
 
@@ -51,6 +56,8 @@ s.newEvent('_debugSignIn',function(key){	//
 	s.teleport(key,'QfirstTown-east','t6','main');
 });
 s.newEvent('_hint',function(key){	//
+	if(!s.get(key,'startGame'))
+		return 'Go talk with Matthe';
 	return "Kill all 10 targets.<br>" + s.message.input(4) + " = Restart.";
 });
 s.newEvent('_death',function(key){	//
@@ -66,13 +73,16 @@ s.newEvent('_getScoreMod',function(key){	//
 	return 1;
 });
 s.newEvent('_abandon',function(key){ //
-	s.teleport(key,'QfirstTown-east','t6','main');
-	s.setRespawn(key,'QfirstTown-east','t6','main');
+	if(s.isInQuestMap(key)){
+		s.teleport(key,'QfirstTown-east','t6','main');
+		s.setRespawn(key,'QfirstTown-east','t6','main');
+	}
 });
 s.newEvent('_complete',function(key){ //
 	s.callEvent('_abandon',key);
 });
 s.newEvent('startGame',function(key){	//
+	s.set(key,'startGame',true);
 	s.removeQuestMarker(key,'start');
 	s.message(key,"Break all 10 targets in less than 18 seconds.");
 	s.message(key,"Press " + s.message.input(4) + " to restart the quest quickly.");
@@ -96,7 +106,8 @@ s.newEvent('startCourse',function(key){	//
 	s.enableAttack(key,true);
 });
 s.newEvent('killTarget',function(key){	//
-	if(s.add(key,'killTarget',1) >= 10){
+	s.add(key,'killTarget',1)
+	if(s.get(key,'killTarget') >= 10){
 		s.callEvent('endCourse',key);
 	}
 });
@@ -145,7 +156,7 @@ s.newEvent('talkMatthe',function(key){ //
 });
 s.newAbility('simple','attack',{
 	name:'Bullet',
-	icon:'offensive.bullet',
+	icon:'offensive-bullet',
 	description:'This is an ability.',
 	periodOwn:15
 },{
@@ -156,7 +167,7 @@ s.newAbility('simple','attack',{
 });
 s.newAbility('boomerang','attack',{
 	name:'Boomerang',
-	icon:'weapon.boomerang',
+	icon:'weapon-boomerang',
 	description:'This is an ability.',
 	periodGlobal:15
 },{
@@ -171,7 +182,7 @@ s.newAbility('boomerang','attack',{
 });
 s.newAbility('5ways','attack',{
 	name:'Fire Bullet',
-	icon:'attackMagic.fireball',
+	icon:'attackMagic-fireball',
 	description:'This is an ability.',
 	periodOwn:100,
 	periodGlobal:15
@@ -186,14 +197,14 @@ s.newAbility('5ways','attack',{
 });
 s.newAbility('reset','event',{
 	name:'myAbility',
-	icon:'attackMelee.cube',
+	icon:'attackMelee-cube',
 	description:'This is an ability.'
 },{
 	event:s.getEvent('abilityReset')
 });
 s.newAbility('fastmove','dodge',{
 	name:'Invincibility',
-	icon:'attackMelee.cube',
+	icon:'attackMelee-cube',
 	description:'Dodge all damage.',
 	bypassGlobalCooldown:True,
 	costMana:30
@@ -204,7 +215,7 @@ s.newAbility('fastmove','dodge',{
 s.newPreset('target',s.newPreset.ability(['simple','boomerang','5ways','','reset','fastmove']),null,False,False,False,False);
 s.newPreset('fireonly',s.newPreset.ability(['5ways','','','','reset','']),null,False,False,False,False);
 
-s.newDialogue('Matthe','Matthe','villager-male.5',[ //{ 
+s.newDialogue('Matthe','Matthe','villagerMale-5',[ //{ 
 	s.newDialogue.node('intro',"Hey! There is a weird bug in the map ahead. There are 10 targets that spawned out of nowhere and I can\'t get rid of them fast enough. Can you help me out?",[ 
 		s.newDialogue.option("Sure",'','startGame')
 	],''),
@@ -228,8 +239,8 @@ s.newMapAddon('QfirstTown-east',{
 	load: function(spot){
 		m.spawnActor(spot.t6,'npc',{
 			dialogue:'talkMatthe',
-			sprite:s.newNpc.sprite('villager-male5',1),
-			minimapIcon:'minimapIcon.quest',
+			sprite:s.newNpc.sprite('villagerMale-5',1),
+			minimapIcon:'minimapIcon-quest',
 			angle:s.newNpc.angle('up'),
 			nevermove:true,
 			name:'Matthe',

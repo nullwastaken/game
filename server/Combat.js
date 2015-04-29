@@ -92,7 +92,6 @@ Combat.attack.perform = function(player,atk,extra){   //extra used for stuff lik
 	}
 }
 
-
 Combat.summon = function(master,param){
 	var name = param.model;
 	
@@ -112,7 +111,7 @@ Combat.summon = function(master,param){
 	
 	if(master.summon[name].child.$length() > maxChild){ 
 		if(Actor.isPlayer(master)) 
-			Message.add(key,"You already have maximum amount of minions.");  
+			Message.add(master.id,"You already have maximum amount of minions.");  
 		return;
 	}	
 	
@@ -124,7 +123,7 @@ Combat.summon = function(master,param){
 			damagedIf:master.damagedIf,//'summoned',
 			viewedIf:master.viewedIf,//'summoned',
 			combatType:master.combatType,
-			quest:master.quest,	//for _enemyKilled
+			quest:master.quest,	//for killCount
 			awareNpc:1,
 		}
 		
@@ -145,8 +144,11 @@ Combat.boost = function(act,param){
 }
 
 Combat.heal = function(act,param){
+	if(act.hp === act.hpMax && param.mana === 0)	//BAD
+		return Message.add(act.id,"You're already at maximum HP. Use this ability when your HP gets low.");
 	Actor.changeResource(act,param);
 }
+
 Combat.dodge = function(act,param){
 	Actor.dodge(act,param.time,param.distance);
 }

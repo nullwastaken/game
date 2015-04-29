@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Map = require2('Map'), ActiveList = require2('ActiveList'), ItemModel = require2('ItemModel'), Equip = require2('Equip'), Actor = require2('Actor');
+var Maps = require2('Maps'), ActiveList = require2('ActiveList'), ItemModel = require2('ItemModel'), Equip = require2('Equip'), Actor = require2('Actor');
 var QueryDb = require4('QueryDb'), Img = require4('Img'), Collision = require4('Collision');
 var Drop = exports.Drop = {};
 
@@ -30,7 +30,7 @@ Drop.create = function(spot,item,amount,viewedIf,timer){
 	
 	LIST[tmp.id] = tmp;
 	ActiveList.addToList(tmp);
-	Map.enter(tmp);
+	Maps.enter(tmp);
 };	
 var LIST = Drop.LIST = {};
 
@@ -55,7 +55,7 @@ Drop.loop = function(){	//static
 
 Drop.remove = function(drop){
 	if(typeof drop === 'string') drop = LIST[drop];
-	Map.leave(drop);
+	Maps.leave(drop);
 	delete LIST[drop.id];
 	ActiveList.removeFromList(drop.id);
 }
@@ -90,8 +90,8 @@ Drop.drawAll = function(ctx){	//linked with Button.updateList.drop for size 32
 	for(var i in LIST){
 		var drop = LIST[i];
 				
-		var numX = CST.WIDTH2 + drop.x - player.x;
-		var numY = CST.HEIGHT2 + drop.y - player.y;
+		var numX = Tk.absToRel.x(drop.x);
+		var numY = Tk.absToRel.y(drop.y);
 		
 		var item = QueryDb.get('item',drop.item);
 		if(!item) continue;
@@ -105,7 +105,7 @@ Drop.drawAll = function(ctx){	//linked with Button.updateList.drop for size 32
 			ctx.lineWidth = 1;
 		}
 		
-		if(Collision.testMouseRect(key,{x:numX,y:numY,width:32,height:32}))
+		if(Collision.testMouseRect(null,{x:numX,y:numY,width:32,height:32}))
 			context = item.name;
 	}
 	return context;

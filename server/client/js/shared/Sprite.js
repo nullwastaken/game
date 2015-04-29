@@ -1,13 +1,14 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var ActiveList = require2('ActiveList'), Actor = require2('Actor'), SpriteModel = require2('SpriteModel');
-var Collision = require4('Collision'), Main = require4('Main'), ClientPrediction = require4('ClientPrediction'), Input = require4('Input');
+var ActiveList = require2('ActiveList'), Actor = require2('Actor'), Main = require2('Main'), SpriteModel = require2('SpriteModel');
+var Collision = require4('Collision'), LightingEffect = require4('LightingEffect'), ClientPrediction = require4('ClientPrediction'), Input = require4('Input');
 
 var Sprite = exports.Sprite = {};
 Sprite.create = function(name,sizeMod,actorType){
 	var model = SpriteModel.get(name);
-	if(!model) return ERROR(4,'no model for name',name);
+	if(!model) 
+		return ERROR(4,'no model for name',name);
 	
 	var s = {
     	name:name,
@@ -20,7 +21,6 @@ Sprite.create = function(name,sizeMod,actorType){
 		hitBox:null,	//set later
 		bumperBox:null,
 		dead: false,			//used to change alpha
-		normal:'mace',		//default appearance, contribution reward
 	};
 	s.name = name;
 	s.sizeMod = sizeMod || 1;
@@ -32,12 +32,16 @@ Sprite.create = function(name,sizeMod,actorType){
 	return s;
 };
 
-Sprite.change = function(sprite,info){
-    if(!sprite) return ERROR(5,'no act or no sprite');
+Sprite.change = function(act,info){	//BAD param is act instead of sprite, but need act for contribution
+    var sprite = act.sprite;
+	if(!sprite) 
+		return ERROR(3,'no act or no sprite');
 
 	if(info.name){
-		if(info.name === 'normal')  sprite.name = sprite.normal;
-		else sprite.name = info.name;
+		if(info.name === 'normal') 
+			sprite.name = Main.contribution.getPlayerSprite(Actor.getMain(act));
+		else
+			sprite.name = info.name;
 	}
 	sprite.sizeMod = info.sizeMod || sprite.sizeMod;
 		
@@ -59,7 +63,7 @@ Sprite.updateAnim = function (act){	//client side only
 	
 	if(act.sprite.animOld !== act.sprite.anim){	//otherwise, animation can be cut if timer for walk is high 
 		act.sprite.animOld = act.sprite.anim;
-		Sprite.change(act.sprite,{'anim':act.sprite.anim});
+		Sprite.change(act,{'anim':act.sprite.anim});
 	}
 	var animFromDb = dsp.anim[act.sprite.anim];	
 	if(!animFromDb) return ERROR(4,"sprite anim dont exist",act.sprite);
@@ -70,9 +74,14 @@ Sprite.updateAnim = function (act){	//client side only
 		mod = Math.abs(spd/act.maxSpd) || 0;
 	}
 	
-	act.sprite.timer += animFromDb.spd * mod;	
-	act.sprite.startX = Math.floor(act.sprite.timer);
-	if(act.sprite.startX > animFromDb.frame-1){
+	act.sprite.timer += animFromDb.spd * mod;
+	var rt = Math.floor(act.sprite.timer);
+	if(animFromDb.loopReverse && rt > animFromDb.frame-1){	//frame exclude reverse (only counted once)
+		act.sprite.startX = 2*(animFromDb.frame - 1) - rt;
+	} else 
+		act.sprite.startX = rt;
+	
+	if(rt > animFromDb.loopFrame-1){	//loopframe include reverse
 		Sprite.changeAnim(act.sprite,animFromDb.next);
 	}
 	if(act.sprite.dead){
@@ -89,7 +98,6 @@ Sprite.changeAnim = function(sprite,anim){
 	sprite.timer = 0;
 }
 
-
 Sprite.resizeBumper = function(bumperBox,size){
 	for(var i in bumperBox)
 		for(var j in bumperBox[i])
@@ -97,7 +105,7 @@ Sprite.resizeBumper = function(bumperBox,size){
 	return bumperBox;
 }
 
-Sprite.draw = function(ctx,act){	//also does position update calc, client prediction //BAD hardcoded border
+Sprite.draw = function(ctx,act,glow){	//also does position update calc, client prediction //BAD hardcoded border
 	var list = act.sprite.name.split(',');
 
 	var underMouse = false;
@@ -105,7 +113,7 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 		var model = SpriteModel.get(list[i]);
 		
 		var image = SpriteModel.getImage(model,act.spriteFilter);
-		if(!image) continue;
+		if(!image || !image.naturalWidth) continue;
 		
 		var animFromDb = model.anim[act.sprite.anim];
 		
@@ -122,35 +130,43 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 		var sizeOffY = animFromDb.sizeY/2*sizeMod;
 		var offsetX = model.offsetX*sizeMod;
 		var offsetY = model.offsetY*sizeMod;
-		var posX = (CST.WIDTH2 - player.x) + act.x + offsetX;
-		var posY = (CST.HEIGHT2 - player.y) + act.y + offsetY;
+		var posX = Tk.absToRel.x(act.x + offsetX);
+		var posY = Tk.absToRel.y(act.y + offsetY);
 		
 		if(act.type !== 'bullet' && act !== player){
-			if(Collision.testMouseRect(key,{x:posX- sizeOffX,y:posY- sizeOffY,width:sizeOffX*2,height:sizeOffY*2}))
+			if(Collision.testMouseRect(null,{x:posX- sizeOffX,y:posY- sizeOffY,width:sizeOffX*2,height:sizeOffY*2}))
 				underMouse = true;
 		}
 		
 		if(!model.canvasRotate){
+			//draw black border
 			if(model.showBorder && (underMouse || act.withinStrikeRange)){	//BAD hardocded...
 				var filter = Main.getPref(main,'strikeTarget') === 0 && act.withinStrikeRange ? 'allRed' : 'allBlack';
 				var black = SpriteModel.getImage(model,{filter:filter});
-				if(!black) continue;
+				if(!black || !black.naturalWidth) continue;
 				
 				ctx.drawImage(black, 
-					startX,Math.floor(startY+1),	//bad way to fix random line on top of player
-					animFromDb.sizeX,Math.floor(animFromDb.sizeY-1),
+					startX,startY,	//bad way to fix random line on top of player
+					animFromDb.sizeX,animFromDb.sizeY,
 					posX - sizeOffX - 3,posY - sizeOffY - 3,
 					animFromDb.sizeX * sizeMod + 6,animFromDb.sizeY * sizeMod + 6
 				);
 			}
 			
-			
+			//draw image
 			ctx.drawImage(image, 
-				startX,Math.floor(startY+1),	//bad way to fix random line on top of player
-				animFromDb.sizeX,Math.floor(animFromDb.sizeY-1),
+				startX,startY,	//bad way to fix random line on top of player
+				animFromDb.sizeX,animFromDb.sizeY,
 				posX - sizeOffX,posY - sizeOffY,
 				animFromDb.sizeX * sizeMod,animFromDb.sizeY * sizeMod
 			);	
+			
+			if(glow)
+				LightingEffect.drawEntity(LightingEffect.getEntityGlow(),ctx,posX,posY,glow);
+
+			//draw light
+			if(model.lightingEffect)
+				LightingEffect.drawEntity(model.lightingEffect,ctx,posX,posY,sizeMod);
 		} else {
 			ctx.save();
 			ctx.translate(posX,posY);
@@ -159,16 +175,20 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 			ctx.drawImage(image, 
 				startX,startY,
 				animFromDb.sizeX,animFromDb.sizeY,
-				- sizeOffX,- sizeOffY,
+				0-sizeOffX,0-sizeOffY,
 				animFromDb.sizeX * sizeMod,animFromDb.sizeY * sizeMod
 			);
+			//draw light
+			if(model.lightingEffect)
+				LightingEffect.drawEntity(model.lightingEffect,ctx,0,0,sizeMod,posX,posY);
+						
 			ctx.restore();
 		}
 		ctx.globalAlpha = 1;
 		
 		if(Main.getPref(main,'displayMiddleSprite')){
 			ctx.fillStyle = 'red';
-			ctx.fillRect(CST.WIDTH2 - player.x + act.x -4,CST.HEIGHT2 - player.y + act.y -4,8,8);
+			ctx.fillRect(Tk.absToRel.x(act.x -4),Tk.absToRel.y(act.y -4),8,8);
 			ctx.fillStyle = 'black';
 		}
 	}
@@ -180,9 +200,8 @@ Sprite.draw = function(ctx,act){	//also does position update calc, client predic
 	return '';
 }
 
-
 Sprite.getMoveAngle = function(act){	//moveAngle
-	if(ClientPrediction.isActive() && act === player){	//TEMP
+	if(ClientPrediction.isActive() && act === player){
 		//check Actor.loop.updatePosition.player
 		return act.moveAngle;
 	}

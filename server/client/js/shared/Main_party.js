@@ -42,9 +42,10 @@ Main.party.onSignOff = function(main){
 	}
 	Quest.get(main.questActive).event._signOff(notGuySignOff);
 	
+	Main.leaveParty(main);
 }
 
-Main.joinParty = function(main,name){ //only called directly when sign in, otherwise, use changeParty
+Main.joinParty = function(main,name,showMessage){ //only called directly when sign in, otherwise, use changeParty
 	main.party.id = name;
 	
 	var party = Party.get(name);
@@ -52,25 +53,22 @@ Main.joinParty = function(main,name){ //only called directly when sign in, other
 		party = Party.create(name);	//create if not exist
 		Party.setQuest(party,main.questActive);
 	} else if(party.quest){
-		party = Party.create(Math.randomId());
+		party = Party.create(Math.randomId());	//join random party
 		Main.addMessage(main,"You can't join this party because they are already doing a quest.");
 	}
 	Party.addPlayer(party,main.id,main.username);
 	
 	Main.setFlag(main,'party');
 	
-	Main.addMessage(main, 'You are now in party "' + name + '".');
-	/*
-	if(Party.testQuest(act,name) === false){
-		Message.add(act.id,"You can't join this party because one of more players do not share the same active quest than you. Abandon your active quest or make sure they are doing the same than yours. You have been moved in a temporary party instead.");
-		name = '!temp-' + act.name;
-		Party.creation(act,name);
-		act.party = name;
-	}
-	*/
+	if(showMessage !== false)
+		Main.addMessage(main, 'You are now in party "' + name + '".');
 }
-
-Main.leaveParty = function(main){	//only called directly when sign off, otherwise, use changeParty
+Main.joinSoloParty = function(main){	//called when player leaves party
+	Main.leaveParty(main);
+	Main.joinParty(main,Party.SOLO + Math.randomId(),false);
+	//message in Command
+}
+Main.leaveParty = function(main){
 	var party = Party.get(main.party.id);
 	Party.removePlayer(party,main.id);
 }
@@ -78,6 +76,8 @@ Main.leaveParty = function(main){	//only called directly when sign off, otherwis
 Main.changeParty = function(main,newParty){
 	if(main.questActive)
 		return Main.addMessage(main,"You can't change your party while doing a quest.");
+	if(newParty.$contains(Party.SOLO))
+		return Main.addMessage(main,"You can't join that party.");
 	newParty = newParty || Math.randomId();
 	Main.leaveParty(main);
 	Main.joinParty(main,newParty);
