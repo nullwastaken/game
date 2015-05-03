@@ -7,9 +7,9 @@ var Collision = require4('Collision'), LightingEffect = require4('LightingEffect
 var Sprite = exports.Sprite = {};
 Sprite.create = function(name,sizeMod,actorType){
 	var model = SpriteModel.get(name);
-	if(!model) 
-		return ERROR(4,'no model for name',name);
-	
+	if(!model)
+		ERROR(4,'no model for name',name);
+	//115,207,15085
 	var s = {
     	name:name,
 		anim:"walk",		//on SERVER: normally null. change for 1 frame when attack

@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Song = require4('Song'), Main = require4('Main'), Message = require4('Message');
+var Song = require4('Song'), Main = require4('Main'), Message = require4('Message'), Input = require4('Input');
 var Pref = exports.Pref = {};
 
 var VOL_MASTER = 25; //30
@@ -45,6 +45,7 @@ Pref.create('volumeSong','Volume Song',5,0,100,'Volume Song.',Pref.DisplayType('
 Pref.create('volumeSfx','Volume Effects',75,0,100,'Volume Sound Effects.',Pref.DisplayType('slider'));
 Pref.create('enableLightingEffect','Enable Lighting Effects',1,0,1,'Enable Lighting Effects. Turning this off will improve performance.');
 Pref.create('enableWeather','Enable Weather',1,0,1,'Enable Weather like rain, sun and night. Turning this off will improve performance.');
+Pref.create('maxWidth','Max Screen Width',1280,1000,1920,'The Max Screen Width in pixel. Setting a large width can create frame drops on slow computers.',undefined,function(){ Input.onResize(); });
 Pref.create('clientPredictionThreshold','Latency Threshold',200,75,10000,'BETA. Activate Client Prediction if latency (in ms) is above this value.');
 Pref.create('displayStrike','Display AoE',0,0,1,'Display Damage Zone For Strikes.');
 Pref.create('strikeTarget','Highlight Target',0,0,3,'Display Damage Zone For Strikes.',

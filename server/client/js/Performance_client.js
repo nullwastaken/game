@@ -46,7 +46,7 @@ Performance.init = function(){
 	
 	Dialog.UI('performance',{
 		position:'absolute',
-		left:900,
+		left:'75%',
 		top:5,
 		width:'auto',
 		height:'auto',

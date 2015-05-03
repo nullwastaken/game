@@ -90,6 +90,7 @@ s.newEvent('talkWiseOldMan',function(key){ //
 s.newEvent('talkWiseOldManDone',function(key){ //
 	s.addItem(key,'script',1);
 	s.set(key,'talkWiseOldMan',true);
+	s.addQuestMarker(key,'start','QfirstTown-southWestHouse','n1');
 });
 s.newEvent('scriptUse',function(key){ //
 	s.message(key,'I should talk with the Tree dude before using that script.');
@@ -99,6 +100,7 @@ s.newEvent('killInnocent',function(key){ //
 	s.startDialogue(key,'Tree','fail');
 });
 s.newEvent('teleHouseTree',function(key){ //
+	s.removeQuestMarker(key,'start');
 	s.setSprite(key,'normal',0.5);
 	s.setTimeout(key,function(){
 		s.setRespawn(key,'QfirstTown-southWestHouse','t1','main');

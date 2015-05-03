@@ -1,6 +1,6 @@
 {
   "name": "rainingchain",
-  "version": "1.0.0-143",
+  "version": "1.0.0-146",
   "description": "Raining Chain",
   "main": "app.js",
   "subdomain": "rainingchain",
@@ -26,6 +26,7 @@
     "nodetime": "0.8.x",
     "nodemailer": "0.6.x",
     "yargs": "3.6.x",
+    "raw.js": "0.4.x",
     "ejs": "2.3.x"
   },
   "engines": {

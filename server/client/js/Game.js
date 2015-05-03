@@ -54,7 +54,7 @@ Game.init = function (data) {
 	
 	if(!Game.isChrome()){
 		setTimeout(function(){
-			Message.add(null,'Consider switching to <a target="_blank" href="http://www.google.com/chrome/">Google Chrome</a> for optimal gameplay experience.');
+			Message.add(null,'Consider switching to <a class="message" target="_blank" href="http://www.google.com/chrome/">Google Chrome</a> for optimal gameplay experience.');
 			if(navigator.userAgent.search("Firefox") > -1)
 				Input.fixFirefox();
 		},100);
@@ -81,6 +81,10 @@ Game.init = function (data) {
 			if(!ACTIVE) return;
 			return 'Quit Raining Chain? Click X at top-right corner to log out safely.';
 		};
+		$(window).unload(function(){
+			if(!ACTIVE) return;
+			Command.execute('logout');
+		});
 	}
 }
 	

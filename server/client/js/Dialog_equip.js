@@ -121,7 +121,7 @@ Dialog.create('equip','Equip',Dialog.Size(925,650),Dialog.Refresh(function(html,
 		var id = Actor.getEquip(player).piece[piece];
 		if(!id){
 			variable[piece]
-				.html('No ' + piece.$capitalize() + '<br>equipped')
+				.html('No ' + piece.$capitalize() + '<br>equipped<br><br>Equip one via<br>the Inventory.')
 				.css({padding:'20px 20px'});
 			continue;
 		}
@@ -185,7 +185,7 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin,notOwning){	//imp
 	if(!notOwning){
 		icon.css({pointerEvents:'all'});
 		icon.attr('title','Click to display in chat. Also done by Shift-Right click in inventory.');
-		icon.click(function(){
+		icon.mousedown(function(){
 			ItemModel.displayInChat(equip);
 		});
 	}	
@@ -197,7 +197,7 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin,notOwning){	//imp
 		.append($('<span>')
 			.css({
 				color:equip.color === 'white' ? 'grey' : equip.color,
-				fontSize:'1.5em',
+				fontSize:'1.2em',
 				textDecoration:'underline',
 				textAlign:'center',
 				pointerEvents:'none',
@@ -218,7 +218,7 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin,notOwning){	//imp
 		
 		tmp.append($('<span>')
 			.html('(+' + equip.tier + ') ')
-			.attr('title',upgrade + (equip.piece === 'weapon' ? ' Dmg' : ' Def'))
+			.attr('title',upgrade + (isWeapon ? ' Dmg' : ' Def'))
 			.css({pointerEvents:'all',fontSize:'0.8em'})
 		);			
 	}
@@ -232,8 +232,8 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin,notOwning){	//imp
 		topRight.append($('<span>')
 			.append($('<button>')
 				.css({fontSize:'0.8em',paddingLeft:'4px',pointerEvents:'all'})
-				.html('Lvl Up')
-				.attr('title','Cost: ' + equip.tierCost + ' Exp.')
+				.html('Upgrade')
+				.attr('title','Upgrade Cost: ' + equip.tierCost + ' Exp. Increase equip ' + (isWeapon ? 'damage' : 'defence') + ' by 5%.')
 				.addClass('myButton skinny')
 				.css({background: Actor.getExp(player) < equip.tierCost 
 					? '#FFEEEE' : '#EEFFEE'})					
@@ -365,12 +365,17 @@ Dialog.equipPopup.func = function(html,variable,equip,equipWin,notOwning){	//imp
 	
 	if(!equipWin){
 		var mouse = Input.getMouse(true);
-		
-		html.css({
-			right:CST.WIDTH - mouse.x,
-			bottom:CST.HEIGHT - mouse.y,
-			position:'absolute',
-		});
+		html.css({position:'absolute'});
+			//right:CST.WIDTH - mouse.x,	//cuz equip in chat
+				
+		if(mouse.x < CST.WIDTH/2)	//left side
+			html.css({left:mouse.x});
+		else
+			html.css({right:CST.WIDTH - mouse.x});
+		if(mouse.y < CST.HEIGHT/2)	//left side
+			html.css({top:mouse.y});
+		else
+			html.css({bottom:CST.HEIGHT - mouse.y});
 	}
 	return html;
 };

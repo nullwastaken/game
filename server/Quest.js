@@ -450,7 +450,7 @@ Quest.updateRating = function(){
 		}
 	};
 	for(var i in DB){
-		db.questRating.find({quest:i},{_id:0,text:1,username:1}).sort({timestamp:1}).limit(2,func(i));
+		db.questRating.find({quest:i,text:{$ne:""}},{_id:0,text:1,username:1}).sort({timestamp:1}).limit(5,func(i));
 	}
 	
 	setTimeout(function(){	//BAD

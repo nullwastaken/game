@@ -101,7 +101,7 @@ Dialog.create('questList','Quest List',Dialog.Size(1200,700),Dialog.Refresh(func
 			? ''
 			: Tk.getGlyph('lock',true).css({color:'black'}).attr({title:q.requirement.canStartText})
 		
-		var name = $('<span>')
+		var name = $('<fakea>')
 			.css({color:color,cursor:'pointer'})
 			.addClass('shadow')
 			.append(glyph,' ' + q.name)

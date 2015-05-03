@@ -1,6 +1,6 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
-var Actor = require2('Actor'), Weather = require2('Weather'), Main = require2('Main'), Strike = require2('Strike'), Sign = require2('Sign'), MapModel = require2('MapModel'), Drop = require2('Drop'), Bullet = require2('Bullet'), ActiveList = require2('ActiveList'), Collision = require2('Collision'), ActorGroup = require2('ActorGroup');
+var Actor = require2('Actor'), Weather = require2('Weather'), Strike = require2('Strike'), Sign = require2('Sign'), MapModel = require2('MapModel'), Drop = require2('Drop'), Bullet = require2('Bullet'), ActiveList = require2('ActiveList'), Collision = require2('Collision'), ActorGroup = require2('ActorGroup');
 
 var BANK_DIST = 400;
 var Maps = exports.Maps = {};

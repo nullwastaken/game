@@ -202,17 +202,8 @@ s.newAbility('reset','event',{
 },{
 	event:s.getEvent('abilityReset')
 });
-s.newAbility('fastmove','dodge',{
-	name:'Invincibility',
-	icon:'attackMelee-cube',
-	description:'Dodge all damage.',
-	bypassGlobalCooldown:True,
-	costMana:30
-},{
-	distance:200, time:4
-});
 
-s.newPreset('target',s.newPreset.ability(['simple','boomerang','5ways','','reset','fastmove']),null,False,False,False,False);
+s.newPreset('target',s.newPreset.ability(['simple','boomerang','5ways','','reset','']),null,False,False,False,False);
 s.newPreset('fireonly',s.newPreset.ability(['5ways','','','','reset','']),null,False,False,False,False);
 
 s.newDialogue('Matthe','Matthe','villagerMale-5',[ //{ 

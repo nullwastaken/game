@@ -1,0 +1,39 @@
+<% include ../partial/header.html %>
+<div class="container">
+	<h3>Quest Creator Discussion:</h3>
+
+	<script type="text/javascript" async>
+		function ajaxpath_55414c57a8c44(url){
+			return window.location.href == '' ? url : url.replace('&s=','&s=' + escape(window.location.href));
+		}(function(){
+			document.write('<div id="fcs_div_55414c57a8c44"></div>');
+			fcs_55414c57a8c44=document.createElement('script');
+			fcs_55414c57a8c44.type="text/javascript";
+			fcs_55414c57a8c44.src=ajaxpath_55414c57a8c44((document.location.protocol=="https:"?"https:":"http:")+"//www.freecommentscript.com/GetComments2.php?p=55414c57a8c44&s=&Size=10#!55414c57a8c44");
+			setTimeout("document.getElementById('fcs_div_55414c57a8c44').appendChild(fcs_55414c57a8c44)",1);
+		})();
+		setTimeout(function(){
+			$(".comment").hide();
+			$("#profile").hide();
+			$(".emoty-container").hide();
+			
+			setTimeout(function(){
+				$(".fcs_voting_container").hide();
+				$('#comment-container').append($("#comment-ad"));
+			},10);
+			
+			$('img').hide();
+			$('table').hide();
+		},1000);
+	</script>
+</div>
+<!--
+<div class="container">
+	<h3>Quest Creator Issues:</h3>
+	<textarea></textarea>
+	<button class="myButton">Submit</button>
+</div>
+-->
+
+
+<% include ../partial/footer.html %>

@@ -52,7 +52,9 @@ Equip.create = function(quest,id,piece,type,name,lvl,valueMod,boost,extra,addDb)
 	
 	
 	for(var i in extra){
-		if(equip[i] === undefined) ERROR(4,'prop not in constructor',i);
+		if(equip[i] === undefined) 
+			if(NODEJITSU)
+				ERROR(4,'prop not in constructor',i);
 		equip[i] = extra[i];
 	}
 	equip.tierCost = Equip.getTierUpCost(equip);

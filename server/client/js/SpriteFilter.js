@@ -5,7 +5,7 @@ var SpriteFilter = exports.SpriteFilter = {};
 var LIST = SpriteFilter.LIST = {};	//list hardcoded in s.setSpriteFilter
 
 SpriteFilter.create = function(id,func,advanced){
-	SpriteFilter.LIST[id] = {
+	LIST[id] = {
 		func:func,
 		advanced:advanced || false,
 	}
@@ -92,7 +92,7 @@ SpriteFilter.generateSpriteFilteredImg = function(spriteModel,filter){
 	var imgData = imgDataNormal.data;
 	
 	for (var i = 0; i < imgData.length; i+=4){
-		var res = SpriteFilter.LIST[filter].func(imgData[i+0],imgData[i+1],imgData[i+2],imgData[i+3]);
+		var res = LIST[filter].func(imgData[i+0],imgData[i+1],imgData[i+2],imgData[i+3]);
 		imgData[i+0] = res[0];
 		imgData[i+1] = res[1];
 		imgData[i+2] = res[2];

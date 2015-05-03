@@ -1,0 +1,276 @@
+<% include ../partial/header.html %>
+<script>
+var LIST = [];
+add = function(name,description,advanced,priority,ret,p1,p2,p3,p4,p5,p6){
+	var a = {
+		name:name || '',
+		description:description || '',
+		ret:ret || null,
+		advanced:advanced || false,
+		priority:priority || 0,
+		param:[],	
+	}
+	if(p1) a.param.push(p1);
+	if(p2) a.param.push(p2);
+	if(p3) a.param.push(p3);
+	if(p4) a.param.push(p4);
+	if(p5) a.param.push(p5);
+	if(p6) a.param.push(p6);
+	
+	LIST.push(a);
+}
+ret = function(type,description){
+	return {
+		name:'',
+		type:type || '',
+		description:description || '',
+	}
+}
+param = function(name,type,description){
+	if(name === 'key'){
+		type = 'key';
+		description = 'apply event to the actor with this key';
+	}
+	return {
+		name:name || '',
+		type:type || '',
+		description:description || '',
+	}
+}
+f = false;
+t = true;
+</script>
+<script src="../views/QuestCreator/API_DATA.js"></script>
+
+<div class="container">	
+	<h2>Raining Chain Quest API</h2>
+	<p>Make sure to watch the <a href="/QuestCreator/tutorial">Tutorial</a> first.</p>
+	<p>Note: The variable "key" represents the player who triggered the event. It is given as the first parameter of every event function you create.</p>
+	<div class="checkbox">
+		<label>
+			<input type="checkbox" onchange="change();" id="showAdvanced"> Show Advanced
+		</label>
+	</div>
+	
+	<h3>General Functions</h3>
+	<ul class="list-group" id="s"></ul>
+	
+	<br>
+	<h3>Map Functions</h3>
+	<p>Can only be used in the map section.</p>
+	<ul class="list-group" id="m"></ul>
+	
+	<br>
+	<h3>Actor Extra Constructors</h3>
+	<p>Can only be used in the actorExtra parameter.</p>
+	<ul class="list-group" id="s_new"></ul>
+	
+	<br>
+	<h3 id="actorExtra">Actor Extra</h3>
+	<ul class="list-group">
+		<li class="list-group-item">
+			<strong>dialogue</strong>: event<br>
+			Event called when 'Talk To' is selected. Normally triggers s.startDialogue().
+		</li>
+		<li class="list-group-item">
+			<strong>deathEvent</strong>: event<br>
+			Event called when NPC dies
+		</li>
+		<li class="list-group-item">
+			<strong>viewedIf</strong>: event<br>
+			If event returns true, the actor is visible.
+		</li>
+		<li class="list-group-item">
+			<strong>name</strong>: string<br>
+			Display name.
+		</li>
+		<li class="list-group-item">
+			<strong>sprite</strong>: s.newNpc.sprite<br>
+			Image appearance.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>angle</strong>: s.newNpc.angle<br>
+			Facing angle when spawned.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>tag</strong>: object<br>
+			Holds custom data. Useful for s.getRandomNpc() and other query functions.
+		</li>
+		<li class="list-group-item">
+			<strong>nevermove</strong>: boolean<br>
+			If true, the NPC can't move.
+		</li>
+		<li class="list-group-item">
+			<strong>globalDef</strong>: number<br>
+			Multiply defence by this value.
+		</li>
+		<li class="list-group-item">
+			<strong>globalDmg</strong>: number<br>
+			Multiply damage by this value.
+		</li>	
+		<li class="list-group-item">
+			<strong>atkSpd</strong>: number<br>
+			Multiply attack speed by this value.
+		</li>	
+		<li class="list-group-item">
+			<strong>hp</strong>: number<br>
+			Default = 1000
+		</li>
+		<li class="list-group-item advanced">
+			<strong>damageIf</strong>: player|npc|true|false<br>
+			Can only damage actor with this combatType. True=Any. False=Can't damage.
+		</li>		
+		<li class="list-group-item advanced">
+			<strong>targetIf</strong>: player|npc|true|false<br>
+			Can only target actor with this combatType. True=Any. False=Can't target.
+		</li>
+		<li class="list-group-item">
+			<strong>damagedIf</strong>: player|npc|true|false<br>
+			Can only be damaged by actor with that combatType. True=Any. False=Can't be damaged.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>combatType</strong>: player|npc<br>
+			Type considered for targetIf, damageIf and damagedIf.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>onclick</strong>: s.newNpc.onclick<br>
+			Call custom event when clicking this NPC.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>pushable</strong>: s.newNpc.pushable<br>
+			Allow this NPC to be pushed by players.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>block</strong>: s.newNpc.block<br>
+			Players won't be able to go over this NPC.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>awareNpc</strong>: boolean<br>
+			Actor is still active even when no player is around.
+		</li>
+	</ul>
+	
+	
+	<br>
+	<h3>Special Events</h3>
+	<p>Events with those id will be triggered automatically on due time.</p>
+	<ul class="list-group">
+		<li class="list-group-item">
+			<strong>_hint</strong>: Return string. The value returned will be displayed below the minimap.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>_complete</strong>: Called right after s.completeQuest is called.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>_abandon</strong>: Called when right after the player abandons a quest or s.failQuest is called.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>_start</strong>: Called when starting the quest. Useful to set quest markers.
+		</li>
+		<li class="list-group-item">
+			<strong>_death</strong>: Called when the player dies.
+		</li>
+		<li class="list-group-item">
+			<strong>_signIn</strong>: Called when the player signs into the game. Used to end quest that would be broken otherwise.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>_signOff</strong>: Called when the player signs off into the game. Used for quests involving multiple players.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>_button</strong>: Called when the player clicks a button create via s.displayPermPopup.button. Used for complex interface.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>_getScoreMod</strong>: Return number. The rewards will be multiply by that value.
+		</li>
+	</ul>
+	
+	<br>
+	<a href="/QuestCreator/feedback">Feedback or questions?</a>
+	
+	
+</div>
+
+
+
+<script>
+$(document).ready(function(){
+	var s = $('#s');
+	var m = $('#m');
+	var s_new = $('#s_new');
+	
+	for(var i = 0 ; i < LIST.length; i++){
+		var a = LIST[i];
+		
+		var li = $('<li>').addClass('list-group-item ' + (a.advanced ? 'advanced' : ''));
+		var name = a.name + '(';
+		for(var j = 0 ; j < a.param.length; j++){
+			name += a.param[j].name;
+			if(j !== a.param.length-1)
+				name += ', ';
+		}
+		name += ');';
+		
+		var btn = '<a class="collapseBtn" href="#">Show</a>';
+		li.append($('<strong>').html(name),' ',btn,'<br>');
+		
+		
+		
+		var div = $('<div>').addClass('collapse').css({marginLeft:'5px'});
+		div.append(a.description,'<br><br>');
+		
+		if(a.ret){
+			div.append('@return (' + a.ret.type + ') : ' + a.ret.description,"<br>"); 
+		}
+		
+		for(var j = 0 ; j < a.param.length; j++){
+			var p = a.param[j];
+			var str = '@' + p.name + ' (' + p.type + ') : ' + p.description + '<br>';
+			div.append(str); 
+		}
+		li.append(div);
+		
+		
+		if(a.name.indexOf('s.new') !== -1)
+			s_new.append(li);
+		else if(a.name[0] === 's')
+			s.append(li);
+		else if(a.name[0] === 'm')
+			m.append(li);	
+	}
+	
+	change();
+	
+	$('.collapseBtn').on('click', function(e) {
+		e.preventDefault();
+		var $this = $(this);
+		//var $collapse = $this.closest('.collapse-group').find('.collapse');
+		var $collapse = $this.parent().find('.collapse');
+		$collapse.collapse('toggle');
+	});
+});
+change = function(){
+	if($('#showAdvanced')[0].checked)
+		$('.advanced').show();
+	else
+		$('.advanced').hide();
+		
+}
+
+
+/*
+<div class="row">
+	<div class="span4 collapse-group">
+		<h2>Heading</h2>
+		<p class="collapse">Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
+		<p><a class="btn" href="#">View details &raquo;</a></p>
+	</div>
+</div>
+*/  
+	  
+
+
+
+</script>
+
+
+<% include ../partial/footer.html %>

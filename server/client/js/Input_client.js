@@ -568,13 +568,15 @@ Input.callOnResize = function(funcORdom){
 	FUNC_LIST.push(funcORdom);
 }
 
-Input.onResize = function(func){
-	CST.WIDTH = Math.max(700,Math.min(1920,$(window).width()));
-	CST.HEIGHT = Math.max(400,Math.min(1080,$(window).height()-35));	//-30 for gameBottom
+Input.onResize = function(){
+	var max = Main.getPref(main,'maxWidth');
+	
+	CST.WIDTH = Math.max(700,Math.min(max,$(window).width()));
+	CST.HEIGHT = Math.max(400,Math.min(max/16*9,$(window).height()-35));	//-30 for gameBottom
 	
 	$mainDiv.css({width:CST.WIDTH,height:CST.HEIGHT});
 	$gameDiv.css({width:CST.WIDTH,height:CST.HEIGHT});
-	$gameBottom.css({top:CST.HEIGHT});
+	$gameBottom.css({width:CST.WIDTH,top:CST.HEIGHT});
 	
 	CST.WIDTH2 = CST.WIDTH/2;
 	CST.HEIGHT2 = CST.HEIGHT/2;

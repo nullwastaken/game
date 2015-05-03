@@ -370,7 +370,6 @@ Dialog.UI('questRating',{
 		.click(function(){
 			Command.execute('questRating',[param.quest,STAR_CLICKED+1,textarea.val(),abandonReason,param.hint]);	//+1 cuz 1-3 stars
 			Dialog.close('questRating');
-			Message.add(null,'Thanks for your feedback.');
 		})
 		
 	div.append(textarea).append('<br>').append(button);

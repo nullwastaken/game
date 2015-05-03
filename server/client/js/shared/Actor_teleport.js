@@ -103,6 +103,7 @@ Actor.teleport.main = function(act,spot,force){
 
 Actor.teleport.getMapName = function(act,map){
 	if(!map) return act.map;
+	if(map.$contains("@MAIN"))	return map + '@MAIN'; 				//main instance
 	if(!map.$contains("@"))	return map + '@MAIN'; 				//main instance
 	if(map.$contains("@@"))	return map.split('@@')[0] + '@@' + act.username; 				//alone instance
 	//after @@

@@ -48,15 +48,19 @@ Actor.drawAll.getSortedList = function(){
 	}
 	drawSortList.push(player);
 	drawSortList.sort(function (act,act2){
-		var spriteFromDb = SpriteModel.get(Actor.getSpriteName(act));
-		var sizeMod = spriteFromDb.size* act.sprite.sizeMod;
-		var y0 = act.y + spriteFromDb.legs * sizeMod
-		
-		var spriteFromDb1 = SpriteModel.get(Actor.getSpriteName(act2));
-		var sizeMod1 = spriteFromDb1.size* act2.sprite.sizeMod;
-		var y1 = act2.y + spriteFromDb1.legs * sizeMod1
-		
-		return y0-y1;	
+		try {
+			var spriteFromDb = SpriteModel.get(Actor.getSpriteName(act));
+			var sizeMod = spriteFromDb.size* act.sprite.sizeMod;
+			var y0 = act.y + spriteFromDb.legs * sizeMod
+			
+			var spriteFromDb1 = SpriteModel.get(Actor.getSpriteName(act2));
+			var sizeMod1 = spriteFromDb1.size* act2.sprite.sizeMod;
+			var y1 = act2.y + spriteFromDb1.legs * sizeMod1
+			
+			return y0-y1;
+		} catch(err){
+			ERROR.err(3,err);
+		}
 	});	
 	return drawSortList;	
 }

@@ -2,10 +2,10 @@
 /*jslint node: true, undef:true, sub:true, asi:true, funcscope:true, forin:true, unused:false*//*global True, False, loadAPI*/
 /*Go to http://jshint.com/ and copy paste your code to spot syntax errors.*/
 
-var Actor = require2('Actor'), Debug = require2('Debug'), Actor = require2('Actor'), Debug = require2('Debug'), Actor = require2('Actor'), Debug = require2('Debug'), Actor = require2('Actor'), Debug = require2('Debug'), Actor = require2('Actor'), Debug = require2('Debug'), Actor = require2('Actor'), Debug = require2('Debug'), Actor = require2('Actor'), Debug = require2('Debug'), Actor = require2('Actor'), Debug = require2('Debug');
+var Actor = require2('Actor'), Debug = require2('Debug');
 
 var s = loadAPI('v1.0','Qtutorial',{
-	name:"GPS Tutorial",
+	name:"Tutorial",
 	author:"rc",
 	thumbnail:False,
 	description:"Teaches you the basic of Raining Chain.",
@@ -39,6 +39,7 @@ s.newVariable({
 	learnHeal:0,
 	assignedHeal:0,
 	walkedOverLava:0,
+	redTreeMessage:false,
 	lootChest2:0,
 	upgradedEquip:0,
 	bossStarted:0,
@@ -48,7 +49,7 @@ s.newVariable({
 	askedReputation:False,
 	askedAchievement:False,
 	openedAchievement:False,
-	askedQuest:False
+	askedQuest:False,
 });
 
 s.newEvent('_start',function(key){ //
@@ -93,13 +94,18 @@ s.newEvent('_hint',function(key){ //
 	if(s.get(key,'killEnemy') < 6) return 'Kill all monsters.';
 	if(!s.get(key,'lootChest')) return 'Loot the chest!';
 	if(!s.get(key,'learnHeal')) return 'Read the scroll you just looted.';
-	if(!s.get(key,'assignedHeal')) return 'Assign the ability Healing to a key binding.';
+	if(!s.get(key,'assignedHeal')) return 'Assign the ability Healing to a key binding via ' + s.iconToText('tab-ability') + '.';
 	if(!s.get(key,'walkedOverLava')) return 'Press F key to use Healing Ability while traversing the lava north.';
 	if(!s.get(key,'lootChest2')) return 'Search for a chest.';
-	if(!s.get(key,'upgradedEquip')) return 'Upgrade one of your equip before fighting the dragon.';
+	if(!s.get(key,'upgradedEquip')) return 'Upgrade one of your equip before fighting the dragon via ' + s.iconToText('tab-equip') + '.';
 	if(!s.get(key,'killBoss')) return 'Kill the Dragon Boss!';
+	
 	if(!s.get(key,'askedReputation')) return "Congratz! Go talk with Genetos.";
-	return "Talk with Genetos again.";
+	if(s.getReputationUsedPt(key) === 0) return "Spend 5 Reputation points via " + s.iconToText('tab-reputation') + '.';
+	if(!s.get(key,'askedAchievement')) return "Talk with Genetos again.";
+	if(!s.get(key,'openedAchievement')) return "Open the achievement window via " + s.iconToText('plan-scroll') + '.';
+	if(!s.get(key,'askedQuest')) return "Talk with Genetos again.";
+	return "Open the Quest Window via " + s.iconToText('tab-quest') + '.';
 });
 s.newEvent('skipTutorial',function(key){ //
 	Debug.skipTutorial(key);
@@ -108,7 +114,7 @@ s.newEvent('_complete',function(key){ //
 	s.restoreHUD(key);
 });
 s.newEvent('mainTownLoop',function(key){ //
-	if(s.testQuestActive(key,'Qtutorial') && !s.isAtSpot(key,'firstTown','t1',200)){
+	if(s.testQuestActive(key,'Qtutorial') && !s.isAtSpot(key,'firstTown','t1',150)){
 		s.displayPopup(key,'Good job!<br>Teleporting to Admin Testing Zone.');
 		s.setTimeout(key,function(){
 			s.set(key,'teleportedToAdmin',1);
@@ -117,6 +123,15 @@ s.newEvent('mainTownLoop',function(key){ //
 			s.callEvent('talkGenetos',key);
 			s.addBoost(key,'maxSpd',0,25*1);
 			s.setHUD(key,'questHint','flashing');
+			
+			s.setInterval(key,function(){
+				if(!s.get(key,'talkGenetos')){
+					if(!s.isInDialogue(key))
+						s.displayPopup(key,'Talk with Genetos by clicking on him.');
+					return true;
+				}
+			},25*15);
+			
 		},25*1);
 	}
 });
@@ -164,6 +179,14 @@ s.newEvent('_signIn',function(key){ //
 		s.teleport(key,'adminZone','t1','main');
 		s.setRespawn(key,'adminZone','t1','main',true);
 	}
+	s.setInterval(key,function(){
+		if(!s.get(key,'talkGenetos')){
+			if(!s.isInDialogue(key))
+				s.displayPopup(key,'Talk with Genetos by clicking on him.');
+			return true;
+		}
+	},25*15);
+	
 	
 	if(s.get(key,'lootChest2') && !s.get(key,'upgradedEquip'))
 		s.callEvent('displayPopupEquip',key);
@@ -181,7 +204,9 @@ s.newEvent('_dialogOpen',function(key,str){ //
 });
 s.newEvent('killMushroom',function(key){ //
 	s.set(key,'killMushroom',1);
-	s.displayPopup(key,'Right-Click to interact with environment and NPCs.');
+	s.setTimeout(key,function(){
+		s.displayPopup(key,'Right-Click to interact with environment and NPCs.');
+	},25*7);
 });
 s.newEvent('talkGenetos',function(key){ //
 	if(!s.get(key,'talkGenetos')){
@@ -194,7 +219,7 @@ s.newEvent('teleAdminTutorial',function(key){ //
 	if(s.get(key,'talkGenetos')){
 		s.teleport(key,'main','t2','solo',true);
 		s.setRespawn(key,'main','t2','solo',true);
-		s.displayPopup(key,'Make your way to Town using the Quest Hints below the minimap.');
+		s.displayPopup(key,'Check the Quest Hints below the minimap and come back to Town.');
 		s.setHUD(key,'questHint','flashing',25*10);
 		s.addAbility.permanently(key,'Qsystem-start-melee',0);
 		s.set(key,'haveClickedDoor',true);
@@ -228,9 +253,9 @@ s.newEvent('lootChest',function(key){ //
 	s.addItem(key,'ability');	
 	s.set(key,'lootChest',1);
 	s.setRespawn(key,'main','g1','solo',true);
-	s.displayPopup(key,'Sweet, a scroll!<br>Right-click to use items in your inventory at bottom right.');
+	s.displayPopup(key,'Sweet, a scroll! ' + s.iconToText('plan-equip') + '<br>Right-click to use items in your inventory at bottom right.');
 	s.message(key,'Sweet, a scroll!<br>Left click it.');
-	s.setHUD(key,'inventory','flashing');
+	s.setHUD(key,'inventory','flashing');	//not working
 });
 s.newEvent('itemAbility',function(key){ //
 	s.addAbility.permanently(key,'Qsystem-start-heal',null);
@@ -251,7 +276,7 @@ s.newEvent('displayPopupHeal',function(key){ //
 			s.closePermPopup(key);
 			s.displayPopup(key,'Press F when your HP is low to heal yourself.');
 		} else {
-			s.displayPermPopup(key,'Assign Heal ability to F Key via Ability Window (bottom-right icon).<br>Select Heal then click F slot to the left.');	
+			s.displayPermPopup(key,'Assign Heal ability to F Key via Ability Window ' + s.iconToText('tab-ability') + ' (bottom-right).<br>Select Heal ' + s.iconToText('heal-plus') + ' then click F slot to the left.');	
 			return true;
 		}
 	},25*3);
@@ -264,10 +289,10 @@ s.newEvent('lootChest2',function(key){ //
 	s.set(key,'lootChest2',1);
 	s.displayPopup(key,'You just received a mace, a bow and a staff!<br>'
 		+ 'Equip and upgrade one of them before fighting the dragon.<br><br>'
-		+ 'Mace: +50% <span class="shadow" style="color:orange">Melee</span> & <span class="shadow" style="color:red">Fire</span> Dmg<br>'
+		/*+ 'Mace: +50% <span class="shadow" style="color:orange">Melee</span> & <span class="shadow" style="color:red">Fire</span> Dmg<br>'
 		+ 'Bow: +50% <span class="shadow" style="color:green">Range</span> & <span class="shadow" style="color:red">Fire</span> Dmg<br>'
-		+ 'Staff: +50% <span class="shadow" style="color:purple">Magic</span> & <span class="shadow" style="color:cyan">Cold</span> Dmg<br>'
-		+ '<br><span style="font-size:0.8em">Note: You can use any ability with any weapon. Effectiveness will be impacted though. You can change weapon and ability at any time.</span>');
+		+ 'Staff: +50% <span class="shadow" style="color:purple">Magic</span> & <span class="shadow" style="color:cyan">Cold</span> Dmg<br>'*/
+		+ '<br><span style="font-size:0.8em">Note: You can use any ability with any weapon. Ex: Shoot arrows with a mace. However, effectiveness will be impacted.</span>');
 	s.callEvent('displayPopupEquip',key);
 	s.setHUD(key,'tab-equip','flashing');
 });
@@ -291,7 +316,7 @@ s.newEvent('displayPopupEquip',function(key){ //
 			s.closePermPopup(key);
 			s.displayPopup(key,'You are now ready to fight the dragon boss.');
 		} else {
-			s.displayPermPopup(key,'To upgrade gear, open Equip Window (bottom-right icon) then either Lvl Up or Unlock Hidden Boost');	
+			s.displayPermPopup(key,'Open Equip Window ' + s.iconToText('tab-equip') + ' then either Upgrade or Unlock Hidden Boost.');	
 			return true;
 		}
 	},25*3);
@@ -337,8 +362,6 @@ s.newEvent('talkGenetosTown',function(key){ //
 		return s.startDialogue(key,'genetos','askOpenQuest');
 	
 	s.startDialogue(key,'genetos','questNoob');
-	
-	
 });
 s.newEvent('okSpendRep',function(key){ //
 	s.displayPopup(key,'In short:<br>'
@@ -368,21 +391,21 @@ s.newEvent('teleGenetosTown',function(key){ //
 	s.setHUD(key,'tab-homeTele','flashing',25*10);
 });
 s.newEvent('questFlash',function(key){ //
-	s.setHUD(key,'tab-quest','flashing',25*15);
+	s.setHUD(key,'tab-quest','flashing');
 });
 s.newEvent('reputationFlash',function(key){ //
-	s.setHUD(key,'tab-reputation','flashing',25*15);
+	s.setHUD(key,'tab-reputation','flashing');
 	s.set(key,'askedReputation',true);
 });
 s.newEvent('displayQuest',function(key){ //
 	s.openDialog(key,'questList');
 });
 s.newEvent('askOpenAchievement',function(key){ //
-	s.setHUD(key,'tab-achievement','flashing',25*15);
+	s.setHUD(key,'tab-achievement','flashing');
 	s.set(key,'askedAchievement',true);
 });
 s.newEvent('askOpenQuest',function(key){ //
-	s.setHUD(key,'tab-quest','flashing',25*15);
+	s.setHUD(key,'tab-quest','flashing');
 	s.set(key,'askedQuest',true);
 });
 
@@ -418,7 +441,7 @@ s.newAbility('fireball-fast','attack',{
 	type:'bullet',
 	amount:1,
 	angleRange:5,
-	dmg:s.newAbility.dmg(20,'fire'),
+	dmg:s.newAbility.dmg(10,'fire'),
 	hitAnim:s.newAbility.anim('fireHit',0.5),
 	spd:s.newAbility.spd(4),
 	sprite:s.newAbility.sprite('fireball',1)
@@ -457,7 +480,7 @@ s.newDialogue('ringo','Ringo','villagerMale-0',[ //{
 		s.newDialogue.option("Come show me.",'help')
 	])
 ]); //}
-s.newDialogue('genetos','Genetos','villagerMale-2',[ //{ 
+s.newDialogue('genetos','Genetos','villagerMale-5',[ //{ 
 	s.newDialogue.node('first',"What! What are you doing here!?! This is an <u>unfinished admin testing zone</u>. Only the admins are allowed here.",[ 
 		s.newDialogue.option("I just logged in and somehow I got teleported here.",'noclue'),
 		s.newDialogue.option("I'm an admin, that's why.",'imadmin'),
@@ -475,7 +498,7 @@ s.newDialogue('genetos','Genetos','villagerMale-2',[ //{
 	s.newDialogue.node('gps',"<u>G</u>ame <u>P</u>roblem <u>S</u>olver, of course. What else could it be? Your job is to fix issues with the game.",[ 
 		s.newDialogue.option("Okay?",'okay')
 	]),
-	s.newDialogue.node('okay',"Welcome to Primum, one of the worlds within Raining Chain. This game world was coded by a dumb programmer and everything is falling apart... Your job is to fix bugs.",[ 
+	s.newDialogue.node('okay',"Welcome! This game world was coded by a dumb programmer and everything is falling apart... Your job is to fix bugs.",[ 
 		s.newDialogue.option("How do I find a bug?",'findbug')
 	]),
 	s.newDialogue.node('findbug',"Just go in town and talk with the villagers. They will tell you what to fix exactly. You can see bug fixing as the equivalent of completing a quest.",[ 
@@ -530,7 +553,7 @@ s.newDialogue('genetos','Genetos','villagerMale-2',[ //{
 	s.newDialogue.node('questNoob',"Take a look at the list of Quests by clicking the button at the bottom right of your screen.",[ 
 		s.newDialogue.option("Okay.")
 	],'askOpenQuest'),
-	s.newDialogue.node('askOpenQuest',"Good job. Now go fix bugs! NPCs displayed as <span class='shadow' style='color:pink;font-size:0.8em;'>★</span> in your minimap represent a quest.<br>Alternatively, click the <u>Quest button</u> at the bottom right to see all the quests. Try to open it.",[ 
+	s.newDialogue.node('askOpenQuest',"Good job. Now go fix bugs! NPCs displayed as <span class='shadow' style='color:pink;font-size:0.8em;'>★</span> in your minimap represent a quest.<br>Alternatively, click the Quest icon at the bottom right to see all the quests. Try to open it.",[ 
 		s.newDialogue.option("Okay, I'll open the Quest Window.")
 	],'askOpenQuest'),
 	
@@ -586,7 +609,7 @@ s.newMap('main',{
 			},'npc',null,{block:true})
 		}});
 		
-		m.spawnActor(spot.b2,'pushable-rock2x2');
+		m.spawnActor(spot.b2,'pushable-rock2x2-loose');
 		m.spawnToggle(spot.q2,function(key){
 			return !s.get(key,'tgOn');
 		},function(key){ 
@@ -657,6 +680,10 @@ s.newMap('main',{
 		m.forEachActor(spot,15,function(key){
 			s.set(key,'walkedOverLava',1);
 			s.addHp(key,500);
+			if(!s.get(key,'redTreeMessage')){
+				s.displayPopup(key,'Red trees can be harvested to obtain Red Wood.');
+				s.set(key,'redTreeMessage',true);
+			}
 		},'actor',spot.b);
 		
 		m.forEachActor(spot,15,function(key){
@@ -681,7 +708,7 @@ s.newMap('adminZone',{
 		m.spawnActor(spot.n1,'npc',{
 			dialogue:'talkGenetos',
 			name:'Genetos',
-			sprite:s.newNpc.sprite('villagerMale-2')
+			sprite:s.newNpc.sprite('villagerMale-5')
 		});
 		
 		m.spawnTeleporter(spot.t2,'teleAdminTutorial','door');
@@ -698,7 +725,7 @@ s.newMap('adminZone',{
 						s.addItem.permanently(key,'Qsystem-ruby-0',1);
 					}
 				},25*2);
-			;})
+			;},null,true)
 		});
 		
 		
@@ -730,7 +757,7 @@ s.newMap('firstTown',{
 		
 	},
 	loop:function(spot){
-		m.forEachActor(spot,100,function(key){
+		m.forEachActor(spot,50,function(key){
 			s.callEvent('mainTownLoop',key);
 		},'player');
 	}
@@ -746,10 +773,35 @@ s.newMap('genetosHouse',{
 		m.spawnActor(spot.n1,'npc',{
 			dialogue:'talkGenetosTown',
 			name:'Genetos',	
-			sprite:s.newNpc.sprite('villagerMale-2')
+			sprite:s.newNpc.sprite('villagerMale-5')
 		});
 		m.spawnTeleporter(spot.t1,'teleGenetosTown','zone','down');
-	}
+	},
+	loop:function(spot){
+		if(!m.testInterval(25*5))
+			return;
+		var key = m.getRandomPlayer(spot);
+		
+		if(s.get(key,'askedReputation')){
+			if(s.getReputationUsedPt(key) === 0)
+				return s.setHUD(key,'tab-reputation','flashing');
+			else
+				s.setHUD(key,'tab-reputation','normal');
+			s.set(key,'askedReputation',true);	//BAD to refresh hint
+		}
+		if(s.get(key,'askedAchievement')){
+			if(!s.get(key,'openedAchievement'))
+				return s.setHUD(key,'tab-achievement','flashing');
+			else
+				s.setHUD(key,'tab-achievement','normal');
+		}
+		if(s.get(key,'askedQuest')){
+			if(s.testQuestActive(key))
+				return s.setHUD(key,'tab-quest','flashing');
+			else
+				s.setHUD(key,'tab-quest','normal');
+		}
+	},
 });
 s.newMap('genetosHouse2',{
 	name:"Genetos House",
@@ -761,7 +813,7 @@ s.newMap('genetosHouse2',{
 		m.spawnActor(spot.n1,'npc',{
 			dialogue:'talkGenetosTown',
 			name:'Genetos',
-			sprite:s.newNpc.sprite('villagerMale-2')
+			sprite:s.newNpc.sprite('villagerMale-5')
 		});
 		m.spawnTeleporter(spot.t1,function(key){
 			s.teleport(key,'QfirstTown-main','t8','main');
@@ -770,10 +822,10 @@ s.newMap('genetosHouse2',{
 });
 
 s.newBoss('dragon',s.newBoss.variable({"direction":1,"rotationAngle":0,"randomAngle":0}),function(boss){
-	var SPD = 1;
+	var SPD = 0.7;
 	s.newBoss.phase(boss,'phase0',{
 		loop:function(boss){
-			var num = b.get(boss,'_framePhase') % 60;
+			var num = b.get(boss,'_framePhase') % 90;
 			
 			if(num === 5){
 				var angleVar = Math.randomML()*50;
@@ -817,13 +869,13 @@ s.newBoss('dragon',s.newBoss.variable({"direction":1,"rotationAngle":0,"randomAn
 			}
 		},
 		transitionTest:function(boss){
-			if(b.get(boss,'_framePhase') > 400) 
+			if(b.get(boss,'_framePhase') > 600) 
 				return 'phase1';
 		},
 	});
 	s.newBoss.phase(boss,'phase1',{
 		loop:function(boss){
-			if(b.get(boss,'_framePhase') < 50) 
+			if(b.get(boss,'_framePhase') < 100) 
 				return;
 			
 			var toadd = b.get(boss,'direction') * SPD;
@@ -849,7 +901,7 @@ s.newBoss('dragon',s.newBoss.variable({"direction":1,"rotationAngle":0,"randomAn
 			}
 		},
 		transitionTest:function(boss){
-			if(b.get(boss,'_framePhase') > 250) 
+			if(b.get(boss,'_framePhase') > 300) 
 				return 'phase0';
 		},
 		transitionIn:function(boss){

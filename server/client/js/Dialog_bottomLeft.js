@@ -21,6 +21,7 @@ var getWidth = function(){
 Dialog.UI('chat',{
 	position:'absolute',
 	left:0,
+	zIndex:11,	//otherwise, cant click links
 	background:'rgba(0,0,0,0.3)',
 	padding:'0px 0px',
 	border:'1px solid black',
@@ -103,7 +104,7 @@ Dialog.UI('chat',{
 			.click(function(e){
 				if(!e.shiftKey) return;
 				CHAT_BOX_TEXT.html('');
-				$("#pmText").html('');
+				PM_TEXT.html('');
 			})
 		)
 	);
@@ -180,6 +181,8 @@ Dialog.chat.focusInput = function(){
 var PM_HEIGHT = 110;
 var PM_HTML = null;
 var PM_TEXT = null;
+
+
 Dialog.UI('pm',{
 	position:'absolute',
 	left:0,
@@ -191,14 +194,16 @@ Dialog.UI('pm',{
 	font:'1.3em Kelly Slab',
 },Dialog.Refresh(function(html){
 	html.css({	//cant put above, cuz Main not defined (for getHeight)
-		bottom:PM_HEIGHT-30,
+		bottom:DIALOGUE_HEIGHT+PARTY_HEIGHT,
 		width:getWidth(),
 	});
 	
 	PM_HTML = PM_HTML || html;
 	html.addClass('onlyText container shadow');
 	
-	PM_TEXT = PM_TEXT || $('<div>').css({height:PM_HEIGHT,maxHeight:PM_HEIGHT});
+	PM_TEXT = PM_TEXT || $('<div>').css({
+		height:PM_HEIGHT,maxHeight:PM_HEIGHT
+	});
 	
 	html.append(PM_TEXT);
 },function(){
@@ -276,10 +281,11 @@ Dialog.UI('dialogue',{
 	
 }));
 
+var PARTY_HEIGHT = 30;
 Dialog.UI('partyClan',{
 	position:'absolute',
 	left:0,
-	height:30,
+	height:PARTY_HEIGHT,
 	padding:'5px 5px',
 	color:'white',
 	font:'1.3em Kelly Slab',

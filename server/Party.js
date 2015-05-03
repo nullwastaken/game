@@ -40,7 +40,8 @@ Party.get = function(id){
 
 Party.addPlayer = function(party,key,name){
 	party.list[key] = name;
-	if(!party.leader) Party.changeLeader(party,key,false);
+	if(!party.leader) 
+		Party.changeLeader(party,key,false);
 	Party.addMessage(party,name.q() + ' has joined the party.');
 	Party.setFlagForAll(party);
 }
@@ -57,7 +58,8 @@ Party.removePlayer = function(party,key){
 	Party.setFlagForAll(party);
 }
 Party.changeLeader = function(party,key,message){
-	if(!party.list[key]) return ERROR(3,'leader not in party');
+	if(!party.list[key]) 
+		return ERROR(3,'leader not in party');
 	
 	party.leader = key;
 	if(message !== false) Party.addMessage(party,'Your new party leader is ' + Main.get(key).username.q() + '.');
@@ -73,6 +75,10 @@ Party.addMessage = function(party,str,toexclude){
 Party.setFlagForAll = function(party){
 	for(var i in party.list){
 		var main = Main.get(i);
+		if(!main){
+			ERROR(3,'no main',i);
+			continue;
+		}
 		Main.setFlag(main,'party');
 		main.party = Main.Party(party);
 	}

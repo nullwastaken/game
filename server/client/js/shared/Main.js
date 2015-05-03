@@ -1,7 +1,7 @@
 //LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
 "use strict";
 (function(){ //}
-var Actor = require2('Actor'), Server = require2('Server'), Party = require2('Party'), QuestVar = require2('QuestVar'), ActorGroup = require2('ActorGroup'), Message = require2('Message'), Drop = require2('Drop');
+var Actor = require2('Actor'), Server = require2('Server'), QuestVar = require2('QuestVar'), ActorGroup = require2('ActorGroup'), Message = require2('Message'), Drop = require2('Drop');
 var Pref = require4('Pref');
 var Main = exports.Main = {};
 Main.create = function(key,extra){

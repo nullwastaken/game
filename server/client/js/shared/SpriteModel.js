@@ -291,7 +291,7 @@ SpriteModel.init = function(){
 }
 
 SpriteModel.get = function(id){
-	return DB[id] || null;
+	return DB[id] || DB[id.split(',')[0]] || null;
 }
 
 SpriteModel.bullet = function(id,src,sizeX,sizeY,frame,canvasRotate,extra){

@@ -3,6 +3,7 @@
 (function(){ //}
 var Actor = require2('Actor'), Metrics = require2('Metrics'), Account = require2('Account'), Send = require2('Send'), Debug = require2('Debug'), Equip = require2('Equip'), Socket = require2('Socket'), Server = require2('Server'), ItemList = require2('ItemList'), Challenge = require2('Challenge'), Sign = require2('Sign'), Message = require2('Message'), Main = require2('Main'), Quest = require2('Quest');
 var Dialog = require4('Dialog'), Pref = require4('Pref'), Song = require4('Song');
+var Reddit = SERVER && !MINIFY && require2('Reddit');
 var Command = exports.Command = {};
 
 //quests needed to be loaded first via D b.quest.$keys() for Command.Param.quest
@@ -236,13 +237,11 @@ Command.create('win,reputation,add',"Select a Reputation",false,[ //{
 	Command.Param('number','Y',false,{max:14}),
 	Command.Param('number','X',false,{max:14}),
 ],function(key,num,i,j){	
-	if(!Main.reputation.allowChange(Main.get(key))) return;
 	Main.reputation.add(Main.get(key),num,i,j);
 }); //}
 Command.create('win,reputation,clear',"Clear Reputation Grid",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
 ],function(key,num){
-	if(!Main.reputation.allowChange(Main.get(key))) return;
 	var main = Main.get(key);
 	Main.question(main,function(){
 		Main.reputation.clearGrid(main,num);
@@ -254,14 +253,12 @@ Command.create('win,reputation,remove',"Remove a Reputation",false,[ //{
 	Command.Param('number','Y',false,{max:14}),
 	Command.Param('number','X',false,{max:14}),
 ],function(key,num,i,j){
-	if(!Main.reputation.allowChange(Main.get(key))) return;
 	Main.reputation.remove(Main.get(key),num,i,j);
 }); //}
 Command.create('win,reputation,page',"Change Active Reputation Page",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
 ],function(key,num){
 	return; //not supported
-	//if(!Main.reputation.allowChange(Main.get(key))) return;
 	//Main.reputation.changeActivePage(Main.get(key),num);
 }); //}
 
@@ -269,7 +266,6 @@ Command.create('win,reputation,converterAdd',"Add Converter",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
 	Command.Param('string','Converter Name',false),
 ],function(key,num,name){
-	if(!Main.reputation.allowChange(Main.get(key))) return;
 	Main.reputation.addConverter(Main.get(key),num,name);	
 }); //}
 
@@ -277,7 +273,6 @@ Command.create('win,reputation,converterRemove',"Add Converter",false,[ //{
 	Command.Param('number','Page',false,{max:1}),
 	Command.Param('string','Converter Name',false),
 ],function(key,num,name){
-	if(!Main.reputation.allowChange(Main.get(key))) return;
 	Main.reputation.removeConverter(Main.get(key),num,name);	
 }); //}
 
@@ -412,6 +407,22 @@ Command.create('equipSalvage',"Salvage an equip.",false,[ //{
 
 //############
 
+Command.create('redditComment',"Submit Reddit comment.",false,[ //{
+	Command.Param('string','Where',false),
+	Command.Param('string','Text',false),
+],function(key,where,text){
+	var user = Actor.get(key).username;
+	if(!Reddit.isValidParent(where))
+		return;
+	if(!text.trim() || text.length > 10000)
+		return;
+	var str = user + ' says: ' + text;
+	Reddit.comment(where,str);	
+	var url = Reddit.getUrlParent(where);
+	Message.add(key,'Thanks for your feedback. <a class="message" href="' + url + '" target="_blank">Check your comment here.</a>');
+}); //}
+
+
 Command.create('enableMouseForMove',"Move Using the Mouse",false,[ //{
 	Command.Param('boolean','Is Active?',false),
 ],function(key,active){
@@ -530,6 +541,17 @@ Command.create('questRating',"Rate a quest.",false,[ //{
 	Command.Param('string','Hint',true),
 ],function(key,quest,rating,text,abandonReason,hint){
 	Quest.rate(Main.get(key),quest,rating,text,abandonReason,hint);
+	
+	if(!Reddit.isValidParent(quest))
+		return Message.add(null,'Thanks for your feedback.');
+	
+	var user = Actor.get(key).username;
+	if(!text.trim() || text.length > 10000)
+		return;
+	var str = user + ' says: ' + text;
+	Reddit.comment(quest,str);	
+	var url = Reddit.getUrlParent(quest);
+	Message.add(key,'Thanks for your feedback. <a class="message" href="' + url + '" target="_blank">Check your comment here.</a>');
 }); //}
 
 Command.create('contribution,purchase',"Purchase a Contribution Reward",false,[ //{
@@ -596,6 +618,13 @@ Command.create('addCPQuestFeedback',"",false,[ //{
 	Command.Param('string','',false),
 ],function(key,username,qname){
 	Main.contribution.addPtOffline(username,1,'questFeedback','CP for useful feedback for the quest ' + qname + '.'); 
+},false,true); //}
+
+Command.create('giveCP',"",false,[ //{
+	Command.Param('string','',false),
+	Command.Param('number',0,false),
+],function(key,username,pt){
+	Main.contribution.addPtOffline(username,pt,'questFeedback','You are awesome!'); 
 },false,true); //}
 
 Command.create('activeBotwatch',"",false,[ //{

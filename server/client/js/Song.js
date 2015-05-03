@@ -77,7 +77,7 @@ Song.updateVolume = function(){
 }
 Song.getCurrentSongInfo = function(){
 	if(!BEING_PLAYED) return 'No song being played...';
-	return '<a style="color:cyan;text-decoration:underline;" target="_blank" href="' + BEING_PLAYED.link + '">\"' + BEING_PLAYED.name + '\"</a> by ' + BEING_PLAYED.author;
+	return '<a class="message" target="_blank" href="' + BEING_PLAYED.link + '">\"' + BEING_PLAYED.name + '\"</a> by ' + BEING_PLAYED.author;
 }
 
 Song.playRandom = function(){

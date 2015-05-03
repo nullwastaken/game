@@ -48,7 +48,7 @@ s.newChallenge('harvester',"Harvester","Finish the quest with 25 unused resource
 s.newChallenge('minion',"Minion Master","The boss has minions protecting him.",function(key){
 	return true;
 });
-s.newChallenge('speedrun',"Speedrun","Kill the boss in less than 1 minute.",function(key){
+s.newChallenge('speedrun',"Speedrun","Kill the boss in less than 1:30 minute.",function(key){
 	return s.stopChrono(key,'timerBoss') < 25*60;
 });
 
@@ -553,7 +553,7 @@ s.newDialogue('Geff','Geff','villagerMale-9',[ //{
 	s.newDialogue.node('whattodo',"Like I was saying, you are collecting resources to strengthen your equipment and abilities before the final battle.",[ 
 		s.newDialogue.option("That sounds cool.",'teleport','')
 	],''),
-	s.newDialogue.node('teleport',"I'm glad you like it. Because I'm about to send you in that parallel universe for 1 minute.",[ 
+	s.newDialogue.node('teleport',"I'm glad you like it. Because I'm about to send you in that parallel universe for 1:30 minute.",[ 
 		s.newDialogue.option("Nah, you kidding. It's impossible.",'','startGame'),
 		s.newDialogue.option("Ok, great.",'','startGame')
 	],'')

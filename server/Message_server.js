@@ -26,7 +26,8 @@ Message.broadcast = function(text){
 
 Message.receive = function(key,msg){
 	msg.from = Main.get(key).username;
-	if(!Message.receive.test(key,msg)) return;
+	if(!Message.receive.test(key,msg)) 
+		return;
 	
 	var parse = Message.parseText(msg.text);     	//text
 	msg.hasItem = parse.hasItem;
@@ -43,11 +44,16 @@ Message.receive = function(key,msg){
 };
 
 Message.receive.test = function(key,msg){
-	if(!msg.type || !msg.text || typeof msg.text !== 'string') return false;
-	if(msg.to === msg.from) return Message.add(key,"Ever heard of thinking in your head?") || false;
-	if(msg.type !== 'feedback' && msg.text.length > 200) return false;	//text too long
-	if(Message.receive.ZALGO_ACTIVE && Message.receive.ZALGO_REGEX.test(msg.text)) return false;
-	if(Main.get(key).social.muted) return false;				//player is muted
+	if(!msg.type || !msg.text || typeof msg.text !== 'string') 
+		return false;
+	if(msg.to === msg.from) 
+		Message.add(key,"Ever heard of thinking in your head?");//no return cuz used for testing
+	if(msg.type !== 'feedback' && msg.text.length > 200) 
+		return false;	//text too long
+	if(Message.receive.ZALGO_ACTIVE && Message.receive.ZALGO_REGEX.test(msg.text)) 
+		return false;
+	if(Main.get(key).social.muted) 
+		return false;				//player is muted
 	return true;
 }
 
@@ -127,11 +133,7 @@ Message.parseText.item = function(id){
 	if(item.type !== 'equip') 
 		return '[' + item.name + ']';
 	
-	return '<span ' + 
-	'style="color:cyan;cursor:pointer;" ' +
-	'onclick="exports.Dialog.open(\'equipPopup\',{id:\'' + item.id + '\',notOwning:true});" ' +
-	'>[' + item.name + 
-	']</span>';
+	return '<fakea class="message" onclick="exports.Dialog.open(\'equipPopup\',{id:\'' + item.id + '\',notOwning:true});">[' + item.name + ']</span>';
 }
 
 Message.generateTextLink = function(onclick,text){

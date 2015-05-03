@@ -8,7 +8,6 @@ var IMG_W = 640;
 var IMG_H = 360;
 
 var SIZEFACT = 2;		//enlarge the map image by this factor
-var IMAGERATIO = 2;  	//basically 1280 / size of 1 image
 	
 MapModel.create = function(quest,name,sizeX,sizeY,grid,width,height){
 	var tmp = {

@@ -1198,6 +1198,7 @@ s.newNpc("npc",{
 	sprite:s.newNpc.sprite("villagerMale-0"),
 	nevercombat:1,
 	angle:90,
+	interactionMaxRange:200,
 	targetSetting:s.newNpc.targetSetting(null,25*4),
 	moveRange:s.newNpc.moveRange(3,1,3),
 	maxSpd:s.newNpc.maxSpd(0.35),
@@ -1318,6 +1319,18 @@ s.newNpc("pushable-rock2x2",{
 	pushable:s.newNpc.pushable(4,16),
 	bounce:0,
 });
+s.newNpc("pushable-rock2x2-loose",{
+	name:"Block",
+	minimapIcon:'',
+	sprite:s.newNpc.sprite("pushable-rock1x1",2),
+	nevercombat:1,
+	useUpdateInput:0,
+	move:1,
+	interactionMaxRange:150,
+	block:s.newNpc.block(s.newNpc.block.size(2,2),1),
+	pushable:s.newNpc.pushable(4,16,null,false,true),
+	bounce:0,
+});
 s.newNpc("pushable-bridgeH",{
 	name:"",
 	minimapIcon:'',
@@ -1403,6 +1416,7 @@ s.newNpc("tree-red",{
 	sprite:s.newNpc.sprite("tree-red"),
 	nevercombat:1,
 	nevermove:1,
+	interactionMaxRange:200,
 	block:s.newNpc.block(s.newNpc.block.size(3,2,-1,0),1),
 });
 s.newNpc("tree-down",{
@@ -1411,6 +1425,7 @@ s.newNpc("tree-down",{
 	sprite:s.newNpc.sprite("tree-down"),
 	nevercombat:1,
 	nevermove:1,
+	interactionMaxRange:200,
 	block:s.newNpc.block(s.newNpc.block.size(2,2,0,0),1),
 });
 s.newNpc("rock-bronze",{
@@ -1419,6 +1434,7 @@ s.newNpc("rock-bronze",{
 	sprite:s.newNpc.sprite("rock-bronze"),
 	nevercombat:1,
 	nevermove:1,
+	interactionMaxRange:200,
 	block:s.newNpc.block(s.newNpc.block.size(3,2),1),
 });
 s.newNpc("rock-down",{
@@ -1427,6 +1443,7 @@ s.newNpc("rock-down",{
 	sprite:s.newNpc.sprite("rock-down"),
 	nevercombat:1,
 	nevermove:1,
+	interactionMaxRange:200,
 	block:s.newNpc.block(s.newNpc.block.size(3,2),1),
 });
 s.newNpc("hunt-squirrel",{
@@ -1434,6 +1451,7 @@ s.newNpc("hunt-squirrel",{
 	minimapIcon:'minimapIcon-trap',
 	sprite:s.newNpc.sprite("hunt-squirrel"),
 	nevercombat:1,
+	interactionMaxRange:200,
 	maxSpd:s.newNpc.maxSpd(0.5),
 });
 s.newNpc("hunt-down",{
@@ -1442,6 +1460,7 @@ s.newNpc("hunt-down",{
 	sprite:s.newNpc.sprite("hunt-down"),
 	nevercombat:1,
 	nevermove:1,
+	interactionMaxRange:200,
 	block:s.newNpc.block(s.newNpc.block.size(2,2),1),
 });
 

@@ -83,7 +83,7 @@ Actor.undoInitPack = function(draw,id){
 }
 
 Actor.undoInitPack.generateContext = function(act){	//use weakness	//BAD...
-	if(!act.weakness.weak || (!act.weakness.weak && !act.weakness.resist)) return act.context;
+	if(act.type === 'player' || !act.weakness.weak || (!act.weakness.weak && !act.weakness.resist)) return act.context;
 		
 		
 	var span = $('<span>')

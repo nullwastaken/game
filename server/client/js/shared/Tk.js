@@ -38,12 +38,6 @@ Date.niceFormat = function(num){
 //Math
 Tk = exports.Tk = {};
 
-Tk.getWidth = function(){
-	return CST.WIDTH;
-}
-Tk.getHeight = function(){
-	return CST.HEIGHT;
-}
 Tk.absToRel = function(pt){
 	return {
 		x:Tk.absToRel.x(pt.x),
@@ -57,8 +51,56 @@ Tk.absToRel.y = function(y){
 	return y - player.y + CST.HEIGHT2;
 }
 
+
+Tk.nicePrompt = function(cb,placeholder,title){
+	var div = $('<div>')
+		.css({textAlign:'center',zIndex:100});
+	var textarea = $('<textarea>')
+		.css({margin:'10px',width:'300px',height:'200px'});
+	if(placeholder)
+		textarea.attr('placeholder',placeholder);
+	var button = $('<button>')
+		.addClass('myButton')
+		.css({margin:'10px'})
+		.html('Submit')
+		.click(function(){
+			div.dialog('destroy');
+			var str = textarea.val();
+			if(str)
+				cb(str);
+		});
+	div.append(textarea,'<br>',button);
+	
+	div.dialog({ 
+		width:'auto',
+		height:'auto',
+		zIndex:1000,
+		title:title || '',
+		resizable: false,
+		open: function(event, ui) {
+			if(!title)
+				$(this).parent().children('.ui-dialog-titlebar').hide();
+		}
+	});
+}
+
+Tk.niceAlert = function(text){
+	var div = $('<div>')
+		.css({minHeight:'100px',minWidth:'200px',textAlign:'center',padding:'10px'})
+		.html(text);
+	
+	div.dialog({ 
+		zIndex:1000,
+		modal: true,
+		width:'auto',		
+		height:'auto',
+		resizable: false,
+	});
+}
+
+
 Tk.crossDomainAjax = function(url,func){
-	$.ajax( {
+	$.ajax({
 		url: url,
 		dataType: 'jsonp',
 		type: 'GET',
@@ -741,9 +783,9 @@ Tk.keyFullName = function(str){
 	return str;
 }
 
-Tk.replaceBracketPattern = function(data,func){	//only works like [[sdadsa]]
+Tk.replaceBracketPattern = function(data,func2){	//only works like [[sdadsa]]
 	var func = function(match, p1, p2, p3) {
-		return p1 + func(p2) + p3;
+		return p1 + func2(p2) + p3;
 	};
 	for(var i = 0; i < 100; i++){
 		var data2 = data.replace(/(.*?)\[\[(.*?)\]\](.*)/,func);

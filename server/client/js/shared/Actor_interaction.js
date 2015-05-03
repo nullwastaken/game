@@ -96,10 +96,12 @@ Actor.click.pushable = function(pusher,beingPushed){
 	var pusherAngle = Tk.atan2(act.y - pushery,act.x - pusher.x);			//only work with square block
 	var fact = 360/4;
 	var angle = Math.floor((pusherAngle+fact/2)/fact)*fact%360;
-		
-	if(pusherAngle > 340) pusherAngle -= 360;	//QUICKFIX
-	if(Math.abs(pusherAngle-angle) > 20){
-		return Message.add(pusher.id,'You need to be perpendicular to what you want to push.');
+	
+	if(!act.pushable.loose){
+		if(pusherAngle > 340) pusherAngle -= 360;	//QUICKFIX
+		if(Math.abs(pusherAngle-angle) > 20){
+			return Message.add(pusher.id,'You need to be perpendicular to what you want to push.');
+		}
 	}
 	//Test if too far
 	var blockVarX = 0;	//only supported direction =4
@@ -142,13 +144,14 @@ Actor.click.skillPlot = function(act,eid){
 	var e = Actor.get(eid);
 	if(!e.skillPlot) return ERROR(3,'not skillplot');
 	var quest = e.skillPlot.quest;
-	if(e.skillPlot.type === 'down')	return Message.add(act.id,'This plot is down. You need to complete the quest ' + Quest.get(quest).name.q() + ' to harvest this plot again.');
+	if(e.skillPlot.type === 'down')	
+		return Message.add(act.id,'This plot is down. You need to complete the quest ' + Quest.get(quest).name.q() + ' to harvest this plot again.');
 	
 	var plot = SkillPlotModel.get(e.skillPlot.type);
 	var key = act.id;
 	var main = Main.get(key);
 	
-	if(Collision.getDistancePtPt(act,e) > e.interactionMaxRange) return;	//cant use TESTDIST cuz if tree in wall, cant click..
+	if(Collision.getDistancePtPt(act,e) > e.interactionMaxRange) return Message.add(act.id,'You are too far away.');	//cant use TESTDIST cuz if tree in wall, cant click..
 	if(+main.quest[quest]._skillPlot[e.skillPlot.num]) return;
 	
 	main.quest[quest]._skillPlot[e.skillPlot.num] = 1;

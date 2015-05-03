@@ -81,12 +81,6 @@ Main.reputation.get = function(main,num){
 	return main.reputation.list[num];	
 }
 
-Main.reputation.allowChange = function(main){
-	var q = Main.getQuestActive(main);
-	if(q !== null && q !== 'Qtutorial') 
-		return Message.addPopup(main.id,'Finish the quest you\'re doing before modifying your Reputation.');
-	return true;
-}	
 Main.reputation.remove = function(main,num,i,j){
 	//maybe system where cost nothing if lvl less than 20
 	

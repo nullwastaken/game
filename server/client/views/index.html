@@ -78,6 +78,11 @@
 				<a target="_blank" href="http://twitter.com/rainingchain">
 					<img title="Follow @RainingChain on Twitter" src="/../img/ui/twitter.png" width="24px" height="24px" style="margin-right:15px; float: right">
 				</a>
+				<a target="_blank" href="http://www.reddit.com/r/rainingchain">
+					<img title="Check player comments on Reddit" src="/../img/ui/reddit.png" width="24px" height="24px" style="margin-right:15px; float: right">
+				</a>
+				
+				
 				<script>
 				$('#twitch').hide();
 				Tk.crossDomainAjax('http://api.twitch.tv/kraken/streams/RainingChain',function(data){
@@ -88,16 +93,29 @@
 				News
 			</h3>
 			<ul class="list-group">
+				<!--<li class="list-group-item">
+					<strong>Tuesday, April 28th, 2015</strong><br>
+					I've just released a new version for the Quest Creator. It also includes an auto-updater and many new features. You can download the Quest Creator <a href="/QuestCreator">here</a>. This new version uses WPF instead of Winforms. 
+				</li>-->
+				
+				
 				<li class="list-group-item">
-					<strong>Friday, April 25th, 2015</strong><br>
-					Added option to disable lighting effects and weather. Added option to disable lighting effects and weather. Added option to disable lighting effects and weather. Added option to disable lighting effects and weather. Added option to disable lighting effects and weather. Added option to disable lighting effects and weather. 
+					<strong>Thursday, April 30th, 2015</strong><br>
+					I created a subreddit on Raining Chain and I posted all the quest feedback collected over the last months. You can check it <a href="http://www.reddit.com/r/rainingchain">here</a>. 
 				</li>
 				<li class="list-group-item">
-					<strong>2015-04-17</strong><br>
-					Added option to disable lighting effects and weather. Added option to disable lighting effects and weather. Added option to disable lighting effects and weather. Added option to disable lighting effects and weather. 
+					<strong>Wednesday, April 29th, 2015</strong><br>
+					I just finished my last school exam. This means I will now have plenty time to work on Raining Chain! 
+				</li>
+				<li class="list-group-item">
+					<strong>Monday, April 27th, 2015</strong><br>
+					The major update this week is resizable game screen. Before, the game could only be ran at 1280x720 but now it can be scaled in any format. I also revamped the home page of the website to include the News section and social media icons. Finally, I made a new dialogue box when starting a new quest that makes challenges more obvious.
 				</li>
 			</ul>
 			<a class="form-signin" href="/patchNotes" style="display:block;cursor:pointer;">Browse all news.</a>
+			
+			
+			
 		</div>
 		<div class="col-lg-4">
 			<h3>Quest Overview</h3>
@@ -110,8 +128,9 @@
 				<h3>Highscore</h3>
 				<p>Most Quests Complete</p>
 				<script>
-				var highscore = <%- JSON.stringify(highscore) %>;
-				$(window).load(function(){
+				var highscore = <%- highscore ? JSON.stringify(highscore) : "null" %>;
+				$(document).ready(function(){
+					if(!highscore) return $('#highscore').hide();
 					var array = [['Rank','Name','Quest']];
 					for(var i = 0 ; i < highscore.length; i++){
 						array.push([highscore[i].rank,highscore[i].username,highscore[i].value]);
@@ -121,15 +140,16 @@
 				</script>			
 			</div>
 			<div id="competition">
-				<h3 title="Ends on <%= (new Date(competition.endTime)).toDateString() %>">
+				<h3 title="Ends on <%= competition && (new Date(competition.endTime)).toDateString() %>">
 					Competition
 				</h3>
-				<p title="<%= competition.name + ": " + competition.description %>">
-					<%= competition.questName %>
+				<p title="<%= (competition && competition.name) + ": " + (competition && competition.description) %>">
+					<%= (competition && competition.questName) %>
 				</p>
 				<script>
-				var competition = <%- JSON.stringify(competition) %>;
-				$(window).load(function(){
+				var competition = <%- competition ? JSON.stringify(competition) : "null" %>;
+				$(document).ready(function(){
+					if(!competition) return $('#competition').hide();
 					var array = [['Rank','Name','Score']];
 					
 					for(var i = 0 ; i < competition.score.length && i < 5; i++){

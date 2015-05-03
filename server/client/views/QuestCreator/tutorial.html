@@ -1,0 +1,234 @@
+<% include ../partial/header.html %>
+<div class="container">
+	<h3>The Basics</h3>
+	<object width="550" height="300" data="http://www.youtube.com/embed/Xcan4jfDjYg"></object>
+	<h4>Quest</h4>
+	<p>Quests can be about anything in Raining Chain. For example:</p>
+	<ul class="">
+		<li class="">Kill monsters.</li>
+		<li class="">Fetch items.</li>
+		<li class="">Complete puzzle.</li>
+		<li class="">Play minigame.</li>
+		<li class="">PvP.</li>
+	</ul>
+	<br>
+	<h4>Events</h4>
+	<p>Events holds the logic of your quest. For example:</p>
+	<ul class="">
+		<li class="">Teleport player.</li>
+		<li class="">Give items.</li>
+		<li class="">Spawn monsters.</li>
+		<li class="">Display message.</li>
+		<li class="">Is the door locked?</li>
+	</ul>
+	<br>
+
+	<h4>Triggers</h4>
+	<p>Triggers tell the game engine when to trigger/call a specific event.</p>
+	<ul class="">
+		<li class="">When talking to a NPC (dialogue).</li>
+		<li class="">When NPC dies (deathEvent).</li>
+		<li class="">When toggling a switch.</li>
+		<li class="">When looting a chest.</li>
+		<li class="">When reaching a certain position.</li>
+		<li class="">When using item.</li>
+	</ul>
+
+	<br>
+	<h4>Maps</h4>
+	<p>Maps are responsible of the map images but also tell the game engine what NPC to spawn.</p>
+	<ul class="list-group">
+		<li class="list-group-item">
+			<strong>NPC (Ringo)</strong><br>
+			Trigger (dialogue) => Event (talkRingo)<br>
+			Trigger (deathEvent) => Event (killRingo)<br>
+		</li>
+		<li class="list-group-item">
+			<strong>NPC (Dragon)</strong><br>
+			Trigger (deathEvent) => Event (giveDragonHead)<br>
+		</li>
+		<li class="list-group-item">
+			<strong>NPC (Switch)</strong><br>
+			Trigger (toggle) => Event (openLockedDoor)<br>
+		</li>
+	</ul>
+	
+
+	<br>
+	<h4>Quest Variables</h4>
+	<p>Used to save the player progression in a quest. They will be modified by events. Each player has its own copy of variables.</p>
+	<ul class="">
+		<li class="">goblinKillCount = 1000</li>
+		<li class="">doorLocked = true</li>
+		<li class="">haveTalkedWithRingo = false</li>
+	</ul>
+
+	<br>
+	<h4>Event Functions</h4>
+	<p>
+		Most of the time, events are applied to a player in particular.<br>
+		Every player (and NPC) has a unique key.<br>
+		In your events, you can access the key of the player who triggered the event via the variable "key".<br>
+	</p>
+	<p>
+		<a href="/QuestCreator/API">Click here</a> to check the API (list of all functionalities you can use for events).
+	</p>
+	
+	<br>
+	<h4>Spawning Actors</h4>
+	<p>
+		For every NPC you create, you need to mark where it spawns inside the Tiled map project.<br>
+		To mark it, select the layer SPOT and places letters from the tileset #9.<br>
+		<img width="500px" src="../views/QuestCreator/mapEditor.png">
+	</p>
+	<p>
+		Every NPC can be customized via the "actorExtra" parameter to trigger events or change appearance.<br>
+		<a href="/QuestCreator/API#actorExtra">Click here</a> for the complete list.	
+	</p>
+	<ul class="list-group">
+		<li class="list-group-item">
+			<strong>dialogue</strong>: Event called when player selects "Talk to" option.
+		</li>
+		<li class="list-group-item">
+			<strong>deathEvent</strong>: Event called when NPC dies.
+		</li>
+		<li class="list-group-item">
+			<strong>viewedIf</strong>: If event returns true, the actor is visible.
+		</li>
+		<li class="list-group-item">
+			<strong>name</strong>: Diplay name.
+		</li>
+		<li class="list-group-item">
+			<strong>sprite</strong>: Image appearance.
+		</li>
+		<li class="list-group-item">
+			<strong>globalDef</strong>: Multiply defence by this value.
+		</li>
+		<li class="list-group-item">
+			<strong>globalDmg</strong>: Multiply damage by this value.
+		</li>	
+	</ul>
+	<br>	
+	<br>
+	<h3>Quest Example #1</h3>
+	<h4>Logic</h4>
+	<ul class="">
+		<li class="">Talk with NPC who asks to kill Dragon.</li>
+		<li class="">Kill Dragon</li>
+		<li class="">Talk with NPC to complete quest</li>
+	</ul>
+
+	<h4>Variable</h4>
+	<ul class="">
+		<li class="">haveKilledDragon = false</li>
+	</ul>
+
+	<h4>Events</h4>
+	<ul class="list-group">
+		<li class="list-group-item">
+			<strong>talkRingo</strong> (linked with "dialogue" trigger of NPC Ringo)<br>
+			if haveKilledDragon == false<br>
+			&nbsp;&nbsp;then ask player to kill dragon<br>
+			if haveKilledDragon == true<br>
+			&nbsp;&nbsp;then quest complete<br>
+		</li>
+		<li class="list-group-item">
+			<strong>killDragon</strong> (linked with "deathEvent" trigger of NPC Dragon)<br>
+			set haveKilledDragon = true
+		</li>
+	</ul>
+
+	<h4>Real Code</h4>
+	<ul class="list-group">
+		<li class="list-group-item">
+			<strong>Variable</strong><br>
+			haveKilledDragon:true
+		</li>
+		<li class="list-group-item">
+			<strong>Event talkRingo:</strong><br>
+			if(s.get(key,'haveKilledDragon') == false)<br>
+			&nbsp;&nbsp;s.message(key,'Go kill the dragon.');<br>
+			if(s.get(key,'haveKilledDragon') == true)<br>
+			&nbsp;&nbsp;s.completeQuest(key);<br>
+		</li>
+		<li class="list-group-item">
+			<strong>Event killDragon:</strong><br>
+			s.set(key,'haveKilledDragon',true);
+		</li>
+		
+		<li class="list-group-item">
+			<strong>Map dragonLair:</strong><br>
+			//Tiled project as a n1 and e1 spots on layer SPOT<br>
+			m.spawnActor(spot.n1,'npc',{<br>
+			&nbsp;&nbsp;dialogue:'talkRingo'<br>		
+			});<br>
+			<br>
+			m.spawnActor(spot.e1,'dragon',{<br>
+			&nbsp;&nbsp;deathEvent:'killDragon'<br>
+			});
+		</li>
+	</ul>
+
+	<br>
+	<h3>Quest Example #2</h3>
+	<h4>Logic</h4>
+	<ul class="">
+		<li class="">Rocks block path.</li>
+		<li class="">Activate switch to destroy them.</li>
+	</ul>
+
+	<h4>Variable</h4>
+	<ul class="">
+		<li class="">haveDestroyedRock = false</li>
+	</ul>
+
+	<h4>Events</h4>
+	<ul class="list-group">
+		<li class="list-group-item">
+			<strong>activeSwitch</strong> (linked with "toggle" trigger of NPC Level)<br>
+			set haveDestroyedRock = true		
+		</li>
+		<li class="list-group-item">
+			<strong>canSeeRock</strong> (linked with "viewedIf" attribute of NPC Rock)<br>
+			if haveDestroyedRock == false<br>
+			&nbsp;&nbsp;return true (visible)<br>
+			if haveDestroyedRock == true<br>
+			&nbsp;&nbsp;return false (not visible)<br>
+		</li>
+	</ul>
+	
+	<h4>Real Code</h4>
+	<ul class="list-group">
+		<li class="list-group-item">
+			<strong>Variable</strong><br>
+			haveDestroyedRock:false
+		</li>
+		<li class="list-group-item">
+			<strong>Event canSeeRock:</strong><br>
+			if(s.get(key,'haveDestroyedRock') == false)<br>
+			&nbsp;&nbsp;return true;<br>
+			if(s.get(key,'haveDestroyedRock') == true)<br>
+			&nbsp;&nbsp;return false;<br>
+		</li>
+		<li class="list-group-item">
+			<strong>Event activeSwitch:</strong><br>
+			s.set(key,'haveDestroyedRock',true);
+		</li>
+		
+		<li class="list-group-item">
+			<strong>Map mountain:</strong><br>
+			//Tiled project as a b1 and q1 spots on layer SPOT<br>
+			m.spawnBlock(spot.b1,'canSeeRock');<br>
+			<br>
+			m.spawnToggle(spot.q1,'activeSwitch');<br>
+		</li>
+	</ul>
+	
+	<br>
+	<a href="/QuestCreator/feedback">Feedback or questions?</a>
+</div>
+<% include ../partial/footer.html %>
+
+
+
+

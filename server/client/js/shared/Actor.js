@@ -442,7 +442,7 @@ Actor.getQuestZone = function(act){
 	return Quest.get(act.quest).zone || null;
 }
 
-Actor.Pushable = function(magn,time,event,onlySimulate){
+Actor.Pushable = function(magn,time,event,onlySimulate,loose){
 	return {
 		magn:magn,
 		time:time,
@@ -450,6 +450,7 @@ Actor.Pushable = function(magn,time,event,onlySimulate){
 		timer:0,
 		angle:0,
 		onlySimulate:onlySimulate || false,
+		loose:loose || false,
 	};
 }
 Actor.Block = function(size,value,impactPlayer,impactNpc,impactBullet){

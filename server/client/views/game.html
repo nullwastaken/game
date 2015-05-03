@@ -183,6 +183,18 @@
 	
 	<div id="gameBottom" style="position:absolute; white-space:normal; width:100%; font:30px Kelly Slab; color:white;">
 		<div id="playerOnline"></div>
+		<button id="commentButton" style="width:auto; height: 30px; font-size:0.5em; position:absolute; top:0px; right:0px;" class="myButton">Feedback</button>
+		<script>
+		$(document).ready(function(){
+			$("#commentButton").click(function(){
+				Tk.nicePrompt(function(text){
+					if(!text.trim())
+						return;
+					exports.Command.execute('redditComment',['general',text]);
+				},'Your constructive feedback...','Submit feedback');
+			});
+		});
+		</script>
 		<!--<div id="infoDay"></div>-->
 	</div>
 </div>

@@ -30,7 +30,7 @@ IconModel.testIntegrity = function(id){
 var DB = IconModel.DB = {};
 
 IconModel.init = function(){
-	IconModel.create('system',["square","close","arrow","gold","question","flag"]);
+	IconModel.create('system',["square","close","gold","question","flag"]);
 	IconModel.create('color',["red","yellow","cyan","green","purple","orange"]);
 	IconModel.create('system1',["more","less"]);
 	IconModel.create('tab',["equip","inventory","quest","skill","friend","pref","ability","reputation"]);
@@ -41,9 +41,9 @@ IconModel.init = function(){
 	IconModel.create('offensive',["pierce","bullet","strike","leech","atkSpd"]);
 	IconModel.create('defensive',["speed","pickup","life","magicFind"]);
 	IconModel.create('attackMelee',["slash","scar","triple","slice","bleed","fierce","cube"]);
-	IconModel.create('attackRange',["trio","steady","bleed","rain","head"]);
+	IconModel.create('attackRange',["steady","bleed","rain","head"]);
 	IconModel.create('attackMagic',["crystal","fireball","meteor","fire","ball","lightning","static"]);
-	IconModel.create('blessing',["spike","cycle","muscle","reflect"]);
+	IconModel.create('blessing',["spike","muscle","reflect"]);
 	IconModel.create('curse',["death","haunt","skull","stumble"]);
 	IconModel.create('heal',["plus","vial","pill","cake","pot"]);
 	IconModel.create('summon',["wolf"]);

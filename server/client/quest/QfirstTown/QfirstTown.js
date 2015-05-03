@@ -497,8 +497,8 @@ s.newMap('eastCave',{
 	spot:{t4:{x:704,y:48},t5:{x:1632,y:48},s1:{x:592,y:368},s5:{x:2096,y:432},e1:{x:1104,y:496},t3:{x:48,y:592},t6:{x:2352,y:704},e2:{x:1712,y:880},e4:{x:656,y:912},s8:{x:528,y:976},s4:{x:1936,y:1040},s2:{x:272,y:1424},t7:{x:1232,y:1456},s3:{x:1552,y:1552},s7:{x:976,y:1584},t2:{x:48,y:1616},e3:{x:688,y:1808},s6:{x:560,y:2096},t1:{x:1936,y:2096}},
 	load:function(spot){
 		m.spawnTeleporter(spot.t1,function(key){
-			s.teleport(key,'main','k');
-			s.setRespawn(key,'main','k');
+			s.teleport(key,'main','k','main');
+			s.setRespawn(key,'main','k','main');
 		},'zone','down','main');
 		
 		m.spawnSkillPlot(spot.s2,'QduelLeague','rock-bronze',0);

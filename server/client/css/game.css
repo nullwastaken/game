@@ -48,6 +48,10 @@ div{
 	-ms-user-select: text;
 }
 
+a.message {
+	z-index:10000;
+	color:cyan;
+}
 
 table .center {
     margin: 0 auto;
@@ -58,6 +62,11 @@ fakea {
 	text-decoration: none;
 	cursor:pointer;
 }
+fakea.message {
+	z-index:10000;
+	color:cyan;
+}
+
 fakea:hover {
 	text-decoration: underline;
 }
