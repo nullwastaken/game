@@ -412,6 +412,7 @@ Command.create('redditComment',"Submit Reddit comment.",false,[ //{
 	Command.Param('string','Text',false),
 ],function(key,where,text){
 	var user = Actor.get(key).username;
+	if(!Reddit) return;
 	if(!Reddit.isValidParent(where))
 		return;
 	if(!text.trim() || text.length > 10000)
@@ -541,7 +542,7 @@ Command.create('questRating',"Rate a quest.",false,[ //{
 	Command.Param('string','Hint',true),
 ],function(key,quest,rating,text,abandonReason,hint){
 	Quest.rate(Main.get(key),quest,rating,text,abandonReason,hint);
-	
+	if(!Reddit) return;
 	if(!Reddit.isValidParent(quest))
 		return Message.add(null,'Thanks for your feedback.');
 	
