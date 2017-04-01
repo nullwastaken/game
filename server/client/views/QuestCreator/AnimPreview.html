@@ -1,0 +1,207 @@
+<% include ../partial/header.html %>
+<style> p { margin:8px } </style>
+<style> input[type=number]{ width:50px } </style>
+
+<div class="container">
+	<div style="float:left; margin-right:50px">
+		<canvas id="ctx" width="300" height="300" style="border:1px solid #000000;"></canvas><br>
+		<input type="file" class="upload" id="loader" onchange="readFiles(this.files)" multiple="" /><br>
+		<input type="button" value="Update" onclick="updateModel();">
+		<input type="button" value="Restart Animation" onclick="anim.timer=0; anim.slot=0;">
+		<div>
+			<p>Repeat <input id="repeat" type="checkbox"></p>
+			<p>Total Frames <input type="number" id="frame" value="5"/></p>
+			<p>Frames/Column <input type="number" id="frameX" value="5"/></p>
+			<p>Size <input type="number" id="size" value="1"></p>
+			<p>Speed <input type="number" id="spd" value="1"></p>
+			<p><button onclick="get('ctx').style.background = get('ctx').style.background === 'black' ? 'white' : 'black';">Change Background</button></p>
+		</div>
+	</div>
+	
+	<div style="float:left;">
+		<div id="anim"></div><br>
+		<textarea style="width:400px; height:100px" id="code" ></textarea><br>
+		<input type="button" value="Load Setting" onclick="updateModelUsingTextArea();">
+		<br><div id="log"></div><br>
+		<div>
+			<h4>How to use:</h4>
+			1- Load image via Choose Files button.<br>
+			2- Set the fields (Size, Speed, Frame...).<br>
+			3- Click Update button.<br>
+			4- If animation is correct, save the setting text (top right) in new file.<br>
+			5- <a href="/QuestCreator/submit" target="_blank">Submit your creation.</a> Send both image and setting.<br>
+			<br>
+			Note: You can load a setting via the Choose Files button.<br>
+			<a href="https://github.com/RainingChain/rainingchain/tree/master/server/client/img/anim" target="_blank">Anim Examples</a>
+			<br><br>
+			<button onclick="demo()">Load Demo</button>
+		</div>
+	</div>
+</div>
+
+<script>
+var get = function(id){return document.getElementById(id);}
+var log = function(txt){ document.getElementById('log').innerHTML += txt + '<br>'; }
+var ctx = document.getElementById("ctx").getContext("2d"); 
+ctx.font = '30px Arial';
+ctx.mozImageSmoothingEnabled = false;
+ctx.msImageSmoothingEnabled = false;
+ctx.imageSmoothingEnabled = false;
+
+var animModel = null;
+var loadedImage = new Image();
+
+var anim = {
+	timer:0,
+	slot:0,
+	sizeMod:1,
+	spdMod:1,
+	x:150,
+	y:150,
+};
+
+var demo = function(){
+	loadedImage.src = 'views/QuestCreator/AnimPreview_demo.png';
+	loadedImage.onload = function(){
+		animModel = AnimModel.create("",6,"",0.5,"",{
+			frameX:5,size:2,
+		});
+	
+		updateHtml();
+		updateModel();
+	}
+}
+
+var updateModel = function(){	//set model using html
+	var size = +get('size').value;
+	var frame = +get('frame').value;
+	var frameX = +get('frameX').value;
+	var spd = +get('spd').value;
+		
+	animModel = AnimModel.create("",frame,"",spd,"",{
+		frameX:frameX,size:size,
+	});
+	updateTextArea();
+}
+var updateModelUsingTextArea = function(){
+	var text = get('code').value;
+	if(!text)
+		return log('The setting is empty.');
+	try {
+		animModel = eval(text);
+		updateHtml();
+	} catch(err){
+		log('Invalid code.\r\n' + err.stack);
+	}
+}
+
+var updateHtml = function(){	//use spriteModel to update html
+	var model = animModel;
+	
+	get('size').value = model.size;
+	get('spd').value = model.spd;	
+	get('frame').value = model.frame;
+	get('frameX').value = model.frameX;	
+	updateTextArea();
+}
+
+var updateTextArea = function(){	//set html using spriteModel
+	var model = animModel;
+
+	/*AnimModel.create('',frame,'',spd,'',{
+		frameX:frameX,size:size,
+	});*/
+	
+	var str = 'AnimModel.create("",' + model.frame + ',"",' + model.spd + ',"",{\r\n'
+	+ '\tframeX:' + model.frameX + ',size:' + model.size + ',\r\n' 
+	+ '});';
+	
+	get('code').value = str;
+}
+
+
+setInterval(function(){
+	ctx.clearRect(0,0,1000,1000);
+	if(loadedImage.src && animModel)
+		Anim.loop(anim);
+},40);
+
+
+Anim = {};
+Anim.loop = function (anim){
+	var animFromDb = animModel;
+	anim.timer += animFromDb.spd * anim.spdMod;
+	anim.slot = Math.floor(anim.timer);
+	if(anim.slot > animFromDb.frame){
+		if(repeat.checked && anim.slot - animFromDb.frame > 5){
+			anim.timer = 0;
+			anim.slot = 0;
+		}
+	} 
+	if(anim.slot <= animFromDb.frame)
+		Draw.anim(anim);	
+}
+	
+Draw = {};
+Draw.anim = function (anim){
+	var animFromDb = animModel;
+	var image = loadedImage;
+	var height = image.height;
+	var width = image.width;
+	var sizeX = image.width / animFromDb.frameX;
+	var slotX = anim.slot % animFromDb.frameX;
+	var slotY = Math.floor(anim.slot / animFromDb.frameX);
+	var sizeY = height / Math.ceil(animFromDb.frame / animFromDb.frameX);
+	var size = animFromDb.size*anim.sizeMod;
+	var startY = animFromDb.startY;
+	ctx.drawImage(image,
+		sizeX*slotX,sizeY*slotY+startY,
+		sizeX,sizeY,
+		anim.x-sizeX/2*size,anim.y-sizeY/2*size,
+		sizeX*size,sizeY*size
+	);
+}
+	
+var readFiles = function(files) {
+	var helper = function(file){
+		var reader = new FileReader();  
+		
+		if(file.type === "image/png")
+			loadedImage.src = URL.createObjectURL(file);
+		
+		if(file.type === "text/plain" || file.type === "application/javascript")
+			reader.onload = function(e) {
+				get('code').value = e.target.result;
+				updateModelUsingTextArea();
+			}
+		reader.readAsText(file, "UTF-8");
+	}
+	for (var i = 0 ; i < files.length; i++) //for multiple files          
+		helper(files[i]);
+}
+
+AnimModel = {};
+AnimModel.create = function(id,frame,sfx,spd,layer,extra){
+	var tmp = {
+		id:id,
+		src:null,	
+		frame:frame || 10,
+		frameX:extra.frameX || 10,
+		spd:spd || 1,
+		layer:null,
+		sfx:null,
+		size:extra.size || 4,
+		startY:0,
+		lightingEffect:[],	//[LightingEffect]
+		img:null,	//client side
+	};
+	return tmp;
+}
+
+	
+</script>
+
+<% include ../partial/footer.html %>
+
+
+

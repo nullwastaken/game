@@ -1,0 +1,36 @@
+<% include ../partial/header.html %>
+<style>
+.mapTutorial {
+	width:100%;
+	max-width:400px;
+	margin-bottom:50px;
+}
+</style>
+<div class="container">
+	<h3>Map Creation Tutorial</h3>
+	<h4>1- Create General Shape (layer wall0)</h4>
+	<p>Make sure the grid is set as visible in Tiled. (Ctrl-G)</p>
+	<p>You can change size via Map -> Resize Map. Recommended: 40x45. Max size accepted: 70x70.</p>
+	<img class="mapTutorial" src="/views/QuestCreator/map/map000.png">
+	
+	<h4>2- Add Shape Decoration (layer wall1)</h4>
+	<p>Place stairs on that layer as well.</p>
+	<img class="mapTutorial" src="/views/QuestCreator/map/map001.png">
+	
+	<h4>3- Add General Ground (layer ground0)</h4>
+	<p>Grounds with different height must be different.</p>
+	<p>Grounds with same height must be the same.</p>
+	<img class="mapTutorial" src="/views/QuestCreator/map/map002.png">
+	
+	<h4>4- Add Paths and Water (layer ground1)</h4>
+	<img class="mapTutorial" src="/views/QuestCreator/map/map003.png">
+	
+	<h4>5- Add Non-Walkable Decoration (layer deco1)</h4>
+	<p>Make sure non-walkable decorations will not get in the way during battle.</p>
+	<img class="mapTutorial" src="/views/QuestCreator/map/map004.png">
+	
+	<h4>6- Add Walkable Decoration (layer deco0)</h4>
+	<img class="mapTutorial" src="/views/QuestCreator/map/map005.png">
+	
+</div>
+<% include ../partial/footer.html %>

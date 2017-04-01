@@ -1,0 +1,467 @@
+<% include ../partial/header.html %>
+<style> p { margin:8px } </style>
+<style> input[type=number]{ width:50px } </style>
+<div class="container">
+	<div style="float:left; margin-right:50px">
+		<canvas id="ctx" width="300" height="300" style="border:1px solid #000000;"></canvas><br>
+		<input type="file" class="upload" id="loader" onchange="readFiles(this.files)" multiple="" /><br>
+		<input type="button" value="Update" onclick="updateSpriteModel();">
+		<div>
+			<p>Size <input type="number" id="size" value="2"/></p>
+			<p>Speed <input type="number" id="spd" value="0.2"/></p>
+			<p>Frame <input type="number" id="frame" value="3"></p>
+			<p>Anim Cycle 
+				<select id="cycle">
+					<option value="loopReverse">1-2-3-2-1</option>	
+					<option value="loop">1-2-3-1-2-3</option>			
+				</select>
+			</p>
+			<p>Direction 
+				<select id="dir" onchange="if(this.value === '4') $('.dir8').hide(); else $('.dir8').show();">
+					<option value="4">4</option>
+					<option value="8">8</option>				
+				</select>
+			</p>
+			<p>Facing Side <br>
+				<div style="margin-left:20px">
+					<p>Row facing Right: <input type="number" id="sideR" value="0"/></p>
+					<p hidden class="dir8">Row facing Down-Right: <input type="number" id="sideDR" value="1"/></p>
+					<p>Row facing Down: <input type="number" id="sideD" value="1"/></p>
+					<p hidden class="dir8">Row facing Down-Left: <input type="number" id="sideDL" value="3"/></p>
+					<p>Row facing Left: <input type="number" id="sideL" value="2"/></p>
+					<p hidden class="dir8">Row facing Up-Left: <input type="number" id="sideUL" value="5"/></p>
+					<p>Row facing Up: <input type="number" id="sideU" value="3"/></p>
+					<p hidden class="dir8">Row facing Up-Right: <input type="number" id="sideUR" value="6"/></p>
+				</div>
+			</p>
+		</div>
+	</div>
+	
+	<div style="float:left;">
+		<div id="anim"></div><br>
+		<textarea style="width:400px; height:100px" id="code" ></textarea><br>
+		<input type="button" value="Load Setting" onclick="updateModelUsingTextArea();">
+		<br><div id="log"></div><br>
+		<div>
+			<h4>How to use:</h4>
+			1- Load image via Choose Files button.<br>
+			2- Set the fields (Size, Speed, Frame...).<br>
+			3- Click Update button.<br>
+			4- If animation is correct, save the setting text (top right) in new file.<br>
+			5- <a href="/QuestCreator/submit" target="_blank">Submit your creation.</a> Send both image and setting.<br>
+			<br>
+			Note: You can load a setting via the Choose Files button.<br>
+			<a href="https://github.com/RainingChain/rainingchain/tree/master/server/client/img/sprite/actor" target="_blank">Sprite Examples</a>
+			<br><br>
+			<button onclick="demo()">Load Demo</button>
+		</div>
+	</div>
+</div>
+
+<script>
+var get = function(id){
+	return document.getElementById(id);
+}
+var player = {	//Input.mouse.move assume player in middle
+	x:150,
+	y:150,
+	angle:90,
+	spd:1,
+	sprite:{
+		startX:0,
+		anim:'walk',
+		timer:0,
+		sizeMod:1,
+	},
+};
+
+
+var demo = function(){
+	loadedImage.src = 'views/QuestCreator/SpritePreview_demo.png';
+	loadedImage.onload = function(){
+		spriteModel = SpriteModel.create("","",'',{
+			size:2,side:[3,2,1,0],
+		},[SpriteModel.Anim("walk",3,35,50,0.2)]);
+		
+		updateHtml();
+		updateSpriteModel();
+	}
+}
+
+var loadedImage = new Image();	//readFiles.image
+var spriteModel = null;	//readFiles.script
+
+var getSpriteModel = function(){
+	return spriteModel;
+}
+
+var updateSpriteModel = function(){	//set spriteModel using html
+	var size = +get('size').value;
+	var dir = +get('dir').value;
+	var side = [];
+	if(dir === 4){
+		side = [+get('sideR').value,+get('sideD').value,+get('sideL').value,+get('sideU').value];
+	} else {
+		side = [
+			+get('sideR').value,+get('sideDR').value,
+			+get('sideD').value,+get('sideDL').value,
+			+get('sideL').value,+get('sideUL').value,
+			+get('sideU').value,+get('sideUR').value
+		];
+	}
+	var loopReverse = get('cycle').value === 'loopReverse';
+	
+	var frame = get('frame').value;
+	var sizeX = loadedImage.width / frame;
+	var sizeY = loadedImage.height / dir;
+	var spd = get('spd').value;
+	
+	spriteModel = SpriteModel.create("","","",{
+		size:size,side:side,
+	},[
+		SpriteModel.Anim('walk',frame,sizeX,sizeY,spd,{loopReverse:loopReverse})
+	]);
+	updateTextArea();
+	/*
+	var div = get("anim");
+	var str = "To test animations: <br>";
+	var animList = Object.keys(sp.anim);
+	var keyList = ["a","s","d","f"];
+	for(var i in animList)	
+		str += keyList[i] + ' = ' + animList[i] + '<br>';
+	div.innerHTML = str;
+	*/
+}
+
+var updateModelUsingTextArea = function(){
+	var text = get('code').value;
+	if(!text)
+		return log('The setting is empty.');
+	try {
+		spriteModel = eval(text);
+		updateHtml();
+	} catch(err){
+		log('Invalid code.\r\n' + err.stack);
+	}
+}
+
+var updateHtml = function(){	//use spriteModel to update html
+	var model = getSpriteModel();
+	var a = model.anim.walk;
+	var side = JSON.stringify(model.side);
+	
+	get('size').value = model.size;
+	get('frame').value = a.frame;
+	get('spd').value = a.spd;
+	
+	var dir = model.side.length;
+	get('dir').value = dir;
+	if(dir === 4){
+		get('sideR').value = model.side[0];
+		get('sideD').value = model.side[1];
+		get('sideL').value = model.side[2];
+		get('sideU').value = model.side[3];
+	} else if(dir === 8){
+		get('sideR').value = model.side[0];
+		get('sideDR').value = model.side[1];
+		get('sideD').value = model.side[2];
+		get('sideDL').value = model.side[3];
+		get('sideL').value = model.side[4];
+		get('sideUL').value = model.side[5];
+		get('sideU').value = model.side[6];
+		get('sideUR').value = model.side[7];
+	} else {
+		log('Invalid side. Length should be 4 or 8.');
+	}
+	
+	get('cycle').value = a.loopReverse ? 'loopReverse' : 'loop';
+	
+	updateTextArea();
+}
+
+var updateTextArea = function(){	//set html using spriteModel
+	var model = getSpriteModel();
+	var a = model.anim.walk;
+	var side = JSON.stringify(model.side);
+	
+	var str = 'SpriteModel.create("","","",{\r\n'
+	+ '\tsize:' + model.size + ',side:' + side + ',\r\n' 
+	+ '},[SpriteModel.Anim("walk",' + a.frame + ',' + a.sizeX + ',' + a.sizeY + ',' + a.spd;
+
+	if(!a.loopReverse)
+		str += ',{loopReverse:false}';
+		
+	str += ')]);';
+	
+	get('code').value = str;
+}
+
+
+
+SpriteModel = {};
+SpriteModel.create = function(id,src,bumperBox,extra,anim){
+	var a = {
+		id:'',
+		src:"actor/main.png",
+		bumperBox:bumperBox,
+		img:null,	//client only
+		filteredImg:{},	//client only
+		size:1,
+		side:[0,1,2,3],
+		hpBar:0,
+		legs:0,
+		hitBox:'',
+		anim:{},
+		defaultAnim:"walk",
+		alpha:1,
+		canvasRotate:false,
+		lightingEffect:null,
+		offsetY:0,
+		offsetX:0,
+		showBorder:true,
+		isPlayerSprite:false,
+	};
+	for(var i in extra)
+		a[i] = extra[i];
+	for(var i = 0; i < anim.length; i++)
+		a.anim[anim[i].name] = anim[i];
+	return a;
+}
+
+SpriteModel.Anim = function(name,frame,sizeX,sizeY,spd,extra){	//part of model
+	var a = {
+		name:name,
+		startY:0,
+		frame:frame,
+		loopFrame:4,
+		sizeX:sizeX,
+		sizeY:sizeY,
+		dir:4,
+		loopReverse:true,
+		spd:spd,
+		walk:1,
+		next:'walk'
+	};
+	for(var i in extra)
+		a[i] = extra[i];
+	
+	return a;
+}
+
+Sprite = {};
+Sprite.loop = function(act){
+	var spriteFromDb = getSpriteModel();
+
+	var animFromDb = spriteFromDb.anim[act.sprite.anim];
+
+	var mod = animFromDb.walk ? act.spd : 1;
+
+	act.sprite.timer += animFromDb.spd * mod;	
+	if(!act.sprite.timer)
+		act.sprite.timer = 0;
+	
+	var rt = Math.floor(act.sprite.timer);
+	var frameL1 = animFromDb.frame-1;
+	
+	if(!animFromDb.loopReverse || frameL1 === 0){
+		act.sprite.startX = rt;
+	} else {
+		var slot = rt % (frameL1*2);
+		//[0121][0121][0121]
+		if(slot > frameL1)	//3 => 1
+			slot = 2*frameL1 - slot;
+		act.sprite.startX =  slot;
+	}		
+		
+	if(act.sprite.startX > frameL1 || act.sprite.startX < 0){
+		act.sprite.startX = 0;
+		act.sprite.timer = 0;
+	}
+	Draw.sprite(act);
+	ctx.fillText('Current animation: ' + act.sprite.anim,0,20);
+}
+
+
+var readFiles = function(files) {
+	var helper = function(file){
+		var reader = new FileReader();  
+		
+		if(file.type === "image/png"){
+			loadedImage.src = URL.createObjectURL(file);
+			loadedImage.onload = function(){
+				loadedImage = validateImg(loadedImage);
+			}
+		}
+		if(file.type === "text/plain" || file.type === "application/javascript")
+			reader.onload = function(e) {
+				get('code').value = e.target.result;
+				updateModelUsingTextArea();
+			}
+		reader.readAsText(file, "UTF-8");
+	}
+
+	for (var i = 0 ; i < files.length; i++){ //for multiple files          
+		helper(files[i]);
+	}
+}
+
+
+
+//###########################
+
+var log = function(txt){ $('#log').append(txt,'<br>'); }
+
+var ctx = document.getElementById("ctx").getContext("2d"); 
+ctx.font = '20px Arial';
+ctx.mozImageSmoothingEnabled = false;
+ctx.msImageSmoothingEnabled = false;
+ctx.imageSmoothingEnabled = false;
+	
+setInterval(function(){
+	ctx.clearRect(0,0,1000,1000);
+	if(loadedImage.src && getSpriteModel())
+		Sprite.loop(player);
+},40);
+
+Draw = {};
+Draw.sprite = function (act){
+	var spriteServer = act.sprite;
+	var spriteFromDb = getSpriteModel();
+	var animFromDb = spriteFromDb.anim[spriteServer.anim];
+
+	var sideAngle = Math.round(act.angle/(360/animFromDb.dir)) % animFromDb.dir;
+
+	var startX = spriteServer.startX * animFromDb.sizeX;
+	var startY = animFromDb.startY + spriteFromDb.side[sideAngle] * animFromDb.sizeY;
+
+	var sizeMod = spriteFromDb.size * spriteServer.sizeMod;
+		
+	ctx.drawImage(loadedImage, 
+		startX,
+		startY,
+		animFromDb.sizeX,
+		animFromDb.sizeY,
+		-animFromDb.sizeX/2*sizeMod + act.x,
+		-animFromDb.sizeY/2*sizeMod + act.y,
+		animFromDb.sizeX * sizeMod,
+		animFromDb.sizeY * sizeMod
+	);
+
+	ctx.fillStyle = 'black';
+	ctx.globalAlpha = 1;
+}
+
+/* Input */
+var Input = {};
+Input.key = function(code,dir,event){
+	/*if(code === 65) //a
+		player.sprite.anim = Object.keys(getSpriteModel().anim)[0];
+	if(code === 83) //s
+		player.sprite.anim = Object.keys(getSpriteModel().anim)[1];
+	if(code === 68) //d
+		player.sprite.anim = Object.keys(getSpriteModel().anim)[2];
+	if(code === 70) //f
+		player.sprite.anim = Object.keys(getSpriteModel().anim)[3];*/
+}
+Input.mouse = {};
+Input.mouse.move = function (evt){
+	var off = $('#ctx').offset();
+	var mx = evt.clientX - off.left;
+	var my = evt.clientY - off.top;
+	player.angle = Tk.atan2(my-player.y,mx - player.x);	
+}
+
+//Mouse Down/Up || Key Down/Up
+document.addEventListener('keydown', function(event) {	Input.key(event.keyCode,'down',event);});
+document.addEventListener("mousemove", Input.mouse.move);
+
+deepClone = function(obj){
+	if(obj === null || typeof(obj) !== 'object')
+        return obj;
+
+    var temp = obj.constructor();
+
+    for(var key in obj)
+        temp[key] = deepClone(obj[key]);
+    return temp;
+}
+
+
+var validateImg = function(img){
+	if(img.height * 2 > img.width)	//good
+		return img;
+	
+	var finalW = img.width/4;
+	var finalH = img.height*4;
+	/*var canvas = $('<canvas>').attr({width:finalW,height:finalH});
+	var ctx = canvas[0].getContext('2d');
+	var h = img.height;
+	ctx.drawImage(img,0,0,finalW,h,0,0,finalW,h);
+	ctx.drawImage(img,finalW,0,finalW,h,0,h,finalW,h);
+	ctx.drawImage(img,finalW*2,0,finalW,h,0,h*2,finalW,h);
+	ctx.drawImage(img,finalW*3,0,finalW,h,0,h*3,finalW,h);
+	
+
+	var newImg = new Image();
+	newImg.src = canvas[0].toDataURL('image/png');
+	*/
+	newImg = convertImage(img,11,3);
+	
+	log('It appears that the image was created with piskelapp 1-line format.<br>The image has been converted to the good row-based format.<br>Right-Click to download the full-size converted image.');	
+	log($('<img>')
+		.attr('src',newImg.src)
+		.css({width:finalW/2,height:finalH/2})
+	);
+	return newImg;
+	//button.href
+}
+
+/*
+  img:Image, image with all frames side by side
+  totalFrame:Number, total amount of frames in the image
+  framesPerRow:Number,
+  return Image, image with the right amount of frames per row
+*/
+var convertImage = function(img,totalFrame,framesPerRow){
+	if(framesPerRow === totalFrame)
+		return img;
+	
+	var frameWidth = img.width/totalFrame;
+	var frameHeight = img.height;
+	var rowCount = Math.ceil(totalFrame/framesPerRow);
+	
+	var finalImgWidth = frameWidth * framesPerRow;
+	var finalImgHeight = frameHeight * rowCount;
+	
+	var canvas = document.createElement('canvas');
+	canvas.width = finalImgWidth;
+	canvas.height = finalImgHeight;
+	
+	var ctx = canvas.getContext('2d');
+	
+	for(var i = 0; i < rowCount; i++){
+		var cropWidth = finalImgWidth;
+		if(i * finalImgWidth + finalImgWidth > img.width)	//incase row is not full (framesPerRow is not a factor of totalFrame)
+			cropWidth = img.width - i * finalImgWidth;
+		
+		ctx.drawImage(img,
+			i * finalImgWidth,0,
+			cropWidth,frameHeight,
+			0,i * frameHeight,
+			cropWidth,frameHeight
+		);
+	}
+	var newImg = new Image();
+	newImg.src = canvas.toDataURL('image/png');
+	return newImg;
+}
+
+
+
+
+</script>
+
+
+<% include ../partial/footer.html %>
+
+
