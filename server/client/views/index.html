@@ -1,63 +1,41 @@
 <% include partial/header.html %>
-<script src="../js/shared/BISON.js"></script>
-
-<script src="/socket.io/socket.io.js"></script>
-
-<script src="../js/main.js"></script>
-<script src="../js/Socket_client.js"></script>
-<script src="../js/Sign_client.js"></script>
-
-<script src="../js/Game.js"></script>
-<script src="../js/Account.js"></script>
-
-<script src="../js/Dialog.js"></script>
-
-<script src="../js/shared/CST.js"></script>
-<script src="../js/shared/ERROR.js"></script>
-<script src="../js/shared/Tk.js"></script>
-<script src="../js/shared/Stat.js"></script>
-<script src="../js/Dialog.js"></script>
-<script src="../js/Dialog_questList.js"></script>
-
+<script src="/js/shared/Tk.js"></script>
 <div class="container">
 	<div class="container jumbotron">
 		<div class="col-md-6">
-			<h1>Raining Chain</h1>
+			<h1>Raining Chain <span style="font-size:0.3em">BETA</span></h1>
 			<p class="lead">
 				Raining Chain is a free-to-play HTML5 <span style="border-bottom: 1px dashed #999;" title="Massively-Multiplayer Online Role-Playing Game">MMORPG</span>. 
-				Play with or against your friends and overcome original quests involving fast paced combat, puzzle and skill. No installation required.
+				Play with or against your friends and overcome original quests involving fast-paced combat, puzzle and skill. No installation needed. Not pay-to-win. 		
 			</p>
 			<p>
-				<!--signUp=true check Sign.init -->
-				<a class="btn btn-lg btn-success" href="/game?signUp=true" role="button">Sign Up</a>
-				<a class="btn btn-lg btn-success" href="/game" role="button">Sign In</a>
+				<a class="btn btn-lg btn-success" href="/game?s=up" role="button">Sign Up</a>
+				<a class="btn btn-lg btn-success" href="/game?s=in" role="button">Sign In</a>
 				<span style="margin-left:30px" <%- playerCount !== 0 ? "" : "hidden" %> >
 					Player<%- playerCount > 1 ? "s" : "" %> Online: <%- playerCount %>
 				</span>
-				<span <%- serverDown ? "" : "hidden" %> >
-					Server Status: <span class="shadow" style="color:red;">Down</span>
-				</span>
 			</p>
 		</div>
-		<div class="col-md-6">
-			<iframe hidden width="480" height="270" src="http://www.youtube.com/embed/Xnjb2ZshyHM?controls=0&showinfo=0&rel=0"></iframe>
-		
-		
-			<div id="carousel-example-generic" style="width:480px; height:270px; border:1px solid #333333;" class="carousel slide" data-ride="carousel">
-				<ol class="carousel-indicators"><li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li><li data-target="#carousel-example-generic" data-slide-to="1"></li><li data-target="#carousel-example-generic" data-slide-to="2"></li></ol>
+		<div class="col-md-6 hidden-xs">
+			<div id="carousel-example-generic" style="max-width:480px; max-height:270px; border:1px solid #333333;" class="carousel slide" data-ride="carousel">
+				<ol class="carousel-indicators">
+					<li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
+					<li data-target="#carousel-example-generic" data-slide-to="1"></li>
+					<!--<li data-target="#carousel-example-generic" data-slide-to="2"></li>-->
+				</ol>
 			 
 				<!-- Wrapper for slides -->
 				<div class="carousel-inner">
 					<div class="item active">
-						<img style="width:480px; height:270px;" src="../img/ui/carousel0.png" alt="...">
+						<img src="/img/ui/carousel0.png" alt="...">
 						<!--<div class="carousel-caption"><h3>Caption Text</h3></div>-->
 					</div>
 					<div class="item">
-						<img style="width:480px; height:270px;" src="../img/ui/carousel1.png" alt="...">
+						<img src="/img/ui/carousel1.png" alt="...">
 					</div>
-					<div class="item">
-						<img style="width:480px; height:270px;" src="../img/ui/carousel2.png" alt="...">
-					</div>
+					<!--<div class="item">
+						<img style="width:480px; height:270px;" src="/img/ui/carousel2.png" alt="...">
+					</div>-->
 				</div>
 			 
 				<a class="left carousel-control" href="#carousel-example-generic" role="button" data-slide="prev"><span class="glyphicon glyphicon-chevron-left"></span></a>
@@ -84,42 +62,163 @@
 				
 				<script>
 				$('#twitch').hide();
-				Tk.crossDomainAjax('http://api.twitch.tv/kraken/streams/RainingChain',function(data){
-					if(data.stream)
+				Tk.crossDomainAjax('https://api.twitch.tv/kraken/streams/RainingChain',function(data){
+					if(data && data.stream)
 						$('#twitch').show();
 				});
 				</script>
 				News
 			</h3>
+			<a class="form-signin" href="/patchNotes">Browse detailed patch notes.</a>
 			<ul class="list-group">
-				<!--<li class="list-group-item">
-					<strong>Tuesday, April 28th, 2015</strong><br>
-					I've just released a new version for the Quest Creator. It also includes an auto-updater and many new features. You can download the Quest Creator <a href="/QuestCreator">here</a>. This new version uses WPF instead of Winforms. 
-				</li>-->
+				<!-- update Server.getUpdateMessage and /patchNotes ApatchNotes -->
+		
+				<li class="list-group-item">
+					<strong>Thursday, September 24th, 2015</strong><br>
+					I released the first main story quest of the game: Save The Database. 
+					Certain bosses now shoot less bullets and have lighting effect and particle effect turned off.
+					I reduced the knockback from monsters.
+					The password recovery window now works correctly.
+					Changing weapon now also changes your current abilities for ones you can use.
+				</li>
+	
+				<li class="list-group-item">
+					<strong>Saturday, September 19th, 2015</strong><br>
+					I added 12 new abilities and 6 new bullet sprites. 
+					Each ability now requires a specific type of weapon to be used.
+					The ability window has been changed.
+					I added an option to not delete chat message automatically.
+					I added a quick way to change quality settings.
+				</li>
+				
+				<li class="list-group-item">
+					<strong>Wednesday, September 16th, 2015</strong><br>
+					The Ice Boss in Boss Battle has been changed. 
+					Drawing rotated bullets is now a lot faster.
+					Equip boost values now depends on the level of the equip. 
+					Increasing the tier of an equip now requires Equip Exp rather than regular Exp. This means upgrading your equip no longer affects your leveling progress. 
+					A daily tip has been added on the sign in page. 
+					Quest rating is now embed inside the quest complete window.
+					I updated the <a href="/credit" target="_blank">credit</a> page.
+				</li>
+				
+				<li class="list-group-item">
+					<strong>Sunday, September 6th, 2015</strong><br>
+					Changing map while in a party no longer causes the whole party to be teleported.
+					Chat messages become invisible after 1 minute. Moving the mouse over the chat will display hidden messages.
+					The movement script now takes into consideration the frame rate.
+					The player Dieu corrected grammar errors in the dialogues.
+					Friendly NPCs now have a green HP bar.					
+				</li>
 				
 				
 				<li class="list-group-item">
-					<strong>Thursday, April 30th, 2015</strong><br>
-					I created a subreddit on Raining Chain and I posted all the quest feedback collected over the last months. You can check it <a href="http://www.reddit.com/r/rainingchain">here</a>. 
+					<strong>Saturday, September 5th, 2015</strong><br>
+					The list of online players now displays the map location and the current quest of every player.					
+					The world map has been fixed. The maps are now correctly rendered on IE and Safari.
+					I added a Use button on the equip popup.
 				</li>
+				
 				<li class="list-group-item">
-					<strong>Wednesday, April 29th, 2015</strong><br>
-					I just finished my last school exam. This means I will now have plenty time to work on Raining Chain! 
+					<strong>Friday, September 4th, 2015</strong><br>
+					The new graphics are finally done! This impacts both the maps and the sprites. The art style is now a lot more consistent. 
+					I also implemented a system to draw the maps dynamically. The maps no longer need to be pre-rendered. This means it is now possible to create randomly generated maps.
+					If you find any graphical glitches, please let me know.
 				</li>
+				
 				<li class="list-group-item">
-					<strong>Monday, April 27th, 2015</strong><br>
-					The major update this week is resizable game screen. Before, the game could only be ran at 1280x720 but now it can be scaled in any format. I also revamped the home page of the website to include the News section and social media icons. Finally, I made a new dialogue box when starting a new quest that makes challenges more obvious.
+					<strong>Saturday, August 22nd, 2015</strong><br>
+					Drops on the ground are now animated and move towards the player.
+					Many quests now support up to 8 players in the same party.
+					I released a new <a href="/tutorial/html" target="_blank">HTML Interface</a> tutorial on Youtube.
+					There is now a button to quickly abandon a quest next to the hint.
+				</li>				
+				<li class="list-group-item">
+					<strong>Friday, August 21st, 2015</strong><br>
+					I added a list of useful advices accessible via the Tips button.
+					Abilities no longer uncharge when teleporting or dying.
+					I added 2 new abilities. Chain is a melee projectile that pulls touched enemies towards you.
+					Regen Tornado is a healing ability that also pushes enemies away. 
+					The abilities can be unlocked via the 2 new achievements: reaching a lvl 10 & 15 maps.
 				</li>
+				
+	
+				<li class="list-group-item">
+					<strong>Thursday, August 20th, 2015</strong><br>
+					I created a new map transition system. Instead of fading out, the camera slides between the maps.
+					Enemies explode into particles upon dying.
+					Attacking with melee now shakes the screen.
+					I fixed a major bug which was causing lost of data in websocket data package.
+					The party interface over the chat has been improved.
+					Side quests are now always available.
+				</li>				
+					
+					
+				
+					
+					
+				
+				
+				
 			</ul>
-			<a class="form-signin" href="/patchNotes" style="display:block;cursor:pointer;">Browse all news.</a>
+			<a class="form-signin" href="/patchNotes">Browse all news.</a>
 			
 			
 			
 		</div>
-		<div class="col-lg-4">
+		<div class="col-lg-4 hidden-xs hidden-sm">
 			<h3>Quest Overview</h3>
-			<div class="row" id="questOverview">
-			</div>
+			<div class="row" id="questOverview"></div>
+			<script>
+			/*get QUEST_DATA: 
+			var tmp = {};
+			for(var i in exports.QueryDb.DB.quest.data){
+				var q = exports.QueryDb.DB.quest.data[i];
+				tmp[i] = {name:q.name,description:q.description,author:q.author,id:q.id};
+			}*/
+
+			$(document).ready(function(){
+				var full = $('#questOverview');
+				var QUEST_DATA = {"Qsystem":{"name":"Default Name","description":"A super awesome quest!","author":"rc","id":"Qsystem"},"QfirstTown":{"name":"","description":"A super awesome quest!","author":"rc","id":"QfirstTown"},"Qtutorial":{"name":"GPS Tutorial","description":"Teaches you the basic of Raining Chain.","author":"rc","id":"Qtutorial"},"Qdebug":{"name":"Debug","description":"A super awesome quest!","author":"Admin","id":"Qdebug"},"Qhighscore":{"name":"Global Highscore","description":"A super awesome quest!","author":"rc","id":"Qhighscore"},"Qbtt000":{"name":"Break Targets","description":"Find the fastest way to break 10 targets.","author":"rc","id":"Qbtt000"},"QlureKill":{"name":"Lure & Kill","description":"Kill monsters by luring them on the red mat.","author":"rc","id":"QlureKill"},"QprotectFirstTown":{"name":"Protect Town","description":"Protect villagers from waves of monsters.","author":"rc","id":"QprotectFirstTown"},"QtowerDefence":{"name":"Tower Defence","description":"Place towers to kill waves of enemies trying to reach the bottom of the screen.","author":"rc","id":"QtowerDefence"},"QbulletHeaven":{"name":"Bullet Heaven","description":"Survive as long as you can in a cave filled with deadly towers.","author":"rc","id":"QbulletHeaven"},"QpuzzleBridge":{"name":"Puzzle & Bridge","description":"Puzzle where you need to move blocks to form a bridge.","author":"rc","id":"QpuzzleBridge"},"Qdarkness":{"name":"Darkness","description":"Retrieve a precious object lost in a mysterious cave haunted by ghosts.","author":"rc","id":"Qdarkness"},"QbaseDefence":{"name":"Base Defence","description":"Kill waves of monsters before they reach your base using the right ability.","author":"rc","id":"QbaseDefence"},"Qminesweeper":{"name":"Minesweeper","description":"Play the puzzle game minesweeper.","author":"rc","id":"Qminesweeper"},"Qfifteen":{"name":"15-Puzzle","description":"Place 15 blocks in the right order by pushing them.","author":"rc","id":"Qfifteen"},"Qrgb":{"name":"RGB","description":"You must restore the RGB setting by activating 2 switches guarded by enemies.","author":"rc","id":"Qrgb"},"QkillTheDragon":{"name":"Kill The Dragon","description":"","author":"rc","id":"QkillTheDragon"},"QaggressiveNpc":{"name":"Bipolarity","description":"Activating a switch can have weird effects on villagers.","author":"rc","id":"QaggressiveNpc"},"QcollectFight":{"name":"Collect & Fight","description":"In a parallel universe, you're a pumpking harvesting resources to become stronger in preparation for an epic battle.","author":"rc","id":"QcollectFight"},"QduelLeague":{"name":"Duel League","description":"Kill enemies in your zone to send enemies in your rivals' zone until they die.","author":"rc","id":"QduelLeague"},"QkingOfTheHill":{"name":"King of the Hill","description":"Stay on the hill as long as possible while killing rivals.","author":"rc","id":"QkingOfTheHill"},"QcatchThemAll":{"name":"Catch Them All","description":"Catch monsters by first weakening them. When the time runs out, use them to kill the boss.","author":"rc","id":"QcatchThemAll"},"Qsoccer":{"name":"Soccer","description":"Play soccer against your friends! Push the ball in the goal to score. First to 5 points win.","author":"rc","id":"Qsoccer"},"QpuzzleSwitch":{"name":"Puzzle & Switch","description":"Activate switches and push blocks to complete 5 puzzles.","author":"rc","id":"QpuzzleSwitch"}};
+				var list = [
+					'QlureKill','QtowerDefence','QcollectFight',
+					'Qsoccer','QpuzzleSwitch','QbulletHeaven',
+					'QprotectFirstTown','QaggressiveNpc','Qbtt000',
+					'QpuzzleBridge','QkingOfTheHill','Qdarkness',
+					'Qminesweeper','Qrgb','QduelLeague',
+					'QbaseDefence','QcatchThemAll','Qfifteen',
+				];
+				
+				for(var i = 0 ; i < list.length; i++){
+					var id = list[i];
+					var div = $('<div class="col-xs-4">');
+					var a = $('<a class="thumbnail">');
+					var imgSrc = '/quest/' + id + '/' + id + '-small.png';
+					var img = $('<img class="img-responsive">')
+						.attr({src:imgSrc,title:'_'});	//title must not be empty...
+					full.append(div.append(a.append(img)));
+					
+					//dupe of Dialog.questThumbnail
+					var sizeFactor = 0.7;
+					var obj = $('<img>')
+						.attr({src:imgSrc,width:400*sizeFactor,height:300*sizeFactor})
+						.css({border:'2px solid black'});
+					
+					var q = QUEST_DATA[id];
+					var auth = q.author ? ' (by ' + q.author + ') ' : '';
+					var thumbText = $('<div>')
+						.css({fontSize:(1.75*sizeFactor) + 'em',width:400*sizeFactor,background:'white'})
+						.html('<u>' + q.name + '</u>' + auth + ':<br><span style="font-size:0.85em">' + q.description + '<span>');
+					var thumbnail = $('<div>')
+						.css({display:'inline-block',verticalAlign:'top',margin:'10px 10px'})
+						.append(obj,'<br>',thumbText);				
+					
+					img.tooltip({
+						content:thumbnail.html()
+					});
+				}
+			});
+			</script>
 		</div>
 		
 		<div class="col-lg-3">
@@ -129,10 +228,11 @@
 				<script>
 				var highscore = <%- highscore ? JSON.stringify(highscore) : "null" %>;
 				$(document).ready(function(){
-					if(!highscore) return $('#highscore').hide();
+					if(!highscore || Object.keys(highscore).length === 0) 
+						return $('#highscore').hide();
 					var array = [['Rank','Name','Quest']];
 					for(var i = 0 ; i < highscore.length; i++){
-						array.push([highscore[i].rank,highscore[i].username,highscore[i].value]);
+						array.push([highscore[i].rank,highscore[i].name,highscore[i].value]);
 					}
 					$("#highscore").append(Tk.arrayToTable2(array).addClass('table'));
 				});
@@ -148,12 +248,12 @@
 				<script>
 				var competition = <%- competition ? JSON.stringify(competition) : "null" %>;
 				$(document).ready(function(){
-					if(!competition) return $('#competition').hide();
+					if(!competition || Object.keys(competition).length === 0) return $('#competition').hide();
 					var array = [['Rank','Name','Score']];
 					
 					for(var i = 0 ; i < competition.score.length && i < 5; i++){
 						var info = competition.score[i];
-						array.push([i+1,info.username,info.value]);
+						array.push([i+1,info.name,info.value]);
 					}
 					$("#competition").append(Tk.arrayToTable2(array).addClass('table'));
 				});
@@ -161,30 +261,6 @@
 			</div>
 			<br>
 		</div>
-		
-		<!--<div class="col-lg-4">
-			<h4>Twitch</h4>
-			<p style="margin-bottom:30px">
-				I host livestreams frequently on <a target="_blank" href="http://www.twitch.tv/rainingchain">Twitch</a>
-				where I create new quests, fix bugs, and answer viewers questions.
-			</p>
-			
-			<h4>Javascript Tutorial</h4>
-			<p style="margin-bottom:30px">
-				<a target="_blank" href="/tutorial/html5">Youtube video series</a> about creating a simple HTML5 game in Javascript using Canvas.
-			</p>
-			
-			<h4>Blog</h4>
-			<p style="margin-bottom:30px">
-				Check out my <a target="_blank" href="http://blog.rainingchain.com">Blog</a> where I cover the different concepts behind creating a HTML5 MMORPG using Javascript, Canvas, NodeJs and Socket.io.
-			</p>
-			
-			<h4>Quest Creator</h4>
-			<p style="margin-bottom:30px">
-				Contribute to the project with the easy-to-use <a href="http://www.rainingchain.com/contribution/">Quest Creator</a>.
-				<br><iframe width="320px" height="180px" src="http://www.youtube.com/embed/Xcan4jfDjYg?controls=0&showinfo=0&rel=0"></iframe>
-			</p>
-		</div>-->
 	</div>
 </div>
 <% include partial/footer.html %>

@@ -1,103 +1,134 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Server = require2('Server'), Message = require2('Message'), Debug = require2('Debug'), Main = require2('Main'), QuestVar = require2('QuestVar'), Quest = require2('Quest');
-var Main = require3('Main');
-Main.Quest = function(overwrite){
+
+var Challenge, Message, Main, Quest;
+global.onReady(function(){
+	Challenge = rootRequire('server','Challenge'); Message = rootRequire('shared','Message'); Main = rootRequire('shared','Main'); Quest = rootRequire('server','Quest');
+
+	var Command = rootRequire('shared','Command');
+	Command.create(CST.COMMAND.questSetChallenge,Command.MAIN,[ //{
+		Command.Param('string','Challenge Id',false),
+	],Main.setChallenge); //}
+});
+var Main = rootRequire('shared','Main');
+
+
+//check QuestVar.verifyIntegrity for custom quest variable
+Main.Quest = function(dbData){
 	if(!SERVER) 
 		return {};
+		
 	var tmp = {};
-	overwrite = overwrite || {};
-	var list = Quest.getMainVarList();
+	dbData = dbData || {};	//assume dbData is already integrity tested
+	var list = Quest.getDefaultVariable();
 	for(var i in list){
-		tmp[list[i]] = Main.Quest.part(Quest.get(list[i]),overwrite[list[i]]);
+		tmp[i] = dbData[i] || list[i];
 	}
 	return tmp;	
 }
-Main.Quest.part = function(quest,overwrite){
-	return overwrite || {
-		_rewardScore:0,
-		_complete:0,
-		_completeToday:0,
-		_started:0,
-		_startTime:0,
-		_challenge:Quest.getChallengeList(quest),
-		_challengeDone:Quest.getChallengeList(quest),
-		_highscore:Quest.getHighscoreList(quest),
-		_skillPlot:[0,0,0,0,0,0,0],
-		_permData:null,
+Main.Quest.Part = function(quest){
+	return {
+		complete:0,
+		completeToday:0,
+		completeTime:0,
+		rewardScore:0,
+		started:false,
+		startTime:0,
+		challenge:'',
+		challengeDone:Quest.getChallengeList(quest),
+		highscore:Quest.getHighscoreList(quest),
+		skillPlot:false,
+		permData:null,
 		canStart:true,
 	};
 }
 
-
-Main.Quest.compressDb = function(quest,main,qid){	
-	quest.username = main.username;
-	quest.quest = qid;
-	delete quest.canStart;
-	return quest;
+Main.Quest.compressDb = function(mq,main,qid){
+	if(!mq.started && !mq.skillPlot) 
+		return null;
+		
+	mq.username = main.username;
+	mq.quest = qid;
+	
+	var chalDone = [];
+	for(var i in mq.challengeDone)
+		chalDone.push({id:i,complete:!!mq.challengeDone[i]});
+	mq.challengeDone = chalDone;
+	
+	var highscore = [];
+	for(var i in mq.highscore)
+		highscore.push({id:i,value:mq.highscore[i]});
+	mq.highscore = highscore;
+	
+	delete mq.canStart;
+	delete mq.permData;
+	
+	if(!Main.Quest.getDbSchema()(mq))
+		ERROR(3,'data not following schema',JSON.stringify(Main.Quest.getDbSchema().errors(mq)),mq);
+	
+	return mq;
 }
 
-Main.Quest.uncompressDb = function(quest){ //quest= main.quest[i]
-	quest.canStart = true;
-	delete quest.username;
-	delete quest.quest;
-	return quest;
+Main.Quest.uncompressDb = function(mq){ //mq= main.quest[i]
+	if(!Main.Quest.getDbSchema()(mq))
+		ERROR(3,'data not following schema',JSON.stringify(Main.Quest.getDbSchema().errors(mq)),mq);
+	
+	var q = Quest.get(mq.quest);
+	if(!q || !q.inMain)
+		return null;	//invalid
+	
+	mq.canStart = true;
+	delete mq.username;
+	delete mq.quest;
+	mq.permData = null;
+	
+	//challenge integrity
+	var newChalDone = Quest.getChallengeList(q);
+	
+	for(var i = 0; i < mq.challengeDone.length; i++){
+		if(newChalDone[mq.challengeDone[i].id] !== undefined)
+			newChalDone[mq.challengeDone[i].id] = mq.challengeDone[i].complete;
+	}
+		
+	mq.challengeDone = newChalDone;
+	
+	if(!newChalDone[mq.challenge])	//if challenge not longer exist
+		mq.challenge = '';
+		
+	
+	//highscore integrity
+	var newHigh = Quest.getHighscoreList(q);
+	
+	for(var i = 0; i < mq.challengeDone.length; i++){
+		if(newHigh[mq.highscore[i].id] !== undefined)
+			newHigh[mq.highscore[i].id] = mq.highscore[i].value;
+	}
+	
+	mq.highscore = newHigh;
+	
+	
+	return mq;
 }
 
-Main.Quest.uncompressDb.verifyIntegrity = function(quest){	//WHOLE MAIN.QUEST, quest= main.quest
-	//If new or deleted quest
-	//check QuestVar.verifyIntegrity for custom quest variable
-	var allQuest = QuestVar.getInitVar.all();
-	
-	for(var i in quest){
-		if(!allQuest[i]){ 	//delete quest
-			delete quest[i];
-		}
-	}
-	
-	for(var i in allQuest){
-		var q = Quest.get(i);
-		if(!q.inMain) continue;	//not part of
-	
-		if(!quest[i]){ 	//aka new quest
-			quest[i] = Main.Quest.part(q);
-			continue; 
-		}	
-		
-		//challenge integrity
-		var chal = Quest.getChallengeList(Quest.get(i));
-		for(var j in chal){	//add new version challenge
-			quest[i]._challengeDone = quest[i]._challengeDone || {};
-			quest[i]._challenge = quest[i]._challenge || {};
-			if(typeof quest[i]._challengeDone[j] === 'undefined'){	
-				quest[i]._challengeDone[j] = 0;
-				quest[i]._challenge[j] = 0;
-			}
-		}
-		for(var j in quest[i]._challengeDone){	//removed challenge
-			if(typeof chal[j] === 'undefined'){	
-				delete quest[i]._challengeDone[j];
-				delete quest[i]._challenge[j];
-			}
-		}
-		
-		//highscore integrity
-		var high = Quest.getHighscoreList(Quest.get(i));
-		for(var j in high){	//add new version highscore
-			quest[i]._highscore = quest[i]._highscore || {};
-			
-			if(typeof quest[i]._highscore[j] === 'undefined'){	
-				quest[i]._highscore[j] = null;
-			}
-		}
-		for(var j in quest[i]._highscore){	//remove highscore
-			if(typeof high[j] === 'undefined'){	
-				delete quest[i]._highscore[j];
-			}
-		}
-	}
-	return quest;
+var schema;
+Main.Quest.getDbSchema = function(){
+	schema = schema || require('js-schema')({
+		challenge : String,
+        complete:Number,
+		completeTime:Number,
+		completeToday:Number,
+		quest:String,
+		challengeDone : Array.of({id:String,complete:Boolean}),
+        highscore : Array.of({id:String,value:[Number,null]}),
+        rewardScore : Number,
+        skillPlot : Boolean,
+        started : Boolean,
+		startTime:Number,
+        username : String,
+		'*':null,
+	});
+	return schema;	
 }
 
 Main.KillCount = function(killCount){
@@ -112,11 +143,23 @@ Main.KillCount = function(killCount){
 }
 
 Main.KillCount.compressDb = function(killCount){	
-	return killCount;
+	return Tk.objectToArray(killCount,'id','count');
 }
 
 Main.KillCount.uncompressDb = function(killCount){
+	killCount = Tk.arrayToObject(killCount,'id','count');
 	return Main.KillCount(killCount);
+}
+Main.KillCount.getDbSchema = function(){	//be careful, schema is already defined
+	return Array.of({
+		id:String,
+		count:Number,
+		'*':null
+	})
+}
+
+Main.KillCount.reset = function(main,zone,completeToday){
+	main.killCount[zone] = completeToday <= 3 ? 0 : completeToday * completeToday - 9;
 }
 
 Main.QuestActive = function(questActive){
@@ -131,60 +174,48 @@ Main.QuestActive.uncompressDb = function(questActive){
 	return questActive;
 }
 
-
-
 //#################
 
 Main.quest = {};
-Main.quest.haveDoneTutorial = function(main){
-	if(Debug.isActive()) return true;
-	if(Server.isAdmin(main.id)) return true;
-	return !!Main.hasCompletedQuest(main,'Qtutorial');
+Main.quest.haveCompletedTutorial = function(main){
+	return Main.haveCompletedQuest(main,CST.QTUTORIAL);
 }
 
-Main.quest.onDeath = function(main,wholePartyDead,killer){
-	if(!main.questActive) return false;
-	var ret = Quest.get(main.questActive).event._death(main.id,wholePartyDead,killer);
-	
-	if(!wholePartyDead && ret === true)
-		return true;	//aka turn player into grave
-	return false;	
-}
-
-Main.getQuestVar = function(main,id){
-	if(id) return main.quest[id];
-	if(main.questActive) return main.quest[main.questActive];
-	return main.quest;
+Main.quest.onDeath = function(main,killer,partyDead){
+	if(!main.questActive) 
+		return;
+	return Quest.get(main.questActive).event._death(main.id,killer,partyDead);	
 }
 
 Main.updateQuestHint = function(main){
 	var old = main.questHint;
 	main.questHint = main.questActive ? 
-		Quest.get(main.questActive).event._hint(main.id) || 'None.'
+		Quest.get(main.questActive).event._hint(main.id) || 'No hint.'
 		: '';
 	if(old !== main.questHint)
-		Main.setFlag(main,'questHint');
+		Main.setChange(main,'questHint',main.questHint);
 }
 
 Main.setQuestPermData = function(main,qid,data){
-	main.quest[qid]._permData = data;
-}
-Main.getQuestPermData = function(main,qid,data){
-	return main.quest[qid]._permData;
+	main.quest[qid].permData = data;
 }
 
+Main.getQuestPermData = function(main,qid,data){
+	return main.quest[qid].permData;
+}
 
 Main.getQuestActive = function(main){
 	return main.questActive || null;
 }
 
-Main.hasCompletedQuest = function(main,quest){
-	return main.quest[quest]._complete;
+Main.haveCompletedQuest = function(main,quest){
+	return main.quest[quest].complete;
 }
+
 Main.getCompletedQuestCount = function(main){
 	var questCount = 0;
 	for(var i in main.quest) 
-		if(Main.hasCompletedQuest(main,i))
+		if(Main.haveCompletedQuest(main,i) && i !== CST.QTUTORIAL)
 			questCount++;
 	return questCount;
 }
@@ -200,13 +231,40 @@ Main.updateCanStartQuest = function(main,neverSetFlag){
 				str += Message.generateTextLink("exports.Dialog.open('quest','" + i + "');",q.name);
 				str += '.';
 				Message.addPopup(main.id,str); 
-				Main.setFlag(main,'quest',i);
+				Main.setChange(main,'quest,'+i,main.quest[i]);
 			}
 		}
 	}
 }
 
-
+Main.setChallenge = function(main,qid,id){
+	var mq = main.quest[qid];
+	if(!mq) 
+		return;
+	
+	if(!id){
+		main.quest[qid].challenge = '';
+		Main.addMessage(main,'Challenge turned off.');
+		Main.playSfx(main,'select');
+		Main.setChange(main,'quest,' + qid,main.quest[qid]);
+		return;
+	}
+	var chal = Challenge.get(id);
+	if(!chal || chal.quest !== qid) 
+		return;
+	
+	if(main.questActive){
+		return Main.error(main,'You have already started this quest. You can\'t change challenges anymore.');
+	}
+	if(!Main.haveCompletedQuest(main,qid)){
+		return Main.error(main,'You need to complete this quest at least once before trying challenges.');
+	}
+	
+	mq.challenge = id;
+	Main.addMessage(main,'Challenge ' + chal.name + ' turned on.');
+	Main.playSfx(main,'select');
+	Main.setChange(main,'quest,' + qid,main.quest[qid]);
+}
 //###################
 
 })(); //{

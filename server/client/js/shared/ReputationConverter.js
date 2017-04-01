@@ -1,25 +1,34 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var ReputationGrid = require2('ReputationGrid'), Message = require2('Message'), Actor = require2('Actor'), Main = require2('Main');
-var Img = require4('Img'), Stat = require4('Stat');
-var ReputationConverter = exports.ReputationConverter = {};
+var ReputationGrid, Message, Actor, Main, Img, Stat;
+global.onReady(function(){
+	ReputationGrid = rootRequire('shared','ReputationGrid'); Message = rootRequire('shared','Message'); Actor = rootRequire('shared','Actor'); Main = rootRequire('shared','Main');
+	Img = rootRequire('client','Img',true); Stat = rootRequire('shared','Stat',true);
+});
+var ReputationConverter = exports.ReputationConverter = function(extra){
+	this.id = '';
+	this.name = '';
+	this.description = '';	
+	this.func = null; //function(ReputationGrid): ReputationGrid
+	this.getButtonAppend = null;	//function(): HTMLElement
+	Tk.fillExtra(this,extra);
+};
 
 var DB = {};
 var GROUP = [];
 
 ReputationConverter.create = function(id,name,description,func,getButtonAppend){
-	var tmp = {
-		id:id || '',
-		name:name || '',
-		description:description || '',
-		func:func || function(a){ return a; },
-		getButtonAppend:getButtonAppend || function(){ return ''; },
-	};
+	var tmp = new ReputationConverter({
+		id:id,
+		name:name,
+		description:description,
+		func:func,
+		getButtonAppend:getButtonAppend,
+	});
 	DB[id] = tmp;
 	return tmp;
 }
-
 
 ReputationConverter.get = function(id){
 	return DB[id];
@@ -32,7 +41,7 @@ ReputationConverter.getConvertedGrid = function(listConverter){
 	for(var i in listConverter){
 		var conv = ReputationConverter.get(listConverter[i]);
 		if(!conv){
-			ERROR(3,'converter doesnt exist: ' + listConverter[i]);
+			ERROR(3,'converter doesnt exist: ',listConverter[i]);
 			continue;			
 		}
 		rawGrid = conv.func(rawGrid);
@@ -40,24 +49,29 @@ ReputationConverter.getConvertedGrid = function(listConverter){
 	return rawGrid;	
 }
 
-
 var helper = function(before,after){
 	if(!Array.isArray(before)) before = [before];
 	if(!Array.isArray(after)) after = [after];
 	
+	if(before.length !== after.length){
+		ERROR(3,'before and after must have same length');
+		return function(grid){
+			return grid;
+		}
+	}
 	return function(grid){
 		var b = grid.base;	//2d array
 		for(var i in b){
 			for(var j in b[i]){
 				for(var k in before)
-					if(b[i][j].stat === before[k])
+					if(b[i][j].stat === before[k]){
 						b[i][j].stat = after[k];
+					}
 			}
 		}
 		return grid;
 	}
 }
-
 
 var helper2 = function(icon1,icon2){
 	var button = $('<button>');
@@ -70,6 +84,12 @@ var helper2 = function(icon1,icon2){
 }
 
 
+ReputationConverter.getGroupViaLevel = function(lvl){
+	for(var i = 0 ; i < GROUP.length; i++)
+		if(GROUP[i].lvl === lvl)
+			return GROUP[i];
+	return null;
+}
 ReputationConverter.Group = function(lvl,list){
 	var tmp = {
 		list:list,
@@ -112,11 +132,11 @@ ReputationConverter.findGroup = function(conv){
 		helper('dmg-melee','dmg-range'),
 		function(){ return helper2(Stat.get('dmg-melee').icon,Stat.get('dmg-range').icon); }
 	);
-	ReputationConverter.create('dmgRangeMagic','Dmg RG -> Dmg MG','Convert every Dmg Range Boost into Dmg Magic Boost',
+	ReputationConverter.create('dmgRangeMagic','Dmg RG -> Dmg MG','Convert every Dmg Range Boost into Dmg Arcane Boost',
 		helper('dmg-range','dmg-magic'),
 		function(){ return helper2(Stat.get('dmg-range').icon,Stat.get('dmg-magic').icon); }
 	);
-	ReputationConverter.create('dmgMagicMelee','Dmg MG -> Dmg ML','Convert every Dmg Magic Boost into Dmg Melee Boost',
+	ReputationConverter.create('dmgMagicMelee','Dmg MG -> Dmg ML','Convert every Dmg Arcane Boost into Dmg Melee Boost',
 		helper('dmg-magic','dmg-melee'),
 		function(){ return helper2(Stat.get('dmg-magic').icon,Stat.get('dmg-melee').icon); }
 	);
@@ -147,19 +167,19 @@ ReputationConverter.findGroup = function(conv){
 		function(){ return helper2(Stat.get('mana-max').icon,Stat.get('hp-max').icon);}
 	);
 
-	ReputationConverter.create('critAmount','Crit -> Bullet Amount','Convert every Crit Boost into Bullet Amount Boost',
-		helper(['crit-chance','crit-magn'],['bullet-amount','bullet-amount']),
-		function(){ return helper2(Stat.get('crit-chance').icon,Stat.get('bullet-amount').icon);}
+	ReputationConverter.create('critChanceMagn','Crit Chance -> Crit Magn','Convert every Crit Chance into Crit Magn Boost',
+		helper('crit-chance','crit-magn'),
+		function(){ return helper2(Stat.get('crit-chance').icon,Stat.get('crit-magn').icon);}
 	);
-	ReputationConverter.create('amountSpd','Bullet Amount -> Atk Spd','Convert every Bullet Amount Boost into Atk Spd Boost',
-		helper(['bullet-amount'],['atkSpd']),
-		function(){ return helper2(Stat.get('bullet-amount').icon,Stat.get('atkSpd').icon);}
+	ReputationConverter.create('critMagnSpd','Crit Magn -> Atk Spd','Convert every Crit Magn Boost into Atk Spd Boost',
+		helper(['crit-magn'],['atkSpd']),
+		function(){ return helper2(Stat.get('crit-magn').icon,Stat.get('atkSpd').icon);}
 	);
-	ReputationConverter.create('spdCrit','Atk Spd -> Crit','Convert every Atk Spd Boost into Crit Boost',
-		helper(['atkSpd'],['crit-magn']),
-		function(){ return helper2(Stat.get('atkSpd').icon,Stat.get('crit-magn').icon);}
+	ReputationConverter.create('spdCritChance','Atk Spd -> Crit Chance','Convert every Atk Spd Boost into Crit Chance Boost',
+		helper(['atkSpd'],['crit-chance']),
+		function(){ return helper2(Stat.get('atkSpd').icon,Stat.get('crit-chance').icon);}
 	);
-
+	
 	ReputationConverter.create('changeMagn','Chance -> Magn','Convert every Status Chance into Status Magn Boost',
 		helper(['burn-chance','chill-chance','stun-chance','bleed-chance','knock-chance','drain-chance'],
 			['burn-magn','chill-magn','stun-magn','bleed-magn','knock-magn','drain-magn']),
@@ -181,8 +201,8 @@ ReputationConverter.findGroup = function(conv){
 	ReputationConverter.Group(3,['dmgMeleeRange','dmgRangeMagic','dmgMagicMelee']);
 	ReputationConverter.Group(6,['dmgFireCold','dmgColdLightning','dmgFireLightning']);
 	ReputationConverter.Group(10,['hpLeech','leechMana','manaHp']);
-	ReputationConverter.Group(14,['critAmount','amountSpd','spdCrit']);
-	//ReputationConverter.Group(19,['changeMagn','magnTime','timeChance']);	//TODO
+	ReputationConverter.Group(14,['critChanceMagn','critMagnSpd','spdCritChance']);
+	//ReputationConverter.Group(19,['changeMagn','magnTime','timeChance']);
 })(); //{
 /*
 

@@ -1,23 +1,44 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Main = require2('Main'), Message = require2('Message'), Achievement = require2('Achievement');
-var Actor = require3('Actor');
-Actor.Skill = function(exp,lvl){
+var Main;
+global.onReady(function(){
+	Main = rootRequire('shared','Main');
+	
+	var Command = rootRequire('shared','Command');
+	Command.create(CST.COMMAND.lvlUp,Command.ACTOR,[ //{
+	],Actor.levelUp); //}
+
+});
+var Actor = rootRequire('shared','Actor');
+
+var LVL_EXPONENTIAL_START = 20;
+
+Actor.Skill = function(exp,lvl,equipExp){
 	return {
 		exp:exp||0,	
 		lvl:lvl || 0,
+		equipExp:equipExp||0,
 	}
 }
 
-Actor.SkillPlot = function(quest,num,type){
+Actor.Skill.getDbSchema = function(){
+	return {exp:Number,lvl:Number,equipExp:Number}
+}
+
+Actor.Skill.compressDb = function(what){
+	return what;
+}
+Actor.Skill.uncompressDb = function(what){
+	return Actor.Skill(what.exp,what.lvl,what.equipExp);
+}
+
+Actor.SkillPlot = function(quest,type){
 	return {
 		quest:quest,
-		num:num,
 		type:type
 	};	
 }
-
 
 //###############
 
@@ -32,14 +53,23 @@ Actor.addExp = function(act,num,useGEM){
 	if(num < 0)
 		return ERROR(4,'exp to add is less than 0',num);
 		
-	if(useGEM !== false){
+	if(useGEM !== false)
 		num *= Actor.getGEM(act);
-	}
-	
-	
+		
 	act.skill.exp += num || 0;
-	Actor.setFlag(act,'skill');
+	act.skill.equipExp += num || 0;
+	Actor.setChange(act,'skill',act.skill);
 }
+
+Actor.removeEquipExp = function(act,num){
+	if(typeof num !== 'number' || isNaN(num)) 
+		return ERROR(4,'num is not number');
+	if(num < 0)
+		return ERROR(4,'remove exp must be gte 0',num);
+	act.skill.equipExp -= num || 0;
+	Actor.setChange(act,'skill',act.skill);
+}
+
 
 Actor.removeExp = function(act,num){
 	if(typeof num !== 'number' || isNaN(num)) 
@@ -47,37 +77,54 @@ Actor.removeExp = function(act,num){
 	if(num < 0)
 		return ERROR(4,'remove exp must be gte 0',num);
 	act.skill.exp -= num || 0;
-	Actor.setFlag(act,'skill');
+	Actor.setChange(act,'skill',act.skill);
 }
-
-
+Actor.getEquipExp = function(act){
+	return act.skill.equipExp;
+}
 Actor.getExp = function(act){
 	return act.skill.exp;
 }
 
+Actor.getGEM = Tk.newCacheManager(function(act){	//BAD gem is on main
+	if(!SERVER)	//on server, updated when quest complete and signin
+		Actor.updateGEM(act);
+	return Actor.getMain(act).gem;
+},SERVER ? -1 : 1000);
 
-Actor.getGEM = function(act){
+Actor.updateGEM = function(act){
 	var main = Actor.getMain(act);
 	
 	var count = 0;
 	for(var i in main.quest){
-		if(main.quest[i]._rewardScore > 1){
-			count += Actor.getGEM.scoreToGEM(main.quest[i]._rewardScore);
-			for(var j in main.quest[i]._challengeDone)
-				if(main.quest[i]._challengeDone[j])
+		if(main.quest[i].rewardScore > 1){
+			count += Actor.getGEM.scoreToGEM(main.quest[i].rewardScore);
+			for(var j in main.quest[i].challengeDone)
+				if(main.quest[i].challengeDone[j])
 					count += 0.02;
 		}
 	}
-	return 1 + count;
+	main.gem =  1 + count;
 }
+
 Actor.getGEM.scoreToGEM = function(score){
-	if(score === 0) return 0;
-	return Math.floor(Math.log10(score))/100 || 0;	
+	if(score === 0) 
+		return 0;
+	return Math.min(0.04,Math.floor(Math.log10(score))/100 || 0);	
 }
 
 Actor.getLevelUpCost = function(act){
 	var lvl = Actor.getLevel(act);
-	return CST.exp[lvl+1] - CST.exp[lvl];
+	var base = CST.exp[lvl+1] - CST.exp[lvl];
+	var mod = 1;
+	if(lvl > LVL_EXPONENTIAL_START)
+		mod = Math.pow(2,lvl - LVL_EXPONENTIAL_START);
+	return base * mod;
+}
+
+Actor.getLevelUpGEM = function(act){
+	var lvl = Actor.getLevel(act);
+	return CST.LVLUP_GEM[lvl + 1];
 }
 
 Actor.getLevel = function(act){
@@ -85,23 +132,21 @@ Actor.getLevel = function(act){
 }
 
 Actor.levelUp = function(act){
-	if(Actor.getExp(act) < Actor.getLevelUpCost(act)){
-		return Message.add(act.id,'You don\'t have enough exp to level up.');
-	}
+	var main = Actor.getMain(act);
+	if(Actor.getExp(act) < Actor.getLevelUpCost(act))
+		return Main.error(main,'You don\'t have enough exp to level up.');
+		
+	if(Actor.getGEM(act) < Actor.getLevelUpGEM(act))
+		return Main.error(main,'Your GEM is not high enough to level up.<br>Complete quests and challenges to increase your GEM.');
+	
+	if(act.skill.lvl >= CST.exp.length - 2)
+		return Main.error(main,'You can no longer level up.');
+	
 	Actor.removeExp(act,Actor.getLevelUpCost(act));
 	act.skill.lvl++;
 	
-	var str = 'Level up! You are now level ' + act.skill.lvl + '!<br>You gained an additional Reputation Point.<br>';
-	str += Message.generateTextLink("exports.Dialog.open(\'reputation\');",'Click here to use it.');
-	
-	Message.addPopup(act.id,str);
-	
-	var main = Actor.getMain(act);
-	Main.reputation.updatePt(main);
-	
-	Main.contribution.onLevelUp(main,act.skill.lvl);
-	Achievement.onLevelUp(main);
-	Main.updateCanStartQuest(main);
+	act.context = Actor.getContext(act);
+	Main.onLevelUp(main,act.skill.lvl);
 }
 
 

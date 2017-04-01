@@ -1,98 +1,102 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Sprite = require2('Sprite'), Actor = require2('Actor');
+var Sprite, Actor;
+global.onReady(function(){
+	Sprite = rootRequire('shared','Sprite'); Actor = rootRequire('shared','Actor');
+},null,'ActorModel',['SpriteModel'],function(){
+	ActorModel.init();
+});
 
-var ActorModel = exports.ActorModel = {};
+var ActorModel = exports.ActorModel = function(extra){
+	this.type = CST.ENTITY.npc;
+	
+	this.model = '';
+	this.alwaysActive = false;
+	this.combatType = CST.ENTITY.npc;
+	this.mastery = Actor.Mastery();
+	this.awareNpc = false;
+	this.aggressive = false;
+	this.hp = 1000;
+	this.hpMax = 1000;
+	this.hpRegen = 25/25;
+	this.mana = 100;
+	this.manaMax = 100;
+	this.manaRegen = 20/25;
+	this.abilityList = Actor.AbilityList();
+	this.friction = CST.FRICTIONNPC;
+	this.bounce = 1; //mod
+	this.move = true;
+	this.lvl = 0;
+	this.name = '';
+	this.cantDie = false;
+	this.minimapIcon = 'color-red';	//HCODE
+	this.quest = '';
+	this.sprite = Sprite.create(Actor.SPRITE_NORMAL,1);
+	this.moveRange = Actor.MoveRange();
+	this.useUpdateInput = true;
+	this.nevercombat = false;
+	this.boss = '';
+	this.ability = Actor.Ability();
+	this.killRewardMod = 1;
+	this.preventStagger = false;
+	this.fixedPosition = false;	//nevermove => fixedPosition. but if fixedPosition and move=true, then can be staggered
+	this.globalDef = 1;
+	this.globalDmg = 1;
+	this.aim = 0;
+	this.atkSpd = 1;
+	this.ghost = false;
+	this.nevermove = false;
+	this.maxSpd = CST.NPCSPD;
+	this.acc = CST.NPCACC;
+	this.immune = {};	//element:bool BAD
+	this.abilityAi = Actor.AbilityAi();
+	this.interactionMaxRange = 100;
+	this.combat = true;
+	this.damageIf = CST.DAMAGE_IF.player;
+	this.damagedIf = CST.DAMAGE_IF.always;
+	this.targetIf = CST.DAMAGE_IF.player; 
+	this.statusResist = Actor.StatusResist();
+	this.pvpEnabled = false;
+	this.pickRadius = 250;
+	this.targetSetting = Actor.TargetSetting();
+	this.block = null;	//Actor.Block
+	this.angle = 1;
+	this.bank = false;
+	this.pushable = null; //Actor.Pushable
+	this.zone = '';	//set in parseActorExtra
+	this.waypoint = null;
+	this.combatContext = Actor.CombatContext();
+	this.flag = {};	//string:function():any
+	this.hideOptionList = false;
+	this.bounceDmgMod = 1;
+	this.delayBeforeAttack = 10;
+	this.safeZoneRadius = 0;
+	
+	Tk.fillExtra(this,extra);
+};
+
 ActorModel.create = function(id,info){
-	var tmp = {
-		modelId:id,
-		alwaysActive:0,
-		type:'npc',
-		combatType:'npc',
-		mastery:Actor.Mastery(),
-		awareNpc:0,
-		hp:1000,	
-		hpMax:1000,
-		hpRegen:25/25,
-		mana:100,
-		manaMax:100,
-		manaRegen:20/25,
-		abilityList:Actor.AbilityList(),
-		friction:CST.FRICTIONNPC,
-		bounce:1,			//mod
-		move:1,
-		model:"Qsystem-bat",   //for enemy
-		lvl:0,
-		name:"Goblin",     //visible name
-		minimapIcon:'color-red',     //icon used for minimap
-		quest:'',
-		sprite:Sprite.create(Actor.DEFAULT_SPRITENAME,1),
-		moveRange:Actor.MoveRange(),
-		useUpdateInput:true, 		//generate its own input	(ex: pushable dont but still move)
-		useMouseForMove:false,
-		nevercombat:0,
-		boss:'',
-		ability:Actor.Ability(),
-		
-		preventStagger:false,
-		globalDef:1,
-		globalDmg:1,   //global modifier
-		aim:0,       //difference between mouse and actually bullet direction
-		atkSpd:1,	
-		ghost:0,
-		nevermove:0,
-		maxSpd:CST.NPCSPD,	
-		acc:CST.PLAYERACC,
-		immune:{},
-		abilityAi:Actor.AbilityAi(),	
-		interactionMaxRange:100,
-		waypoint:null, 		//right click:setRespawn
-		combat:1,
-		damageIf:'player',
-		damagedIf:'true',
-		targetIf:'player',  //condition used by monsters to find their target. check targetIfList
-		statusResist:Actor.StatusResist(),
-		pvpEnabled:false,
-		pickRadius:250,	
-		targetSetting:Actor.TargetSetting(),
-		block:null,
-		angle:1,
-		bank:0,
-		pushable:null,
-		
-		//BAD
-		combatContext:Actor.CombatContext(),		//only there cuz need it to access ability... -.-
-		flag:Actor.Flag(),
-		globalMod:null,
-		hideOptionList:false,
-	}
-	for(var i in info){
-		if(tmp[i] === undefined) return ERROR(4,'prop undefined',i);
-		tmp[i] = info[i];
-	}
-	if(!SERVER) return tmp;
-	
+	var tmp = new ActorModel(info);
+	tmp.model = id;
 	DB[id] = tmp;
-	
 	return tmp;
 }
 var DB = ActorModel.DB ={};
 
 ActorModel.init = function(){
-	DB['player'] = ActorModel.create('player',{
-		type:"player",
-		preventStagger:true,
-		combatType:'player',
-		damageIf:'npc',
-		damagedIf:'npc',
-		targetIf:'npc',	//important for summon
-		awareNpc:1,
-		alwaysActive:1,
-		minimapIcon:'color-yellow',
+	ActorModel.create('player',{
+		type:CST.ENTITY.player,
+		combatType:CST.ENTITY.player,
+		damageIf:CST.DAMAGE_IF.npc,
+		damagedIf:CST.DAMAGE_IF.npc,
+		targetIf:CST.DAMAGE_IF.npc,	//important for summon
+		awareNpc:true,
+		alwaysActive:true,
+		minimapIcon:'color-yellow', //HCODE
 		pickRadius:250,
+		delayBeforeAttack:0,
 		useUpdateInput:false,
-		useMouseForMove:false,
 		maxSpd:CST.PLAYERSPD,
 		friction:CST.FRICTION,
 		acc:CST.PLAYERACC,

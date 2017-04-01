@@ -1,10 +1,15 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ 	//}
-var Main = require2('Main');
+var Main;
+global.onReady(function(){
+	Main = rootRequire('shared','Main');
+	global.onLoop(Weather.loop);
+	Weather.init();
+});
 var Weather = exports.Weather = {};
 
-var LOOP_INTERVAL = 25*60;
+var LOOP_INTERVAL = 25*60*2;
 var FRAME_COUNT = 0;
 var CURRENT = null;
 var PHASE = 0;
@@ -16,7 +21,7 @@ var CAVE = null,LIGHT_CAVE = null,DARK_CAVE = null;
 Weather.SCREEN_EFFECT = ['weather','cave','lightCave','darkCave',''];
 
 Weather.loop = function(){
-	if(FRAME_COUNT++ % (LOOP_INTERVAL) !== 0)	//TEMP IMPORTANT
+	if(FRAME_COUNT++ % LOOP_INTERVAL !== 0)
 		return;
 	var list = DATA[CATEGORY];
 	if(list[PHASE])
@@ -26,7 +31,7 @@ Weather.loop = function(){
 	PHASE++;
 }
 
-Weather.onPlayerEnter = function(main,map){
+Weather.onMapEnter = function(main,map){
 	if(map.screenEffect === 'weather' && CURRENT)
 		Main.addScreenEffect(main,CURRENT);
 	else if(map.screenEffect === 'cave')
@@ -69,7 +74,7 @@ Weather.init = function(){
 	LIGHT_CAVE = Main.ScreenEffect.torch('weather',300);
 	
 	DATA = {
-		sunYellow:[
+		sunYellow:[			
 			Main.ScreenEffect.sun('weather',0.10,255,122,66,0.025),
 			Main.ScreenEffect.sun('weather',0.25,255,122,66,0.05),
 			Main.ScreenEffect.sun('weather',0.5,255,122,66,0.15),

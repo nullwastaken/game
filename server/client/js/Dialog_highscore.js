@@ -1,14 +1,16 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var QueryDb = require4('QueryDb');
-var Dialog = require3('Dialog');
-
-Dialog.create('highscore','Highscore',Dialog.Size(700,700),Dialog.Refresh(function(){
-	return Dialog.highscore.apply(this,arguments);
-}),{
-	param:null,
+var QueryDb;
+global.onReady(function(){
+	QueryDb = rootRequire('shared','QueryDb',true);
 });
+var Dialog = rootRequire('client','Dialog');
+
+
+Dialog.create('highscore','Highscore',Dialog.Size(400,700),Dialog.Refresh(function(){
+	return Dialog.highscore.apply(this,arguments);
+}));
 //Dialog.open('highscore')
 //QueryDb.get('highscore','QlureKill-_score')
 
@@ -23,7 +25,7 @@ Dialog.highscore = function(html,variable,param){	//param: quest, noRefresh, cat
 	}
 	
 	if(typeof param === 'string')
-		param = {quest:param.split('-')[0],category:param};
+		param = {quest:Tk.getSplit0(param,'-'),category:param};
 	param = param || {};
 	param.quest = param.quest || QueryDb.getHighscoreQuestList().$random();
 	param.category = param.category || QueryDb.getHighscoreForQuest(param.quest).$randomAttribute();
@@ -43,14 +45,13 @@ Dialog.highscore = function(html,variable,param){	//param: quest, noRefresh, cat
 	Dialog.highscore.top(html,variable,highscore);
 	Dialog.highscore.table(html,variable,highscore);
 	
-	return variable.param;
-	
-	
+	return;
 }
 
 var refresh = function(highscore){
 	return function(){
 		QueryDb.get('highscore',highscore.id,function(){
+			Dialog.playSfx('select');
 			Dialog.refresh('highscore',{quest:highscore.quest,category:highscore.id,noRefresh:true});
 		},true);
 	}
@@ -69,12 +70,11 @@ Dialog.highscore.top = function(html,variable,highscore,isCompetition){
 		Dialog.open('highscore',{quest:sel.val()});
 	});
 	sel.val(isCompetition ? 'competition' : highscore.quest);	//set selected option to the right spot
-	html.append('Quest: ');
-	html.append(sel);
+	html.append('Quest: ',sel);
 	
 	//#########
 	if(isCompetition)
-		html.append(' Ends on ' + (new Date(highscore.endTime)).toDateString());
+		html.append('<br>Ends on ' + (new Date(highscore.endTime)).toDateString());
 	else {
 		var sel2 = $('<select>');
 		var list = QueryDb.getHighscoreForQuest(highscore.quest);
@@ -85,14 +85,13 @@ Dialog.highscore.top = function(html,variable,highscore,isCompetition){
 			Dialog.refresh('highscore',{quest:sel.val(),category:sel2.val()});
 		});
 		sel2.val(highscore.id);
-		html.append(' - Category: ');
-		html.append(sel2);
+		html.append('<br>Category: ',sel2);
 		
 		//#########
-		html.append(' ');
-		html.append($('<button>')
+		html.append('<br>',$('<button>')
 			.html('Refresh')
-			.addClass('myButton')
+			.css({margin:'10px'})
+			.addClass('myButton skinny')
 			.click(refresh(highscore))
 		);
 	}
@@ -127,13 +126,13 @@ Dialog.highscore.table = function(html,variable,highscore){
 		for(var i = 0 ;  i < highscore.score.length; i++){	
 			array.push([
 				i + 1,
-				highscore.score[i].username,
-				highscore.score[i].value === null ? '---' : highscore.score[i].value
+				highscore.score[i].name,
+				highscore.score[i].value === null ? '---' : Math.floor(highscore.score[i].value)
 			]);
 		}
 	}
 	
-	html.append(Tk.arrayToTable(array,true,false,true).css({marginLeft:'auto',marginRight:'auto'}));
+	html.append(Tk.arrayToTable(array,true,false,true).css({marginLeft:'auto',marginTop:'10px',marginRight:'auto'}));
 }
 
 

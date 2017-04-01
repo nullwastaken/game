@@ -1,44 +1,49 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
+var OptionList, IconModel, ItemList, Message, Main;
+global.onReady(function(){
+	OptionList = rootRequire('shared','OptionList'); IconModel = rootRequire('shared','IconModel'); ItemList = rootRequire('shared','ItemList'); Message = rootRequire('shared','Message'); Main = rootRequire('shared','Main');
+});
+var ItemModel = exports.ItemModel = function(extra){
+	this.id = '';
+	this.name = '';
+	this.icon = '';
+	this.description = '';
+	this.trade = true;
+	this.drop = true;
+	this.destroy = false;
+	this.adminOnly = false;
+	this.bank = true;
+	this.option = [];
+	this.type = CST.ITEM.misc;
+	this.quest = '';	
+	Tk.fillExtra(this,extra);
+};
 
-var OptionList = require2('OptionList'), IconModel = require2('IconModel'), ItemList = require2('ItemList'), Message = require2('Message'), Main = require2('Main');
-
-var ItemModel = exports.ItemModel = {};
 ItemModel.create = function(quest,id,name,icon,option,description,extra){	//implements OptionList
-	if(!id || DB[id]) return ERROR(2,'no item id or already used id',id);
+	if(!id || DB[id]) 
+		return ERROR(2,'no item id or already used id',id);
 	
-	var item = {
-		id:id || '',
-		name:name || 'buggedItem',
-		icon:icon || 'system-square',
-		description:description || name || '',
-		trade:true, 
-		drop:true,
-		destroy:false,
-		adminOnly:false,
-		bank:true,
-		option:option ||  [],
-		type:'item',	//equip or ability
-		quest:quest || '',
-	};
-	extra = extra || {};
-	for(var i in extra){
-		if(item[i] === undefined) 
-			ERROR(4,'prop not in constructor',i);
-		item[i] = extra[i];
-	}
+	var tmp = new ItemModel({
+		id:id,
+		name:name,
+		icon:icon,
+		description:description || name,
+		option:option,
+		quest:quest,
+	});
+	Tk.fillExtra(tmp,extra);
 	
-	if(item.drop && (!item.option[item.option.length-1] || item.option[item.option.length-1].name !== 'Drop'))	//BAD
-		item.option.push(ItemModel.Option(Main.dropInv,'Drop',null,[OptionList.MAIN,item.id]));
-	if(item.destroy && (!item.option[item.option.length-1] || item.option[item.option.length-1].name !== 'Destroy')) 	//BAD
-		item.option.push(ItemModel.Option(Main.destroyInv,'Destroy',null,[OptionList.MAIN,item.id]));
-	DB[item.id] = item;
+	if(tmp.destroy && (!tmp.option[tmp.option.length-1] || tmp.option[tmp.option.length-1].name !== 'Destroy')) 	//BAD
+		tmp.option.push(ItemModel.Option(Main.destroyInv,'Destroy',null,[OptionList.MAIN,tmp.id]));
+	else if(tmp.drop && (!tmp.option[tmp.option.length-1] || tmp.option[tmp.option.length-1].name !== 'Drop'))	//BAD
+		tmp.option.push(ItemModel.Option(Main.dropInv,'Drop',null,[OptionList.MAIN,tmp.id]));
+	DB[tmp.id] = tmp;
 	
-	IconModel.testIntegrity(item.icon);
-	
-	
-	return item;
+	IconModel.testIntegrity(tmp.icon);
+
+	return tmp;
 }
 
 var DB = ItemModel.DB = {};
@@ -52,15 +57,27 @@ ItemModel.get = function(id,noError){
 }
 
 ItemModel.getId = function(id,noError){
-	if(DB[id]) return id;
+	if(DB[id]) 
+		return id;
 	id = 'Qsystem-' + id;
-	if(DB[id]) return id;
-	if(!noError) ERROR(4,'invalid id',id);
+	if(DB[id]) 
+		return id;
+	if(!noError) 
+		ERROR(4,'invalid id',id);
 	return;
 }
+if(!SERVER)
+	ItemModel.getId = function(id){
+		if(id[0] === 'Q') return id;
+		return 'Qsystem-' + id;
+	}
 
-ItemModel.displayInChat = function(item){	//client
-	Message.add(null,Message.Input('[[' + item.id + ']]',true));
+
+
+ItemModel.displayInChat = function(id,amount){	//client
+	if(!amount || amount <= 1)
+		Message.add(null,Message.Input('[[' + id + ']]',true));
+	return Message.add(null,Message.Input('[[' + id + ']]x' + amount + ',',true));
 }
 
 ItemModel.compressClient = function(item){
@@ -68,7 +85,7 @@ ItemModel.compressClient = function(item){
 }
 
 ItemModel.uncompressClient = function(item){
-	return OptionList.uncompressClient(item,'useItem',item.id);	
+	return OptionList.uncompressClient(item,CST.COMMAND.useItem,item.id);	
 }
 
 ItemModel.removeFromRAM = function(id){
@@ -77,6 +94,7 @@ ItemModel.removeFromRAM = function(id){
 
 ItemModel.getSignInPack = function(key){ //warning, compress everytime needed
 	var list = ItemList.getAllItemOwned(key);
+	
 	var pack = {};
 	for(var i = 0 ; i < list.length; i++){
 		pack[list[i]] = ItemModel.compressClient(ItemModel.get(list[i]));

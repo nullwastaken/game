@@ -1,156 +1,87 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Actor = require2('Actor'), ActiveList = require2('ActiveList'), Bullet = require2('Bullet'), Main = require2('Main'), Maps = require2('Maps'), Collision = require2('Collision'), Combat = require2('Combat'), AttackModel = require2('AttackModel');
+var Actor, Entity, Collision, AttackModel;
+global.onReady(function(){
+	Actor = rootRequire('shared','Actor'); Entity = rootRequire('shared','Entity'); Collision = rootRequire('shared','Collision'); AttackModel = rootRequire('shared','AttackModel');
+});
+var Attack = exports.Attack = function(extra,act,custom){
+	Entity.call(this);
+	
+	this.toRemove = false;
+	this.hitId = Math.randomId();
+	this.combat = true;
+	this.timer = 0;
+	this.mouseX = 0;
+	this.mouseY = 0;
+	this.damageIf = CST.DAMAGE_IF.player;
+	this.parent = null;	//string?
+	this.angle = 0;
+	this.crAngle = 0;
+	this.moveAngle = 0;	//where bullet moves (used for knock, boomerang)
+	this.num = 0;	//-th bullet if many shoot at once
+	this.normal = true;	//for movement, get set inside creation
+	this.bonus = null;	//Actor.Bonus
+	this.mastery = null;	//Actor.Mastery
+	this.globalDmg = 0;
+	this.combatContext = null;	//Actor.CombatContext
+	this.equip = null;		//Actor.Equip
+	
+	this.frameLate = 0;	//client
+	this.boostedSpd = false;
+	Tk.fillExtra(this,extra);
+	//
+	
+	if(act || custom){
+		this.x = custom.x;
+		this.y = custom.y;
+		this.crX = custom.x;
+		this.crY = custom.y; 			//creation Y, used for parabole and sin
+		this.mouseX = act.mouseX;	//strike and parabole
+		this.mouseY = act.mouseY;
+		this.map = act.map;
+		this.mapModel = act.mapModel;
+		this.viewedIf = act.viewedIf;
+		this.damageIf = act.damageIf;
+		this.parent = act.parent || act.id;
+		this.angle = custom.angle;
+		this.crAngle = custom.angle;
+		this.moveAngle = custom.angle;
+		this.num = custom.num;
+		this.normal = false;
+		this.globalDmg = act.globalDmg;
+		this.bonus = act.bonus || ERROR(3,'shouldnt need bonus',act.name) || Actor.Bonus();
+		this.mastery = act.mastery || ERROR(3,'shouldnt need Mastery',act.name) || Actor.Mastery();
+		this.combatContext = act.combatContext || ERROR(3,'shouldnt need combatContext',act.name)  || Actor.CombatContext();
+		this.equip = act.equip || ERROR(3,'shouldnt need equip',act.name) || Actor.Equip();
+	}
+};
 
-var Attack = exports.Attack = {};
-Attack.create = function(model,act,extra){	//model is AttackModel
-	var tmp = {		//+ all properties from model
-		change:{},
-		old:{},
-		activeList:{},
-		toRemove:0,
-		id:Math.randomId(),
-		hitId:Math.randomId(),
-		combat:1,
-		timer:0,
-		point:[],				//used for collision
-		rotatedRect:null,
-		
-		x:extra.x || 0,
-		y:extra.y || 0,
-		crX:extra.x || 0,			//creation X, used for parabole and sin
-		crY:extra.y || 0, 			//creation Y, used for parabole and sin
-		
-		mouseX:act.mouseX || 0,	//strike and parabole
-		mouseY:act.mouseY || 0,
-		
-		map:act.map || 'QfirstTown-main@MAIN',
-		mapModel:act.mapModel || 'QfirstTown-main',
-		viewedIf:act.viewedIf || 'true',
-		damageIf:act.damageIf || 'player',
-		parent:act.parent || act.id || null,		
-		
-		angle:extra.angle,
-		crAngle:extra.angle,
-		moveAngle:extra.angle,	//where bullet moves (used for knock, boomerang)
-		num:extra.num || 0,		//# bullet if many shoot at once
-		normal:0,	//for movement, get set inside creation
-		
-		//for onMove onHit onDamagePhase
-		bonus:act.bonus || Actor.Bonus(),
-		mastery:act.mastery || Actor.Mastery(),
-		globalDmg:act.globalDmg || 0,
-		combatContext:act.combatContext || Actor.CombatContext(),
-		equip:act.equip || '',
-		
-	}
-	for(var i in model) 
-		tmp[i] = model[i];	//adds property, doesnt overwrite tho at least not supposed to...
-	
-	
-	if(tmp.type === 'strike') 
-		Attack.Strike(tmp);
-	else if(tmp.type === 'bullet'){
-		ActiveList.addToList(tmp);
-		Attack.Bullet(tmp);	
-	}
+Attack.create = function(model,act,extra){
+	return Attack.onCreate.pub(model.type,model,act,extra);
 }; 
 
-Attack.Bullet = function(b){
-	if(b.parabole){
-		var diff = Math.pyt(b.mouseX,b.mouseY);
-		b.parabole.dist = diff.mm(b.parabole.min,b.parabole.max);
-		b.parabole.timer *= b.parabole.dist/b.parabole.max;
-	}
-	if(b.onMove)
-		b.angle = Math.random()*360;	//otherwise, circle always the same. moveAngle is same tho
-
-	b.normal = !b.sin && !b.parabole && !b.boomerang;
-	
-	if(b.parent && Actor.isPlayer(b.parent))
-		b.sprite.name = Main.contribution.getBullet(Actor.getMain(Actor.get(b.parent)),b.sprite.name);
-	
-	Bullet.addToList(b);
-	Maps.enter(b);
-		
-	return b;
-}; 
-
-//need to remove player.bonus to pre-atk
-Attack.Strike = function(s){
-	//make sure s.x and s.y is not thru wall
-	
-	
-	
-	
-	
-	//after that, we place 9 points around (s.x,s.y). exact position depends on width and height of strike
-	s.point = Attack.Strike.getPoint(s);
-	
-	s.rotatedRect = Attack.Strike.getRotatedRect(s,s.point);
-	
-	Collision.strikeActor(s);
-	
-	if(s.onDamagePhase && s.onDamagePhase.chance >= Math.random()){
-		Combat.attack(s,s.onDamagePhase.attack);
-	}
-	
-	
-	return s;
-}
-Attack.Strike.getRotatedRect = function(s,point){
-	return {
-		x:point[0].x,y:point[0].y,width:s.width,height:s.height,angle:s.angle,
-	};
-}
-
-Attack.Strike.getPoint = function(s){
-	var startX = -s.width/2; 
-	var startY = -s.height/2;
-		
-	var pt = [];
-	for(var k = 0 ; k < 9 ; k++){
-		var axeX = startX + (k % 3)*s.width/2;
-		var axeY = startY + Math.floor(k/3)*s.height/2;
-		var numX = (axeX*Tk.cos(s.angle) - axeY * Tk.sin(s.angle));
-		var numY = (axeX*Tk.sin(s.angle) + axeY * Tk.cos(s.angle));
-
-		pt[k] = {
-			x:numX + s.x,
-			y:numY + s.y
-		};
-	}
-	return pt;
-}	
-
-
-Attack.loop = function(){
-	Attack.loop.FRAME_COUNT++;
-	Bullet.loop();
-}
-Attack.loop.FRAME_COUNT = 0;
-
-Attack.testInterval = function(b,num){
-	return Attack.loop.FRAME_COUNT % num === 0;
-}
+Attack.onCreate = Tk.newPubSub(true);
 
 Attack.getInitPosition = function(atk,act){
 	var mouse = Actor.getMouse(act);
 	var diff = Math.pyt(mouse.x,mouse.y); //difference between actor and mouse
-	diff = diff.mm(atk.initPosition.min,atk.initPosition.max);
 	
-	var goal = {x:diff * Tk.cos(act.angle) + act.x,y:diff * Tk.sin(act.angle) + act.y};
+	diff = Math.min(Math.max(diff,atk.initPosition.min),atk.initPosition.max);
+	
+	var goal = CST.pt(diff * Tk.cos(act.angle) + act.x,diff * Tk.sin(act.angle) + act.y);
 	
 	if(!SERVER) return goal;
 	
-	var pos = atk.ghost ? goal : Collision.strikeMap(act,goal);	//get farthest possible without touching wall
-	if(pos.collision){	//check Collision.strikeMap
+	var pos = atk.ghost ? goal : Collision.getFarthestStrikePosition(act,goal);	//get farthest possible without touching wall
+	if(pos.collision){	//check Collision.getFarthestStrikePosition
 		atk.dmg = AttackModel.Dmg(0,1,0,0,0,0,0);
 		atk.hitAnim = null;
 	}
 	return pos;
 }
+
+
 			
 })(); //{
 		

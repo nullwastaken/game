@@ -1,7 +1,10 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Actor = require2('Actor'), Main = require2('Main'), Socket = require2('Socket');
+var Actor, Main, Socket;
+global.onReady(function(){
+	Actor = rootRequire('shared','Actor'); Main = rootRequire('shared','Main'); Socket = rootRequire('private','Socket');
+});
 var Metrics = exports.Metrics = {};
 
 var onSignUp = [];
@@ -40,10 +43,7 @@ Metrics.onSignOff = function(key){
 	});
 }
 Metrics.onQuestComplete = function(key,quest,chalSuccess){
-	var challenge = '';
-	for(var i in chalSuccess)
-		if(chalSuccess[i])
-			challenge = i;
+	var challenge = chalSuccess ? chalSuccess.name : null;
 	
 	onQuestComplete.push({
 		username:Actor.get(key).username,
@@ -94,7 +94,7 @@ Metrics.getDisplayText = function(){
 	for(var i = 0 ; i < onSignOff.length; i++)
 		time += onSignOff[i].timePlayed;
 	time = Math.floor(time / onSignOff.length / 60000);
-	str2 += 'SignIn: ' + onSignIn.length + ' (Playtime: ' + time + ' mins, 72h no dupe: ' + in24c + ')<br>';
+	str2 += 'SignIn: ' + onSignIn.length + ' (Avg Playtime: ' + time + ' mins, 72h no dupe: ' + in24c + ')<br>';
 	//######################
 	var quest24 = {};
 	var quest24c = 0;
@@ -107,7 +107,7 @@ Metrics.getDisplayText = function(){
 	for(var i = 0 ; i < onQuestComplete.length; i++)
 		if(onQuestComplete[i].challenge)
 			chal++;
-	str2 += 'Quest: ' + onQuestComplete.length + ' (Challenge: ' + chal + ', 72h no dupe: ' + quest24c + ')<br>';
+	str2 += 'Quest: ' + onQuestComplete.length + ' (Challenge: ' + chal + ', 72h diff person: ' + quest24c + ')<br>';
 	
 	str2 += '<br>' + str.join('');
 	return str2;

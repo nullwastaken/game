@@ -1,18 +1,23 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Actor = require4('Actor'), Img = require4('Img');
-var Dialog = require3('Dialog');
+var Actor, Img;
+global.onReady(function(){
+	Actor = rootRequire('shared','Actor',true); Img = rootRequire('client','Img',true);
+});
+var Dialog = rootRequire('client','Dialog');
+
+
 
 Dialog.create('stat','Combat Stat',Dialog.Size(600,600),Dialog.Refresh(function(){
 	Dialog.stat.apply(this,arguments);
 },function(){
-	return Tk.stringify(player.boost.list) + Tk.stringify(Actor.getEquip(player));
+	return Tk.stringify(w.player.boost.list) + Tk.stringify(Actor.getEquip(w.player));
 }));
 //Dialog.open('stat')
 
 Dialog.stat = function(html,variable){
-	variable.OLD = Tk.stringify(player.boost.list);
+	variable.OLD = Tk.stringify(w.player.boost.list);
 	
 	html.append('<h3>Offensive Stats</h3>');
 	var array = [];
@@ -21,7 +26,7 @@ Dialog.stat = function(html,variable){
 		array.push([
 			Img.drawIcon.html(line.icon,24),
 			'<span title="' + line.title + '">' + line.name + '</span>',
-			line.func(r,player.boost.list),		
+			line.func(r,w.player.boost.list),		
 		]);
 	}
 	html.append(Tk.arrayToTable(array,false,false,true));
@@ -35,7 +40,7 @@ Dialog.stat = function(html,variable){
 		array.push([
 			Img.drawIcon.html(line.icon,24),
 			'<span title="' + line.title + '">' + line.name + '</span>',
-			line.func(r,player.boost.list),		
+			line.func(r,w.player.boost.list),		
 		]);
 	}
 	html.append(Tk.arrayToTable(array,false,false,true));
@@ -44,7 +49,7 @@ Dialog.stat = function(html,variable){
 
 //#################################
 var r = function(statName,round,round2){
-	return Actor.boost.getBase(player,statName).r(round,round2);
+	return Actor.boost.getBase(w.player,statName).r(round,round2);
 }
 	
 var Line = function(category,name,title,icon,func){
@@ -60,11 +65,11 @@ Line.LIST = {offensive:[],defensive:[]};
 Line.getElementFunc = function(type,name){	//BADD hardcoded
 	return function(r,b){
 		var el = type + '-' + name;
-		var mod = Actor.boost.getBase(player,el);
+		var mod = Actor.boost.getBase(w.player,el);
 		if(type === 'dmg'){
 			return 'x' + Tk.round(mod,2,2);
 		} else {
-			var totaldef = Actor.getEquip(player).def[name];
+			var totaldef = Actor.getEquip(w.player).def[name];
 			
 			var num = totaldef*mod;	//3
 			var res = 1-1/num;		//1-1/3 = 66% reduc
@@ -73,7 +78,7 @@ Line.getElementFunc = function(type,name){	//BADD hardcoded
 			var num = Math.max(1,num.r(2));
 			var str = num === 1 
 				? 'No Damage Reduction.' 
-				: 'You will take ' + num + ' times less damage from ' + name.$capitalize() + "."
+				: 'You will take ' + num + ' times less damage from ' + CST.element.toCaps[name] + "."
 			return $('<span>')
 				.append($('<span>')
 					.html(Tk.round(totaldef,2,2))
@@ -117,7 +122,7 @@ Line.getStatusFunc = function(status,magn,time,chance){
 	Line('offensive','Range','Increase Range damage dealt by ability','element-range',(function(){ 
 		return Line.getElementFunc('dmg','range');
 	})());
-	Line('offensive','Magic','Increase Magic damage dealt by ability','element-magic',(function(){ 
+	Line('offensive','Arcane','Increase Arcane damage dealt by ability','element-magic',(function(){ 
 		return Line.getElementFunc('dmg','magic');
 	})());
 	Line('offensive','Fire','Increase Fire damage dealt by ability','element-fire',(function(){ 
@@ -143,7 +148,7 @@ Line.getStatusFunc = function(status,magn,time,chance){
 			'Amount of frames at which the target is pushed.'
 		);
 	})());
-	Line('offensive','Drain (Magic)','Replenish mana when hitting an enemy.','status-bleed',(function(){ 
+	Line('offensive','Drain (Arcane)','Replenish mana when hitting an enemy.','status-bleed',(function(){ 
 		return Line.getStatusFunc(
 			'drain',
 			'Amount of mana leeched.',
@@ -176,7 +181,7 @@ Line.getStatusFunc = function(status,magn,time,chance){
 	Line('offensive','Range Weapon','Increase damage dealt if using these weapons','element-range2',function(r,b){
 		return 'Bow: ' + r('weapon-bow',2,1) + ', Boomerang: ' + r('weapon-boomerang',2,1) + ', Crossbow: ' + r('weapon-crossbow',2,1);
 	});
-	Line('offensive','Magic Weapon','Increase damage dealt if using these weapons','element-range2',function(r,b){
+	Line('offensive','Arcane Weapon','Increase damage dealt if using these weapons','element-range2',function(r,b){
 		return 'Staff: ' + r('weapon-staff',2,1) + ', Wand: ' + r('weapon-wand',2,1) + ', Orb: ' + r('weapon-orb',2,1);
 	});
 
@@ -195,7 +200,7 @@ Line.getStatusFunc = function(status,magn,time,chance){
 		);
 	})());
 	Line('offensive','Bullet','Impact bullet behaviour. (Ex: Arrow)','offensive-bullet',function(r,b){
-		var str = '<span title="Amount:Chance to shoot an additional bullet.">Amount: ' + r('bullet-amount',2,2) + '</span>, ';
+		var str = '';
 		str += '<span title="Spd: Multiply the bullet travelling speed by this value.">Spd: ' + r('bullet-spd',2,2) + '</span>';
 		return str;
 	});
@@ -224,7 +229,7 @@ Line.getStatusFunc = function(status,magn,time,chance){
 	Line('defensive','Range','Increase Range defence.','element-range',(function(){ 
 		return Line.getElementFunc('def','range');
 	})());
-	Line('defensive','Magic','Increase Magic defence.','element-magic',(function(){ 
+	Line('defensive','Arcane','Increase Arcane defence.','element-magic',(function(){ 
 		return Line.getElementFunc('def','magic');
 	})());
 	Line('defensive','Fire','Increase Fire defence.','element-fire',(function(){ 

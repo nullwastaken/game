@@ -1,96 +1,131 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
-var Actor = require2('Actor'), Achievement = require2('Achievement'), Highscore = require2('Highscore'), Main = require2('Main'), Debug = require2('Debug'), Challenge = require2('Challenge');
-var db;
-var QUEST_FOLDER = './client/quest/';
-var QUEST_EXCLUDE = ['QkillTheDragon','tileset','Qpvp'];
+var Actor, Achievement, Highscore, Main, Debug, Challenge, Reddit;
+global.onReady(function(initPack){
+	Reddit = SERVER && !MINIFY && rootRequire('private','Reddit'); Actor = rootRequire('shared','Actor'); Achievement = rootRequire('shared','Achievement'); Highscore = rootRequire('server','Highscore'); Main = rootRequire('shared','Main'); Debug = rootRequire('server','Debug'); Challenge = rootRequire('server','Challenge');
+	db = initPack.db;
+	
+	var Command = rootRequire('shared','Command');
+	Command.create(CST.COMMAND.questButton,Command.MAIN,[ //{
+		Command.Param('string','Button Id',false),
+	],function(main,str){
+		if(!main.questActive) return;
+		Quest.get(main.questActive).event._button(main.id,str);
+	}); //}
+
+	Command.create(CST.COMMAND.dialogOpen,Command.MAIN,[ //{	//only for Qtutorial, check Dialog.open
+		Command.Param('string','Dialog Id',false),
+	],function(main,str){
+		if(main.questActive !== CST.QTUTORIAL) return;
+		Quest.get(main.questActive).event._dialogOpen(main.id,str);
+	}); //}
+
+	Command.create(CST.COMMAND.dialogClose,Command.MAIN,[ //{	//only for Qtutorial, check Dialog.open
+		Command.Param('string','Dialog Id',false),
+	],function(main,str){
+		if(main.questActive !== CST.QTUTORIAL) 
+			return;
+		Quest.get(main.questActive).event._dialogClose(main.id,str);
+	}); //}
+	Command.create(CST.COMMAND.getTutorialHelp,Command.MAIN,[ //{ 
+	],function(main){
+		if(main.questActive !== CST.QTUTORIAL)
+			return;
+		var str = Quest.get(CST.QTUTORIAL).event._help(main.id);
+		Main.openDialog(main,'permPopupMouseover',{text:str});
+	}); //}
+	Command.create(CST.COMMAND.questFeedback,Command.MAIN,[ //{
+		Command.Param('string','Quest Id',false),
+		Command.Param('number','Rating',true,{min:0,max:3}),
+		Command.Param('string','Comment',true),
+		Command.Param('string','Abandon Reason',true),
+		Command.Param('string','Hint',true),
+	],Quest.rate.onCommand); //}
+	
+},{db:['questRating','mainQuest']},'Quest',['SpriteModel','AnimModel'],function(){
+	Quest.init();
+});
 var ONLINE_QUEST_LIST = [
-	"Qsystem","QfirstTown","Qdebug",
-	"Qcontribution","Qhighscore",
-	"QsadTree","QaggressiveNpc","QbaseDefence","Qbtt000","QbulletHeaven","QcatchThemAll","QcollectFight","Qdarkness","QduelLeague","Qfifteen","QkingOfTheHill","QlureKill","Qminesweeper","QprotectFirstTown","QpuzzleBridge","QpuzzleSwitch","Qrgb","Qsoccer","QtowerDefence","Qtutorial"
+	"Qsystem","QfirstTown","Qdebug","QsideQuest",
+	"Qcontribution","Qhighscore",	
+	"QlockedMemento","QsadTree","QaggressiveNpc","QbaseDefence","Qbtt000","QbulletHeaven","QcatchThemAll","QcollectFight","Qdarkness","QduelLeague","Qfifteen","QkingOfTheHill","QlureKill","Qminesweeper","QprotectFirstTown","QpuzzleBridge","QpuzzleSwitch","Qrgb","Qsoccer","QtowerDefence","Qtutorial",
+	"QbadLuck","Qbtt001","Qspawner",'QflipTile',"QbossBattle","QmSaveDb"
 ];
 
-var ZONE = ['QfirstTown-south','QfirstTown-main','QfirstTown-east','QfirstTown-eastCave','QfirstTown-north'];
+var Quest = exports.Quest = function(extra){
+	//considering i create the things on the fly; its useless except for sutff in loadAPI
+	this.id = '';
+	this.version = 'v1.0';
+	this.name = 'Default Name';
+	this.reward = Quest.Reward();
+	this.showInTab = true;
+	this.sideQuestAllowed = false;
+	this.showWindowComplete = true;
+	this.dailyTask = true;
+	this.inMain = true;	//in Main.get(key).quest
+	this.globalHighscore = false;	//call updateHighscore everytime a quest complete
+	this.alwaysActive = false;	//can call event without being questActive (ex: town)
+	this.admin = false;		//allow extra in item, ability
+	this.autoStartQuest = true;
+	this.disabled = false;
+	this.maxPartySize = 2;
+	this.recommendedPartySize = 2;
+	this.author = 'rc';
+	this.description = 'A super awesome quest!';
+	this.thumbnail = false;
+	this.scoreModInfo = '';
+	this.lvl = 0;
+	this.difficulty = 'Easy';
+	this.rating = 0;
+	this.statistic = Quest.Statistic();
+	this.playerComment = [];
+	this.category = [];
+	this.party = "Coop";
+	this.zone = null;
+	this.mainStory = false;
+	this.loadingPrerequisite = [];
+	this.completable = true;
+	this.requirement = {};
+	this.questMarker = null;	// {map,spot}
+	this.mapAddon = {};
+	this.map = {};
+	this.item = {};
+	this.equip = {};
+	this.npc = {};
+	this.ability = {};
+	this.dialogue = {};
+	this.boss = {};
+	this.challenge = {};
+	this.sideQuest = {};
+	this.preset = {};
+	this.highscore = {};
+	this.event = Quest.Event();
+	this.skillPlot = [];
+	this.path = {};
+	this.s = null;	//set in s.exports
+	Tk.fillExtra(this,extra);
+};
 
-var SIGN_IN_PACK = {};
-
-var Quest = exports.Quest = {};
-var DB = Quest.DB = {};
 Quest.create = function(extra){
 	//Quest.getAPItemplate for template
-	var tmp = {};	
-	for(var i in extra) 
-		tmp[i] = extra[i];
-	DB[tmp.id] = tmp;
-	Debug.createQuestTool(tmp);
+
+	DB[extra.id] = extra;
+	Debug.createQuestTool(extra);
 	//Quest.fetchPlayerComment(q.id);
 	
-	return tmp;
+	return extra;
 }
 
 Quest.getAPItemplate = function(extra){
-	var tmp = {	//note: considering i create the things on the fly, its useless except for sutff in loadAPI
-		id:'',
-		version:'v1.0',
-		name:'Default Name',
-		reward:Quest.Reward(),
-		showInTab:true,
-		showWindowComplete:true,
-		dailyTask:true,
-		inMain:true,	//in Main.get(key).quest
-		globalHighscore:false,	//call updateHighscore everytime a quest complete
-		alwaysActive:false,	//can call event without being questActive (ex: town)
-		skillPlotAllowed:false,
-		admin:false,		//allow extra in item, ability
-		autoStartQuest:true,
-		maxParty:2,
-		author:'rc',
-		description:'A super awesome quest!',
-		thumbnail:'',
-		scoreModInfo:'',
-		lvl:0,
-		difficulty:'Easy',
-		rating:0,
-		statistic:Quest.Statistic(),
-		playerComment:[],
-		category:[],
-		solo:true,
-		party:"Coop",
-		zone:null,
-		completable:true,
-		requirement:{},
-		//
-		mapAddon:{},
-		map:{},
-		item:{}, 
-		equip:{},
-		npc:{},
-		ability:{},
-		dialogue:{},
-		boss:{},
-		//		
-		challenge:{},
-		preset:{},
-		highscore:{},
-		event:Quest.Event(),
-		skillPlot:[],
-		path:{},	
-		s:null,	//set in s.exports
-	};
-	for(var i in extra){
-		if(tmp[i] === undefined) 
-			ERROR(4,'prop not in constructor',i);
-		tmp[i] = extra[i];
-	}
+	if(extra.reward)
+		extra.reward = Quest.Reward(extra.reward);
+	if(!extra.id || extra.id[0] !== 'Q')
+		return ERROR(1,'quest needs to start with Q',extra.id);
+	if(extra.recommendedPartySize === undefined)
+		extra.recommendedPartySize = extra.maxPartySize;
 	
-	tmp.reward = Quest.Reward(tmp.reward);
-	if(!tmp.id || tmp.id[0] !== 'Q')
-		return ERROR(1,'quest needs to start with Q',tmp.id);
+	var tmp = new Quest(extra);
 	
-	if(tmp.thumbnail === true)
-		tmp.thumbnail = '/quest/' + tmp.id + '/' + tmp.id + '.png';
-	else
-		tmp.thumbnail = '/img/ui/defaultQuestThumbnail.png'
 	
 	if(tmp.zone && !ZONE.$contains(tmp.zone))
 		return ERROR(3,'invalid zone',tmp.zone);
@@ -105,6 +140,18 @@ Quest.getAPItemplate = function(extra){
 	return tmp;
 }
 
+var db;
+var QUEST_FOLDER = './quest/';
+var QUEST_EXCLUDE = ['tileset'];
+
+
+var ZONE = ['QfirstTown-west','QfirstTown-south','QfirstTown-main','QfirstTown-east','QfirstTown-eastCave','QfirstTown-north'];
+
+var SIGN_IN_PACK = {};
+var SIGN_IN_PACK_RATING = null;	//set in getRatingSignInPack
+
+var DB = Quest.DB = {};
+
 Quest.Party = function(name){
 	return ["No","Coop","PvP"].$contains(name);
 }
@@ -117,18 +164,9 @@ Quest.Category = function(category){
 Quest.Reward = function(reward){
 	reward = reward || {};
 	return {
-		reputation:reward.reputation || Quest.Reward.reputation(),
-		exp:reward.exp === undefined ? 1 : reward.exp,
-		item:reward.item === undefined ? 1 : reward.item,
-		ability:reward.ability || {},
-	};
-}	
-
-Quest.Reward.reputation = function(mod,min,max){
-	return {
-		mod:mod || 10,
-		min:min || 1,
-		max:max || 2,
+		score:reward.score === undefined ? 1 : reward.score,
+		completion:reward.completion === undefined ? 1 : reward.completion,
+		monster:reward.monster === undefined ? 1 : reward.monster,
 	};
 }
 
@@ -138,6 +176,10 @@ Quest.Statistic = function(countComplete,countStarted,averageRepeat){
 		countStarted:countStarted || 0,
 		averageRepeat:averageRepeat || 0,
 	}
+}
+
+Quest.isValidZone = function(name){
+	return ZONE.$contains(name);
 }
 
 Quest.Requirement = function(req){
@@ -159,7 +201,7 @@ Quest.Requirement = function(req){
 		if(Main.getCompletedQuestCount(main) < a.questCount)
 			return false;
 		for(var i = 0 ; i < a.questComplete.length; i++)
-			if(!Main.hasCompletedQuest(main,a.questComplete[i]))
+			if(!Main.haveCompletedQuest(main,a.questComplete[i]))
 				return false;
 				
 		if(Actor.getLevel(Main.getAct(main)) < a.lvl)
@@ -167,7 +209,7 @@ Quest.Requirement = function(req){
 		if(Main.getCompletedAchievementCount(main) < a.achievementCount)
 			return false;
 		for(var i = 0 ; i < a.achievementComplete.length; i++)
-			if(!Main.hasCompletedAchievement(main,a.achievementComplete[i]))
+			if(!Main.haveCompletedAchievement(main,a.achievementComplete[i]))
 				return false;
 		return true;
 	}
@@ -206,9 +248,7 @@ Quest.Requirement = function(req){
 var fs = require('fs'),
     path = require('path');
 
-Quest.init = function(dbLink){	//init Module
-	db = dbLink;
-	
+Quest.init = function(){
 	var QUEST_ID_LIST;
 	if(!NODEJITSU){
 		var getDirectories = function (srcpath) {
@@ -237,7 +277,7 @@ Quest.init = function(dbLink){	//init Module
 	for(var i = 0; i < QUEST_ID_LIST.length; i++){
 		var qid = QUEST_ID_LIST[i];
 		if(!qid) continue;	//in case split mess up...
-		var req;
+		var req = null;
 		try {
 			req = require(QUEST_FOLDER+qid + "/" + qid);
 		} catch(err){
@@ -249,51 +289,40 @@ Quest.init = function(dbLink){	//init Module
 		
 		var q = Quest.create(req.quest);
 		if(q.id !== qid) 
-			return ERROR(2,'quest filename doesnt match quest id',q.id,qid);
+			ERROR(2,'quest filename doesnt match quest id',q.id,qid);
 	}
-	setInterval(function(){
-		Quest.updateStatistic();
-	},CST.HOUR*4);
-	Quest.updateRequirement();
-	Quest.updateStatistic();
-	Quest.updateSignInPack(); //duplicated but w/e called inside updateStatistic
-}
-Quest.updateRequirement = function(){
-	for(var i in DB)
+	
+	
+	for(var i in DB){
 		DB[i].requirement = Quest.Requirement(DB[i].requirement);
+		SIGN_IN_PACK[i] = Quest.compressClient(DB[i],false);
+	}
+	Quest.updateStatistic();
+	Quest.updateRating();
 }
-
 
 Quest.get = function(id){
 	return DB[id] || null;
 }
 
-Quest.updateSignInPack = function(onlyOneQuest){
-	if(onlyOneQuest){
-		SIGN_IN_PACK[onlyOneQuest] = Quest.compressClient(DB[onlyOneQuest],false);
-		return;
-	}
-	for(var i in DB)
-		SIGN_IN_PACK[i] = Quest.compressClient(DB[i],false);
-}
-
 Quest.getSignInPack = function(){
 	return SIGN_IN_PACK;
 }
-	
-Quest.compressClient = function(quest,full){ //decompression in QueryDb.uncompressQuest. 
-	full = true;	//not being cheap bandwidth...
-	if(!full){
-		return {
-			name:quest.name,
-			author:quest.author,
-			description:quest.description,
-			thumbnail:quest.thumbnail,
-			showInTab:quest.showInTab,
-			isPartialVersion:true,
-			requirement:Quest.compressClient.requirement(quest.requirement),
-		};
+
+Quest.getRatingSignInPack = function(){
+	if(SIGN_IN_PACK_RATING)
+		return SIGN_IN_PACK_RATING;
+	SIGN_IN_PACK_RATING = {};
+	for(var i in DB){
+		SIGN_IN_PACK_RATING[i] = {
+			rating:DB[i].rating,
+			statistic:DB[i].statistic
+		}
 	}
+	return SIGN_IN_PACK_RATING;
+}	
+
+Quest.compressClient = function(quest){ //decompression in QueryDb.uncompressQuest. 
 	return [
 		quest.id,
 		quest.name,
@@ -307,13 +336,13 @@ Quest.compressClient = function(quest,full){ //decompression in QueryDb.uncompre
 		Quest.compressClient.highscore(quest.highscore),
 		quest.lvl,
 		quest.difficulty,
-		quest.rating,
-		quest.statistic,
-		quest.playerComment,
 		quest.showInTab,
 		false,
 		quest.category,
-		Quest.compressClient.requirement(quest.requirement)
+		Quest.compressClient.requirement(quest.requirement),
+		quest.maxPartySize,
+		quest.recommendedPartySize,
+		quest.mainStory,
 	];
 } 
 
@@ -333,7 +362,6 @@ Quest.compressClient.highscore = function(info){
 	return tmp;
 }
 
-
 Quest.compressClient.requirement = function(info){
 	return {
 		canStartText:info.canStartText
@@ -342,10 +370,13 @@ Quest.compressClient.requirement = function(info){
 
 //#######################
 
-Quest.getMainVarList = function(){
-	var list = [];
-	for(var i in DB)
-		if(DB[i].inMain) list.push(i);
+Quest.getDefaultVariable = function(){
+	var list = {};
+	for(var i in DB){
+		if(DB[i].inMain){
+			list[i] = Main.Quest.Part(DB[i]);
+		}
+	}
 	return list;
 };
 
@@ -373,9 +404,9 @@ Quest.Event = function(obj){
 		_signIn:CST.func,
 		_signOff:CST.func,
 		_hint:CST.func,
-		_death:CST.func,
+		_death:CST.func,		//function(key,killer,partyDead): boolean
+		_respawn:CST.func,		//when manually click revive button. revive by teammate doesnt count
 		_button:CST.func,
-		_debugSignIn:CST.func,
 		_getScoreMod:function(){ return 1; },	//return NUMBER
 	}
 	obj = obj || {};
@@ -384,19 +415,11 @@ Quest.Event = function(obj){
 	return tmp;
 }
 
-Quest.RewardInfo = function(score,exp,item){	//not an attribute of quest...
-	return {
-		score:score === undefined ? 1 : score, 
-		exp:exp === undefined ? 1 : exp, 
-		item:item === undefined ? 1 : item, 
-	}
-}
-
 Quest.getChallengeList = function(q){
 	if(typeof q === 'string') return ERROR(3,'q needs to be object');
 	var tmp = {};
 	for(var i in q.challenge){
-		tmp[i] = 0;
+		tmp[i] = false;
 	}	
 	return tmp;
 }
@@ -411,24 +434,75 @@ Quest.getHighscoreList = function(q){
 }
 
 Quest.rate = function(main,quest,rating,text,abandonReason,hint){
-	if(!main.quest[quest]) return;
+	var timeComplete = main.quest[quest] ? Math.round((Date.now() - main.quest[quest].startTime)/CST.MIN) : 0;
+
 	db.questRating.insert({
 		quest:quest,
-		rating:rating || 1,
+		rating:rating || 0,	//0 means no rating, only feedback
 		text:(text || '').slice(0,1000),
 		username:main.username,
 		timestamp:Date.now(),
 		abandonReason:abandonReason,
 		read:false,
 		hint:hint,
-		timeToComplete:Math.round((Date.now() - main.quest[quest]._startTime)/CST.MIN)
+		timeToComplete:timeComplete
 	});
 }
+Quest.addGeneralFeedback = function(main,text){
+	Quest.rate(main,CST.GENERAL_FEEDBACK,0,text,null,null);
+}
+
+Quest.rate.onCommand = function(main,quest,rating,text,abandonReason,hint){
+	var username = main.username;
+	var name = main.name;
+	if(!main.quest[quest])
+		return;
+	if(rating === 0)
+		Quest.rate(main,quest,rating,text,abandonReason,hint);
+	else {
+		Quest.canRate(username,quest,function(res){
+			if(res)
+				Quest.rate(main,quest,rating,text,abandonReason,hint);
+		});
+	}
+	
+	if(!Reddit || !Reddit.isInit() || !Reddit.isValidParent(quest)) 
+		return Main.addMessage(main,'Thanks for your feedback.');
+	
+	if(!text.trim() || text.length > 10000)
+		return;
+	var str = name + ' says: ' + text;
+	Reddit.comment(quest,str);	
+	var url = Reddit.getUrlParent(quest);
+	Main.addMessage(main,'Thanks for your feedback. <a class="message" href="' + url + '" target="_blank">Check your comment here.</a>');
+}
+
+Quest.canRate = function(username,quest,cb){
+	db.questRating.findOne({
+		username:username,
+		quest:quest,
+	},function(err,res){
+		cb(!res);
+	});
+}
+
+Quest.setQuestMarker = function(qid,spot){
+	DB[qid].questMarker = Quest.QuestMarker(spot.x,spot.y,spot.mapModel);
+}
+
+Quest.QuestMarker = function(x,y,map){
+	return {x:x,y:y,map:map};	//BAD...
+}
+
 //ts("Quest.updateRating(true)")
 //Dialog.open('questRating','QlureKill')
 Quest.updateRating = function(){
 	db.questRating.aggregate([
-		// {$match : {quest : 'QlureKill'} },
+		{ 
+			$match: {
+				rating: { $gt: 0 }
+			}
+		},
 		{
 			$group: {
 				_id: "$quest",
@@ -444,18 +518,18 @@ Quest.updateRating = function(){
 			}
 	   }
 	);
+	/*
 	var func = function(i){
 		return function(err,res){
 			DB[i].playerComment = res;
 		}
 	};
 	for(var i in DB){
-		db.questRating.find({quest:i,text:{$ne:""}},{_id:0,text:1,username:1}).sort({timestamp:1}).limit(5,func(i));
+		db.questRating.find({quest:i,text:{$ne:""}},{_id:0,text:1,username:1})
+			.sort({timestamp:1})
+			.limit(5,func(i));
 	}
-	
-	setTimeout(function(){	//BAD
-		Quest.updateSignInPack();
-	},10000);
+	*/
 }
 
 //ts("Quest.updateStatistic('QlureKill')")
@@ -470,33 +544,33 @@ Quest.updateStatistic = function(quest){
 	var countStarted = 0;
 	var countCompletedAtLeastOnce = 0;
 	
-	db.mainQuest.find({quest:quest},{_id:0,_complete:1,_started:1}).forEach(function(err,res){
+	db.mainQuest.find({quest:quest},{_id:0,complete:1,started:1}).forEach(function(err,res){
 		if(!res){	//aka search done
 			DB[quest].statistic = Quest.Statistic(countCompletedAtLeastOnce,countStarted,countCompleted/countCompletedAtLeastOnce);
-			Quest.updateSignInPack(quest);
 			return;
 		}
-		countCompleted += res._complete;
-		if(res._complete) 
+		countCompleted += res.complete;
+		if(res.complete) 
 			countCompletedAtLeastOnce++;
-		countStarted += res._started;
+		countStarted += +res.started;
 	});
 }
 
-Quest.getQuestRating = function(key,readToo){
+Quest.getQuestFeedback = function(key,readToo){	//admin
 	var query = {}; //text:{$ne:""}};
 	if(!readToo)
 		query.read = false;
 	
 	var param = {list:[]};
 	db.questRating.find(query).forEach(function(err,doc){
-		if(!doc) return Main.openDialog(Main.get(key),'adminQuestRating',param);
+		if(!doc) 
+			return Main.openDialog(Main.get(key),'adminQuestFeedback',param);
 		param.list.push(doc);
 	});
 }
 
-Quest.setQuestRatingAsRead = function(){
-	db.questRating.update({read:false},{$set:{read:true}},{multi:true})
+Quest.setQuestRatingAsRead = function(){	//admin
+	db.questRating.update({read:false},{$set:{read:true}},{multi:true});
 }
 
 

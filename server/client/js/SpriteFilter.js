@@ -1,4 +1,4 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
 var SpriteFilter = exports.SpriteFilter = {};
@@ -12,40 +12,40 @@ SpriteFilter.create = function(id,func,advanced){
 }
 
 SpriteFilter.init = function(){
-	SpriteFilter.create('red',function(red,green,blue,alpha){
+	SpriteFilter.create(CST.SPRITE_FILTER.red,function(red,green,blue,alpha){
 		if(red > 100) red += 100;
 		else red *= 2;
 		return [
-			red.mm(10),
+			Math.max(red,10),
 			green,
 			blue,
 			alpha
 		];
 	});
 
-	SpriteFilter.create('green',function(red,green,blue,alpha){
+	SpriteFilter.create(CST.SPRITE_FILTER.green,function(red,green,blue,alpha){
 		if(green > 100) green += 100;
 		else green *= 2;
 		return [
 			red,
-			green.mm(10),
+			Math.max(green,10),
 			blue,
 			alpha
 		]
 	});
 
-	SpriteFilter.create('blue',function(red,green,blue,alpha){
+	SpriteFilter.create(CST.SPRITE_FILTER.blue,function(red,green,blue,alpha){
 		if(blue > 100) blue += 100;
 		else blue *= 2;
 		return [
 			red,
 			green,
-			blue.mm(10),
+			Math.max(blue,10),
 			alpha
 		]
 	});
 
-	SpriteFilter.create('allBlack',function(red,green,blue,alpha){
+	SpriteFilter.create(CST.SPRITE_FILTER.allBlack,function(red,green,blue,alpha){
 		return [
 			0,
 			0,
@@ -53,35 +53,22 @@ SpriteFilter.init = function(){
 			alpha
 		]
 	},true);
-
-	SpriteFilter.create('dodge',function(red,green,blue,alpha){
-		return [
-			red+100,
-			green,
-			blue,
-			alpha/2
-		]
-	});
 };
 
 SpriteFilter.init();	//no dependency
 
 SpriteFilter.generateSpriteFilteredImg = function(spriteModel,filter){
-	var canvas = $('<canvas>')
-		.attr({
-			width:spriteModel.img.width,
-			height:spriteModel.img.height
-		})[0];
+	var canvas = Tk.createSharpCanvas(spriteModel.img.width,spriteModel.img.height)[0];
 	var ctx = canvas.getContext("2d");
 	ctx.drawImage(spriteModel.img,0,0);
 	
-	if(filter === 'allBlack'){	//need optimization cuz called often
+	if(filter === CST.SPRITE_FILTER.allBlack){	//need optimization cuz called often
 		SpriteFilter.generateSpriteFilteredImg.allColor('black',spriteModel.img,ctx);
 		spriteModel.filteredImg[filter] = new Image();
 		spriteModel.filteredImg[filter].src = canvas.toDataURL();
 		return;
 	}
-	if(filter === 'allRed'){
+	if(filter === CST.SPRITE_FILTER.allRed){
 		SpriteFilter.generateSpriteFilteredImg.allColor('red',spriteModel.img,ctx);
 		spriteModel.filteredImg[filter] = new Image();
 		spriteModel.filteredImg[filter].src = canvas.toDataURL();

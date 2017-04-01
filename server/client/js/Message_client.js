@@ -1,20 +1,18 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Dialog = require4('Dialog'), Command = require4('Command'), Socket = require4('Socket');
-var Message = require3('Message');
+var Dialog, Command, Socket;
+global.onReady(function(){
+	Dialog = rootRequire('client','Dialog',true); Command = rootRequire('shared','Command',true); Socket = rootRequire('private','Socket',true);
+});
+var Message = rootRequire('shared','Message');
+
 
 Message.sendChatToServer = function(text){
 	if(!text.trim()) return;
 	
 	Dialog.chat.setInput('',false);
-	if(text[0] === '$'){
-		var cmd = Command.textToCommand(text.slice(1));
-		if(cmd)
-			Command.execute();
-		return;
-	}
-	
+
 	Message.sendToServer(Message.sendChatToServer.textToMessage(text));
 }
 
@@ -26,7 +24,7 @@ Message.sendChatToServer.textToMessage = function(txt){
 		var to = txt.slice(0,txt.indexOf(','));
 		var text = txt.slice(txt.indexOf(',') + 1);
 		
-		return Message.Pm(text,player.name,to);
+		return Message.Pm(text,w.player.name,to);
 	}
 	
 	//Pm with possible nickname
@@ -34,24 +32,22 @@ Message.sendChatToServer.textToMessage = function(txt){
 		txt = txt.slice(1);
 		
 		//Check for Nickname
-		var nick = txt.slice(0,txt.indexOf(','));
-		var to = nick;
-		var text = txt.slice(txt.indexOf(',') + 1);
+		var comma = txt.indexOf(',');
 		
-		for(var i in main.social.friendList){
-			if(nick === main.social.friendList[i].nick) 
-				to = i;
+		if(comma !== -1){
+			var to = txt.slice(0,comma);
+			var text = txt.slice(comma + 1);
+					
+			return Message.Pm(text,w.player.name,to);
 		}
-				
-		return Message.Pm(text,player.name,to);
 	}
 	
 	//Public
-	return Message.Public(txt,player.name);
+	return Message.Public(txt,w.player.name);
 }
 
 Message.sendToServer = function(msg){
-	Socket.emit('sendChat',msg);
+	Socket.emit(CST.SOCKET.message,msg);
 }
 
 
@@ -77,6 +73,7 @@ Message.add = function(key,msg){
 		msg = Message.Game(msg,Message.CLIENT);
 	Message.receive(msg);
 }
+
 Message.addPopup = function(key,text){
 	Message.receive(Message.QuestPopup(text));
 }

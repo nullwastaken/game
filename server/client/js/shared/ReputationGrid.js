@@ -1,15 +1,21 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var ReputationConverter = require2('ReputationConverter'), Main = require2('Main');
-var ReputationGrid = exports.ReputationGrid = {};
+var ReputationConverter, Main;
+global.onReady(function(){
+	ReputationConverter = rootRequire('shared','ReputationConverter'); Main = rootRequire('shared','Main');
+});
+var ReputationGrid = exports.ReputationGrid = function(extra){
+	this.width = 15;
+	this.height = 15;
+	this.base = null;	//ReputationGrid.Base
+	Tk.fillExtra(this,extra);
+};
 
 ReputationGrid.create = function(base){
-	var tmp = {
-		width:15,
-		height:15,
+	var tmp = new ReputationGrid({
 		base:base,
-	};
+	});
 	DB = tmp;
 };
 
@@ -42,17 +48,17 @@ var s = ReputationGrid.Base.slot = function(stat,value){
 }
 
 ReputationGrid.create(ReputationGrid.Base([
-	[s("hp-max",0.03),s("bullet-amount",0.03),s("crit-magn",0.03),s("mana-max",0.03),s("stun-magn",0.03),s("strike-size",0.03),s("crit-magn",0.03),s("dmg-cold",0.03),s("dmg-melee",0.03),s("bleed-chance",0.03),s("chill-magn",0.03),s("drain-chance",0.03),s("hp-regen",0.03),s("chill-chance",0.03),s("chill-magn",0.03)],
-	[s("dmg-magic",0.03),s("chill-magn",0.03),s("mana-regen",0.03),s("crit-chance",0.03),s("def-range",0.03),s("burn-magn",0.03),s("knock-magn",0.03),s("crit-chance",0.03),s("dmg-range",0.03),s("leech-magn",0.03),s("bullet-amount",0.03),s("def-lightning",0.03),s("hp-max",0.03),s("burn-chance",0.03),s("def-magic",0.03)],
-	[s("def-range",0.03),s("knock-magn",0.03),s("leech-magn",0.03),s("crit-chance",0.03),s("dmg-fire",0.03),s("strike-range",0.03),s("leech-chance",0.03),s("dmg-lightning",0.03),s("stun-chance",0.03),s("dmg-fire",0.03),s("leech-chance",0.03),s("bullet-amount",0.03),s("dmg-lightning",0.03),s("def-fire",0.03),s("def-range",0.03)],
+	[s("hp-max",0.03),s("atkSpd",0.03),s("crit-magn",0.03),s("mana-max",0.03),s("stun-magn",0.03),s("strike-size",0.03),s("crit-magn",0.03),s("dmg-cold",0.03),s("dmg-melee",0.03),s("bleed-chance",0.03),s("chill-magn",0.03),s("drain-chance",0.03),s("hp-regen",0.03),s("chill-chance",0.03),s("chill-magn",0.03)],
+	[s("dmg-magic",0.03),s("chill-magn",0.03),s("mana-regen",0.03),s("crit-chance",0.03),s("def-range",0.03),s("burn-magn",0.03),s("knock-magn",0.03),s("crit-chance",0.03),s("dmg-range",0.03),s("leech-magn",0.03),s("atkSpd",0.03),s("def-lightning",0.03),s("hp-max",0.03),s("burn-chance",0.03),s("def-magic",0.03)],
+	[s("def-range",0.03),s("knock-magn",0.03),s("leech-magn",0.03),s("crit-chance",0.03),s("dmg-fire",0.03),s("strike-range",0.03),s("leech-chance",0.03),s("dmg-lightning",0.03),s("stun-chance",0.03),s("dmg-fire",0.03),s("leech-chance",0.03),s("atkSpd",0.03),s("dmg-lightning",0.03),s("def-fire",0.03),s("def-range",0.03)],
 	[s("hp-max",0.03),s("dmg-lightning",0.03),s("dmg-range",0.03),s("mana-max",0.03),s("knock-magn",0.03),s("dmg-melee",0.03),s("crit-chance",0.03),s("leech-magn",0.03),s("def-range",0.03),s("def-lightning",0.03),s("dmg-lightning",0.03),s("def-melee",0.03),s("dmg-cold",0.03),s("def-fire",0.03),s("knock-chance",0.03)],
 	[s("chill-chance",0.03),s("bleed-magn",0.03),s("hp-regen",0.03),s("def-magic",0.03),s("chill-chance",0.03),s("strike-size",0.03),s("bleed-chance",0.03),s("chill-chance",0.03),s("bleed-chance",0.03),s("crit-magn",0.03),s("knock-chance",0.03),s("chill-magn",0.03),s("mana-max",0.03),s("leech-chance",0.03),s("leech-magn",0.03)],
 	[s("knock-magn",0.03),s("stun-magn",0.03),s("stun-magn",0.03),s("crit-magn",0.03),s("def-melee",0.03),s("stun-magn",0.03),s("def-cold",0.03),s("dmg-melee",0.03),s("def-cold",0.03),s("drain-chance",0.03),s("drain-magn",0.03),s("leech-magn",0.03),s("mana-regen",0.03),s("def-cold",0.03),s("bleed-magn",0.03)],
 	[s("knock-magn",0.03),s("dmg-range",0.03),s("atkSpd",0.03),s("def-cold",0.03),s("leech-magn",0.03),s("dmg-cold",0.03),s("dmg-fire",0.03),s("bleed-chance",0.03),s("dmg-fire",0.03),s("def-magic",0.03),s("crit-magn",0.03),s("strike-size",0.03),s("hp-regen",0.03),s("def-melee",0.03),s("hp-regen",0.03)],
-	[s("stun-chance",0.03),s("hp-max",0.03),s("dmg-magic",0.03),s("stun-magn",0.03),s("def-lightning",0.03),s("def-magic",0.03),s("strike-range",0.03),s("def-melee",0.03),s("dmg-magic",0.03),s("bullet-amount",0.03),s("atkSpd",0.03),s("def-magic",0.03),s("dmg-cold",0.03),s("dmg-fire",0.03),s("bleed-magn",0.03)],
-	[s("mana-regen",0.03),s("burn-chance",0.03),s("atkSpd",0.03),s("stun-chance",0.03),s("knock-magn",0.03),s("def-melee",0.03),s("dmg-lightning",0.03),s("chill-chance",0.03),s("chill-chance",0.03),s("def-fire",0.03),s("leech-chance",0.03),s("def-cold",0.03),s("bullet-amount",0.03),s("burn-chance",0.03),s("def-range",0.03)],
+	[s("stun-chance",0.03),s("hp-max",0.03),s("dmg-magic",0.03),s("stun-magn",0.03),s("def-lightning",0.03),s("def-magic",0.03),s("strike-range",0.03),s("def-melee",0.03),s("dmg-magic",0.03),s("atkSpd",0.03),s("atkSpd",0.03),s("def-magic",0.03),s("dmg-cold",0.03),s("dmg-fire",0.03),s("bleed-magn",0.03)],
+	[s("mana-regen",0.03),s("burn-chance",0.03),s("atkSpd",0.03),s("stun-chance",0.03),s("knock-magn",0.03),s("def-melee",0.03),s("dmg-lightning",0.03),s("chill-chance",0.03),s("chill-chance",0.03),s("def-fire",0.03),s("leech-chance",0.03),s("def-cold",0.03),s("atkSpd",0.03),s("burn-chance",0.03),s("def-range",0.03)],
 	[s("dmg-melee",0.03),s("bleed-magn",0.03),s("drain-chance",0.03),s("def-melee",0.03),s("drain-chance",0.03),s("dmg-melee",0.03),s("atkSpd",0.03),s("dmg-magic",0.03),s("dmg-lightning",0.03),s("dmg-fire",0.03),s("drain-magn",0.03),s("mana-max",0.03),s("strike-range",0.03),s("hp-regen",0.03),s("def-lightning",0.03)],
-	[s("knock-chance",0.03),s("mana-regen",0.03),s("mana-max",0.03),s("dmg-magic",0.03),s("def-range",0.03),s("mana-regen",0.03),s("bullet-amount",0.03),s("mana-max",0.03),s("hp-regen",0.03),s("crit-chance",0.03),s("drain-magn",0.03),s("burn-magn",0.03),s("stun-chance",0.03),s("knock-chance",0.03),s("strike-range",0.03)],
+	[s("knock-chance",0.03),s("mana-regen",0.03),s("mana-max",0.03),s("dmg-magic",0.03),s("def-range",0.03),s("mana-regen",0.03),s("atkSpd",0.03),s("mana-max",0.03),s("hp-regen",0.03),s("crit-chance",0.03),s("drain-magn",0.03),s("burn-magn",0.03),s("stun-chance",0.03),s("knock-chance",0.03),s("strike-range",0.03)],
 	[s("burn-magn",0.03),s("dmg-cold",0.03),s("dmg-cold",0.03),s("chill-magn",0.03),s("def-magic",0.03),s("burn-magn",0.03),s("dmg-magic",0.03),s("stun-chance",0.03),s("drain-magn",0.03),s("stun-magn",0.03),s("strike-range",0.03),s("burn-magn",0.03),s("bleed-magn",0.03),s("def-cold",0.03),s("dmg-range",0.03)],
 	[s("knock-chance",0.03),s("def-fire",0.03),s("def-lightning",0.03),s("dmg-range",0.03),s("atkSpd",0.03),s("def-fire",0.03),s("crit-chance",0.03),s("dmg-melee",0.03),s("def-lightning",0.03),s("mana-regen",0.03),s("burn-chance",0.03),s("dmg-cold",0.03),s("drain-chance",0.03),s("leech-chance",0.03),s("dmg-range",0.03)],
 	[s("hp-max",0.03),s("bleed-chance",0.03),s("def-melee",0.03),s("leech-chance",0.03),s("knock-chance",0.03),s("stun-chance",0.03),s("drain-magn",0.03),s("strike-range",0.03),s("dmg-melee",0.03),s("crit-magn",0.03),s("bleed-chance",0.03),s("dmg-magic",0.03),s("def-magic",0.03),s("hp-max",0.03),s("dmg-range",0.03)],
@@ -60,9 +66,6 @@ ReputationGrid.create(ReputationGrid.Base([
 ]));
 
 
-ReputationGrid.getSignInPack = function(){
-	return DB.base;
-}
 ReputationGrid.get = function(){
 	return DB;
 }
@@ -126,7 +129,6 @@ ReputationGrid.randomlyGenerate = function(){
 		"mana-regen":RESOURCE,
 		"mana-max":RESOURCE,
 		
-		"bullet-amount":SPEC,
 		"atkSpd":SPEC,
 		"strike-range":SPEC,
 		"strike-size":SPEC,

@@ -1,39 +1,54 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
-var Quest = require2('Quest'),Achievement = require2('Achievement'), Actor = require2('Actor'), Material = require2('Material'), OfflineAction = require2('OfflineAction'), Highscore = require2('Highscore'), Main = require2('Main');
+var Quest, Achievement, Material, OfflineAction, Highscore, Main;
+global.onReady(function(initPack){
+	Quest = rootRequire('server','Quest'); Achievement = rootRequire('shared','Achievement'); Material = rootRequire('server','Material'); OfflineAction = rootRequire('server','OfflineAction'); Highscore = rootRequire('server','Highscore'); Main = rootRequire('shared','Main');
+	db = initPack.db;
+	Competition.init();
+},{db:['competition']});
+var Competition = exports.Competition = function(extra){
+	this.id = Math.randomId();
+	this.startTime = Date.now();
+	this.endTime =  0;
+	this.name = '';
+	this.description = '';
+	this.rewardGiven = false;
+	this.score = [];	//Competition.Score[]
+	this.order = CST.HIGHSCORE.descending;
+	this.highscore = '';
+	this.quest = '';
+	this.questName = '';
+	Tk.fillExtra(this,extra);
+};
 
 var db;
 
 var CURRENT = null;
 
-var Competition = exports.Competition = {};
 Competition.create = function(highscore,end){	//rename highscore to category?
 	var high = Highscore.get(highscore);
 	var quest = Highscore.getQuest(highscore);
-	if(!high || !quest) return ERROR(3,'invalid quest or highscore',quest,highscore);
+	if(!high || !quest) 
+		return ERROR(3,'invalid quest or highscore',quest,highscore);
 	
-	var a = {
-		id:Math.randomId(),
-		startTime:Date.now(),
-		endTime:end || 0,
+	var a = new Competition({
+		endTime:end,
 		name:high.name,
 		description:high.description,
-		rewardGiven:false,
-		score:[],
 		order:high.order,
-		highscore:highscore || '',
+		highscore:highscore,
 		quest:quest,
 		questName:Quest.get(quest).name,
-	};
+	});
 	CURRENT = a;
 	return a;
 }
 
-Competition.Score = function(username,value,lvl){	//BAD saving lvl here is bad...
+Competition.Score = function(username,name,value){
 	return {
 		username:username || '',
+		name:name || '',
 		value:value || 0,
-		lvl: lvl || 0,
 	};
 }
 
@@ -44,30 +59,30 @@ Competition.Reward = function(item,exp){
 	}
 }
 
-Competition.Reward.randomlyGenerate = function(lvl,place){
+Competition.Reward.randomlyGenerate = function(place){
 	var item = {};
 	if(place === 0){
-		item[Material.getRandom(lvl)] = 20;
+		item[Material.getRandom()] = 20;
 		item['competition-1'] = 1;
 		return Competition.Reward(item,2000);
 	}
 	if(place === 1){
-		item[Material.getRandom(lvl)] = 16;
+		item[Material.getRandom()] = 16;
 		item['competition-any'] = 1;
 		return Competition.Reward(item,1600);
 	}
 	if(place === 2){
-		item[Material.getRandom(lvl)] = 12;
+		item[Material.getRandom()] = 12;
 		item['competition-any'] = 1;
 		return Competition.Reward(item,1200);
 	}
 	if(place === 3){
-		item[Material.getRandom(lvl)] = 8;
+		item[Material.getRandom()] = 8;
 		item['competition-any'] = 1;
 		return Competition.Reward(item,800);
 	}
 	if(place === 4){
-		item[Material.getRandom(lvl)] = 4;
+		item[Material.getRandom()] = 4;
 		item['competition-any'] = 1;
 		return Competition.Reward(item,400);
 	}
@@ -75,21 +90,31 @@ Competition.Reward.randomlyGenerate = function(lvl,place){
 	return Competition.Reward(item,0);
 }
 
-Competition.init = function(dbLink,app){
-	db = dbLink;
-	db.competition.find({rewardGiven:false},{_id:0},function(err,res){
-		if(res[0])
-			CURRENT = res[0];
+Competition.init = function(){
+	Competition.getCurrentFromDb(db,function(comp){
+		if(comp)
+			CURRENT = comp;
 		else {
 			Competition.generateRandom();
+			Competition.save();
 		}
 		var comp = Competition.getCurrent();
 		var timeDiff = comp.endTime - Date.now();
 		setTimeout(function(){
 			Competition.end(comp);
 		},timeDiff);
-	}).sort({endTime:-1}).limit(1);
+	});
 	
+}
+
+Competition.getCurrentFromDb = function(db,cb){
+	db.competition.find({rewardGiven:false},{_id:0},function(err,res){
+		if(err)
+			return null;
+		if(res[0])
+			res[0] = Competition.uncompressDb(res[0]);
+		cb(res[0]);
+	}).sort({endTime:-1}).limit(1);
 }
 
 Competition.generateRandom = function(){
@@ -98,6 +123,9 @@ Competition.generateRandom = function(){
 
 Competition.save = function(){
 	var comp = Competition.getCurrent();
+	
+	comp = Competition.compressDb(Tk.deepClone(comp));
+	
 	db.competition.upsert({id:comp.id},comp);
 }
 
@@ -105,18 +133,22 @@ Competition.onQuestComplete = function(key,highscoreInfo){
 	var comp = Competition.getCurrent();
 	if(!comp) return;
 	
+	var username = Main.get(key).username;
+	var name = Main.get(key).name;
+	
+	if(username === 'rc')
+		return;
+		
 	for(var j in highscoreInfo){
 		if(j !== comp.highscore)
 			continue;
-		var username = Main.get(key).username;
-		var lvl = Actor.getLevel(Actor.get(key));
 		
 		var alreadyThere = false;
 		for(var i = 0 ; i < comp.score.length; i++){
 			if(comp.score[i].username === username){
 				alreadyThere = true;
-				if((comp.order === 'ascending' && highscoreInfo[j].score > comp.score[i].value)
-					|| (comp.order === 'descending' && highscoreInfo[j].score < comp.score[i].value)
+				if((comp.order === CST.HIGHSCORE.ascending && highscoreInfo[j].score < comp.score[i].value)
+					|| (comp.order === CST.HIGHSCORE.descending && highscoreInfo[j].score > comp.score[i].value)
 				){
 					comp.score[i].value = highscoreInfo[j].score;
 					Competition.updateRank(comp);
@@ -125,7 +157,7 @@ Competition.onQuestComplete = function(key,highscoreInfo){
 			}
 		}
 		if(alreadyThere === false){
-			comp.score.push(Competition.Score(username,highscoreInfo[j].score,lvl));
+			comp.score.push(Competition.Score(username,name,highscoreInfo[j].score));
 			Competition.updateRank(comp);
 			Competition.save();
 		}
@@ -147,7 +179,7 @@ Competition.removePlayer = function(comp,username){
 };
 
 Competition.updateRank = function(comp){
-	if(comp.order === 'ascending')
+	if(comp.order === CST.HIGHSCORE.ascending)
 		comp.score.sort(function(a,b){
 			return a.value-b.value;
 		});
@@ -183,7 +215,7 @@ Competition.end = function(comp){
 	//give reward
 	for(var i = 0; i < 5; i++){
 		if(comp.score[i]){
-			var reward = Competition.Reward.randomlyGenerate(comp.score[i].lvl,i);
+			var reward = Competition.Reward.randomlyGenerate(i);
 		
 			OfflineAction.create(comp.score[i].username,'message',OfflineAction.Data.message(
 				'Congratulations! You finished #' + (i+1) + ' in the competition! You win ' + reward.exp + ' exp and a bunch of items.'
@@ -199,19 +231,67 @@ Competition.end = function(comp){
 	Competition.generateRandom();
 }
 
-Competition.getHomePageContent = function(scoreMaxLength){
-	scoreMaxLength = scoreMaxLength || 5;
+Competition.onSignIn = function(main,firstSignIn){
+	if(firstSignIn)
+		return;
+	var comp = Competition.getCurrent();
+	var str = 'Weekly competition: '
+		+ '<fakea class="message" onclick="exports.Dialog.open(\'highscore\',\'competition\');" '
+		+ 'title="' + comp.description + '">' + comp.questName + '</fakea>.';
 	
-	var cur = Competition.getCurrent();
-	var temp = {};
-	for(var i in cur){	//only want to compress score
-		if(i === 'score')
-			temp[i] = cur[i].slice(0,scoreMaxLength);
-		else
-			temp[i] = cur[i];
-	}
-	return temp;
+	if(comp.score[0])
+		str += '<br> &nbsp;=> Currently in first place: ' + comp.score[0].name + '.';
+	Main.addMessage(main,str);	
 }
+
+
+Competition.compressDb = function(comp){
+	if(!Competition.getDbSchema()(comp))
+		ERROR(3,'data not following schema',JSON.stringify(Competition.getDbSchema().errors(comp)),comp);
+	return comp;
+}
+
+Competition.uncompressDb = function(comp){
+	if(!Competition.getDbSchema()(comp))
+		ERROR(3,'data not following schema',JSON.stringify(Competition.getDbSchema().errors(comp)),comp);
+	return comp;
+}
+
+var schema;
+Competition.getDbSchema = function(){
+	schema = schema || require('js-schema')({
+		id:String,
+		startTime:Number,
+		endTime:Number,
+		name:String,
+		description:String,
+		rewardGiven:Boolean,
+		score:Array.of({username:String,name:String,value:Number}),
+		order:String,
+		highscore:String,
+		quest:String,
+		questName:String,
+		'*':null
+	});
+	return schema;
+}
+
+
+//no dependencies
+Competition.getHomePageContent = function(db){
+	if(Date.now() - LAST_UPDATE > 60000){
+		LAST_UPDATE = Date.now();
+		Competition.getCurrentFromDb(db,function(comp){
+			CONTENT = comp;
+		});
+	}
+	return CONTENT;
+}
+var CONTENT = {};
+var LAST_UPDATE = -1;
+
+
+
 
 
 

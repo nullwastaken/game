@@ -1,24 +1,39 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Main = require4('Main'), Message = require4('Message'), Img = require4('Img'), Command = require4('Command');
-var Dialog = require3('Dialog');
+var Main, Message, Img, Command;
+global.onReady(function(){
+	Main = rootRequire('shared','Main',true); Message = rootRequire('shared','Message',true); Img = rootRequire('client','Img',true); Command = rootRequire('shared','Command',true);
+});
+var Dialog = rootRequire('client','Dialog');
 
 var CHAT_BOX_TEXT = null;
 var DIALOGUE_HEIGHT = 200;
 var DIALOGUE_WIDTH = 600;
 var CHAT_BOX_INPUT = null;
+var FIRST = true;
+
+var REMOVE_TIME = 15*60*1000;
+var HOVER_TIME = 2*60*1000;
 
 var getHeight = function(){
-	return Main.getPref(main,'minimizeChat') ? 150 : 200;
+	return Main.getPref(w.main,'minimizeChat') ? 150 : 200;
 }
 var getWidth = function(){
-	return Main.getPref(main,'minimizeChat') ? 450 : 600; 
+	return Main.getPref(w.main,'minimizeChat') ? 525 : 600; 
+}
+
+Dialog.getSizeBottomLeft = function(includePm){
+	return {
+		width:400,	//getWidth(),	//BAD, but otherwise, because more than half size, alwaysgoes away
+		height:getHeight() + 25 + (includePm ? PM_HEIGHT : 0),	//25 for partyClan
+	}	
 }
 
 
+var HOVER_DIALOG = false;
 
-Dialog.UI('chat',{
+Dialog.UI('chat','bottomLeft',{
 	position:'absolute',
 	left:0,
 	zIndex:11,	//otherwise, cant click links
@@ -26,9 +41,9 @@ Dialog.UI('chat',{
 	padding:'0px 0px',
 	border:'1px solid black',
 	color:'white',
-	font:'1.3em Kelly Slab',
-},Dialog.Refresh(function(html){
-	if(main.hudState.chat === Main.hudState.INVISIBLE){
+	fontSize:'1.1em',
+},Dialog.Refresh(function(html,variable){
+	if(w.main.hudState.chat === Main.hudState.INVISIBLE){
 		html.hide();
 		return null;
 	}
@@ -45,35 +60,41 @@ Dialog.UI('chat',{
 	
 	
 	CHAT_BOX_TEXT = CHAT_BOX_TEXT || $("<div>")
-		.addClass('onlyTextScroll shadow')	//
-		.css({padding:'5px 5px'})
-		.html('Welcome!<br>');
-		
+		.css({fontSize:'0.8em'})
+		.addClass('onlyTextScroll shadow15')	//
+		.css({padding:'5px 5px'});
+	
+	CHAT_BOX_TEXT.unbind('hover');	//idk y...
+	CHAT_BOX_TEXT.hover(function(){
+			HOVER_DIALOG = true;
+			$('.visibleOnFocus').show();
+			CHAT_BOX_TEXT.scrollTop(1000000);
+		},function(){
+			$('.visibleOnFocus').hide();
+			HOVER_DIALOG = false;
+		});
+	
+	if(FIRST)
+		Dialog.chat.addText('Welcome!');
+
 	CHAT_BOX_TEXT.css({height:HEIGHT-27});
 	html.append(CHAT_BOX_TEXT);
+		
 	
 	//#############
 	
 	var form = $('<form>')
-		/*.css({
-			border:'1px solid black',
-			height:25,
-			padding:'4px -4px',
-			width:WIDTH
-		})*/
 		.css({
 			border:'1px solid black',
 			position:'absolute',
 			left:0,	//-4 cuz border
 			bottom:0,
-		})
-		.append($('<span>')
-			.html(player.name + ": ")
-			.attr('id','chatUserName')
-		);
+		});
+	
 	CHAT_BOX_INPUT = $('<input>')
+		.attr('placeholder','Press Enter to chat.')
 		.addClass('onlyText')
-		.css({width:WIDTH-75 - 5*player.name.length});	//-100 cuz player name takes place
+		.css({marginLeft:'10px',width:WIDTH-75 - 5*w.player.name.length});	//-100 cuz player name takes place
 			
 	form.append(CHAT_BOX_INPUT)	
 		.submit(function(e) {
@@ -86,53 +107,13 @@ Dialog.UI('chat',{
 		})
 		.click(function(){
 			Dialog.chat.focusInput();
-		})
-		.keyup(function(){
-			Dialog.open('command');
 		});
 		
 	html.append(form);	
 	
-	if(main.hudState.bottomChatIcon === Main.hudState.INVISIBLE) return;
-	html.append($('<span>')	//span for all buttons, but only 1 button...
-		.css({
-			position:'absolute',
-			left:WIDTH-24-4,	//-4 cuz border
-			top:HEIGHT-24,
-		})
-		.append(Img.drawIcon.html("attackMelee-cube",24,'Shift-Left: Clear Chat and PM')
-			.click(function(e){
-				if(!e.shiftKey) return;
-				CHAT_BOX_TEXT.html('');
-				PM_TEXT.html('');
-			})
-		)
-	);
-	
-	
-	var min = Main.getPref(main,'minimizeChat');		
-	html.append($('<button>')
-		.html(min ? '+' : '-')
-		.attr('title',min ? 'Maximize Chat' : 'Minimize Chat')
-		.css({
-			color:'white',
-			backgroundColor:'rgba(0,0,0,0)',
-			position:'absolute',
-			left:WIDTH-24-4,	//-4 cuz border
-			top:0,
-		})
-		.click(function(){
-			Command.execute('pref',['minimizeChat',!min]);
-		})
-	);
-	CHAT_BOX_TEXT[0].scrollTop += 100000;
-	setTimeout(function(){	//BAD
-		CHAT_BOX_TEXT[0].scrollTop += 100000;
-	},100);
-	
-	
+	FIRST = false;
 },function(){
-	return "" + main.hudState.chat + main.hudState.bottomChatIcon + Main.getPref(main,'minimizeChat');
+	return "" + w.main.hudState.chat + w.main.hudState.bottomChatIcon + Main.getPref(w.main,'minimizeChat');
 }));
 
 Dialog.chat = {};
@@ -154,10 +135,49 @@ Dialog.chat.getInput = function(){
 	return CHAT_BOX_INPUT.val();
 }
 
+
+var TEXT_LIST = {};
 Dialog.chat.addText = function(text){
-	CHAT_BOX_TEXT.append(text,'<br>');
-	CHAT_BOX_TEXT[0].scrollTop += 50;
+	if(!CHAT_BOX_TEXT)	//case not ready
+		return setTimeout(function(){
+			Dialog.chat.addText(text);
+		},5000);
+
+	var atBottom = Tk.isScrollBarBottom(CHAT_BOX_TEXT,20);
+	
+	var el = $('<span>').append(text,'<br>');	
+	CHAT_BOX_TEXT.append(el);
+	
+	if(atBottom)
+		CHAT_BOX_TEXT.scrollTop(10000);	
+		
+	var id = Math.randomId();
+	TEXT_LIST[id] = {
+		id:id,
+		html:el,
+		timestamp:Date.now(),
+	};
+	
+	if(Main.getPref(w.main,'deleteChat'))
+		setTimeout(function(){
+			if(!TEXT_LIST[id])
+				return;
+			TEXT_LIST[id].html.remove();
+			delete TEXT_LIST[id];
+		},REMOVE_TIME);
+		
+	
+	setTimeout(function(){
+		if(!TEXT_LIST[id])
+			return;
+		TEXT_LIST[id].html.addClass('visibleOnFocus');
+		if(!HOVER_DIALOG)
+			TEXT_LIST[id].html.hide();
+	},HOVER_TIME);
+	
 }
+
+
 
 Dialog.chat.isInputActive = function(text){
 	if(typeof text === 'string')
@@ -183,7 +203,7 @@ var PM_HTML = null;
 var PM_TEXT = null;
 
 
-Dialog.UI('pm',{
+Dialog.UI('pm','bottomLeft',{
 	position:'absolute',
 	left:0,
 	height:PM_HEIGHT,
@@ -191,7 +211,7 @@ Dialog.UI('pm',{
 	background:'rgba(0,0,0,0)',
 	padding:'4px 4px',
 	color:'yellow',
-	font:'1.3em Kelly Slab',
+	fontSize:'1.1em',
 },Dialog.Refresh(function(html){
 	html.css({	//cant put above, cuz Main not defined (for getHeight)
 		bottom:DIALOGUE_HEIGHT+PARTY_HEIGHT,
@@ -207,19 +227,45 @@ Dialog.UI('pm',{
 	
 	html.append(PM_TEXT);
 },function(){
-	return "" + Main.getPref(main,'minimizeChat');
+	return "" + Main.getPref(w.main,'minimizeChat');
 },25*10,null,function(){	//BAD hotfix
 	PM_HTML[0].scrollTop += 5000;
 }));
 
+
+var PM_TEXT_LIST = {};
+
 Dialog.pm = {};
 Dialog.pm.addText = function(text){
-	PM_TEXT.append(text);
-	PM_TEXT.append('<br>');
+	var html = $('<span>').append(text,'<br>');
+	PM_TEXT.append(html);
+	
+	var el = {
+		html:html,
+		id:Math.randomId(),
+		timestamp:Date.now()
+	};
+	var id = el.id;
+	PM_TEXT_LIST[id] = el;
+	
 	PM_HTML[0].scrollTop += 5000;
+	
+	if(Main.getPref(w.main,'deleteChat'))
+		setTimeout(function(){
+			if(!PM_TEXT_LIST[id])
+				return;
+			PM_TEXT_LIST[id].html.remove();
+			delete PM_TEXT_LIST[id];
+		},REMOVE_TIME);
+	
 }
 
-Dialog.UI('dialogue',{
+
+	
+
+
+
+Dialog.UI('dialogue','bottomLeft',{
 	position:'absolute',
 	left:0,
 	bottom:0,
@@ -229,15 +275,15 @@ Dialog.UI('dialogue',{
 	padding:'5px 5px',
 	border:'1px solid black',
 	color:'white',
-	font:'1.3em Kelly Slab',
+	fontSize:'1.1em',
 },Dialog.Refresh(function(html,variable,dia){
 	if(!dia) return false;
 	html.addClass('onlyText container shadow');
 	
 	var FACE = false;
-	main.dialogue = dia;
+	w.main.dialogue = dia;
 	
-	if(dia.face && dia.face.image){	//TEMP IMPORTANT
+	if(dia.face && dia.face.image){
 		var face = Img.drawFace(dia.face,96);
 		face.find('canvas').css({border:'1px solid rgba(255, 255, 55, 0.2)'});
 		face.css({
@@ -264,15 +310,21 @@ Dialog.UI('dialogue',{
 	
 	var helper = function(i){
 		return function(){
-			Command.execute('dialogue,option',[i]);
+			Dialog.playSfx('select');
+			Command.execute(CST.COMMAND.dialogueOption,[i]);
 		}
 	};
 	for(var i = 0 ; i < dia.node.option.length; i++){
 		//text.append('&nbsp; ' + (i+1) + '- ');
-		text.append('&nbsp; &nbsp; - ');
+		text.append($('<span>')
+			.html('&nbsp; &nbsp; -> ')
+			.addClass('shadow15')
+			.css({color:'yellow'})
+		);
 		text.append($('<span>')
 			.html(dia.node.option[i].text + '<br>')	//padding?
-			.css({cursor:'pointer'})
+			.css({cursor:'pointer',color:'yellow'})
+			.addClass('shadow15')
 			.click(helper(i))
 			.addClass('underlineHover')
 		);
@@ -282,18 +334,18 @@ Dialog.UI('dialogue',{
 }));
 
 var PARTY_HEIGHT = 30;
-Dialog.UI('partyClan',{
+Dialog.UI('partyClan','bottomLeft',{
 	position:'absolute',
 	left:0,
 	height:PARTY_HEIGHT,
 	padding:'5px 5px',
 	color:'white',
-	font:'1.3em Kelly Slab',
+	fontSize:'1.1em',
 },Dialog.Refresh(function(html){
-	if(main.hudState.party === Main.hudState.INVISIBLE) 
+	if(w.main.hudState.party === Main.hudState.INVISIBLE) 
 		return;
 	
-	if(Dialog.isActive('dialogue') && Main.getPref(main,'minimizeChat'))
+	if(Dialog.isActive('dialogue') && Main.getPref(w.main,'minimizeChat'))
 		return;
 	
 	var HEIGHT = getHeight();
@@ -304,65 +356,82 @@ Dialog.UI('partyClan',{
 		width:WIDTH,
 	});
 	
-	var party = $('<span>');
+	var party = $('<span>').addClass('shadow');
 	html.append(party);
 	
 	var button = $('<button>')
 		.addClass('skinny');
 		
-	if(main.acceptPartyInvite){
+	if(w.main.acceptPartyInvite){
 		button.addClass('myButtonGreen')
 			.html('On')
+			.attr('tabindex',-1)
 			.attr('title','Currently accepting party request. Click to refuse them.')
 			.click(function(){
-				Command.execute('setAcceptPartyInvite',[false]);
+				Dialog.playSfx('select');
+				Command.execute(CST.COMMAND.setAcceptPartyInvite,[false]);
 			});	
 	} else {
 		button.addClass('myButtonRed')
 			.html('Off')
 			.attr('title','Currently refusing party request. Click to accept them.')
 			.click(function(){
-				Command.execute('setAcceptPartyInvite',[true]);
+				Dialog.playSfx('select');
+				Command.execute(CST.COMMAND.setAcceptPartyInvite,[true]);
 			});
 	}
 	
 	party.append(button);	
 	
-	var solo = !main.party.id || main.party.id[0] === '&'; //& is Party.SOLO
+	var solo = !w.main.party.id || w.main.party.id[0] === '&'; //& is Party.SOLO
 	var icon;
 	if(solo){	
-		icon = Img.drawIcon.html('tab-friend',24,'Click to create/join party.')
+		icon = Img.drawIcon.html(CST.UI.party,24,'Click to create party.')
 			.css({verticalAlign:'bottom',margin:'2px',cursor:'pointer'})
 			.click(function(){
-				Command.execute('party,join',[]);
+				Dialog.playSfx('select');
+				Command.execute(CST.COMMAND.partyJoin,[]);
 			});
 	} else {
-		icon = Img.drawIcon.html('tab-friend',24,'Click to leave party.')
+		icon = Img.drawIcon.html(CST.UI.party,24,'Click to leave party.')
 			.css({verticalAlign:'bottom',margin:'2px',cursor:'pointer'})
 			.click(function(){
-				Command.execute('party,joinSolo',[]);
+				Dialog.playSfx('select');
+				Command.execute(CST.COMMAND.partyJoinSolo,[]);
 			});
 	}
 	party.append(icon);
 	if(solo)
 		return;
 
-	party.append(' Party "' + (main.party.id || '') + '": ');
-	party.append($('<u>')
-		.attr('title','Leader')
-		.html(main.party.leader)
+	party.append(' ',$('<u>')
+		.attr('title','Party Leader')
+		.html(w.main.party.leader)
 	);
 	var str = ', ';
-	for(var i = 0; i < 10 && i < main.party.list.length; i++){
-		if(main.party.list[i] !== main.name && main.party.list[i] !== main.party.leader)
-			str += main.party.list[i] + ', '; 
+	for(var i = 0; i < 10 && i < w.main.party.list.length; i++){
+		if(w.main.party.list[i] !== w.main.party.leader)
+			str += w.main.party.list[i] + ', '; 
 	}
-	if(main.party.list.length >= 10) str += '...';
+	str = str.slice(0,-2);	//remove ,
+	if(w.main.party.list.length >= 10) 
+		str += '...';
 	party.append(str);
+	
+	party.append(' ',$('<div>')
+		.attr('title','Invite to party.')
+		.css({cursor:'pointer',display:'inline-block',paddingLeft:'4px',paddingRight:'4px',border:'1px solid white'})
+		.html('+')
+		.click(function(){
+			Main.askQuestion(w.main,function(key,str){	
+				Command.execute(CST.COMMAND.invite,[str]);
+			},'Invite to party.','string');
+		})
+	);
 	
 	
 },function(){
-	return Tk.stringify(main.party) + Tk.stringify(main.social.clanList) + Dialog.isActive('dialogue') + main.acceptPartyInvite + main.hudState.party + Main.getPref(main,'minimizeChat');
+	return Tk.stringify(w.main.party) + Tk.stringify(w.main.social.clanList) + Dialog.isActive('dialogue') + w.main.acceptPartyInvite + w.main.hudState.party + Main.getPref(w.main,'minimizeChat');
 }));
 
 

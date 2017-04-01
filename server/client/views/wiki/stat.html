@@ -1,11 +1,10 @@
 <% include ../partial/header.html %>
+<script src="/js/shared/Tk.js"></script>
 <div class="container">
-	<h3>Stat</h3>
-	<p>
-	This is the list of character stats. They can be increased via equipment boosts and the Reputation Grid.
-	</p>
-	<table class="CSSTableGenerator2">		
-		<tr><th>Stat</th><th>Description</th><th>Default Value</th></tr>
+	<h3>Regular Stats</h3>
+	<p>This is the list of character stats. They can be increased via equipment boosts and the Reputation Grid.</p>
+	<table id="myTable" class="table">		
+		<tr><th>Stat</th><th>Description</th><th class="hidden-xs hidden-sm">Default Value</th></tr>
 		<tr><td>Max Speed</td><td>Movement Speed.</td><td>8</td></tr>
 		<tr><td>Regen Life</td><td>Life Regeneration per frame.</td><td>1</td></tr>
 		<tr><td>Regen Mana</td><td>Mana Regeneration per frame.</td><td>0.4</td></tr>
@@ -14,7 +13,7 @@
 		<tr><td>Leech Life Magn.</td><td>Affect %Life recovered if the Life Leech is successful. Leech is not affected by damage dealt.</td><td>0.01</td></tr>
 		<tr><td>Leech Life Chance</td><td>Affect Chance to Life Leech when hitting an enemy.</td><td>0</td></tr>
 		<tr><td>Pick Radius</td><td>Maximum distance that you can still pick items on the ground.</td><td>250</td></tr>
-		<tr><td>Atk Speed</td><td>Affect how fast your character can use abilities.</td><td>1</td></tr>
+		<tr><td>Atk Speed</td><td>Affect how fast you can use abilities.</td><td>1</td></tr>
 		<tr><td>Crit Chance</td><td>Affect chance to do a Critical Hit.</td><td>0.05</td></tr>
 		<tr><td>Crit Magn</td><td>Affect Additional Damage when doing a Critical Hit.</td><td>1.5</td></tr>
 		<tr><td>Proj. Amount</td><td>Shoot x times additional bullets.  If amount is not whole, it is rounded up or down randomly.</td><td>1</td></tr>
@@ -33,21 +32,21 @@
 		<tr><td>Bleed Time</td><td>Affect Bleed Duration.</td><td>25</td></tr>
 		<tr><td>Bleed Magn</td><td>Affect damage dealt by bleeding enemy.</td><td>4</td></tr>
 		<tr><td>Bleed Chance</td><td>Affect chance to bleed enemy.</td><td>1</td></tr>
-		<tr><td>Drain Time</td><td>USELESS. Affect how long the enemy will be drained.</td><td>100</td></tr>
+		<!--<tr><td>Drain Time</td><td>USELESS. Affect how long the enemy will be drained.</td><td>100</td></tr>-->
 		<tr><td>Drain Magn</td><td>Affect how much mana is drained from enemy.</td><td>25</td></tr>
-		<tr><td>Drain Chance</td><td>Affect chance to drain enemy.</td><td>1</td></tr>
+		<tr><td>Drain Chance</td><td>Affect chance to steal mana from enemy.</td><td>1</td></tr>
 		<tr><td>Knock Time</td><td>Affect how long the enemy will be pushed back.</td><td>15</td></tr>
 		<tr><td>Knock Magn</td><td>Affect how far away the enemy will be pushed.</td><td>10</td></tr>
 		<tr><td>Knock Chance</td><td>Affect chance to push enemy with your attack.</td><td>1</td></tr>
 		<tr><td>Melee Def</td><td>Reduce Melee Damage Taken</td><td>0</td></tr>
 		<tr><td>Range Def</td><td>Reduce Range Damage Taken</td><td>0</td></tr>
-		<tr><td>Magic Def</td><td>Reduce Magic Damage Taken</td><td>0</td></tr>
+		<tr><td>Arcane Def</td><td>Reduce Arcane Damage Taken</td><td>0</td></tr>
 		<tr><td>Fire Def</td><td>Reduce Fire Damage Taken</td><td>0</td></tr>
 		<tr><td>Cold Def</td><td>Reduce Cold Damage Taken</td><td>0</td></tr>
 		<tr><td>Lightning Def</td><td>Reduce Lightning Damage Taken</td><td>0</td></tr>
 		<tr><td>Melee Dmg</td><td>Increase Melee Damage Dealt</td><td>0</td></tr>
 		<tr><td>Range Dmg</td><td>Increase Range Damage Dealt</td><td>0</td></tr>
-		<tr><td>Magic Dmg</td><td>Increase Magic Damage Dealt</td><td>0</td></tr>
+		<tr><td>Arcane Dmg</td><td>Increase Arcane Damage Dealt</td><td>0</td></tr>
 		<tr><td>Fire Dmg</td><td>Increase Fire Damage Dealt</td><td>0</td></tr>
 		<tr><td>Cold Dmg</td><td>Increase Cold Damage Dealt</td><td>0</td></tr>
 		<tr><td>Lightning Dmg</td><td>Increase Lightning Damage Dealt</td><td>0</td></tr>
@@ -61,6 +60,47 @@
 		<tr><td>Dmg Staff</td><td>Increase Damage Dealt with Staff</td><td>0</td></tr>
 		<tr><td>Dmg Orb</td><td>Increase Damage Dealt with Orb</td><td>0</td></tr>
 	</table>
+	
+	<h3>Unique Boosts</h3>
+	<p>Rare equipment may grant those boosts.</p>
+	<table id="myTable2"class="table">		
+		<tr><th>Boost</th><th class="hidden-xs hidden-sm">Equip</th><th>Description</th></tr>
+		
+		<tr><td>Cold Equality</td><td>Sapphire Amulet</td><td>Your cold damage becomes equal to your cold defence.</td></tr>
+		<tr><td>Balanced</td><td>Topaz Amulet</td><td>Your defence and damage are averaged.</td></tr>
+		<tr><td>Chain</td><td>Ruby Amulet</td><td>All your defence stats become equal to your lowest defence stat multiplied by 1.25.</td></tr>
+		<tr><td>Unstunable</td><td>Topaz Ring</td><td>Cannot be stunned.</td></tr>
+		<tr><td>Cold Superiority</td><td>Sapphire Ring</td><td>If cold defence is your worse defence stat, then it becomes equal to your highest defence stat.</td></tr>
+		<tr><td>Just Burning</td><td>Ruby Ring</td><td>x2 more chance to burn enemies. Cannot trigger other status effect.</td></tr>
+		<tr><td>No Helm</td><td>Bone Body</td><td>If not wearing helm, x1.5 hp and x1.25 mana.</td></tr>
+		<tr><td>Special Metal</td><td>Metal Body</td><td>Half melee defence bonus is also applied on range and magic defences.</td></tr>
+		<tr><td>Mediane</td><td>Wood Body</td><td>Defence stats become equal to the mediane of defence stats.</td></tr>
+		<tr><td>Melee #1</td><td>Metal Helm</td><td>If your melee defence is greater than your range and magic defences combined, then your range and magic defences are multiplied by 2.</td></tr>
+		<tr><td>Range Weapon</td><td>Wood Helm</td><td>If using a range weapon, x1.25 range defence.</td></tr>
+		<tr><td>Mind Over Matter</td><td>Bone Helm</td><td>x1.5 more mana regen. No more life regen.</td></tr>
+		<tr><td>Crit-mania</td><td>Boomerang</td><td>33% chance to crit. Attack speed is capped at x1.</td></tr>
+		<tr><td>Status-mania</td><td>Orb</td><td>x2 more chance to afflict status. Status afflicted to you are x2 stronger.</td></tr>
+		<tr><td>No Random</td><td>Bow</td><td>Cannot land critical hits. x1.25 attack speed.</td></tr>
+		<tr><td>Life To Mana</td><td>Staff</td><td>25% more mana regen. 25% less life.</td></tr>
+		<tr><td>Risky</td><td>Mace</td><td>x3 more hp regen. Can only used Healing spell if at less than 10% hp.</td></tr>
+		<tr><td>Leech King</td><td>Wand</td><td>Always leech life. Cannot use Healing Spell.</td></tr>
+		<tr><td>Life For Speed</td><td>Crossbow</td><td>Attack x1.25 faster. Every attack costs 25 Hp.</td></tr>
+		<tr><td>Long Range</td><td>Spear</td><td>You can hit enemies far away from you with melee.</td></tr>
+		<tr><td>Leech Bleed</td><td>Sword</td><td>100% chance to leech life when you afflict bleeding to an enemy.</td></tr>
+
+	</table>
+	<script>
+	Tk.responsiveTable($('#myTable'));
+	Tk.responsiveTable($('#myTable2'));
+	</script>
+	<!--
+	var str = '';
+	for(var i in exports.Stat.DB){
+		var s = exports.Stat.DB[i];
+		if(!s.custom) continue;
+		str += '<tr><td>' + s.name + '</td><td></td><td>' + s.description + '</td></tr>\r\n';
+	}	
+	-->
 </div>
 <% include ../partial/footer.html %>
 

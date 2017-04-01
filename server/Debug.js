@@ -1,11 +1,18 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-/*jshint unused:false*/
+
 "use strict";
-var Quest = require2('Quest'), Weather = require2('Weather'), Socket = require2('Socket'), OfflineAction = require2('OfflineAction'), Preset = require2('Preset'), Send = require2('Send'), Competition = require2('Competition'), ActorModel = require2('ActorModel'), MapModel = require2('MapModel'), Highscore = require2('Highscore'), QuestVar = require2('QuestVar'), Party = require2('Party'), SpriteModel = require2('SpriteModel'), ItemModel = require2('ItemModel'), Account = require2('Account'), ItemList = require2('ItemList'), Combat = require2('Combat'), Message = require2('Message'), OptionList = require2('OptionList'), Boss = require2('Boss'), Server = require2('Server'), Boost = require2('Boost'), Cycle = require2('Cycle'), Actor = require2('Actor'), Main = require2('Main'), Attack = require2('Attack'), Strike = require2('Strike'), Bullet = require2('Bullet'), ActiveList = require2('ActiveList'),  Sign = require2('Sign'), Save = require2('Save'),  Maps = require2('Maps'), Input = require2('Input'), Dialogue = require2('Dialogue'), Drop = require2('Drop'), Performance = require2('Performance'), Ability = require2('Ability'), Equip = require2('Equip'), Collision = require2('Collision'), Button = require2('Button'), Sprite = require2('Sprite'), Anim = require2('Anim'), Command = require2('Command'), ReputationGrid = require2('ReputationGrid');
+
+var Main, Actor, Message, Equip, Quest, ActorModel, ItemModel, Ability, QuestVar, Server, Boost, MapModel, Maps;
+
+global.onReady(function(){
+	ActorModel = rootRequire('shared','ActorModel'); Actor = rootRequire('shared','Actor'); Main = rootRequire('shared','Main'); Message = rootRequire('shared','Message');  Equip = rootRequire('server','Equip'); Quest = rootRequire('server','Quest'); ItemModel = rootRequire('shared','ItemModel'); Ability = rootRequire('server','Ability'); QuestVar = rootRequire('server','QuestVar'); Server = rootRequire('private','Server'); Boost = rootRequire('shared','Boost'); MapModel = rootRequire('server','MapModel'); Maps = rootRequire('server','Maps');
+	
+},null,'Debug',[],function(){
+	Debug.init();
+});
+var Debug = exports.Debug = {};
 
 var DEV_TOOL = 'DEV_TOOL';
 var QUEST_TOOL_SUFFIX = '_Tool';
-var Debug = exports.Debug = {};
 
 Debug.attr = {
 	trackQuestVar:!NODEJITSU,
@@ -27,16 +34,16 @@ Debug.init = function(){
 
 Debug.spawnEnemy = function(key,model){
 	model = model || 'Qsystem-bat';
-	var player = Actor.get(key);
+	var act = Actor.get(key);
 	try {
-		Actor.addToMap(Actor.create(model),Actor.Spot(player.x,player.y,player.map));
+		Actor.addToMap(Actor.create(model),Actor.toSpot(act));
 	} catch(err){ 
 		ERROR.err(5,err);
 	}
 }
 
 Debug.spawnEnemyViaQuestion = function(key){
-	Main.question(Main.get(key),function(key,model,amount){
+	Main.askQuestion(Main.get(key),function(key,model,amount){
 		amount = +amount;
 		
 		if(!Actor.create(model)){
@@ -53,13 +60,13 @@ Debug.spawnEnemyViaQuestion = function(key){
 
 Debug.invincible = function(key){
 	if(Actor.get(key).globalDef < 500){
-		Actor.permBoost(Actor.get(key),'Debug.invincible',[
-			Boost.Perm('globalDef',1000,'+'),
-			Boost.Perm('globalDmg',1000,'+'),
+		Actor.addPermBoost(Actor.get(key),'Debug.invincible',[
+			Boost.Perm('globalDef',1000,CST.BOOST_PLUS),
+			Boost.Perm('globalDmg',1000,CST.BOOST_PLUS),
 		]);	
 		Message.add(key,'Invincible');
 	} else {
-		Actor.permBoost(Actor.get(key),'Debug.invincible');
+		Actor.addPermBoost(Actor.get(key),'Debug.invincible');
 		Message.add(key,'Not Invincible');
 	}
 }
@@ -67,26 +74,24 @@ Debug.invincible = function(key){
 Debug.ghost = function(key){
 	var act = Actor.get(key);
 	if(act.ghost){
-		Actor.permBoost(act,'Debug.ghost');
+		Actor.addPermBoost(act,'Debug.ghost');
 		Message.add(key,'Not ghost.');
 		act.ghost = 0;
 	} else {
 		Message.add(key,'Ghost.');
 		act.ghost = 1;
 		act.bumper = Actor.Bumper();
-		Actor.permBoost(act,'Debug.ghost',[
-			Boost.Perm('acc',40,'+'),
-			Boost.Perm('maxSpd',40,'+'),
-		]);	
+		/*Actor.addPermBoost(act,'Debug.ghost',[
+			Boost.Perm('acc',40,CST.BOOST_PLUS),
+			Boost.Perm('maxSpd',40,CST.BOOST_PLUS),
+		]);	*/
 	}
 }
 
-Debug.giveRandomEquip = function(key,type){
-	var username = Actor.get(key).username;
-	if(type === 'weapon')
-		Main.addItem(Main.get(key),Equip.randomlyGenerate(username,Equip.PieceType('weapon')).id);
-	else
-		Main.addItem(Main.get(key),Equip.randomlyGenerate(username).id);
+Debug.giveRandomEquip = function(key,piece,type){
+	var act = Actor.get(key);
+	var eid = Equip.randomlyGenerate(act.username,Equip.PieceType(piece,type),Actor.getLevel(act)).id;
+	Main.addItem(Main.get(key),eid);
 }
 
 Debug.onSignIn = function(key,name,socket){
@@ -106,37 +111,60 @@ Debug.onSignIn = function(key,name,socket){
 Debug.giveDefaultAbility = function(key){
 	var act = Actor.get(key);
 	Actor.addAbility(act,'Qsystem-start-melee');
-	Actor.addAbility(act,'Qsystem-start-bullet');
-	Actor.addAbility(act,'Qsystem-start-freeze');
-	Actor.addAbility(act,'Qsystem-start-fireball');
-	Actor.addAbility(act,'Qsystem-start-heal');
-	Actor.addAbility(act,'Qsystem-start-dodge');
-	
 	Actor.swapAbility(act,'Qsystem-start-melee',0);
+	Actor.addAbility(act,'Qsystem-start-bullet');
 	Actor.swapAbility(act,'Qsystem-start-bullet',1);
+	Actor.addAbility(act,'Qsystem-start-freeze');
 	Actor.swapAbility(act,'Qsystem-start-freeze',2);
+	Actor.addAbility(act,'Qsystem-start-fireball');
 	Actor.swapAbility(act,'Qsystem-start-fireball',3);
+	Actor.addAbility(act,'Qsystem-start-heal');
 	Actor.swapAbility(act,'Qsystem-start-heal',4);
-	Actor.swapAbility(act,'Qsystem-start-dodge',5);
+	//Actor.addAbility(act,'Qsystem-start-dodge');
+	//Actor.swapAbility(act,'Qsystem-start-dodge',5);
 }
 
 Debug.addItemViaQuestion = function(key){
-	Main.question(Main.get(key),function(key,item,amount){
-		if(item === 'equip') return Debug.giveRandomEquip(key);
-		if(item === 'weapon') return Debug.giveRandomEquip(key,'weapon');		
-		
-		if(ItemModel.get(item,true))	
-			Main.addItem(Main.get(key),item,+amount || 1);
-		else Message.add(key,'wrong');
+	Main.askQuestion(Main.get(key),function(key,item,amount){
+		Debug.addItem(key,item,amount);
 	},"item,amount",'string');	
 }
 
+Debug.addItem = function(key,item,amount){
+	if(item.indexOf('equip') === 0){
+		var array = item.split('-');
+		return Debug.giveRandomEquip(key,array[1],array[2]);
+	}
+	
+	if(ItemModel.get(item,true))	
+		Main.addItem(Main.get(key),item,+amount || 1);
+	else Message.add(key,'wrong item id',item);
+}
+
+Debug.spawnEveryEnemy = function(key,log){
+	Actor.verifyBlockPosition.ACTIVE = false;
+	for(var i in ActorModel.DB){
+		if(i !== 'player'){
+			Debug.spawnEnemy(key,i);
+			if(log)
+				INFO('spawning actormodel' + i);
+		}
+	}
+	Actor.verifyBlockPosition.ACTIVE = true;
+}
+
+Debug.addEveryAbility = function(key){
+	for(var i in Ability.DB)
+		if(Ability.DB[i].usableByPlayer)
+			Actor.addAbility(Actor.get(key),i);
+}
+
 Debug.teleportViaQuestion = function(key){
-	Main.question(Main.get(key),function(key,x,y,map){
+	Main.askQuestion(Main.get(key),function(key,x,y,map){
 		
 		var act = Actor.get(key);
 		if(y === undefined){	//aka x = playerName
-			var err = Debug.teleportTo(key,x);
+			var err = Debug.teleportToPlayer(key,x);
 			if(err)
 				Message.add(key,err);
 			return;
@@ -147,9 +175,10 @@ Debug.teleportViaQuestion = function(key){
 			act.y += +y; 
 			return; 
 		}
-		if(!MapModel.get(map)) 
+		var model = MapModel.get(map);
+		if(!model) 
 			return ERROR(5,'mapmodel not exist',map);
-		Actor.teleport(act,Actor.Spot(+x,+y,map),true);		
+		Actor.teleport(act,Actor.Spot(+x,+y,map,model.id),true);		
 	},"x,y,map OR playerName",'string');
 }
 
@@ -158,10 +187,26 @@ Debug.completeQuest = function(key){
 		Main.completeQuest(Main.get(key));			
 }
 
-Debug.teleportTo = function(key,name){
-	var act = Actor.getViaUserName(name);
+Debug.teleportTo = function(key,nameOrMapId){
+	if(nameOrMapId[0] !== 'Q')
+		Debug.teleportToPlayer(key,nameOrMapId);
+	else {
+		var act = Actor.get(key);
+		var model = MapModel.get(nameOrMapId);
+		if(!model) 
+			return ERROR(5,'mapmodel not exist',nameOrMapId);
+		Actor.teleport(act,Actor.Spot(act.x,act.y,nameOrMapId,model.id),true);
+	}
+}
+
+Debug.teleportToSpot = function(key,spot){
+	Actor.teleport.fromQuest(Actor.get(key),spot,true);
+}
+
+Debug.teleportToPlayer = function(key,name){
+	var act = Actor.getViaUsername(name);
 	if(!act) return 'no player with that name';
-	Actor.teleport(Actor.get(key),Actor.Spot(act.x,act.y,act.map),true);
+	Actor.teleport(Actor.get(key),Actor.toSpot(act),true);
 }
 
 Debug.createQuestTool = function(q){
@@ -173,7 +218,8 @@ Debug.createQuestTool = function(q){
 		INFO('########### ' + Date.now() + ' ###########');
 		var mq = QuestVar.getViaMain(Main.get(key));
 		for(var i in mq){
-			if(['quest','username','key'].$contains(i)) continue;
+			if(['quest','username','key'].$contains(i)) 
+				continue;
 			var attr = i;
 			for(var j = attr.length; j < 15; j++)
 				attr += ' ';
@@ -182,7 +228,7 @@ Debug.createQuestTool = function(q){
 	},'Get Var'));
 	
 	option.push(ItemModel.Option(function(key){
-		Main.question(Main.get(key),function(key,param,value){
+		Main.askQuestion(Main.get(key),function(key,param,value){
 			try {
 				var mq = QuestVar.getViaMain(Main.get(key));
 				if(value === undefined)	return Message.add(key,param + ' : ' + mq[param]);
@@ -198,25 +244,29 @@ Debug.createQuestTool = function(q){
 	},'Change Var'));
 	
 	option.push(ItemModel.Option(function(key){
-		Main.question(Main.get(key),function(key,param){
+		Main.askQuestion(Main.get(key),function(key,param){
 			var spot = Maps.getSpot(Maps.get(Actor.get(key).map),q.id,param);
-			if(spot) Actor.teleport(Actor.get(key),spot);
-			else INFO('not found');
+			if(spot) 
+				Actor.teleport(Actor.get(key),spot);
+			else 
+				INFO('not found');
 		},"enter spot",'string');
 	},'Teleport'));
 	
 	option.push(ItemModel.Option(function(key){
-		Main.question(Main.get(key),function(key,item,amount){
+		Main.askQuestion(Main.get(key),function(key,item,amount){
 			item = q.id + '-' + item;
-			if(ItemModel.get(item))	Main.addItem(Main.get(key),item,amount || 1);
-			else Message.add(key,'wrong');
+			if(ItemModel.get(item))	
+				Main.addItem(Main.get(key),item,amount || 1);
+			else 
+				Message.add(key,'wrong');
 		},"item,amount",'string');	
 	},'Add Item'));
 	
 	option.push(ItemModel.Option(function(key){
-		Main.question(Main.get(key),function(key,param){
-			if(q.event[param]) return q.event[param](key);
-			else for(var i in q.event.test)	if(q.event.test[param]) return q.event.test[param](key);
+		Main.askQuestion(Main.get(key),function(key,param){
+			if(q.event[param]) 
+				return q.event[param](key);
 			Message.add(key,"no found");
 		},'event','string');
 	},'Call Event',null));
@@ -231,8 +281,10 @@ Debug.createQuestTool = function(q){
 }
 
 Debug.addAbilityViaQuestion = function(key){
-	Main.question(Main.get(key),function(key,ability,slot){
+	Main.askQuestion(Main.get(key),function(key,ability,slot){
 		var act = Actor.get(key);
+		if(ability[0] !== 'Q')
+			ability = 'Qsystem-' + ability;
 		if(!Ability.get(ability)) 
 			return ERROR(5,'ability dont exist',ability);
 		slot = +slot || 0;
@@ -243,28 +295,40 @@ Debug.addAbilityViaQuestion = function(key){
 Debug.createDevTool = function(){
 	var option = [
 		ItemModel.Option(Debug.ghost,'Ghost'),
+		ItemModel.Option(Debug.teleportToQuestMarker,'Tele QM'),
 		ItemModel.Option(Debug.invincible,'Invincible'),
-		ItemModel.Option(Debug.teleportViaQuestion,'Tele'),
-		ItemModel.Option(Debug.addItemViaQuestion,'Add Item'),	
-		ItemModel.Option(Debug.addAbilityViaQuestion,'Ability'),
-		ItemModel.Option(Debug.spawnEnemyViaQuestion,'Enemy'),
-		ItemModel.Option(Debug.testQuest,'Test Quest'),
 		ItemModel.Option(Debug.completeQuest,'Quest Complete'),
+		ItemModel.Option(Debug.openAdminDialog,'Full'),
 	];
 	
 	var itemId = Quest.addPrefix('Qsystem',DEV_TOOL);
 	ItemModel.create('Qsystem',itemId,'Dev Tool','system-gold',option,'Dev Tool',{
 		trade:false,drop:false,adminOnly:true,
 	});
-	
+}
 
+Debug.teleportToQuestMarker = function(key){
+	var act = Actor.get(key);
+	var qm = act.questMarker[act.questMarker.$keys()[0]];
+	if(!qm)
+		return;
+	var g = qm.goal;
+	Actor.teleport.fromQuest(act,Actor.Spot(g.x,g.y,g.map,g.map));
+}
+
+
+Debug.openAdminDialog = function(key){
+	Main.openDialog(Main.get(key),'adminTool',{
+		mapList:Maps.LIST.$keys(),
+	});	
 }
 
 Debug.testQuest = function(key){
 	var main = Main.get(key);
-	Main.question(main,function(key,quest){
-		Debug.startQuest(key,quest);
-	},'quest','option',Object.keys(Quest.DB));
+	var list = Object.keys(Quest.DB);
+	Main.askQuestion(main,function(key,slot){
+		Debug.startQuest(key,list[slot]);
+	},'quest','option',list);
 }
 
 Debug.giveDevTool = function(key){
@@ -278,8 +342,8 @@ Debug.giveQuestTool = function(key,quest){
 Debug.giveRandomHighscore = function(key){
 	var main = Main.get(key);
 	for(var i in main.quest){
-		for(var j in main.quest[i]._highscore)
-			main.quest[i]._highscore[j] = Math.floor(Math.random()*1000);
+		for(var j in main.quest[i].highscore)
+			main.quest[i].highscore[j] = Math.floor(Math.random()*1000);
 	}
 }
 
@@ -297,29 +361,10 @@ Debug.onStartQuest = function(key,qid){
 }
 
 Debug.skipTutorial = function(key){
-	var act = Actor.get(key);
-	
-	Main.addItem(Main.get(key),{'Qsystem-start-bow':1,'Qsystem-start-staff':1,'Qsystem-start-weapon':1});
-	Actor.addAbility(act,'Qsystem-start-melee');
-	Actor.swapAbility(act,'Qsystem-start-melee',0);
-	
-	Actor.addAbility(act,'Qsystem-start-bullet');
-	Actor.swapAbility(act,'Qsystem-start-bullet',1);
-		
-	Actor.addAbility(act,'Qsystem-start-freeze');
-	Actor.swapAbility(act,'Qsystem-start-freeze',2);
-	
-	Actor.addAbility(act,'Qsystem-start-fireball');
-	Actor.swapAbility(act,'Qsystem-start-fireball',3);
-	
-	Actor.addAbility(act,'Qsystem-start-heal');
-	Actor.swapAbility(act,'Qsystem-start-heal',4);
-	
-	Actor.addAbility(act,'Qsystem-start-dodge');
-	Actor.swapAbility(act,'Qsystem-start-dodge',5);
-	
+	Main.addItem(Main.get(key),{'Qsystem-start-bow':1,'Qsystem-start-weapon':1});
+	Debug.giveDefaultAbility(key);
 	Main.completeQuest(Main.get(key));
-	Actor.teleport.town(Actor.get(key),true);
+	Actor.teleport.town(Actor.get(key));
 }
 
 Debug.salvageInventory = function(key){
@@ -331,7 +376,7 @@ Debug.salvageInventory = function(key){
 	for(var i = 0 ; i < list.length; i++){
 		var eq = Equip.get(list[i]);
 		if(eq.salvagable){
-			if(eq.boost.length >= 3 || eq.masteryExp >= 1000){
+			if(eq.boost.length > 3){
 				allSalvaged = false;
 			} else {
 				Equip.salvage(key,list[i],true);
@@ -346,11 +391,12 @@ Debug.salvageInventory = function(key){
 	}
 }
 
-Debug.spyPlayer = function(key){
+Debug.spyPlayer = function(key){	//Send.activateBotwatch
 	var array = [];
 	for(var i in Main.LIST){
 		array.push({
 			username:Main.get(i).username,
+			name:Main.get(i).name,
 			id:i,
 			questActive:Main.get(i).questActive,
 			map:Actor.get(i).map

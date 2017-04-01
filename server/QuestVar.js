@@ -1,12 +1,17 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
-var Debug = require2('Debug');
-var db;
-//_preset reserved
+var Debug;
+global.onReady(function(initPack){
+	Debug = rootRequire('server','Debug');
+	db = initPack.db;
+},{db:['questVar']});
 var QuestVar = exports.QuestVar = {};
+var db;
+//BAD weird constructor
 QuestVar.create = function(quest,main,oldValue){	//oldValue is taken from db
 	var regular = QuestVar.getInitVar(quest);
-	if(!oldValue) oldValue = regular;
+	if(!oldValue)
+		oldValue = regular;
 	else {
 		for(var i in oldValue){
 			if(regular[i] === undefined)	//var was removed
@@ -26,7 +31,6 @@ QuestVar.Model = function(quest,varName){	//called from s.exports
 	var tmp = {
 		quest:quest,
 		key:null,
-		_preset:null,
 	}
 	for(var i in varName)
 		tmp[i] = varName[i];
@@ -37,10 +41,6 @@ QuestVar.Model = function(quest,varName){	//called from s.exports
 
 var LIST = QuestVar.LIST = {};	//player values ||| questId:playerId:variableName:value
 var DB = QuestVar.DB = {};	//default values
-
-QuestVar.init = function(dbLink){
-	db = dbLink;
-}
 
 QuestVar.set = function(quest,key,name,value){
 	if(typeof value === 'object') return ERROR(3,'cant set object',quest,name,value);

@@ -1,57 +1,50 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Sprite = require2('Sprite');
-var AttackModel = exports.AttackModel = {};
-AttackModel.create = function(info,addDefaultStatus){
-	var tmp = {
-		//All
-		type:'bullet',
-		dmg:AttackModel.Dmg(0,1,0,0,0,0,0),
-		hitAnim:null,	//when enemy get hits, use anim on him {name,sizeMod}
-		damageIfMod:0, //if 1, hit allies
-		amount:1,	//# bullets shot
-		aim:0,
-		angleRange:5,
-		bleed:null,	//magn and time act as modifier
-		knock:null,
-		drain:null,
-		burn:null,
-		chill:null,
-		stun:null,
-		crit:AttackModel.Status(),	//100% will be multiplied by the 0.05 of player
-		leech:AttackModel.Status(),	
-		curse:null,	//not in IDE yet
-		onHit:null,
-		onHitHeal:null,
-		ghost:0,
-		hitEvent:'',
+var Sprite;
+global.onReady(function(){
+	Sprite = rootRequire('shared','Sprite');
+});
+var AttackModel = exports.AttackModel = function(extra,addDefaultStatus){
+	this.type = CST.ENTITY.bullet;
+	
+	this.dmg = AttackModel.Dmg(0,1,0,0,0,0,0);
+	this.hitAnim = null;	//Anim.Base, when enemy get hits, use anim on him {name,sizeMod}
+	this.damageIfMod = false; //if true, hit allies
+	this.amount = 1; //# bullets shot
+	this.aim = 0;
+	this.delay = 0;	//delay between cast and action
+	this.angleRange = 5;
+	this.bleed = null;	//AttackModel.Status
+	this.knock = null;	//AttackModel.Status
+	this.drain = null;	//AttackModel.Status
+	this.burn = null;	//AttackModel.Status
+	this.chill = null;	//AttackModel.Status
+	this.stun = null;	//AttackModel.Status
+	this.crit = AttackModel.Status(1,1,1); //100% will be multiplied by the 0.05 of player
+	this.leech = AttackModel.Status(1,1,1);	 //100% will be multiplied by the 0.05 of player
+	this.curse = null;	//AttackModel.Curse
+	this.onHit = null; //AttackModel.OnHit
+	this.onHitHeal = null; //AttackModel.OnHitHeal
+	this.hitEvent = null; //function(key,shooterId)
+	this.ghost = false;
+	this.damageOverTime = null;	//AttackModel.DamageOverTime
+	
+	this.initPosition = AttackModel.InitPosition();
 		
-		//Strike Only
-		width:10,      			//width for strike
-		height:10,       		//height for strike
-		delay:0,   				//delay between cast and dmg phase for strike
-		onDamagePhase:null,				//call another attack when strike goes live
-		maxHit:5,
-		preDelayAnim:null,
-		postDelayAnim:null,
-		
-		initPosition:AttackModel.InitPosition(),
-		
-		//Bullet Only
-		pierce:null,
-		maxTimer:40,
-		spd:10,
-		onMove:null,
-		boomerang:null,
-		parabole:null,
-		sin:null,
-		sprite:AttackModel.Sprite('fireball',1),	//overwritten by sprite
+	Tk.fillExtra(this,extra);
+	
+	if(addDefaultStatus){
+		AttackModel.addDefaultStatus(this);
+		if(this.damageOverTime && this.damageOverTime.adjustDmg)
+			this.dmg.main /= this.damageOverTime.duration / this.damageOverTime.interval;
 	}
-	for(var i in info) tmp[i] = info[i];
-	if(addDefaultStatus !== false) AttackModel.addDefaultStatus(tmp);
-	return tmp;
+};
+
+AttackModel.create = function(info,addDefaultStatus){
+	return AttackModel.onCreate.pub(info.type,info,addDefaultStatus);
 }
+AttackModel.onCreate = Tk.newPubSub(true);
 
 AttackModel.Parabole = function(height,min,max,timer){
 	return {
@@ -63,8 +56,8 @@ AttackModel.Parabole = function(height,min,max,timer){
 }
 AttackModel.Sin = function(amp,freq){
 	return {
-		amp:amp*2,
-		freq:freq*2,
+		amp:amp*1.5,
+		freq:freq*15,
 	}
 }
 AttackModel.Boomerang = function(comeBackTime,spd,spdBack,newId){
@@ -92,16 +85,16 @@ AttackModel.Status = function(chance,magn,time){
 }
 AttackModel.Pierce = function(chance,dmgReduc,amount){
 	return {
-		chance:chance||0,
-		dmgReduc:dmgReduc||0.5,
-		amount:amount||5
+		chance:chance || 0,
+		dmgReduc:dmgReduc || 0.5,
+		amount:amount || 5
 	};
 }	
 AttackModel.OnMove = function(period,rotation,attack){
 	return {
 		period:period || 25,
 		rotation:rotation || 0,
-		attack:AttackModel.create(attack)
+		attack:AttackModel.create(attack,true)
 	};
 }
 AttackModel.Curse = function(chance,boost){
@@ -110,20 +103,28 @@ AttackModel.Curse = function(chance,boost){
 		boost:boost || null
 	};
 }
-AttackModel.OnHit = AttackModel._onDamagePhase = function(chance,attack){
+AttackModel.OnHit = AttackModel.OnDamagePhase = function(chance,attack){
 	return {
 		chance:chance || 0,
-		attack:AttackModel.create(attack)
+		attack:AttackModel.create(attack,true) || ERROR(2,'no attack returned'),
 	};
 }
-AttackModel.Sprite = function(name,sizeMod){
-	return Sprite.create(name,sizeMod);
+AttackModel.Sprite = function(name,sizeMod,lightingEffect){
+	return Sprite.create(name,sizeMod,lightingEffect);
 }
 AttackModel.OnHitHeal = function(hp,mana){
 	return {
 		hp:hp||0,
 		mana:mana||0,
 	};
+}
+AttackModel.DamageOverTime = function(duration,interval,adjustDmg){
+	return {
+		duration:duration || 0,
+		interval:interval || 1,	//dmg every x frame
+		adjustDmg:adjustDmg || false,
+		currentTime:0,
+	}
 }
 
 //###################
@@ -143,10 +144,13 @@ AttackModel.getElement = function(model){
 
 AttackModel.InitPosition = function(min,max){
 	return {
-		type:min === undefined ? 'actor' : 'mouse',	//or mouse
+		type:min === undefined ? CST.INIT_POSITION.actor : CST.INIT_POSITION.mouse,
 		min:min || 0,
 		max:max === undefined ? 50 : max,
 	}
 }
+
+
+
 })(); //{
 

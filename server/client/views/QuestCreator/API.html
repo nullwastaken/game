@@ -1,46 +1,5 @@
 <% include ../partial/header.html %>
-<script>
-var LIST = [];
-add = function(name,description,advanced,priority,ret,p1,p2,p3,p4,p5,p6){
-	var a = {
-		name:name || '',
-		description:description || '',
-		ret:ret || null,
-		advanced:advanced || false,
-		priority:priority || 0,
-		param:[],	
-	}
-	if(p1) a.param.push(p1);
-	if(p2) a.param.push(p2);
-	if(p3) a.param.push(p3);
-	if(p4) a.param.push(p4);
-	if(p5) a.param.push(p5);
-	if(p6) a.param.push(p6);
-	
-	LIST.push(a);
-}
-ret = function(type,description){
-	return {
-		name:'',
-		type:type || '',
-		description:description || '',
-	}
-}
-param = function(name,type,description){
-	if(name === 'key'){
-		type = 'key';
-		description = 'apply event to the actor with this key';
-	}
-	return {
-		name:name || '',
-		type:type || '',
-		description:description || '',
-	}
-}
-f = false;
-t = true;
-</script>
-<script src="../views/QuestCreator/API_DATA.js"></script>
+<script src="/views/QuestCreator/API_DATA.js"></script>
 
 <div class="container">	
 	<h2>Raining Chain Quest API</h2>
@@ -52,25 +11,25 @@ t = true;
 		</label>
 	</div>
 	
-	<h3>General Functions</h3>
+	<h3><a href="#GeneralFunctions">General Functions</a></h3>
 	<ul class="list-group" id="s"></ul>
 	
 	<br>
-	<h3>Map Functions</h3>
+	<h3><a href="#MapFunctions">Map Functions</a></h3>
 	<p>Can only be used in the map section.</p>
 	<ul class="list-group" id="m"></ul>
 	
 	<br>
-	<h3>Actor Extra Constructors</h3>
+	<h3><a href="#ActorExtraConstructors">Actor Extra Constructors</a></h3>
 	<p>Can only be used in the actorExtra parameter.</p>
 	<ul class="list-group" id="s_new"></ul>
 	
 	<br>
-	<h3 id="actorExtra">Actor Extra</h3>
+	<h3 id="actorExtra"><a href="#ActorExtra">Actor Extra</a></h3>
 	<ul class="list-group">
 		<li class="list-group-item">
 			<strong>dialogue</strong>: event<br>
-			Event called when 'Talk To' is selected. Normally triggers s.startDialogue().
+			Event called when 'Talk To' option is selected. Normally triggers s.startDialogue(). Causes the NPC to stop moving and looking towards the player if the returned value isn't false.
 		</li>
 		<li class="list-group-item">
 			<strong>deathEvent</strong>: event<br>
@@ -148,11 +107,40 @@ t = true;
 			<strong>awareNpc</strong>: boolean<br>
 			Actor is still active even when no player is around.
 		</li>
+		
+		<li class="list-group-item advanced">
+			<strong>hpRegen</strong>: number<br>
+			Hp regen per frame. (Default=1)
+		</li>
+		
+		<li class="list-group-item advanced">
+			<strong>interactionMaxRange</strong>: number<br>
+			Maximal distance in pixel between the player and the npc to trigger click events. s.newNpc.onclick bypass that limit.
+		</li>
+		
+		<li class="list-group-item advanced">
+			<strong>minimapIcon</strong>: iconId<br>
+			Change minimap icon. Only icon allowed CST.ICON.quest for the NPC that starts the quest.
+		</li>
+		
+		<li class="list-group-item advanced">
+			<strong>preventStagger</strong>: boolean<br>
+			If true, the actor won't be pushed when receiving a hit.
+		</li>
+			
+		<li class="list-group-item advanced">
+			<strong>hideOptionList</strong>: boolean<br>
+			If true, right-clicking the NPC won't open the option list.
+		</li>
+		<li class="list-group-item advanced">
+			<strong>cantDie</strong>: boolean<br>
+			If true, the NPC will not die even when having less than 0 hp.
+		</li>
 	</ul>
 	
 	
 	<br>
-	<h3>Special Events</h3>
+	<h3><a href="#SpecialEvents">Special Events</a></h3>
 	<p>Events with those id will be triggered automatically on due time.</p>
 	<ul class="list-group">
 		<li class="list-group-item">
@@ -168,7 +156,7 @@ t = true;
 			<strong>_start</strong>: Called when starting the quest. Useful to set quest markers.
 		</li>
 		<li class="list-group-item">
-			<strong>_death</strong>: Called when the player dies.
+			<strong>_death</strong>: Called when the player dies. Second param is the killer key. If returns true, player respawns immediately (used for PvP).
 		</li>
 		<li class="list-group-item">
 			<strong>_signIn</strong>: Called when the player signs into the game. Used to end quest that would be broken otherwise.
@@ -184,9 +172,25 @@ t = true;
 		</li>
 	</ul>
 	
+	
+	<div class="advanced">
+		<br>
+		<h3>Challenge</h3>
+		<p>In Quest Creator, if the challenge function returns true, the challenge is successful.</p>
+		<p>The function is called right after calling s.completeQuest.</p>
+		<p>To modify what happens in the quest for a certain challenge, use s.isChallengeActive.</p>	
+		<br>
+		<h3>Highscore</h3>
+		<p>In Quest Creator, the highscore function returns a number which is equal to the score. If null is returned, then no score is attributed.</p>
+		<p>The function is called right after calling s.completeQuest.</p>
+		<p>To only allow score if a certain challenge is active, use s.isChallengeActive.</p>
+		<br>
+	</div>
+	
+	
 	<br>
 	<a href="/QuestCreator/feedback">Feedback or questions?</a>
-	
+	<br>
 	
 </div>
 
@@ -242,9 +246,7 @@ $(document).ready(function(){
 	
 	$('.collapseBtn').on('click', function(e) {
 		e.preventDefault();
-		var $this = $(this);
-		//var $collapse = $this.closest('.collapse-group').find('.collapse');
-		var $collapse = $this.parent().find('.collapse');
+		var $collapse = $(this).parent().find('.collapse');
 		$collapse.collapse('toggle');
 	});
 });

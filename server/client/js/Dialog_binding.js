@@ -1,13 +1,17 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Input = require4('Input'), ClientPrediction = require4('ClientPrediction');
-var Dialog = require3('Dialog');
+var Input;
+global.onReady(function(){
+	Input = rootRequire('server','Input',true);
+});
+var Dialog = rootRequire('client','Dialog');
 
-Dialog.create('binding','Key Binding',Dialog.Size(550,550),Dialog.Refresh(function(){
+
+Dialog.create('binding','Key Binding',Dialog.Size(625,550),Dialog.Refresh(function(){
 	Dialog.binding.apply(this,arguments);
 },function(){
-	return Tk.stringify(Input.getBinding()) + Tk.stringify(Input.getSetting()) + ClientPrediction.isActive();
+	return Tk.stringify(Input.getBinding()) + Tk.stringify(Input.getSetting());
 }));
 //Dialog.open('binding')
 
@@ -19,8 +23,8 @@ Dialog.binding = function(html){
 	]);
 	
 	var list = [
-		{'id':'move','name':'Move','list':['Right','Down','Left','Up']},
-		{'id':'ability','name':'Ability','list':[0,1,2,3,4,5]}
+		{id:'move',name:'Move',list:['Right','Down','Left','Up']},
+		{id:'ability',name:'Ability',list:[0,1,2,3,4,5]}
 	];
 	
 	var helper = function(id,i){
@@ -32,17 +36,7 @@ Dialog.binding = function(html){
 	
 	for(var j in list){
 		var info = list[j];
-		for(var i = 0; i < Input.getState(info.id).length; i++){
-			if(ClientPrediction.isActive() && info.id === 'move'){
-				array.push([
-					info.name + ' ' + info.list[i],
-					'Click'
-				]);
-				continue;
-			}
-				
-			
-			
+		for(var i = 0; i < Input.getState(info.id).length; i++){			
 			var name = Input.getKeyName(info.id,i,true);
 			
 			if(Input.getBinding()[info.id] === i)
@@ -60,6 +54,20 @@ Dialog.binding = function(html){
 			]);
 		}
 	}
+	
+	//custom
+	array.push(['---','---']);
+	
+	var custom = Input.getSetting().custom;
+	for(var i = 0 ; i < custom.length; i++){
+		if(custom[i].name)
+			array.push([
+				custom[i].name,
+				Tk.keyCodeToName(custom[i].keyCode,true)			
+			]);
+	}
+	
+	
 	var el = $('<div>').addClass('inline');
 	el.append(Tk.arrayToTable(array,true,false,true));
 	html.append(el);
@@ -84,6 +92,8 @@ Dialog.binding = function(html){
 		el.append('<br>');
 	}
 	html.append(el);
+
+	
 	
 };
 

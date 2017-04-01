@@ -1,14 +1,22 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
-var Main = require2('Main'), QuestVar = require2('QuestVar'), Equip = require2('Equip'), Actor = require2('Actor'), Challenge = require2('Challenge'), Material = require2('Material');
-var Quest = require3('Quest');
-var CHANCE_EQUIP = 0.5;
+var Main, ItemModel, QuestVar, Equip, Actor, Challenge, Material;
+global.onReady(function(){
+	Main = rootRequire('shared','Main'); ItemModel = rootRequire('shared','ItemModel'); QuestVar = rootRequire('server','QuestVar'); Equip = rootRequire('server','Equip'); Actor = rootRequire('shared','Actor'); Challenge = rootRequire('server','Challenge'); Material = rootRequire('server','Material');
+});
+var Quest = rootRequire('server','Quest');
+
+
+var CHANCE_EQUIP = 0.05;
 var CHANCE_MAT = 5;	//check Dialog_quest
 var MAX_INV = 25;
-var BASE_EXP = 100; //check Dialog_quest
+var BASE_EXP = 150; //check Dialog_quest
 var CHALLENGE_SUCCESS = 2;
 var MAX_COMPLETED_TODAY = 5; //BAD, duplicate in Main_quest_status
-
+var SCORE_BASE = 50;	//dupe Dialog_quest
+var FIRST_TIME_SCORE = 100;
+var FIRST_TIME_EXP = 500;
+var CHANCE_EQUIP_RARE_FIRSTIME = 0.5;
 
 //## START ##################
 Quest.onStart = function(quest,main){
@@ -20,22 +28,33 @@ Quest.addQuestVar = function(quest,main){
 }	
 
 Quest.onSignIn = function(main,questVar,account){
-	if(account.lastSignIn === null)	//aka first time
-		return setTimeout(function(){
-			if(!Main.get(main.id)) 
-				return;
-			Main.startQuest(main,'Qtutorial');
-		},1000);
+	setTimeout(function(){
+		if(!Main.get(main.id))
+			return;
 		
-	if(questVar){
-		var q = Quest.get(questVar.quest);
-		q.event._signIn(main.id);	//after preset cuz
-		if(!main.questActive) return;	//cuz signIn can failQuest
-		//QuestVar.addToList done in QuestVar.onSignIn
+		if(!Main.quest.haveCompletedTutorial(main) && !main.questActive)
+			Main.startQuest(main,CST.QTUTORIAL);
 		
-		Main.updateQuestHint(main);
+		Quest.removeSideQuestItem(main);
+		
+		if(questVar){
+			var q = Quest.get(questVar.quest);
+			q.event._signIn(main.id);	//after preset cuz
+			
+			//QuestVar.addToList done in QuestVar.onSignIn
+			if(main.questActive) 	//cuz signIn can failQuest
+				Main.updateQuestHint(main);			
+		}
+	},1000);
+}
+
+
+Quest.removeSideQuestItem = function(main){
+	for(var i in main.invList.data){
+		var q = ItemModel.get(i).quest;
+		if(q && Quest.get(q).sideQuestAllowed)
+			Main.removeItem(main,i,100000);		
 	}
-	
 }
 
 //## COMPLETE ##################
@@ -58,56 +77,46 @@ Quest.getReward = function(q,chalSuccess,scoreMod,firstTimeCompleted,key,complet
 	if(chalSuccess && chalSuccess.success)
 		chalMod = CHALLENGE_SUCCESS;
 	
-	var finalScore = q.reward.reputation.mod * scoreMod * chalMod;
+	var finalScore = SCORE_BASE * q.reward.score * scoreMod * chalMod;
 
-	if(firstTimeCompleted) 
-		finalScore += Quest.getFirstTimeBonus(q.reward.reputation);
+	if(firstTimeCompleted && finalScore !== 0) 
+		finalScore += FIRST_TIME_SCORE;
 	
 	var todayMod = completeToday >= MAX_COMPLETED_TODAY ? 0 : 1;
-		
+	var firstTimeBonus = firstTimeCompleted ? FIRST_TIME_EXP : 0;
+	
+	
 	return QuestReward(
 		finalScore,
-		Quest.getReward.item(q,chalMod * todayMod,key),
-		BASE_EXP * q.reward.exp * chalMod * todayMod
+		Quest.getReward.item(q,chalMod * todayMod,firstTimeCompleted,key),
+		BASE_EXP * q.reward.completion * chalMod * todayMod + firstTimeBonus
 	);
 }
 
-Quest.getReward.item = function(q,mod,key){
+Quest.getReward.item = function(q,mod,firstTimeCompleted,key){
 	var main = Main.get(key);
 	
 	if(Main.getInventorySlotUsed(main) > MAX_INV){
 		Main.addMessage(main,'Because you have more than ' + MAX_INV + ' items in your inventory, this quest gave you no item reward.');	
 		return {};
 	}
-	mod *= q.reward.item;
+	mod *= q.reward.completion;
 	
 	var act = Actor.get(key);
 	var item = {};
 	var num = Math.roundRandom(mod*CHANCE_MAT); 
 	if(num !== 0) 
-		item[Material.getRandom(Actor.getLevel(act))] = num;
-	if(Math.random() / mod < CHANCE_EQUIP){
+		item[Material.getRandom()] = num;
+	if(firstTimeCompleted && q.id !== CST.QTUTORIAL){
+		var num = Math.random() < CHANCE_EQUIP_RARE_FIRSTIME ? 4 : 2;
+		item[Equip.randomlyGenerateFromQuestReward(act,num).id] = 1;
+	} else if(Math.random() / mod < CHANCE_EQUIP){	//unsued atm cuz = 0
 		item[Equip.randomlyGenerateFromQuestReward(act).id] = 1;
-	}
-	for(var i in q.reward.ability){	//TEMP IMPORTANT should be changed by achievement
-		if(Actor.getAbilityList(act,'normal')[i]) continue;
-		if(Main.haveItem(Actor.getMain(act),i)) continue;
-		if(Math.random() < q.reward.ability[i]){
-			item[i] = 1;	//assume ability id === scroll id
-		}
 	}
 	
 	return item;
 }
 
-Quest.scoreToReputationPoint = function(score,reputation){
-	score = Math.max(score,1);	//other pp could be <0
-	return Math.min(Math.log10(score)/4,1) * reputation.max;
-}
-
-Quest.getFirstTimeBonus = function(reputation){
-	return Math.pow(10,4*reputation.min/reputation.max);	//normally 100
-}
 
 //## RESET ##################
 
@@ -116,20 +125,19 @@ Quest.onAbandon = function(q,main){
 }
 
 Quest.getChallengeSuccess = function(q,main,mq){	//null:non-active
-	var tmp = null;
-	for(var i in mq._challenge){
-		if(!mq._challenge[i]) continue;
-		tmp = {
-			id:i,
-			name:Challenge.get(i).name,
-			success:true,	
-		};		
-		if(Challenge.testSuccess(Challenge.get(i),main.id)){	
-			mq._challengeDone[i] = 1;
-			tmp.success = true;
-		} else {
-			tmp.success = false;
-		}
+	if(!mq.challenge)
+		return null;
+	var c = Challenge.get(mq.challenge);
+	var tmp = {
+		id:mq.challenge,
+		name:c.name,
+		success:true,	
+	};		
+	if(Challenge.testSuccess(c,main.id)){	
+		mq.challengeDone[mq.challenge] = true;
+		tmp.success = true;
+	} else {
+		tmp.success = false;
 	}
 	return tmp;
 }
@@ -143,25 +151,23 @@ Quest.onReset = function(q,main){	//undo what the quest could have done
 	
 	var s = q.s;
 	for(var i in q.item)	
-		s.removeItem(key,i,CST.bigInt);
+		s.removeItem(key,i,CST.BIG_INT);
 	for(var i in q.equip) 
-		s.removeItem(key,i,CST.bigInt);
+		s.removeItem(key,i,CST.BIG_INT);
 		
-	for(var i in act.timeout){
-		if(i.$contains(q.id,true)) 
-			Actor.timeout.remove(act,i);
-	}
+	Quest.onReset.removeTimeout(act,q.id);
+		
 	for(var i in main.chrono){
 		if(i.$contains(q.id,true)) 
 			Main.chrono.stop(main,i);
 	}
 	for(var i in act.permBoost){
 		if(i.$contains(q.id,true)) 
-			Actor.permBoost(act,i);
+			Actor.addPermBoost(act,i);
 	}
 	for(var i in act.preset){
 		if(i.$contains(q.id,true)) 
-			Actor.removePreset(act,i,s);
+			Actor.removePreset(act,i);
 	}	
 	for(var i in q.ability)	
 		Actor.removeAbility(act,i);	
@@ -169,35 +175,50 @@ Quest.onReset = function(q,main){	//undo what the quest could have done
 	Main.reputation.updateBoost(main);
 	Actor.boost.removeAll(act,q.id);
 	
-	if(q.id !== 'Qtutorial' && s.isInQuestMap(key))	//BAD
+	if(q.id !== CST.QTUTORIAL && s.isInQuestMap(key)){	
 		s.teleportTown(key);
+	}
 	
 	s.enableAttack(key,true);
 	s.enablePvp(key,false);
 	s.enableMove(key,true);
 	s.restoreHUD(key);
-	//Main.dialogue.end(main);
+	Main.dialogue.end(main);
 	Actor.setCombatContext(act,'ability','normal');
 	Actor.setCombatContext(act,'equip','normal');
-	Actor.changeSprite(act,{name:'normal',sizeMod:1});
+	Actor.changeSprite(act,{name:CST.SPRITE_NORMAL,sizeMod:1});
 	Actor.removeAllQuestMarker(act);
 	Main.closeDialog(main,'permPopup');
-	Main.removeScreenEffect(main,Main.screenEffect.REMOVE_ALL);
+	Main.removeScreenEffect(main,{quest:q.id});	//BAD
 	
+	if(act.dead){
+		Actor.setTimeout(act,function(){	//cant be instant cuz called within die function
+			Actor.revivePlayer(act);
+		},25);
+	}
+	
+}
+Quest.onReset.removeTimeout = function(act,quest){
+	for(var i in act.timeout){
+		if(i.$contains(quest,true)) 
+			Actor.timeout.remove(act,i);
+	}
 }
 
 //############
 
 Quest.getRandomDaily = function(){
 	var quest;
-	do quest = Quest.DB.$randomAttribute();
-	while(!Quest.DB[quest].dailyTask)
-	return Quest.DB[quest];
+	do {
+		quest = Quest.DB.$randomAttribute();
+	} while(!Quest.DB[quest].dailyTask)	//?
+	return Quest.DB[quest] || null;
 }
 
 Quest.addPrefix = function(Q,name){
-	if(name.$contains(Q + '-',true)) return name;
-	else return Q + '-' + name;
+	if(name.$contains(Q + '-',true)) 
+		return name;
+	return Q + '-' + name;
 }
 
 //#########

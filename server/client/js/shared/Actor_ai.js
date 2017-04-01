@@ -1,8 +1,16 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Combat = require2('Combat'), Collision = require2('Collision'), Tk = require2('Tk');
-var Actor = require3('Actor');
+var Combat, Collision;
+global.onReady(function(){
+	Combat = rootRequire('server','Combat'); Collision = rootRequire('shared','Collision');
+});
+var Actor = rootRequire('shared','Actor');
+
+var TARGET_TYPE = {
+	actor:'actor',
+	spot:'spot',
+}
 
 Actor.TargetSetting = function(maxAngleChange,periodSub,periodMainActor,periodMainSpot,periodStuck){
 	return {
@@ -15,14 +23,16 @@ Actor.TargetSetting = function(maxAngleChange,periodSub,periodMainActor,periodMa
 		updateSub:true,
 	}
 }
+
 Actor.TargetMain = function(targetId,x,y){
 	return {
 		x:x||0,
 		y:y||0,
 		targetId:targetId || '',
-		type:typeof targetId === 'string' ? 'actor' : 'spot',
+		type:typeof targetId === 'string' ? TARGET_TYPE.actor : TARGET_TYPE.spot,
 	}
 }
+
 Actor.TargetSub = function(x,y,callback){
 	return {
 		x:x||0,
@@ -36,7 +46,7 @@ Actor.MoveRange = function(ideal,max,confort){
 	return {
 		ideal:100*Tk.nu(ideal,1),                //distance enemy wants to be from target
 		confort:25*Tk.nu(confort,1),               
-		aggressive:400*Tk.nu(max,1),           //attack player if within this range
+		aggressive:250*Tk.nu(max,1),           //attack player if within this range
 		farthest:600*Tk.nu(max,1),             //stop follow player if above this range
 	};
 }
@@ -47,16 +57,18 @@ Actor.ai.update = function(act){
 	Actor.ai.updateInput(act); 		//simulate enemy key press depending on target 
 }
 
+var UPDATE_ABILITY_INPUT_INTERVAL = 25;
+var UPDATE_MOUSE_INPUT_INTERVAL = 5;
 Actor.ai.updateInput = function(act){
-	if(act.move && (act.useUpdateInput || act.useMouseForMove))
+	if(act.move && act.useUpdateInput)
 		Actor.ai.updateInput.move(act);
 		
-	if(act.type !== 'npc') return;
+	if(act.type !== CST.ENTITY.npc) return;
 	
-	if(act.combat && act.frame % 25 === 0)
+	if(act.combat && act.frame % UPDATE_ABILITY_INPUT_INTERVAL === 0)
 		Actor.ai.updateInput.ability(act);
 	
-	if(act.frame % 5 === 0)
+	if(act.frame % UPDATE_MOUSE_INPUT_INTERVAL === 0 && (act.move || act.combat))
 		Actor.ai.updateInput.mouse(act);
 	
 }
@@ -78,7 +90,7 @@ Actor.ai.updateInput.move = function(act){
 		Actor.ai.updateInput.move.towardSub(act,act.targetSub);
 	
 }
-
+//success is closer than x2*spd
 Actor.ai.updateInput.move.towardSub = function(act,sub){	//sub = where he wants to go
 	if(sub.active === false)
 		return;
@@ -108,32 +120,62 @@ Actor.ai.updateInput.move.towardSub = function(act,sub){	//sub = where he wants 
 	
 }
 
-//cutscene[ {x,y,timeLimit,spd,wait} ]	
+Actor.ai.updateInput.ability = function(act){
+	Actor.ai.resetAbilityChangePress(act);
+	if(act.targetMain.type !== 'actor') return;
+	var target = Actor.ai.setTarget.getMainPos(act);
+	if(!target) return;
+	
+	var diff = Collision.getDistancePtPt(act,target);
+	
+	var id;
+	if(diff > act.abilityAi.range[1]) 
+		id = act.abilityAi.far.$random();
+	else if(diff > act.abilityAi.range[0]) 
+		id = act.abilityAi.middle.$random();
+	else
+		id = act.abilityAi.close.$random();
+
+	if(!id || id === CST.IDLE) 
+		return;
+	
+	var ab = Actor.getAbility(act);
+	for(var i = 0; i < ab.length; i++){
+		if(ab[i] && ab[i].id === id){
+			act.abilityChange.press[i] = true;
+		}
+	}
+}
+
+//cutscene[ {x,y,timeLimit,spd,wait,event} ]	
 Actor.followPath = function(act,cutscene,callback){
 	act.useUpdateInput = true;
 	act.targetSetting.updateMain = false;
 	act.targetSetting.updateSub = false;
-	var oldCombat = act.combat;
-	var oldMove = act.move;
+
 	Actor.followPath.applyNext(act,cutscene,0,function(key){
-		Actor.endPath(act,oldCombat,oldMove);
-		if(callback) callback(key);
+		Actor.endPath(act);
+		if(callback) 
+			callback(key);
 	});
 }
 
 Actor.followPath.applyNext = function(act,fullList,num,callbackIfDone){	//spdMod not applied
 	var spot = fullList[num];
-	if(!spot) return callbackIfDone(act.id);	//finished
+	if(!spot) 
+		return callbackIfDone(act.id);	//finished
 	
-	//Actor.permBoost(act,'followPath',[Boost.Perm('maxSpd',spot.spdMod,"***")]);	//BAD... for npc screw everything. cant add permboost to npc... cant do !== 1, cuz need overwrite
+	//Actor.addPermBoost(act,'followPath',[Boost.Perm('maxSpd',spot.spdMod,CST.BOOST_XXX)]);	//BAD... for npc screw everything. cant add permboost to npc... cant do !== 1, cuz need overwrite
 	
 	Actor.followPath.goTo(act,spot,function(key,success){
-		if(!success) Actor.teleport(act,Actor.Spot(spot.x,spot.y,act.map));	//to prevent gettig stuck
+		if(!success) 
+			Actor.teleport(act,Actor.Spot(spot.x,spot.y,act.map,act.mapModel));	//to prevent gettig stuck
 		
 		Actor.followPath.wait(act,spot.wait,function(){
 			Actor.followPath.applyNext(act,fullList,num + 1,callbackIfDone);
 		});
-		if(spot.event) spot.event(key);
+		if(spot.event) 
+			spot.event(key);
 		
 	},spot.timeLimit);
 }
@@ -142,36 +184,41 @@ Actor.followPath.goTo = function(act,spot,callback,timeLimit){	//for cutscene, t
 	var wasSuccessFull = false;
 	act.targetSub = Actor.TargetSub(spot.x,spot.y,function(key){
 		wasSuccessFull = true;
-		if(callback) callback(key,true);
+		if(callback) 
+			callback(key,true);
 	});
 	if(timeLimit){
 		Actor.setTimeout(act,function(key){
-			if(wasSuccessFull) return;	//reached it before timeLimit
-			if(callback) callback(key,false);
+			if(wasSuccessFull) 
+				return;	//reached it before timeLimit
+			if(callback) 
+				callback(key,false);
 		},timeLimit,'Actor.followPath.goTo');
 	}
 }
 
 Actor.followPath.wait = function(act,time,callback){
-	if(!time && callback) return callback(act.id);	
-	var oldMove = act.move;
-	act.move = false;
+	if(!time && callback)
+		return callback(act.id);	
+	Actor.addPreset(act,'onFollowPathWait');
 	Actor.setTimeout(act,function(key){
 		var act = Actor.get(key);
-		act.move = oldMove;
-		if(callback) callback(key);
+		Actor.removePreset(act,'onFollowPathWait');
+		if(callback) 
+			callback(key);
 	},time,'Actor.ai.wait');
 }
 
-Actor.endPath = function(act,combat,move){
-	act.useUpdateInput = act.type === 'npc';
-	act.combat = combat;
-	act.move = move;
+Actor.endPath = function(act){
+	act.useUpdateInput = act.type === CST.ENTITY.npc;
 	Actor.timeout.remove(act,'Actor.followPath.goTo');	
-	Actor.timeout.remove(act,'Actor.ai.wait');	
+	Actor.timeout.remove(act,'Actor.ai.wait');
+	
+	Actor.removePreset(act,'onFollowPathWait');
+	
 	act.targetSetting.updateMain = true;
 	act.targetSetting.updateSub = true;
-	//Actor.permBoost(act,'followPath');
+	//Actor.addPermBoost(act,'followPath');
 	Actor.ai.resetSub(act);	//so sub doesnt have callback
 }
 
@@ -181,94 +228,91 @@ Actor.ai.resetSub = function(act){
 	act.targetSub = Actor.TargetSub(act.x,act.y);	//for sub doesnt have callback
 }
 
-Actor.ai.updateInput.ability = function(act){
-	Actor.ai.resetAbilityChangePress(act);
-	if(act.targetMain.type !== 'actor') return;
-	var target = Actor.ai.setTarget.getMainPos(act);
-	if(!target) return;
-	
-	var diff = Collision.getDistancePtPt(act,target);
-	
-	var range = 'close';
-	if(diff > act.abilityAi.range[0]) range = 'middle';	//BAD...
-	if(diff > act.abilityAi.range[1]) range = 'far';
-	
-	
-	var id = act.abilityAi[range].$random();
-	if(!id || id === 'idle') return;
-	
-	var ab = Actor.getAbility(act);
-	for(var i = 0; i < ab.length; i++){
-		if(ab[i] && ab[i].id === id){
-			act.abilityChange.press = act.abilityChange.press.set(+i,'1');
-		}
-	}
-}
 Actor.ai.resetAbilityChangePress = function(act){
-	act.abilityChange.press = '0000000000000000000000';
+	act.abilityChange.press = Actor.AbilityChange.press();
 }
-
-
 
 Actor.ai.setTarget = function(act){
-	if(act.type !== 'npc') return;
+	if(act.type !== CST.ENTITY.npc) 
+		return;
 	//Main
-	var period = act.targetMain.type === 'actor' ? act.targetSetting.periodMainActor : act.targetSetting.periodMainSpot;
-	if(act.targetSetting.updateMain && act.frame % period === 0)	
+	var actorTarget = act.targetMain.type === TARGET_TYPE.actor;
+	var period = actorTarget ? act.targetSetting.periodMainActor : act.targetSetting.periodMainSpot;
+	var mustChange = actorTarget && Actor.get(act.targetMain.targetId) && !Actor.get(act.targetMain.targetId).combat;
+	if(mustChange || (act.targetSetting.updateMain && act.frame % period === 0))
 		Actor.ai.setTarget.updateMain(act);
 	
 	//Sub	
 	if(act.targetSetting.updateSub && act.frame % act.targetSetting.periodSub === 0){
 		Actor.ai.setTarget.sub(act);
-		Actor.ai.updateMaxSpdMod(act);	
 	}
 
 }
 
 Actor.ai.setTarget.getMainPos = function(act){	
-	if(act.targetMain.type === 'spot') return {x:act.targetMain.x,y:act.targetMain.y};
+	if(act.targetMain.type === TARGET_TYPE.spot) 
+		return CST.pt(act.targetMain.x,act.targetMain.y);
 	var tar = Actor.get(act.targetMain.targetId);
-	if(!tar) return {x:act.x,y:act.y};	//BAD... might have logged out
-	return {x:tar.x,y:tar.y};
+	if(!tar) 
+		return Actor.toSpot(act);	//BAD... might have logged out
+	return Actor.toSpot(tar);
 }
-
-Actor.ai.updateMaxSpdMod = function(act){ //BAD
-	var tar = Actor.ai.setTarget.getMainPos(act);
-	if(!tar) return;
-	var dist = Collision.getDistancePtPt(act,tar);
-	if((act.moveRange.ideal - act.moveRange.confort *2 - 100) <= dist && dist <= (act.moveRange.ideal + act.moveRange.confort*2+ 100)){
-		act.maxSpdMod = 0.5;
-	} else act.maxSpdMod = 1;
-}
-
-
+var CHANCE_STOP_AGGRESION = 0.5;
+var TIME_LAST_ATTACK = 5000;
 Actor.ai.setTarget.updateMain = function(act){
 	if(!act.combat) return;
 	var targetList = {}; 
 	var playerCount = 0;
 	var fullHp = act.hp === act.hpMax;
+	
+	var now = Date.now();
+	
 	for (var i in act.activeList){
 		var target = Actor.get(i);
 		if(!target)  //aka not actor (ex: bullet)
 			continue; 	
-		if(target.type === 'player') 
+		if(target.type === CST.ENTITY.player) 
 			playerCount++;
 		if(!Combat.targetIf(act,target)) 
 			continue;
 		
 		var dist = Collision.getDistancePtPt(act,target);
-		if(!fullHp && dist > act.moveRange.aggressive) 
+		var recentAtk = now - target.lastAttack < TIME_LAST_ATTACK;
+		
+		//if outside farthest => never aggressive
+		if(dist > act.moveRange.farthest){
 			continue;
+		}
+		
+		if(dist > act.moveRange.aggressive){
+			if(!act.aggressive && fullHp && !recentAtk)
+				continue;
+			var avg = (act.moveRange.aggressive + act.moveRange.farthest)/2;
+			
+			if(dist > avg && fullHp)	//a peacefully monster will attack player if hes within avg
+				continue;
+		}
+		
+		
+		//if within aggresive => aggressive always
+			
 		
 		targetList[i] = 1/(dist+100);
 	}
 	var chosen = targetList.$randomAttribute();
 	if(!chosen){
+		if(Math.random() < CHANCE_STOP_AGGRESION)
+			act.aggressive = false;
 		act.targetMain = Actor.TargetMain(null,act.x,act.y);
 		Actor.ai.resetAbilityChangePress(act);
 	} else {
-		act.targetMain = Actor.TargetMain(chosen);
-		Actor.boost(act,Combat.getEnemyPower(act,playerCount));
+		act.aggressive = true;
+		Actor.addBoost(act,Combat.getEnemyPower(act,playerCount));
+		if(act.targetMain.targetId !== chosen){
+			act.targetMain = Actor.TargetMain(chosen);
+			Actor.ai.updateInput.mouse(act);
+			Actor.ai.updateInput.ability(act);
+		}
 	}
 } 
 		
@@ -282,50 +326,26 @@ Actor.ai.setTarget.sub = function(act){
 	var x;
 	var y;
 	do {
-		var angle = (act.angle+180) + Math.randomML()*act.targetSetting.maxAngleChange;	//pick random angle
+		var angle = Math.random()*360;	//BAD, idk whats the point of maxAngleChange?
+			//(act.angle+180) + Math.randomML()*act.targetSetting.maxAngleChange;	//pick random angle
 		x = Tk.cos(angle)*rayon+tar.x;
 		y = Tk.sin(angle)*rayon+tar.y;
-	} while(Collision.testLineMap(act.map,act,{x:x,y:y}) && ++count < 100)	//while reachable
+	} while(Collision.testLineMap(act.map,act,CST.pt(x,y)) && ++count < 100)	//while reachable
 	act.targetSub = Actor.TargetSub(x,y);
 } 
-/*
-Actor.ai.setTarget.stuck = function(act){
-	return;
-	var maintar = Actor.get(act.target.main);
-	if(!maintar) return;
-	
-	act.target.stuck = Actor.getPath(act,maintar);
-	act.target.sub = act.target.stuck[0] || act.target.sub;
-} 
-
-Actor.getPath = function(act,target){	//using a*
-	return [];
-	if(act.map !== target.map) return [];
-	var map = MapModel.get(act.map).grid.astar.nodes;
-	
-	var start = Collision.getPos(act);
-	var end = Collision.getPos(target);
-	
-	start = map[start.y][start.x];
-	end = map[end.y][end.x];
-	
-	return Actor.getPath.parseAStar(astar.search(map,start,end));
-}
-
-Actor.getPath.parseAStar = function(array){
-	for(var i in array)	array[i] = {y:array[i].x*32,x:array[i].y*32};	//inverting x and y cuz xy represent position of the nodes in the grid
-	return array;
-}
-*/
 
 Actor.isStuck = function(act,maintar){
 	if(!maintar) return 0;
 	var path = Collision.getPath(Collision.getPos(act),Collision.getPos(maintar));
 	for(var i = 0; i < path.length; i++){
-		if(Collision.actorMap(path[i].x,path[i].y,act.map,act)) return 1;	
+		if(Collision.testActorMap(path[i].x,path[i].y,act.map,act)) return 1;	
 	}
 	return 0;
 }
 
+
 })(); //{
+
+
+
 

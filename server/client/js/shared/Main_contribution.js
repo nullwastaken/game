@@ -1,8 +1,31 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Message = require2('Message'), OfflineAction = require2('OfflineAction'), Actor = require2('Actor'), SpriteModel = require2('SpriteModel');
-var Main = require3('Main');
+var Message, OfflineAction, Actor, SpriteModel;
+global.onReady(function(initPack){
+	Message = rootRequire('shared','Message'); OfflineAction = rootRequire('server','OfflineAction'); Actor = rootRequire('shared','Actor'); SpriteModel = rootRequire('shared','SpriteModel');
+	db = initPack.db;
+	
+	
+	var Command = rootRequire('shared','Command');
+	Command.create(CST.COMMAND.contributionPurchase,Command.MAIN,[ //{
+		Command.Param('string','Type',false),
+		Command.Param('string','Param',true),
+	],Main.contribution.purchase); //}
+
+	Command.create(CST.COMMAND.contributionSelect,Command.MAIN,[ //{
+		Command.Param('string','Type',false),
+	],Main.contribution.setActive); //}
+
+	Command.create(CST.COMMAND.contributionReset,Command.MAIN,[ //{
+		Command.Param('string','Type',false),
+	],Main.contribution.resetReward); //}
+
+
+	
+},{db:['contributionHistory']});
+var Main = rootRequire('shared','Main');
+
 
 var db;
 
@@ -44,6 +67,20 @@ Main.Contribution = function(cont){
 		a[i] = cont[i];
 	return a;
 }
+Main.Contribution.compressDb = function(contribution){
+	if(contribution.ptTotal === 0)
+		return null;
+	return contribution;		
+}
+Main.Contribution.uncompressDb = function(contribution){
+	return Main.Contribution(contribution);		
+}
+
+
+Main.Contribution.getDbSchema = function(){
+	return [{},null];	//TODO...
+}
+
 
 Main.contribution = {};
 Main.contribution.getChat = function(main){
@@ -64,10 +101,6 @@ Main.contribution.getBullet = function(main,originalSkin){
 		if(active.bulletArrow === 'bulletCannon')	return 'bullet-cannon';
 	}
 	return originalSkin;
-}
-
-Main.contribution.init = function(dbLink){
-	db = dbLink;
 }
 
 var COST = {
@@ -105,11 +138,11 @@ var COLOR_CHART = {
 
 var SYMBOL_CHART = {
 	chatSymbolNone:'',
-	chatSymbolAdmin:'<span title="Admin" style="color:white;">✪</span>',
+	chatSymbolAdmin:'<span title="Developper" style="color:#EEEEEE;">★</span>',
 	chatSymbolBronze:'<span title="Bronze Contributor" style="color:#CD7F32;">★</span>',
 	chatSymbolSilver:'<span title="Silver Contributor" style="color:#C0C0C0;">★</span>',
 	chatSymbolGold:'<span title="Gold Contributor" style="color:#FFD700;">★</span>',
-	chatSymbolDiamond:'<span title="Diamond Contributor" style="color:white;">★</span>'
+	chatSymbolDiamond:'<span title="Diamond Contributor" style="color:#EEEEEE;">★</span>'
 };
 
 Main.contribution.getCost = function(rewardId){
@@ -135,7 +168,7 @@ Main.contribution.addHistory = function(main,category,type,pt,details){
 }
 
 Main.contribution.getPlayerSprite = function(main){
-	return main.contribution.active.playerSprite || Actor.DEFAULT_SPRITENAME;
+	return main.contribution.active.playerSprite;
 }
 
 Main.contribution.purchase = function(main,what,param){
@@ -163,14 +196,14 @@ Main.contribution.purchase = function(main,what,param){
 		if(list.length === 0) return chat(main,'You need at least one layer.',true);
 		
 		for(var i in list) 
-			if(!SpriteModel.isPlayerContribution(list[i])) 
+			if(!SpriteModel.isPlayerSprite(list[i])) 
 				return chat(main,'Invalid sprite: ' + list[i] + '.',true);
 		param = list.toString();
 		
 		c.pt -= cost;
 		Main.contribution.addHistory(main,'purchase',what,-cost,param);
 		c.active.playerSprite = param;		
-		Main.contribution.updatePlayerSprite(main);
+		Actor.refreshNormalSprite(Main.getAct(main));
 		chat(main,'Transaction successfully completed.');
 	}
 	
@@ -186,7 +219,7 @@ Main.contribution.purchase = function(main,what,param){
 		chat(main,'Transaction successfully completed.');
 	}
 	
-	Main.setFlag(main,'contribution');
+	Main.setChange(main,'contribution',main.contribution);
 }
 
 Main.contribution.setActive = function(main,what){
@@ -198,7 +231,7 @@ Main.contribution.setActive = function(main,what){
 		if(cost > main.contribution.ptTotal)
 			return chat(main,'You have not unlocked that reward yet.',true);
 		a.chatSymbol = what;
-		Main.setFlag(main,'contribution');
+		Main.setChange(main,'contribution',main.contribution);
 		return;
 	}
 	
@@ -216,20 +249,24 @@ Main.contribution.setActive = function(main,what){
 		a.bulletFireball = what;
 	else
 		return ERROR(4,'cant active rewardId',what);
-	Main.setFlag(main,'contribution');
+	Main.setChange(main,'contribution',main.contribution);
 }
 
 Main.contribution.addPt = function(main,pt,type,comment,displayMessage){
-	if(isNaN(pt)) return ERROR(3,'invalid pt',pt);
+	if(isNaN(pt)) 
+		return ERROR(3,'invalid pt',pt);
 	
 	main.contribution.pt += pt;
 	main.contribution.ptTotal += pt;
 	Main.contribution.addHistory(main,'contribution',type,pt,comment);
 	if(displayMessage !== false){
-		Message.add(main.id,'You just gained ' + pt + ' contribution points. Source: ' + comment + '.');
-		Message.addPopup(main.id,'You just gained ' + pt + ' contribution points.<br>Source: ' + comment + '.');
+		Message.add(main.id,'You just gained ' + pt + ' contribution points. ' + comment);
+		Message.addPopup(main.id,'You just gained ' + pt + ' contribution points.<br>' 
+			+ comment + '<br><br>'
+			+ 'Check the cool rewards via ' + Message.funcToText('exports.Dialog.open(\'contribution\');',Message.iconToText('tab-contribution')) + '.'
+		);
 	}
-	Main.setFlag(main,'contribution');
+	Main.setChange(main,'contribution',main.contribution);
 }
 
 Main.contribution.addPtOffline = function(username,pt,type,comment){
@@ -244,10 +281,11 @@ Main.contribution.getChat = function(main){
 }
 
 Main.contribution.onLevelUp = function(main,lvl){
-	if(main.contribution.active.broadcastAchievement <= 0) return;
+	if(main.contribution.active.broadcastAchievement <= 0) 
+		return;
 	main.contribution.active.broadcastAchievement--;
 	Message.broadcast(main.name + ' is now Level ' + lvl + '.');
-	Main.setFlag(main,'contribution');
+	Main.setChange(main,'contribution',main.contribution);
 }
 
 Main.contribution.onQuestComplete = function(main,qname,chalSuccess){	//return true if gave CP
@@ -259,8 +297,9 @@ Main.contribution.onQuestComplete = function(main,qname,chalSuccess){	//return t
 	else
 		Message.broadcast(main.name + ' just completed the quest ' + qname + '.');
 		
-	Main.setFlag(main,'contribution');
+	Main.setChange(main,'contribution',main.contribution);
 	
+	//add pts
 	if(Date.now() - main.timestampQuestComplete > CST.MIN * 10){
 		main.timestampQuestComplete = Date.now();
 		Main.contribution.addPt(main,1,'questComplete','Quest Complete',false);
@@ -269,21 +308,35 @@ Main.contribution.onQuestComplete = function(main,qname,chalSuccess){	//return t
 	return false;
 }
 
+Main.contribution.onAchievementComplete = function(main,name){
+	if(main.contribution.active.broadcastAchievement <= 0) 
+		return;
+	main.contribution.active.broadcastAchievement--;
+	Message.broadcast(main.name + ' has completed the achievement "' + name + '".');
+	Main.setChange(main,'contribution',main.contribution);
+}
+
+Main.contribution.onSideQuestComplete = function(main,name){
+	if(main.contribution.active.broadcastAchievement <= 0) 
+		return;
+	main.contribution.active.broadcastAchievement--;
+	Message.broadcast(main.name + ' has completed the side quest "' + name + '".');
+	Main.setChange(main,'contribution',main.contribution);
+}
+
 Main.contribution.resetReward = function(main,type){
 	if(type === 'bulletFireball')	main.contribution.active.bulletFireball = '';
 	else if(type === 'bulletLightningball')	main.contribution.active.bulletLightningball = '';
 	else if(type === 'bulletIceshard')	main.contribution.active.bulletIceshard = '';
 	else if(type === 'bulletArrow')	main.contribution.active.bulletArrow = '';
 	else if(type === 'playerSprite'){
-		main.contribution.active.playerSprite = Actor.DEFAULT_SPRITENAME;
-		Main.contribution.updatePlayerSprite(main);
+		main.contribution.active.playerSprite = '';
+		Actor.refreshNormalSprite(Main.getAct(main));
 	}
-	Main.setFlag(main,'contribution');
+	Main.setChange(main,'contribution',main.contribution);
 }
 
-Main.contribution.updatePlayerSprite = function(main){
-	Actor.changeSprite(Main.getAct(main),{name:'normal'});
-}
+
 
 Main.contribution.getPoint = function(main,what){
 	if(what === 'overall')
@@ -303,43 +356,43 @@ Contribution.change = function(key,account,name){
 	var p = main.contribution.point;
 	if(!p[account]) return;
 	p[account].username = name;
-	Main.setFlag(main,'contribution');
-	chat(key,"You have successfully linked your Raining Chain account with the " + account.$capitalize() + " account " + name.q() + '.');
+	Main.setChange(main,'contribution',main.contribution);
+	chat(key,"You have successfully linked your GAME_NAME account with the " + account.$capitalize() + " account \"" + name + '\".');
 }
 
 Contribution.updateSocialMedia = function(key,account){
 	var p = Main.get(key).contribution.point;
 	var now = Date.now();
 	if(account === 'youtube'){
-		if(!p.youtube.username) return chat(key,'Link your Raining Chain account with your Youtube account first by typing your Youtube name and pressing the button "Change Name"');
+		if(!p.youtube.username) return chat(key,'Link your GAME_NAME account with your Youtube account first by typing your Youtube name and pressing the button "Change Name"');
 		var diff = CST.DAY/4 - (now - p.youtube.lastUpdate);
 		if(diff > 0) return chat(key,'You will be able to update your Youtube CP in ' + (diff/CST.HOUR).r(2) + ' hour(s).');
 		p.youtube.lastUpdate = now;
-		Main.setFlag(Main.get(key),'contribution');
+		Main.setChange(Main.get(key),'contribution',Main.get(key).contribution);
 		Contribution.updateSocialMedia.youtube(key,p.youtube);
 	}
 	if(account === 'reddit'){
-		if(!p.youtube.username) return chat(key,'Link your Raining Chain account with your Youtube account first by typing your Youtube name and pressing the button "Change Name"');
+		if(!p.youtube.username) return chat(key,'Link your GAME_NAME account with your Youtube account first by typing your Youtube name and pressing the button "Change Name"');
 		var diff = CST.DAY/4 - (now - p.reddit.lastUpdate);
 		if(diff > 0) return chat(key,'You will be able to update your Reddit CP in ' + (diff/CST.HOUR).r(2) + ' hour(s).');
 		p.reddit.lastUpdate = now;
-		Main.setFlag(Main.get(key),'contribution');
+		Main.setChange(Main.get(key),'contribution',Main.get(key).contribution);
 		Contribution.updateSocialMedia.reddit(key,p.reddit);
 	}
 	if(account === 'twitch'){
-		if(!p.twitch.username) return chat(key,'Link your Raining Chain account with your Twitch account first by typing your Twitch name and pressing the button "Change Name"');
+		if(!p.twitch.username) return chat(key,'Link your GAME_NAME account with your Twitch account first by typing your Twitch name and pressing the button "Change Name"');
 		var diff = CST.HOUR - (now - p.twitch.lastUpdate);
 		if(diff > 0) return chat(key,'You will be able to update your Twitch again in ' + (diff/CST.MIN).r(2) + ' minute(s).');
 		p.twitch.lastUpdate = now;
-		Main.setFlag(Main.get(key),'contribution');
+		Main.setChange(Main.get(key),'contribution',Main.get(key).contribution);
 		Contribution.updateSocialMedia.twitch(key,p.twitch);
 	}
 	if(account === 'twitter'){
-		if(!p.twitter.username) return chat(key,'Link your Raining Chain account with your Twitter account first by typing your Twitter name and pressing the button "Change Name"');
+		if(!p.twitter.username) return chat(key,'Link your GAME_NAME account with your Twitter account first by typing your Twitter name and pressing the button "Change Name"');
 		var diff = CST.DAY - (now - p.twitter.lastUpdate);
 		if(diff > 0) return chat(key,'You will be able to update your Twitter again in ' + (diff/CST.MIN).r(2) + ' hour(s).');
 		p.twitter.lastUpdate = now;
-		Main.setFlag(Main.get(key),'contribution');
+		Main.setChange(Main.get(key),'contribution',Main.get(key).contribution);
 		Contribution.updateSocialMedia.twitter(key,p.twitter);
 	}
 	return chat(key,'Invalid');
@@ -395,10 +448,10 @@ Contribution.updateSocialMedia.twitter = function(key,info,cb){
 
 
 Contribution.change = function(account,name){
-	Command.execute('reward,change',[account,name]);
+	Command.execute(CST.COMM AND.reward,change,[account,name]);
 }
 Contribution.updateSocialMedia = function(account){
-	Command.execute('reward,updateSocialMedia',[account]);	
+	Command.execute(CST.COM MAND.reward,updateSocialMedia,[account]);	
 }
 
 */

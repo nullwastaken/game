@@ -1,46 +1,52 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Img = require4('Img'), SpriteFilter = require4('SpriteFilter');
-var LightingEffect = require2('LightingEffect');
+var Img, SpriteFilter, LightingEffect, ParticleEffect;
+global.onReady(function(){
+	LightingEffect = rootRequire('shared','LightingEffect'); ParticleEffect = rootRequire('shared','ParticleEffect');
+	Img = rootRequire('client','Img',true); SpriteFilter = rootRequire('client','SpriteFilter',true);
+},null,'SpriteModel',[],function(){
+	SpriteModel.init();
+});
 
-var SpriteModel = exports.SpriteModel = {};
+var OFFSETY_PLAYER = -4;
+var SpriteModel = exports.SpriteModel = function(extra){
+	this.id = '';
+	this.src = "";
+	this.img = null;	//Image, client only
+	this.filteredImg = {};	//Image, client only
+	this.size = 1;
+	this.side = [0,1,2,3];
+	this.hpBar = 0;
+	this.legs = 0;
+	this.bumperBox = null;	//SpriteModel.BumperBox
+	this.hitBox = SpriteModel.HitBox(-10,10,-10,10);
+	this.anim = {};	//SpriteModel.Anim
+	this.defaultAnim = "walk";	//HCODE
+	this.alpha = 1;
+	this.canvasRotate = false;
+	this.lightingEffect = null;	//LightingEffect
+	this.offsetY = 0;
+	this.offsetX = 0;
+	this.showBorder = true;
+	this.isBulletSprite = false;
+	this.isPlayerSprite = false;
+	this.particleEffect = null; //Particule.Model
+	Tk.fillExtra(this,extra);
+};
+
 SpriteModel.create = function(id,src,bumperBox,extra,anim){
 	bumperBox = SpriteModel.BumperBox.apply(this,bumperBox);
 	
-	var a = {
-		id:'',
-		src:"actor/main.png",
-		img:null,	//client only
-		filteredImg:{},	//client only
-		size:1,
-		side:[0,1,2,3],
-		hpBar:0,
-		legs:0,
+	var a = new SpriteModel({
 		bumperBox:bumperBox,
-		hitBox:SpriteModel.HitBox(-10,10,-10,10),
-		anim:{},
-		defaultAnim:"walk",
-		alpha:1,
-		canvasRotate:0,
-		lightingEffect:null,
-		mirror:0,			//UNUSED: if 90 < angle < 270, symetry
-		offsetY:0,
-		offsetX:0,
-		showBorder:true,
-		playerContribution:false,
-	};
+		id:id,
+		src:'img/sprite/' + src,
+	});
 	
-	a.id = id;
-	a.src = 'img/sprite/' + src;
 	if(!extra.hitBox) 
 		extra.hitBox = Tk.deepClone(bumperBox);
-	
-	for(var i in extra){
-		if(a[i] === undefined)
-			ERROR(4,'prop not in constructor',i);
-		a[i] = extra[i];
-	}
+	Tk.fillExtra(a,extra);
 		
 	for(var i in anim){
 		a.anim[anim[i].name] = anim[i];
@@ -53,15 +59,18 @@ SpriteModel.create = function(id,src,bumperBox,extra,anim){
 	if(Array.isArray(a.bumperBox)) 
 		return ERROR(3,'bumperBox is still array');
 	
+	SpriteModel.compressManager.add(id);
 	DB[id] = a;
 	return id;
 }
 var DB = SpriteModel.DB = {};
 
+SpriteModel.compressManager = Tk.newCompressManager();
+
 SpriteModel.init = function(){
-	SpriteModel.create("mace","actor/main.png",[-12,12,-3,20],{
-		size:2.7,side:[1,2,3,0],hpBar:-17,legs:20,hitBox:SpriteModel.HitBox(-12,12,-3,20),
-	},[SpriteModel.Anim("move",3,24,32,0.5),SpriteModel.Anim("attack",3,24,32,0.5)]);
+	SpriteModel.create("mace","actor/main.png",[-10,10,-3,17],{
+		size:2.7,side:[1,2,3,0],hpBar:-17,legs:16,hitBox:SpriteModel.HitBox(-10,10,-3,17),
+	},[SpriteModel.Anim("move",3,24,32,0.7),SpriteModel.Anim("attack",3,24,32,0.7)]);
 	
 	var tmp = {	//duplicated data in Dialog_contribution
 		body:[205,206,207,208,209,210,211,221,222,223,224,225,325,326,327,328,410,411,412,413,680],
@@ -76,19 +85,35 @@ SpriteModel.init = function(){
 		for(var j in tmp[i]) 
 			SpriteModel.player(tmp[i][j],"player/" + i + '/' + tmp[i][j] + ".png");
 	
+	
+	SpriteModel.player('body-wood',"player/body/body-wood.png");	//linked Actor.getNormalSprite
+	SpriteModel.player('body-metal',"player/body/body-metal.png");
+	SpriteModel.player('body-bone',"player/body/body-bone.png");
+	SpriteModel.player('body-normal',"player/body/body-normal.png");
+	SpriteModel.player('helm-wood',"player/helm/helm-wood.png");
+	SpriteModel.player('helm-metal',"player/helm/helm-metal.png");
+	SpriteModel.player('helm-bone',"player/helm/helm-bone.png");
+	SpriteModel.player('helm-normal',"player/helm/helm-normal.png");
+	
+	SpriteModel.player('skin-body-normal',"player/skin/skin-body-normal.png");
+	SpriteModel.player('skin-head-normal',"player/skin/skin-head-normal.png");
+	
+	
 	for(var i = 0 ; i < 10; i++)
 		SpriteModel.charasProject('villagerMale-' + i);
 	for(var i = 0 ; i < 10; i++)
 		SpriteModel.charasProject('villagerFemale-' + i);
+	SpriteModel.charasProject('creator');
 	
-
+	/*
 	SpriteModel.create("slimeJerome","actor/slimeJerome.png",[-55,55,-15,80],{
 		size:1,side:[0,1,2,3],hpBar:-110,legs:70,
 	},[SpriteModel.Anim("move",5,200,200,0.5)]);	
 	SpriteModel.create("troll","actor/troll.png",[-33,33,-30,64],{
 		size:1,side:[0,1,2,3],hpBar:-70,legs:35,
 	},[SpriteModel.Anim("move",9,128,128,0.5)]);
-		
+	*/
+	
 	//rpgvx
 	SpriteModel.rpgvx("goblin","actor/tm/goblin.png");
 	SpriteModel.rpgvx("skeleton","actor/tm/skeleton.png");
@@ -97,7 +122,7 @@ SpriteModel.init = function(){
 	},[SpriteModel.Anim("move",3,72,72,0.5)]);
 	
 	//good
-	SpriteModel.rpgvx("troll","actor/troll.png");
+	//SpriteModel.rpgvx("troll","actor/troll.png");
 	SpriteModel.rpgvx("spirit","actor/spirit.png");
 	SpriteModel.rpgvx("mosquito","actor/mosquito.png");
 	SpriteModel.rpgvx("mushroom","actor/mushroom.png");
@@ -130,12 +155,12 @@ SpriteModel.init = function(){
 	},[SpriteModel.Anim("move",3,40,46,0.5)]);
 	
 	SpriteModel.create("plant","actor/plant.png",[-60,60,-76,76 ],{
-		size:1,side:[3,2,1,0],hpBar:-100,legs:40,
+		size:1.5,side:[3,2,1,0],hpBar:-70,legs:40,
 	},[SpriteModel.Anim("move",3,60,76,0.5)]);
 	
-	SpriteModel.create("pumpking","actor/pumpking.png",[-46,46,-46,46 ],{
+	SpriteModel.create("pumpking","actor/pumpking.png",[-48,48,-48,48 ],{
 		size:2,side:[3,2,1,0],hpBar:-40,legs:25,
-	},[SpriteModel.Anim("move",3,46,46,0.5)]);
+	},[SpriteModel.Anim("move",3,48,48,0.5)]);
 	
 	SpriteModel.create("slime","actor/slime.png",[-32,32,-32,32 ],{
 		size:2,side:[3,2,1,0],hpBar:-22,legs:16,
@@ -150,73 +175,173 @@ SpriteModel.init = function(){
 	},[SpriteModel.Anim("move",3,32,32,0.5)]);
 	
 	SpriteModel.create("werewolf","actor/werewolf.png",[-64,64,-48,48],{
-		size:2,side:[2,0,1,3],hpBar:-55,legs:50,
+		size:1.8,side:[2,0,1,3],hpBar:-40,legs:50,
 	},[SpriteModel.Anim("move",3,64,48,0.5)]);
 	
-	SpriteModel.create("taurus","actor/taurus.png",[-72,72,-72,72],{
-		size:2,side:[2,0,1,3],hpBar:-45,legs:36,
-	},[SpriteModel.Anim("move",3,72,72,0.5)]);
+	/*SpriteModel.create("taurus","actor/taurus.png",[-72,72,-72,72],{
+		size:1.8,side:[2,0,1,3],hpBar:-45,legs:36,
+	},[SpriteModel.Anim("move",3,72,72,0.5)]);*/
 	
 	SpriteModel.create("mummy","actor/mummy.png",[-60,60,-60,60],{
 		size:2,side:[2,0,1,3],hpBar:-40,legs:40,
 	},[SpriteModel.Anim("move",3,60,60,0.5)]);
+	
 	SpriteModel.create("basilisk","actor/basilisk.png",[-48,48,-48,48],{
-		size:1,side:[2,0,1,3],hpBar:-30,legs:30,
+		size:2,side:[2,0,1,3],hpBar:-30,legs:30,
 	},[SpriteModel.Anim("move",3,48,48,0.5)]);
 	
 	//bullet
-	SpriteModel.bullet("fireball","bullet/fireball.png",32,32,1,1,{size:0.8,
+	SpriteModel.bullet("fireball","bullet/fireball.png",32,32,1,true,{size:0.8,
 		lightingEffect:LightingEffect.create(5,50,[
 			LightingEffect.Color(0,'rgba(255,122,122,0.10)'),
 			LightingEffect.Color(1,'rgba(255,122,122,0)'),
-		])
+		]),
+		particleEffect:ParticleEffect.Model('#ff5555'),
 	});
-	SpriteModel.bullet("iceshard","bullet/iceshard.png",32,32,1,1,{size:0.8,
+	SpriteModel.bullet("iceshard","bullet/iceshard.png",32,32,1,true,{size:0.8,
 		lightingEffect:LightingEffect.create(5,50,[
 			LightingEffect.Color(0,'rgba(122,122,255,0.10)'),
 			LightingEffect.Color(1,'rgba(122,122,255,0)'),
-		])
+		]),
+		particleEffect:ParticleEffect.Model('#7a7aff'),
 	});
 	
-	SpriteModel.bullet("lightningball","bullet/lightningball.png",32,32,1,1,{size:0.8,
+	SpriteModel.bullet("lightningball","bullet/lightningball.png",32,32,1,true,{size:0.8,
 		lightingEffect:LightingEffect.create(5,50,[
 			LightingEffect.Color(0,'rgba(255,255,122,0.10)'),
 			LightingEffect.Color(1,'rgba(255,255,122,0)'),
-		])
+		]),
+		particleEffect:ParticleEffect.Model('#ffff7a'),
 	});
 	
-	SpriteModel.bullet("bullet-pony","bullet/bullet-pony.png",32,32,1,0,{side:[0,1]});
-	SpriteModel.bullet("bullet-happyface","bullet/bullet-happyface.png",32,32,1,1);
-	SpriteModel.bullet("bullet-penguin","bullet/bullet-penguin.png",32,32,1,1);
-	SpriteModel.bullet("arrow","bullet/arrow.png",42,11,1,1,{size:0.9});
-	SpriteModel.bullet("bullet-cannon","bullet/bullet-cannon.png",42,11,1,1);
-	SpriteModel.bullet("dart","bullet/dart.png",16,16,1,1,{size:2});
-	SpriteModel.bullet("boomerang","bullet/boomerang.png",52,52,8);
-	SpriteModel.bullet("bone","bullet/bone.png",48,48,8);
-	SpriteModel.bullet("spore","bullet/spore.png",48,48,1,0,{size:0.8});
-	SpriteModel.bullet("rock","bullet/rock.png",48,48,1,0,{size:0.8});
-	SpriteModel.bullet("shadowball","bullet/shadowball.png",48,48,1,0,{size:0.8, //'http://mohsin-kun.deviantart.com/art/Shadow-Ball-73303663'
+	SpriteModel.bullet("bullet-pony","bullet/bullet-pony.png",32,32,1,false,{side:[0,1],
+		lightingEffect:LightingEffect.create(5,50,[
+			LightingEffect.Color(0,'rgba(255,122,122,0.10)'),
+			LightingEffect.Color(1,'rgba(255,122,122,0)'),
+		]),
+		particleEffect:ParticleEffect.Model('#ff7a7a'),
+	});
+	SpriteModel.bullet("bullet-happyface","bullet/bullet-happyface.png",32,32,1,true,{
+		lightingEffect:LightingEffect.create(5,50,[
+			LightingEffect.Color(0,'rgba(255,255,122,0.10)'),
+			LightingEffect.Color(1,'rgba(255,255,122,0)'),
+		]),
+		particleEffect:ParticleEffect.Model('#ffff7a'),
+	});
+	SpriteModel.bullet("bullet-penguin","bullet/bullet-penguin.png",32,32,1,true,{
+		lightingEffect:LightingEffect.create(5,50,[
+			LightingEffect.Color(0,'rgba(122,122,255,0.10)'),
+			LightingEffect.Color(1,'rgba(122,122,255,0)'),
+		]),
+		particleEffect:ParticleEffect.Model('#7a7aff'),
+	});
+	SpriteModel.bullet("arrow","bullet/arrow.png",42,11,1,true,{
+		size:0.9,
+		particleEffect:ParticleEffect.Model('#777777',0.5),
+	});
+	SpriteModel.bullet("arrow-fire","bullet/arrow-fire.png",42,11,1,true,{
+		size:0.9,
+		lightingEffect:LightingEffect.create(5,50,[
+			LightingEffect.Color(0,'rgba(255,122,122,0.10)'),
+			LightingEffect.Color(1,'rgba(255,122,122,0)'),
+		]),
+		particleEffect:ParticleEffect.Model('#ff5555'),
+	});
+	SpriteModel.bullet("arrow-cold","bullet/arrow-cold.png",42,11,1,true,{
+		size:0.9,
+		lightingEffect:LightingEffect.create(5,50,[
+			LightingEffect.Color(0,'rgba(122,122,255,0.10)'),
+			LightingEffect.Color(1,'rgba(122,122,255,0)'),
+		]),
+		particleEffect:ParticleEffect.Model('#7a7aff'),
+	});
+	SpriteModel.bullet("arrow-lightning","bullet/arrow-lightning.png",42,11,1,true,{
+		size:0.9,
+		lightingEffect:LightingEffect.create(5,50,[
+			LightingEffect.Color(0,'rgba(255,255,122,0.10)'),
+			LightingEffect.Color(1,'rgba(255,255,122,0)'),
+		]),
+		particleEffect:ParticleEffect.Model('#ffff7a'),
+	});
+	
+	
+	SpriteModel.bullet("bullet-cannon","bullet/bullet-cannon.png",42,11,1,true);
+	SpriteModel.bullet("dart","bullet/dart.png",16,16,1,true,{
+		size:2,
+		particleEffect:ParticleEffect.Model('#777777',0.5),
+	});
+	SpriteModel.bullet("bone","bullet/bone.png",48,48,8,{
+		particleEffect:ParticleEffect.Model('#777777',0.5),
+	});
+	SpriteModel.bullet("weapon-fire","bullet/weapon-fire.png",48,48,8,false,{
+		lightingEffect:LightingEffect.create(5,50,[
+			LightingEffect.Color(0,'rgba(255,122,122,0.10)'),
+			LightingEffect.Color(1,'rgba(255,122,122,0)'),
+		]),
+		particleEffect:ParticleEffect.Model('#ff5555'),
+	});
+	SpriteModel.bullet("weapon-cold","bullet/weapon-cold.png",48,48,8,false,{
+		lightingEffect:LightingEffect.create(5,50,[
+			LightingEffect.Color(0,'rgba(122,122,255,0.10)'),
+			LightingEffect.Color(1,'rgba(122,122,255,0)'),
+		]),
+		particleEffect:ParticleEffect.Model('#7a7aff'),
+	});
+	SpriteModel.bullet("weapon-lightning","bullet/weapon-lightning.png",48,48,8,false,{
+		lightingEffect:LightingEffect.create(5,50,[
+			LightingEffect.Color(0,'rgba(255,255,122,0.10)'),
+			LightingEffect.Color(1,'rgba(255,255,122,0)'),
+		]),
+		particleEffect:ParticleEffect.Model('#ffff7a'),
+	});
+	
+	
+	SpriteModel.bullet("spore","bullet/spore.png",48,48,1,false,{
+		size:0.8,
+		particleEffect:ParticleEffect.Model('#CC0099'),	
+	});
+	SpriteModel.bullet("rock","bullet/rock.png",48,48,1,false,{
+		size:0.8,
+		particleEffect:ParticleEffect.Model('#CC6600',0.5),
+	});
+	SpriteModel.bullet("shadowball","bullet/shadowball.png",48,48,1,false,{size:0.8, //'http://mohsin-kun.deviantart.com/art/Shadow-Ball-73303663'
 		lightingEffect:LightingEffect.create(10,100,[
 			LightingEffect.Color(0,'rgba(255,122,255,0.10)'),
 			LightingEffect.Color(1,'rgba(255,122,255,0)'),
-		])
+		]),
+		particleEffect:ParticleEffect.Model('#ff7aff'),
 	});
-	SpriteModel.bullet("tornado","bullet/tornado.png",48,48,5,0,{size:0.8});
+	SpriteModel.bullet("tornado","bullet/tornado.png",48,48,5,false,{size:0.8});
 
 
-	for(var i = 0 ; i <= 15; i++)
-		SpriteModel.picture("number-" + i,"picture/number" + i + ".png",32,32,2,{legs:-100});	//rename to number-flag
-	SpriteModel.picture("number-empty","picture/number-empty.png",32,32,2,{legs:-100});	//rename to number-flag
-	SpriteModel.picture("number-flag","picture/number-flag.png",32,32,2,{legs:-100});	//rename to number-flag
+	SpriteModel.picture("square-red","picture/square-red.png",32,32,2,{legs:-100});
+	SpriteModel.picture("square-blue","picture/square-blue.png",32,32,2,{legs:-100});
+	SpriteModel.picture("square-green","picture/square-green.png",32,32,2,{legs:-100});
+	SpriteModel.picture("square-yellow","picture/square-yellow.png",32,32,2,{legs:-100});
+	
+	for(var i = 0 ; i <= 15; i++)	//number-1
+		SpriteModel.picture("number-" + i,"picture/number" + i + ".png",32,32,2,{legs:-100});
+	SpriteModel.picture("number-empty","picture/number-empty.png",32,32,2,{legs:-100});	
+	SpriteModel.picture("number-flag","picture/number-flag.png",32,32,2,{legs:-100});
 	SpriteModel.picture("system-sign","picture/sign.png",32,32,2);
-	SpriteModel.picture("system-target","picture/target.png",96,96,0.5);
-	SpriteModel.picture("pushable-rock1x1","picture/pushable-rock2x2.png",64,64,0.5);
+	SpriteModel.picture("system-target","picture/target.png",96,96,0.5,{
+		hitBox:SpriteModel.HitBox(-70,70,-70,70)
+	});
+	SpriteModel.picture("pushable-rock2x2","picture/pushable-rock2x2.png",64,64,1);
+	SpriteModel.picture("bomb","picture/bomb.png",64,64);
 
-	SpriteModel.picture("waypoint-grave","picture/waypoint-grave.png",32,32,2);
+	SpriteModel.picture("gravestone","picture/gravestone.png",32,32,2);
+	SpriteModel.picture("waypoint","picture/waypoint.png",16,16,2,{legs:-100});
 	SpriteModel.picture("loot-chestOn","picture/loot-chestOn.png",32,32,2);
 	SpriteModel.picture("loot-chestOff","picture/loot-chestOff.png",32,32,2);
-	SpriteModel.picture("tree-down","picture/tree-down.png",64,80,2,{legs:40});
+	SpriteModel.picture("tree-down","picture/tree-down.png",64,32,2,{legs:40,offsetY:24});
 	SpriteModel.picture("tree-red","picture/tree-red.png",64,80,2,{legs:40});
+	
+	
+	SpriteModel.picture("Qtutorial-tree","picture/Qtutorial-tree.png",64,80,2,{legs:40,showBorder:false});
+	SpriteModel.picture("Qtutorial-tree-glitched","picture/Qtutorial-tree-glitched.png",64,80,2,{legs:40,showBorder:false});
+	SpriteModel.picture("Qtutorial-bed","picture/Qtutorial-bed.png",85,74,2,{legs:40,showBorder:false});
+	
 	SpriteModel.picture("rock-down","picture/rock-down.png",64,64,1.5,{legs:30});
 	SpriteModel.picture("rock-bronze","picture/rock-bronze.png",64,64,1.5,{legs:30});
 	
@@ -248,25 +373,20 @@ SpriteModel.init = function(){
 	SpriteModel.picture("toggle-redOn-bronze","picture/toggle-boxOn-bronze.png",32,32,2);
 	SpriteModel.picture("toggle-redOff-bronze","picture/toggle-boxOff-bronze.png",32,32,2);
 	
-	SpriteModel.picture("toggle-wallOff","picture/toggle-wallOff.png",32,32,2);
-	SpriteModel.picture("toggle-wallOn","picture/toggle-wallOn.png",32,32,2);
-	
 	SpriteModel.create("hunt-squirrel","actor/tm/squirrel.png",[-12,12,-12,12],{	//"http://charas-project.net/resources_download.php?id=15580&file=resources%2FCharasets%2F1%2F10052_1098590341.png"
 		size:2,side:[1,2,3,0]
 	},[SpriteModel.Anim("move",3,24,24,0.4)]);
 	SpriteModel.picture("hunt-down","picture/hunt-down.png",32,64,1.5,{legs:35});
 
 	
-	SpriteModel.picture("teleport-door","picture/teleport-door.png",32,48,2,{offsetY:-16});
+	SpriteModel.picture("teleport-door","picture/teleport-door.png",32,48,1.8,{offsetY:-16});
 	SpriteModel.picture("teleport-cave","picture/teleport-cave.png",128,102,1,{offsetY:-32});
 	
 	SpriteModel.picture("teleport-zone","picture/teleport-zone.png",32,32,1.5,{legs:-1000,side:[0,1,2,3]});
 	SpriteModel.picture("teleport-zoneLight","picture/teleport-zoneLight.png",32,32,1.5,{legs:-1000,side:[0,1,2,3]});
 	SpriteModel.picture("teleport-underground","picture/teleport-underground.png",32,32,2.5);
 	SpriteModel.picture("teleport-well","picture/teleport-well.png",48,48,2);
-		
-	SpriteModel.picture("block-barrier","picture/block-barrier.png",127,64,1,{hpBar:-40});	//size and bumperbox not same
-			
+				
 	SpriteModel.picture("block-spike","picture/block-spike1x1.png",16,32,2,{showBorder:false});
 	SpriteModel.picture("block-spike1x1","picture/block-spike1x1.png",16,32,2,{showBorder:false});
 	SpriteModel.picture("block-spike1x3","picture/block-spike1x3.png",16,64,2,{showBorder:false,offsetY:16});
@@ -283,24 +403,28 @@ SpriteModel.init = function(){
 	SpriteModel.picture("loot-flowerOn","picture/loot-flowerOn.png",32,32,4);
 	SpriteModel.picture("loot-flowerOff","picture/loot-flowerOff.png",32,32,4);
 
-	SpriteModel.picture("tower-green","picture/tower-green.png",64,64);
-	SpriteModel.picture("tower-yellow","picture/tower-yellow.png",64,64);
-	SpriteModel.picture("tower-red","picture/tower-red.png",64,64);
-	SpriteModel.picture("tower-blue","picture/tower-blue.png",64,64);
-	SpriteModel.picture("tower-enemy","picture/tower-enemy.png",32,32,2);
+	SpriteModel.picture("tower-green","picture/tower-green.png",64,64,1,{hpBar:-40});
+	SpriteModel.picture("tower-yellow","picture/tower-yellow.png",64,64,1,{hpBar:-40});
+	SpriteModel.picture("tower-red","picture/tower-red.png",64,64,1,{hpBar:-40});
+	SpriteModel.picture("tower-blue","picture/tower-blue.png",64,64,1,{hpBar:-40});
+	SpriteModel.picture("drop-chest","picture/drop-chest.png",96,96,0.5);
+	
+	
+	
 }
 
 SpriteModel.get = function(id){
-	return DB[id] || DB[id.split(',')[0]] || null;
+	return DB[id] || DB[Tk.getSplit0(id,',')] || null;
 }
 
 SpriteModel.bullet = function(id,src,sizeX,sizeY,frame,canvasRotate,extra){
 	extra = extra || {};
 	extra.side = extra.side || [0];
 	extra.showBorder = false;
-	extra.canvasRotate = canvasRotate || 0;
+	extra.canvasRotate = canvasRotate || false;
+	extra.isBulletSprite = true;
 	return SpriteModel.create(id,src,[-1,1,-1,1],extra,[
-		SpriteModel.Anim('walk',frame,sizeX,sizeY,1,{walk:0,dir:extra.side.length})
+		SpriteModel.Anim('walk',frame,sizeX,sizeY,1,{walk:0,dir:extra.side.length,loopReverse:false})
 	]);
 }
 
@@ -315,9 +439,17 @@ SpriteModel.HitBox = SpriteModel.BumperBox = function(minX,maxX,minY,maxY){
 }
 
 SpriteModel.player = function(id,src){
-	var extra = {playerContribution:true,size:3,side:[1,2,3,0],hpBar:-17,legs:20,hitBox:SpriteModel.HitBox([ -12,12,-12,12])};	//idk y 3 size and not 2.7
-	return SpriteModel.create(id,src,[-12,12,-5,20],extra,[
-		SpriteModel.Anim("move",4,24,32,0.5)
+	var extra = {
+		isPlayerSprite:true,
+		size:3,	//idk y 3 size and not 2.7
+		side:[1,2,3,0],
+		hpBar:-17,
+		legs:15,
+		offsetY:OFFSETY_PLAYER,
+		hitBox:SpriteModel.HitBox([ -12,12,-12,12])
+	};	
+	return SpriteModel.create(id,src,[-12,12,-5+OFFSETY_PLAYER,20+OFFSETY_PLAYER],extra,[
+		SpriteModel.Anim("move",4,24,32,0.7)
 	]);
 }
 
@@ -332,7 +464,7 @@ SpriteModel.picture = function(id,src,sizeX,sizeY,size,extra){
 
 SpriteModel.charasProject = function(id){
 	return SpriteModel.create(id,"actor/" + id + ".png",[-12,12,-3,20],{
-		size:3,side:[1,2,3,0],hpBar:-17,legs:20,hitBox:SpriteModel.HitBox(-12,12,-3,20),
+		size:3,side:[1,2,3,0],hpBar:-12,legs:20,hitBox:SpriteModel.HitBox(-12,12,-3,20),
 	},[SpriteModel.Anim("move",3,24,32,0.5)]);
 }
 
@@ -375,26 +507,25 @@ SpriteModel.Anim = function(name,frame,sizeX,sizeY,spd,extra){	//part of model
 	return a;
 }
 
-SpriteModel.isPlayerContribution = function(what){
-	return SpriteModel.get(what) && SpriteModel.get(what).playerContribution;
+SpriteModel.isPlayerSprite = function(what){
+	return SpriteModel.get(what) && SpriteModel.get(what).isPlayerSprite;
 }
 
 SpriteModel.getImage = function(model,spriteFilter,cb){
-	if(!spriteFilter){
-		if(model.img && model.img.complete) 
-			return model.img;
-		else {
-			model.img = Img.load(model.src,cb);
-			return;
-		}
+	if(!model.img || !model.img.complete){
+		model.img = Img.load(model.src,cb);
+		return;
 	}
+	
+	if(!spriteFilter)
+		return model.img;
 	
 	var filterId = spriteFilter.filter;
 	if(model.filteredImg[filterId] && model.filteredImg[filterId].complete)
 		return model.filteredImg[filterId];
 	else {
 		SpriteFilter.generateSpriteFilteredImg(model,filterId);
-		return SpriteModel.getImage(model,null);	//return normal version
+		return model.img;	//return normal version
 	}
 }
 

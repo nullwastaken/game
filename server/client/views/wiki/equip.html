@@ -1,4 +1,5 @@
 <% include ../partial/header.html %>
+<script src="/js/shared/Tk.js"></script>
 <div class="container">
 	<h3>Equip</h3>
 	<p>
@@ -6,16 +7,16 @@
 	<br>
 	You can obtain equipment by killing monsters, completing quests and trading with other players.
 	</p>
-	<table  class="CSSTableGenerator2">
+	<table id="myTable" class="table">
 		<tr>
 			<th>Slot</th>
 			<th>Name</th>
-			<th>Melee</th>
-			<th>Range</th>
-			<th>Magic</th>
-			<th>Fire</th>
-			<th>Cold</th>
-			<th>Lightning</th>
+			<th class="hidden-xs hidden-sm">Melee</th>
+			<th class="hidden-xs hidden-sm">Range</th>
+			<th class="hidden-xs hidden-sm">Arcane</th>
+			<th class="hidden-xs hidden-sm">Fire</th>
+			<th class="hidden-xs hidden-sm">Cold</th>
+			<th class="hidden-xs hidden-sm">Lightning</th>
 		</tr>
 		<tr>
 			<td>Weapon</td>
@@ -228,24 +229,27 @@
 			<td>+50% Def</td>
 		</tr>
 	</table>
+	<script>
+	Tk.responsiveTable($('#myTable'));
+	</script>
 	<br>
 	<h3>Upgrading Equipment</h3>
 	<div>
 		<p>
 		Equipment can be upgraded in two ways.<br>
-		First, you can spend exp to level up your equip and increase its Damage/Defence by 5%.<br>
-		Secondly, you can use materials to unlock hidden boosts that will strengthen your character.<br>
+		First, you can spend exp to upgrade your equip and increase its Damage/Defence by 5%.<br>
+		Secondly, you can use materials to unlock boosts that will make you more powerful.<br>
 		</p>
 		<div style="display:inline-block">
-			<img src="../views/wiki/equipHelm.png">
+			<img src="/views/wiki/equipHelm.png">
 			<br>
 		</div>
 	</div>
 	<br>
 	<p>
-	The amount of hidden boosts on an equip is randomly-generated.
+	The amount of boosts on an equip is randomly-generated.
 	</p>
-	<table class="CSSTableGenerator2">
+	<table class="table">
 		<tr>
 			<th>Boost Amount</th>
 			<th>Color</th>

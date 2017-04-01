@@ -1,53 +1,46 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-"use strict";
-var AttackModel = require2('AttackModel'), Message = require2('Message'), ItemModel = require2('ItemModel'), Actor = require2('Actor'), Main = require2('Main'), Boost = require2('Boost'), OptionList = require2('OptionList');
 
-var Ability = exports.Ability = {};
-Ability.create = function(quest,id,ability){
-	var tmp = {
-		quest:'',
-		id:'',
-		type:"attack",
-		name:"Strike",
-		icon:"attackMelee-cube",
-		description:"Regular Melee Strike",
-		periodOwn:25,
-		periodGlobal:25,
-		bypassGlobalCooldown:false,
-		costMana:0,
-		costHp:0,
-		//
-		funcStr:"",
-		param:null,
-		//
-		delay:2,
-		preDelayAnimOverSprite:null,
-		spriteFilter:null,
-		postDelayAnimOverSprite:null,
-	}
-	
-	for(var i in ability) tmp[i] = ability[i];
-	tmp.quest = quest; tmp.id = id;	//need after loop thru ability
-	
+"use strict";
+var AttackModel, Message, ItemModel, Actor, Main, Boost, OptionList;
+global.onReady(function(){
+	AttackModel = rootRequire('shared','AttackModel'); Message = rootRequire('shared','Message'); ItemModel = rootRequire('shared','ItemModel'); Actor = rootRequire('shared','Actor'); Main = rootRequire('shared','Main'); Boost = rootRequire('shared','Boost'); OptionList = rootRequire('shared','OptionList');
+});
+var Ability = exports.Ability = function(extra){
+	this.quest = "";
+	this.id = "";
+	this.type = "attack";
+	this.name = "Strike";
+	this.icon = "attackMelee-cube";
+	this.description = "Regular Melee Strike";
+	this.periodOwn = 25;
+	this.periodGlobal = 25;
+	this.bypassGlobalCooldown = false;
+	this.costMana = 0;
+	this.costHp = 0;
+	this.param = null;
+	this.weaponReq = [];	//string[]
+	this.delay = 2;
+	this.preDelayAnimOverSprite = null;	//Anim.Base
+	this.spriteFilter = null;
+	this.postDelayAnimOverSprite = null; //Anim.Base
+	this.randomlyGeneratedId = false;
+	this.triggerAbility = [];
+	this.usableByPlayer = false;	//not enforced
+	Tk.fillExtra(this,extra);
+}
+Ability.create = function(quest,id,extra){
+	var tmp = new Ability(extra);
+	tmp.quest = quest; 
+	tmp.id = id;	//need after loop thru ability
 	
 	DB[id] = tmp;
-	
+	if(!id)
+		ERROR(3,'empty id');
+	if(!Tk.enumContains(CST.ABILITY,tmp.type))
+		ERROR(3,'empty type',tmp.type);
 	if(id.$contains('player'))	//BAD
 		Ability.createItemVersion(tmp);
 	
 	return tmp;
-}
-
-Ability.verifyDmg = function(ab){
-	if(ab.type === 'attack'){
-		var dmg = ab.param.attack.dmg;
-		if(isNaN(dmg.main))
-			ERROR(3,'dmg ratio not a number ability:' + ab.id);
-		for(var i in dmg.ratio){
-			if(isNaN(dmg.ratio[i]))
-				ERROR(3,'dmg ratio not a number ability:' + ab.id);
-		}
-	}
 }
 
 var DB = Ability.DB = {};
@@ -63,16 +56,17 @@ Ability.createItemVersion = function(tmp){
 	],tmp.name,{trade:false,type:'ability'});
 }
 
-Ability.Param = function(funcStr,param){	//unused but sub yes
-	if(funcStr === 'heal') return Ability.Param.heal(param);
-	else if(funcStr === 'summon') return Ability.Param.summon(param);
-	else if(funcStr === 'attack') return Ability.Param.attack(param);
-	else if(funcStr === 'boost') return Ability.Param.boost(param);
-	else if(funcStr === 'dodge') return Ability.Param.dodge(param);
-	else if(funcStr === 'event') return Ability.Param.event(param);
-	else if(funcStr === 'idle') return Ability.Param.idle(param);
-	return ERROR(3,'invalid funcStr',funcStr,param);
+Ability.Param = function(type,param){	//unused but sub yes
+	if(type === CST.ABILITY.heal) return Ability.Param.heal(param);
+	else if(type === CST.ABILITY.summon) return Ability.Param.summon(param);
+	else if(type === CST.ABILITY.attack) return Ability.Param.attack(param);
+	else if(type === CST.ABILITY.boost) return Ability.Param.boost(param);
+	else if(type === CST.ABILITY.dodge) return Ability.Param.dodge(param);
+	else if(type === CST.ABILITY.event) return Ability.Param.event(param);
+	else if(type === CST.ABILITY.idle) return Ability.Param.idle(param);
+	return ERROR(3,'invalid type',type,param);
 }
+
 Ability.Param.idle = function(){
 	return {};
 }
@@ -98,11 +92,12 @@ Ability.Param.event = function(param){
 Ability.Param.summon = function(param){
 	return {
 		maxChild:param.maxChild || 1,
-		time:param.time || CST.bigInt,
+		time:param.time || CST.BIG_INT,
 		distance:param.distance || 500,	//distance before tele back to u
 		model:param.model || '',
 		amount:param.amount || 1,
-		lvl:param.lvl || 0,				//unsued
+		globalDef:param.globalDef || 1,
+		globalDmg:param.globalDmg || 1,
 	}
 }
 
@@ -114,7 +109,7 @@ Ability.Param.boost = function(param){
 Ability.Param.boost.boost = function(stat,type,value,time){	//bad name...
 	return {
 		stat:stat || ERROR(3,'stat missing') || 'globalDmg',
-		type:type || '*',
+		type:type || CST.BOOST_X,
 		value:value || 0,
 		time:time || 100,
 		name:Boost.FROM_ABILITY,
@@ -122,31 +117,20 @@ Ability.Param.boost.boost = function(stat,type,value,time){	//bad name...
 }
 
 Ability.Param.attack = function(param){
-	return AttackModel.create(param);
+	return AttackModel.create(param,true);		
 }
 
-
+Ability.getUsableByPlayerCount = function(){
+	var c = 0;
+	for(var i in DB)
+		if(DB[i].usableByPlayer)
+			c++;
+	return c;
+}
 //#################
 
-Ability.functionVersion = function(name){	//turn ability into function. called when swapAbility
-	var ab = typeof name === 'object' ? name : Tk.deepClone(DB[name]);
-	if(!ab) return ERROR(3,'no ability',name);
-	
-	if(ab.funcStr === 'Combat.attack'){
-		ab.param = new Function('return ' + Tk.stringify(AttackModel.create(ab.param)));
-	}
-	return ab;
-}
-
-Ability.objectVersion = function(name){
-	var ab = Ability.functionVersion(name);
-	if(!ab) return ERROR(3,'no ability',name);
-	if(typeof ab.param === 'function') ab.param = ab.param();
-	return ab;
-}	
-
 Ability.compressClient = function(ability){	
-	return Ability.objectVersion(ability);
+	return ability;
 }	
 
 Ability.clickScroll = function(act,id){

@@ -1,16 +1,22 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var QueryDb = require4('QueryDb'), Command = require4('Command'), Actor = require4('Actor');
-var Dialog = require3('Dialog');
+var QueryDb, Main, Command, Actor;
+global.onReady(function(){
+	QueryDb = rootRequire('shared','QueryDb',true); Main = rootRequire('shared','Main',true); Command = rootRequire('shared','Command',true); Actor = rootRequire('shared','Actor',true);
+});
+var Dialog = rootRequire('client','Dialog');
 
-Dialog.create('quest','Quest',Dialog.Size(950,600),Dialog.Refresh(function(){
+var EXP_BASE = 150; //hardcoded, check Quest_status
+var ITEM_BASE = 5;
+var SCORE_BASE = 50;
+var DEFAULT_THUMBNAIL = '/img/ui/defaultQuestThumbnail.png';
+
+Dialog.create('quest','Quest',Dialog.Size(700,420),Dialog.Refresh(function(){
 	return Dialog.quest.apply(this,arguments);
 },function(html,variable){
-	return Tk.stringify(main.quest[variable.quest]) + variable.quest + main.questActive;
-}),{
-	quest:null,
-});
+	return Tk.stringify(w.main.quest[variable.quest]) + variable.quest + w.main.questActive;
+}));
 //Dialog.open('quest')
 
 Dialog.quest = function (html,variable,param){
@@ -18,7 +24,7 @@ Dialog.quest = function (html,variable,param){
 		Dialog.open('quest',param);
 	});
 	if(!q) return false;
-	var mq = main.quest[param];
+	var mq = w.main.quest[param];
 	variable.quest = param;
 	
 	var chalDiv = Dialog.quest.challenge(q,mq);
@@ -33,19 +39,24 @@ Dialog.quest = function (html,variable,param){
 		[chalDiv,statusDiv,highStatDiv]	
 	];
 	
-	html.append('<span class="u" style="font-size:30px;width:100%">' + q.name + '</span>');
-	html.append(' by ' + q.author);
+	var title = $('<span>')
+		.css({fontSize:'1.3em'})
+		.html('<u style="font-size:1.2em">' + q.name + '</u>')
+		.append(' by ' + q.author);
 	if(q.rating !== 0)
-		html.append(' ',Dialog.getStar(q.rating));
-	var table = Tk.arrayToTable(array,null,null,null,'20px 5px');
+		title.append(' ',Dialog.getStar(q.rating));
+	html.append(title);	
+	
+	var table = Tk.arrayToTable(array,null,null,null,'20px 20px');
+	table.css({marginTop:'-30px'});
 	table.find('td').css({verticalAlign:'text-top'});
 	table.find('td div').css({textAlign:'left'}); //to align image
 	html.append(table);	
 }
 
-var helperChal = function(i){
+var helperChal = function(quest,i){
 	return function(){
-		Command.execute('win,quest,toggleChallenge',[i]);
+		Command.execute(CST.COMMAND.questSetChallenge,[quest,i]);
 	}
 }
 
@@ -54,17 +65,19 @@ Dialog.quest.challenge = function(q,mq){
 	
 	el.append('<h3 class="u">Challenges</h3>');
 	
+	var canDoChallenge = mq.complete;
+	
+	
 	var star = $('<span>')
 		.html(CST.STAR)
 		.addClass('shadow360')
-		.attr('title',mq._complete ? 'Completed this quest at least once' : 'Never completed this quest')
-		.css({color:mq._complete ? 'yellow' : 'gray'});
+		.attr('title',mq.complete ? 'Completed this quest at least once' : 'Never completed this quest')
+		.css({color:mq.complete ? 'yellow' : 'gray'});
 		
 	el.append(star);
 	el.append(' - ');
 		
-	var chalActive = ''; for(var i in mq._challenge) if(mq._challenge[i]) chalActive = i;
-	
+	var chalActive = mq.challenge; 
 	
 	var text = $('<span>No Challenge</span>')
 		.addClass('shadow')
@@ -72,7 +85,7 @@ Dialog.quest.challenge = function(q,mq){
 		.attr('title','Click if you want to do the quest normally.')
 		.click(function(){
 			if(chalActive)
-				Command.execute('win,quest,toggleChallenge',[chalActive]);
+				Command.execute(CST.COMMAND.questSetChallenge,[q.id,'']);
 		});
 	el.append(text);
 	el.append('<br>');
@@ -84,16 +97,21 @@ Dialog.quest.challenge = function(q,mq){
 		var star = $('<span>')
 			.html(CST.STAR)
 			.addClass('shadow360')
-			.attr('title',mq._challengeDone[i] ? 'Completed this challenge at least once' : 'Never completed this challenge')
-			.css({color:mq._challengeDone[i] ? 'yellow' : 'gray'});
+			.attr('title',mq.challengeDone[i] ? 'Completed this challenge at least once' : 'Never completed this challenge')
+			.css({color:mq.challengeDone[i] ? 'yellow' : 'gray'});
 		el.append(star);
 		el.append(' - ');
 		
 		var text = $('<span>' + c.name + '</span>')
 			.addClass('shadow')
 			.css({cursor:'pointer',color:chalActive === i ? 'green' : 'red'})
-			.attr('title','Click to toggle challenge: ' + c.description)
-			.click(helperChal(i));
+			.click(helperChal(q.id,i));	//there even if cant for sfx
+		if(canDoChallenge){
+			text.attr('title','Click to activate challenge: ' + c.description)
+		} else {
+			text.attr('title','Complete the quest at least once to unlock that challenge.');
+		}	
+		
 		el.append(text);
 		el.append('<br>');
 		
@@ -101,20 +119,20 @@ Dialog.quest.challenge = function(q,mq){
 	return el;
 }
 
-Dialog.quest.thumbnail = function(q,mq){
+Dialog.quest.thumbnail = function(q,mq){	//only in quest, not in questList
 	var small = $("<div>");
 	small.css({textAlign:'center',position:'relative',top:30});
 	small.append($("<img>")
 		.attr({width:500/4,height:380/4})
 		.css({border:'2px solid black'})
-		.attr({src:q.thumbnail,title:'need to set title for tooltip to work for w/e reason'})
+		.attr({src:Dialog.getQuestThumbnail(q),title:'need to set title for tooltip to work for w/e reason'})
 		,'<br>',
 		$('<div>')
 			.html('Overview')
 			.css({marginLeft:'20px',marginRight:'20px',display:'block'})
 	);
 	
-	var popup = Dialog.questThumbnail(0.5);
+	var popup = Dialog.questThumbnail(0.7);
 	Dialog.questThumbnail.refresh(popup,q.id)();
 	
 	small.tooltip({
@@ -142,105 +160,109 @@ Dialog.quest.thumbnail = function(q,mq){
 Dialog.quest.start = function(q,mq){
 	var div = $("<div>").css({textAlign:'center'});
 	
-	var chalActive = ''; 
-	for(var i in mq._challenge) 
-		if(mq._challenge[i]) 
-			chalActive = i;
+	var chalActive = mq.challenge;
 	
 	var btn = $('<button>')
-		.css({position:'relative',top:'20px',fontSize:'25px',display:'inline-block'})	//padding is bad... vertical doesnt work
-		.addClass((!main.questActive && mq.canStart) ? 'myButtonGreen' : 'myButtonRed');
+		.css({position:'relative',top:'20px',fontSize:'12px',display:'inline-block'})	//padding is bad... vertical doesnt work
+		.addClass((!w.main.questActive && mq.canStart) ? 'myButtonGreen' : 'myButtonRed');
 	div.append(btn);
 	
-	if(!main.questActive){
+	if(!w.main.questActive){
 		if(mq.canStart){
 			btn.attr('title','Start this quest');
 			btn.click(function(){
-				Command.execute('win,quest,start',[q.id]);
+				Command.execute(CST.COMMAND.questStart,[q.id]);
 			});
-			btn.append('Start Quest<br>');
 			btn.append($('<span>')
-				.html(chalActive ? 'with Challenge<br>' + q.challenge[chalActive].name.q() : 'without<br>challenge')
-				.css({fontSize:'0.7em'})
+				.css({fontSize:'2em'})
+				.html('Start Quest<br>')
+			);
+			btn.append($('<span>')
+				.html(chalActive ? 'With challenge<br>"' + q.challenge[chalActive].name + '"' : 'No challenge')
 			);
 		} else {
 			btn.attr('title',q.requirement.canStartText);
 			btn.click(function(){
-				Command.execute('win,quest,start',[q.id]);
+				Command.execute(CST.COMMAND.questStart,[q.id]);
 			});
-			btn.append(Tk.getGlyph('lock'),'LOCKED').css({width:'100%'});
+			btn.append(Tk.getGlyph('lock'),' LOCKED').css({width:'100%'});
 		}
 	}
-	else if(main.questActive === q.id){
+	else if(w.main.questActive === q.id){
 		btn.attr('title','Abandon quest');
 		btn.click(function(){
-			Command.execute('win,quest,abandon',[q.id]);
+			Command.execute(CST.COMMAND.questAbandon,[q.id]);
 		});
 		btn.html('Abandon<br>This Quest');		
 	}
-	else if(main.questActive && main.questActive !== q.id){
-		var activeQuestName = QueryDb.getQuestName(main.questActive);
+	else if(w.main.questActive && w.main.questActive !== q.id){
+		var activeQuestName = QueryDb.getQuestName(w.main.questActive);
 		
 		btn.attr('title','Abandon Active Quest (' + activeQuestName + ')');
 		btn.click(function(){
-			Command.execute('win,quest,abandon',[main.questActive]);
+			Command.execute(CST.COMMAND.questAbandon,[w.main.questActive]);
 		});
-		btn.html('Abandon<br>' + activeQuestName.q());
+		btn.html('Abandon<br>"' + activeQuestName + '"');
 	}
 		
-	if(main.questActive && main.questActive !== q.id)
+	if(w.main.questActive && w.main.questActive !== q.id)
 		div.append($('<span>')
 			.addClass('shadow')
 			.css({fontSize:'0.9em',color:'red'})
-			.html('<br><br>Warning! You need to abandon your<br>active quest to start a new one.')
+			.html('<br><br>Warning! You must<br>abandon your active<br>quest to start a new one.')
 		);
 	
 	return div;
 }	
 
-Dialog.quest.expectedReward = function(q,mq){
+Dialog.quest.expectedReward = function(q,mq){	//TODO
 	var div = $('<div>');
-	div.append('<u style="font-size:24px">Expected Reward:</u><br>');
+	div.append('<u style="font-size:24px">Reward:</u><br>');
 	
 	//check Quest_status for values
 	
-	var chalActive = false;
-	for(var i in mq._challenge)
-		if(mq._challenge[i]) chalActive = true;
+	var chalActive = !!mq.challenge;
 	
-	var scoreBase = q.reward.reputation.mod;
+	var scoreBase = SCORE_BASE * q.reward.score;
 	if(chalActive)
 		scoreBase *= 2;
-	if(mq._complete === 0)
+	if(mq.complete === 0 && q.reward.score !== 0)
 		scoreBase += 100;
 	scoreBase = Math.round(scoreBase);
 	
-	var expBase = 100 * q.reward.exp;	//hardcoded, check Quest_status
+	var expBase = EXP_BASE * q.reward.completion;	
 	if(chalActive)
 		expBase *= 2;
 	expBase = Math.round(expBase);
 	
-	var item = 5 * q.reward.item;	//hardcoded, check Quest_status
+	var item = ITEM_BASE * q.reward.completion;
 	if(chalActive)
 		item *= 2;
 	item = Math.ceil(item);
 	
-	if(mq._completeToday >= 5){
+	var cappedDaily = Main.quest.haveCompletedMaxDaily(w.main,q.id);
+	
+	
+	if(cappedDaily){
 		expBase = 0;
 		item = 0;		
 	}
-		
 	
 	div.append($('<span>')
 		.html(' &nbsp;+' + scoreBase + ' Score<br>')
 	);
+	
+	var expLine = !cappedDaily && q.reward.monster !== 0
+		? ' &nbsp;+' + expBase + ' Exp (+Kills)<br>'
+		: ' &nbsp;+' + expBase + ' Exp<br>';
+	
 	div.append($('<span>')
-		.html(' &nbsp;+' + expBase + ' Exp<br>')
-		.attr('title',mq._completeToday >= 5 ? 'No Exp because you have completed the quest 5+ times already today.' : '')
+		.html(expLine)
+		.attr('title',cappedDaily ? 'No Exp because you have completed the quest enough times today.' : '')
 	);
 	div.append($('<span>')
-		.html(' &nbsp;+' + item + ' Items<br>')
-		.attr('title',mq._completeToday >= 5 ? 'No Item because you have completed the quest 5+ times already today.' : '')
+		.html(' &nbsp;+' + item + ' Materials<br>')
+		.attr('title',cappedDaily ? 'No Item because you have completed the quest enough times today.' : '')
 	);
 	
 	return div;
@@ -261,15 +283,23 @@ Dialog.quest.statistic = function(q,mq){
 	var div2 = $("<div>");
 	div.append(' ',$('<button>')
 		.addClass('myButton skinny')
-		.html('Expands')
+		.html('Show')
 		.click(function(){
 			div2.toggle();
 		})
 	);
 	
 	div2.append('Completed by ' + q.statistic.countComplete + ' players.<br>');
-	div2.append(((q.statistic.countComplete/q.statistic.countStarted*100) || 0).r(1) + '% players who started the quest finished it.<br>');
-	div2.append('In average, players repeat this quest ' + q.statistic.averageRepeat.r(2) + ' times.<br>');
+	var pctDone = ((q.statistic.countComplete/q.statistic.countStarted*100) || 0).r(1);
+	div2.append($('<span>')
+		.html(pctDone + '% players finished it.<br>')
+		.attr('title',pctDone + '% players who started this quests finished it.')
+	);
+	var rep = q.statistic.averageRepeat.r(2);
+	div2.append($('<span>')
+		.html('Average repeat: x' + rep + ' times.<br>')
+		.attr('title','In average, players repeat this quest x' + rep + ' times.')
+	);
 	div2.hide();
 	div.append(div2);
 	return div;	
@@ -281,7 +311,7 @@ Dialog.quest.highscore = function(q,mq){
 	
 	div.append(' ',$('<button>')
 		.addClass('myButton skinny')
-		.html('Expands')
+		.html('Show')
 		.click(function(){
 			div2.toggle();
 		})
@@ -298,7 +328,7 @@ Dialog.quest.highscore = function(q,mq){
 		var highscore = QueryDb.get('highscore',i,refresh(q.id));
 		if(!highscore) return;
 		var high = $('<a>')
-			.html(highscore.name + ' : ' + (mq._highscore[i] || '---'))
+			.html(highscore.name + ' : ' + (mq.highscore[i] || '---'))
 			.attr('title',highscore.description)
 			.click(helperHigh(i))
 			.css({cursor:'pointer'});
@@ -315,29 +345,52 @@ Dialog.quest.highscore = function(q,mq){
 Dialog.quest.status = function(q,mq){
 	var div = $("<div>");
 	div.append('<h3 class="u">Status</h3>');
-	div.append(' &nbsp;Completion: ' + mq._complete + ' times<br>');
+	div.append(' &nbsp;Completion: ' + mq.complete + ' times<br>');
 	
-	var gemRewardScore = Actor.getGEM.scoreToGEM(mq._rewardScore);
+	var gemRewardScore = Actor.getGEM.scoreToGEM(mq.rewardScore);
 	
 	var span = Dialog.getCumulativeScoreSpan(mq);
 	div.append(' &nbsp;',span,'<br>');
 	
 	var chalCount = 0;
-	for(var i in mq._challengeDone)
-		if(mq._challengeDone[i])
+	for(var i in mq.challengeDone)
+		if(mq.challengeDone[i])
 			chalCount++;
 	var gem = gemRewardScore + chalCount * 0.02;
 	
-	div.append($("<span>")
+	/*div.append($("<span>")
 		.html(' &nbsp;GEM: +' + gem + '<br>')
 		.attr('title','+0.02 * ' + chalCount + ' (# Challenge Done) & +' +  gemRewardScore + ' (Score)')
+	);*/
+	
+	div.append($("<div>")
+		.css({marginTop:'10px'})
+		.html(' &nbsp;GEM: +' + Tk.round(gem,2,true) + '/0.10<br>')
 	);
+	var BAR_BIG = $("<div>")
+		.css({width:'175px',height:'22.5px',margin:'5px 5px 5px 20px',background:'rgba(0,0,0,1)',border:'1px solid black',borderRadius:'2px'})
+	var chalWidth = (0.02*chalCount)/0.10*100 + '%';
+	var CHAL_FIL = $("<div>")
+		.css({verticalAlign:'center',display:'inline-block',marginRight:'0.5px',backgroundColor:'#00DD00',width:chalWidth,height:'20px',borderRadius:'1px'})
+		.attr('title','+0.02 * ' + chalCount + ' from Challenge');
+	BAR_BIG.append(CHAL_FIL);
+	
+	var scoreWidth = Math.min(39,gemRewardScore/0.10*100) + '%';	//BAD
+	var SCORE_FIL = $("<div>")
+		.css({verticalAlign:'center',display:'inline-block',backgroundColor:'#00DD00',width:scoreWidth,height:'20px',borderRadius:'1px'})
+		.attr('title','+' + gemRewardScore + ' from Score');
+	BAR_BIG.append(SCORE_FIL);
+	
+	
+	
+	div.append(BAR_BIG);
+	
 	return div;	
 }
 
 Dialog.getCumulativeScoreSpan = function(mq){
 	var title;
-	var gemRewardScore = Actor.getGEM.scoreToGEM(mq._rewardScore);
+	var gemRewardScore = Actor.getGEM.scoreToGEM(mq.rewardScore);
 	if(gemRewardScore === 0)
 		title = '+' + gemRewardScore + ' GEM';
 	if(gemRewardScore === 0.01)
@@ -347,10 +400,10 @@ Dialog.getCumulativeScoreSpan = function(mq){
 	if(gemRewardScore === 0.03)
 		title = 'Score 1000-9999 => +' + gemRewardScore + ' GEM';
 	if(gemRewardScore === 0.04)
-		title = '+' + gemRewardScore + ' GEM';
+		title = 'Score 10000+ => +' + gemRewardScore + ' GEM';
 	
 	return $('<span>')
-		.html('Cumulative Score: ' + mq._rewardScore.r(0) + '/10000')
+		.html('Cumulative Score: ' + mq.rewardScore.r(0) + '/10000')
 		.attr('title',title)
 }
 
@@ -361,9 +414,9 @@ Dialog.quest.playerInfo = function(bottom,q,mq){
 	
 	//reward
 	el.append('<h2 class="u">Personal Score</h2>');
-	el.append('Quest completed: ' + mq._complete + ' times<br>');
+	el.append('Quest completed: ' + mq.complete + ' times<br>');
 	el.append($('<span>')
-		.html('Cumulative Quest Score: ' + mq._rewardScore.r(0) + ' / 10000')
+		.html('Cumulative Quest Score: ' + mq.rewardScore.r(0) + ' / 10000')
 		.attr('title',"Impact GEM. Everytime you beat a quest, you get a Quest Score that depends on performance and Score Bonus.")
 	);
 	el.append('<br>');
@@ -384,8 +437,14 @@ Dialog.quest.playerInfo = function(bottom,q,mq){
 */
 
 
+Dialog.getQuestThumbnail = function(q){
+	if(q.thumbnail)
+		return '/quest/' + q.id + '/' + q.id + '.png';
+	else
+		return DEFAULT_THUMBNAIL;
+}
 
-
+	
 
 
 //exports.Dialog.open('questStart','QlureKill')
@@ -394,7 +453,7 @@ Dialog.create('questStart','Quest',Dialog.Size('auto','auto'),Dialog.Refresh(fun
 		Dialog.open('questStart',param);
 	});
 	if(!q) return false;
-	var mq = main.quest[param];
+	var mq = w.main.quest[param];
 	variable.quest = param;
 	
 	var el = Dialog.quest.challenge(q,mq);
@@ -411,11 +470,12 @@ Dialog.create('questStart','Quest',Dialog.Size('auto','auto'),Dialog.Refresh(fun
 			Dialog.open('quest',param);
 		})
 	);
+	var at = CST.OFFSET.x >= 0 ? 'center-10%' : 'center+10%';
+	html.dialog({position:{my:'right',at:at}});
+		
 },function(html,variable){
-	return Tk.stringify(main.quest[variable.quest]) + variable.quest + main.questActive;
-}),{
-	quest:null,
-});
+	return Tk.stringify(w.main.quest[variable.quest]) + variable.quest + w.main.questActive;
+}));
 
 
 

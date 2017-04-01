@@ -1,48 +1,38 @@
 <% include ../partial/header.html %>
 <div class="container">
 	<!--other link below -->
-	<h3>Quest Creator <a href="http://download1589.mediafire.com/qthrk2hqjacg/rxq2fr1sm4b508s/RainingChainPackage.zip" target="_blank">Download</a></h3>	
+	<h3>Quest Creator <a href="<%- urlPackage %>" target="_blank">Download</a></h3>	
 	<p>The Quest Creator is a package that contains all the tools needed to create and test quests for Raining Chain.</p>
-	<object width="550" height="300" data="http://www.youtube.com/embed/VdgyVHrU2bM"></object> <!-- overview -->
-	<p>Here's a brief overview of the software:</p>
-	<ul class="list-group">
-		<li class="list-group-item">
-			<strong>Setting</strong>: Modify general quest information such as the name, description and author.
-		</li>
-		<li class="list-group-item">
-			<strong>Variable</strong>: Create quest variables. Every player has their own copy of variables. Modify them in events to save progression.
-		</li>
-		<li class="list-group-item">
-			<strong>Event</strong>: The logic of the quest.	The software provides <a href="/QuestCreator/API">documentation</a> for each functionality. Ex: Teleporting player, adding items, spawning monsters.
-		</li>
-		<li class="list-group-item">
-			<strong>Map</strong>: Create maps using the software Tiled and specify what monsters to spawn by default.
-		</li>
-		<li class="list-group-item">
-			<strong>Item</strong>: Create new items, their options and their icon. 
-		</li>
-		<li class="list-group-item">
-			<strong>Dialogue</strong>: The software provides a powerful dialogue system. Each dialogue can offer options that trigger other dialogues or custom events.
-		</li>
-	</ul>
+	<div style="max-width:650px">
+		<div class="aspect-ratio"><iframe src="http://www.youtube.com/embed/LFzRD94RJi0" frameborder="0" allowfullscreen></iframe></div>
+	</div>
 	
 	<br>
-	<h3>Installing</h3>
-	<ul>
-		<li><a href="http://download1589.mediafire.com/qthrk2hqjacg/rxq2fr1sm4b508s/RainingChainPackage.zip" target="_blank">Download.</a></li>
-		<li>Unzip.</li>
-		<li>Move the rc folder at C:\rc</li>
-		<li>Install nodejs_server.msi at C:\Program Files (x86)\nodejs</li>
-		<li>Install map_editor.exe at C:\Program Files (x86)\Tiled</li>
-		<li>Open the Quest Creator via the shortcut at C:\rc\QuestCreator.exe.</li>
-		<li><a href="/QuestCreator/tutorial">Check tutorials.</a></li>
-	</ul>
-	<object width="550" height="300" data="http://www.youtube.com/embed/8B-e5lEA5yw"></object>
-	<br>
+	<h3>How to Install <a style="font-size:0.8em;margin-left:5px" onclick="$('#installContext').collapse('toggle'); $(this).hide();" href="#">Show</a></h3>
+	<div id="installContext" class="collapse">
+		<ul>
+			<li>
+				<a href="<%- urlPackage %>" target="_blank">Download.</a>  Note: Google Chrome falsely considers the package as malicious. Try downloading on IE or Firefox. I'm currently working on fixing that.
+			</li>
+			<li>Unzip.</li>
+			<li>Move the rc folder at C:\rc</li>
+			<li>Install nodejs_server.msi at C:\Program Files (x86)\nodejs</li>
+			<li>Install map_editor.exe at C:\Program Files (x86)\Tiled</li>
+			<li>Open the Quest Creator via the shortcut at C:\rc\QuestCreator.exe or via C:\rc\QuestCreator\QuestCreator.exe.</li>
+			<li><a href="/QuestCreator/tutorial">Check tutorials.</a></li>
+		</ul>
+		<div style="max-width:500px">
+			<div class="aspect-ratio"><iframe src="http://www.youtube.com/embed/8B-e5lEA5yw" frameborder="0" allowfullscreen></iframe></div>
+		</div>
+		<br>
+	</div>
 	
-	<h3><a href="/QuestCreator/tutorial">Tutorial</a></h3>
+	<h3><a href="/QuestCreator/tutorial">Quest Tutorial</a></h3>
+	<h3><a href="/QuestCreator/map">Map Tutorial</a></h3>
 	<h3><a href="/QuestCreator/API">API</a></h3>
+	<h3><a href="/QuestCreator/submit">Submit your creation</a></h3>
 	<h3><a href="/QuestCreator/feedback">Feedback</a></h3>
+	<br>
 	
 	
 	

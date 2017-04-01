@@ -1,12 +1,13 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 //kinda linked with Input but client only
-//linked with player for Tk.abs to rela
+//linked with player for Tk.absToRel
 if(typeof exports === 'undefined') 
-	exports = {};
+	exports = {};	//on client, exports gets overwritten cuz main loaded after Tk
 
 INFO = function(){ //so doesnt show in search all
 	var cons = SERVER ? global['cons' + 'ole'] : window['cons' + 'ole'];
-	cons.log.apply(cons,arguments); 
+	if(cons)	//BAD but causes error
+		cons.log.apply(cons,arguments); 
 };	
 
 /* DATE
@@ -28,7 +29,7 @@ new Date((new Date('2015/04/24')).valueOf() + 1000*60*60*24*90)
 
 Date.nowDate = function(num){
 	var date = new Date(num || Date.now());
-	return date.getMonth()+1 + '/' + date.getDate() + '/' + date.getFullYear();
+	return date.getFullYear() + '/' + (date.getMonth()+1) + '/' + date.getDate();
 }
 Date.niceFormat = function(num){
 	var date = new Date(num || Date.now());
@@ -39,18 +40,30 @@ Date.niceFormat = function(num){
 Tk = exports.Tk = {};
 
 Tk.absToRel = function(pt){
-	return {
+	ERROR(3,'Tk.absToRel not supported anymore cuz slow');
+	/*return {
 		x:Tk.absToRel.x(pt.x),
 		y:Tk.absToRel.y(pt.y),
-	}
+	}*/
 }
 Tk.absToRel.x = function(x){
-	return x - player.x + CST.WIDTH2;
+	return x - w.player.x + CST.WIDTH2 + CST.OFFSET.x;
 }
 Tk.absToRel.y = function(y){
-	return y - player.y + CST.HEIGHT2;
+	return y - w.player.y + CST.HEIGHT2 + CST.OFFSET.y;
 }
-
+	
+Tk.getTooltipOptions = function(extra){
+	var a = {
+		items: '*:not(.ui-dialog-titlebar-close)',
+		show:false,
+		hide:false,
+		tooltipClass: "toolTipDetails",
+	}
+	for(var i in extra)
+		a[i] = extra[i];
+	return a;
+}
 
 Tk.nicePrompt = function(cb,placeholder,title){
 	var div = $('<div>')
@@ -98,7 +111,6 @@ Tk.niceAlert = function(text){
 	});
 }
 
-
 Tk.crossDomainAjax = function(url,func){
 	$.ajax({
 		url: url,
@@ -111,13 +123,13 @@ Tk.crossDomainAjax = function(url,func){
 
 //var Tk = exports.Tk = {};
 Tk.sin = function (number){
-	return (Math.sin(number/180*Math.PI))
+	return Math.sin(number/180*Math.PI);
 }
 Tk.cos = function (number){
-	return (Math.cos(number/180*Math.PI))
+	return Math.cos(number/180*Math.PI);
 }
 Tk.atan = function (number){
-	return (Math.atan(number)/Math.PI*180)
+	return Math.atan(number)/Math.PI*180;
 }
 Tk.atan2 = function (y,x){
 	//faster
@@ -134,13 +146,24 @@ Tk.atan2 = function (y,x){
 	}
 	angle *= 180/Math.PI;
 	angle = angle || 0;	//case y=0,x=0
-	if(y < 0) angle *= -1;
-	
-	return (angle+360)%360;
-	
-	//slower old
-	//return ((Math.atan2(y,x)/Math.PI*180)+360)%360
+	if(y < 0)
+		angle = -angle + 360;
+	return angle;
 }
+Tk.atan2.precise = function(y,x){
+	return y < 0 ? Math.atan2(y,x)*180/Math.PI + 360
+		: Math.atan2(y,x)*180/Math.PI;
+}
+
+Tk.getAnglePtPt = function(pt1,pt2){
+	return Tk.atan2(pt2.y-pt1.y,pt2.x-pt1.x);
+}
+
+Tk.getDistancePtPt = function(pt1,pt2){
+	return Math.sqrt(Math.pow(pt1.x - pt2.x,2) + Math.pow(pt1.y - pt2.y,2));
+}
+
+
 Math.log10 = function(num){
     return Math.log(num) / Math.log(10);
 }
@@ -151,16 +174,13 @@ Math.fact = function (num){
 	for(var start = 1; num > 1; num--){ start *= num;}
 	return start;
 };
-Tk.binarySearch = function(arr,value,maxIteration){
-	var safetyCount = 0;
-	maxIteration = maxIteration || 1000000;
-	
+Tk.binarySearch = function(arr,value,exactValue){
 	var startIndex = 0,
 		stopIndex = arr.length - 1,
 		middle = Math.floor((stopIndex + startIndex)/2);
 		
 	if(value < arr[0]) return 0;
-	while(++safetyCount < maxIteration && !(value >= arr[middle] && value < arr[middle+1]) && startIndex < stopIndex){
+	while(!(value >= arr[middle] && value < arr[middle+1]) && startIndex < stopIndex){
 
 		if (value < arr[middle]){
 			stopIndex = middle - 1;
@@ -170,23 +190,32 @@ Tk.binarySearch = function(arr,value,maxIteration){
 
 		middle = Math.floor((stopIndex + startIndex)/2);
 	}
-
-	return middle;
+	if(exactValue === false)
+		return middle;
+	return arr[middle] === value ? middle : -1;
 }
 Math.pyt = function(a,b){
 	return Math.sqrt(a*a+b*b);
 }
 
+Tk.formatAngle = function(angle){
+	return ((angle%360)+360)%360;
+}
+
 Math.randomId = function(){
-	return Math.randomId.getChars(+((Math.random()+'').slice(8)),'');
+	return Math.randomId.getChars(Math.floor(Math.random()*1e8),'');
+}
+Math.randomId.num = function(){	//used when client only
+	return Math.random();
 }
 Math.randomId.chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
 Math.randomId.getChars = function(num, res) {
   var mod = num % 64,
       remaining = Math.floor(num / 64),
-      chars = Math.randomId.chars.charAt(mod) + res;
+      chars = Math.randomId.chars[mod] + res;
 
-  if (remaining <= 0) { return chars; }
+  if (remaining <= 0)
+	return chars;
   return Math.randomId.getChars(remaining, chars);
 };
 
@@ -211,13 +240,15 @@ Math.randomML = function(num){
 	return (Math.random()*2-1)*num
 }
 Math.probability = function(base,mod){
+	if(base >= 1)
+		return 1;
 	return 1 - Math.pow(1-base,mod);
 }
 
 Tk.frameToChrono = function(num){
 	return Tk.msToChrono(num*40);
 }
-Tk.msToChrono = function(time){
+Tk.msToChrono = function(time,hideMilli){
 	time = time || 0;
 	var hour = Math.floor(time / CST.HOUR);
 	time %= CST.HOUR;
@@ -230,10 +261,17 @@ Tk.msToChrono = function(time){
 	if(milli < 10) milli = '00' + milli;
 	else if(milli < 100) milli = '0' + milli;
 	
-	if(+hour) return hour + ':' + min + ':' + sec + '.' + milli;	
-	if(+min) return min + ':' + sec + '.' + milli;	
-	return sec + '.' + milli;
+	if(hideMilli !== true){
+		if(+hour) return hour + ':' + min + ':' + sec + '.' + milli;	
+		if(+min) return min + ':' + sec + '.' + milli;	
+		return sec + '.' + milli;
+	} else {
+		if(+hour) return hour + ':' + min + ':' + sec;	
+		if(+min) return min + ':' + sec;	
+		return sec;
+	}
 }
+
 
 Tk.argumentsToArray = function(arg){
 	return [].slice.call(arg);
@@ -244,25 +282,90 @@ Tk.nu = function(test,value){	//used for default values
 	return typeof test !== 'undefined' ? test : value;
 }
 
-//Copy
 
+Tk.getCallTime = function(func,rep,what){
+	var now = Date.now();
+	rep = rep || 1;
+	what = what || '';
+	for(var i = 0 ; i < rep; i++) 
+		func();
+	INFO(what + ': ' + (Date.now() - now));	
+}
+
+
+//Copy
 Tk.deepClone = function(obj){
 	if(obj === null || typeof(obj) !== 'object')
         return obj;
 
-    var temp = obj.constructor();
-
+	//var temp = Array.isArray(obj) ? [] : {};	//obj.constructor();
+	
+	var temp = Array.isArray(obj) ? [] : Object.create(Object.getPrototypeOf(obj));
+	
     for(var key in obj)
         temp[key] = Tk.deepClone(obj[key]);
     return temp;
 }
 
-Tk.smoothCanvas = function(canvas){
+Tk.sleep = function(time){	//only use for debug
+	var now = Date.now();
+	while(Date.now() < now + time){
+		now += 0;	//so not empty for gulp...		
+	}
+}	
+	
+//var verifySameType = false && setTimeout(function(){ INFO('WARNING verifySameType ACTIVE'); },1000);
+Tk.fillExtra = function(what,extra,noError){
+	for(var i in extra){
+		if(what[i] === undefined && noError !== true){
+			ERROR(3,'invalid property',what[i],i,extra[i]);
+		}
+		if(extra[i] !== undefined)
+			what[i] = extra[i];
+	}
+	/*if(SERVER && !NODEJITSU && verifySameType && Math.random() < 0.25){
+		setTimeout(function(){
+			var old = Tk.deepClone(what);
+			setInterval(function(){
+				Tk.verifySameType(old,what);
+			},1000);
+		},1);
+	}*/
+		
+}
+
+	
+Tk.verifySameType = function(a,b,stop){
+	var bool = true;
+	for(var i in a)
+		if(a[i] === null)
+			continue;
+		else
+			if(typeof a[i] !== typeof b[i]){
+				bool = false;
+				if(!stop)
+					INFO('invalid:',i,a[i],b[i]);
+				else
+					INFO('invalid:',i,b[i],a[i]);
+			}
+	if(stop)
+		return bool;
+	return Tk.verifySameType(b,a,true);
+}
+
+Tk.sharpenCanvas = function(canvas){
 	var ctx = $(canvas)[0].getContext('2d');
 	ctx.mozImageSmoothingEnabled = false;
 	ctx.msImageSmoothingEnabled = false;
 	ctx.imageSmoothingEnabled = false;
-}	
+	return canvas;
+}
+
+Tk.createSharpCanvas = function(width,height){
+	var c = $('<canvas>').attr({width:width,height:height}).css({width:width,height:height});
+	Tk.sharpenCanvas(c);
+	return c;
+}
 
 Tk.deepClone.partial = function(obj,toExclude){
 	if(obj === null || typeof(obj) !== 'object')
@@ -284,11 +387,22 @@ Tk.stringify = function(string){
 	else { return JSON.stringify(string); }
 }
 Tk.isEqual = function(obj0,obj1){
-	if(obj0 === undefined || obj1 === undefined){ return false;}	
+	if(obj0 === undefined || obj1 === undefined)
+		return false;
 	return obj0 === obj1;
 }
 
-
+Tk.getCappedVariation = function(diff,max,pct){	//if pct, max is pctage of diff
+	if(pct)
+		max *= Math.abs(diff);
+		
+	if(diff < -max) 
+		return -max;
+	else if(diff > max) 
+		return max;
+	return diff;
+}
+	
 //Via Array
 Tk.viaArray = {};
 Tk.viaArray.get = function(origin,a){
@@ -332,18 +446,21 @@ Tk.round = function (num,decimals,str){
 		decimals = decimals || 0;
 		return Math.round(num*Math.pow(10,decimals))/Math.pow(10,decimals); 
 	}
-	if(!decimals){ return Math.round(num).toString(); }
-	
-	
+	if(!decimals)
+		return Math.round(num).toString(); 
 	
 	var num = Tk.round(num,decimals).toString();
 	
 	var dot = num.indexOf('.');
-	if(dot === -1){ num += '.'; dot = num.length-1; }
+	if(dot === -1){ 
+		num += '.'; 
+		dot = num.length-1; 
+	}
 	
 	var missing0 = decimals - num.length + dot + 1;
 	
-	for(var i=0 ; i < missing0; i++){ num += '0'; }
+	for(var i=0 ; i < missing0; i++)
+		num += '0';
 	
 	return num;
 }
@@ -361,13 +478,14 @@ escape.quote = function(str){
 }
 
 escape.user = function(name){
-	var str = name.replace(/[^a-z0-9 ]/ig, '');
+	var str = name.replace(/[^a-z0-9 _]/ig, '');
 	str = str.trim();
 	return str;
 }
 
 escape.email = function(str){
-	if(typeof str !== 'string') return '' 
+	if(typeof str !== 'string') 
+		return '' 
 
     var re = /[^\s@]+@[^\s@]+\.[^\s@]+/;
     return re.test(str) ? str : '';
@@ -391,19 +509,6 @@ unescape.html = function(text){
 		.replace(/&#039;/g, "'");
 }
 
-Tk.useTemplate = function(temp,obj,deep,viaarray){
-	if(deep) obj = Tk.deepClone(obj); 
-	if(viaarray){
-		for(var i in obj){
-			Tk.viaArray.set(temp,i.split(','),obj[i]);
-		}
-		return temp;
-	}
-	
-	for(var i in obj)	temp[i] = obj[i];	
-	return temp;
-}
-
 Tk.arrayToTable = function(array,top,left,CSSTableGenerator,spacing){
 	var table = $('<table>');
 	if(spacing)	table.css({borderCollapse:'separate',borderSpacing:spacing});
@@ -421,7 +526,8 @@ Tk.arrayToTable = function(array,top,left,CSSTableGenerator,spacing){
 		}
 		table.append(row);
 	}
-	if(CSSTableGenerator === true) table.addClass('CSSTableGenerator');
+	if(CSSTableGenerator === true)
+		table.addClass('CSSTableGenerator');
 	return table;
 }
 
@@ -447,7 +553,24 @@ Tk.arrayToTable2 = function(array){
 	return table;
 }
 
-
+Tk.responsiveTable = function(table,smToo){
+	var list = table.find('tr:first').find('th');
+	var colSmall = [];
+	for(var i = 0 ; i < list.length; i++){
+		if($(list[i]).hasClass('hidden-xs'))
+			colSmall.push(i+1);	//+1 cuz index starts at 1...
+	}
+	var clas = smToo !== false ?  'hidden-xs hidden-sm' : 'hidden-xs';
+	for(var i = 0 ; i < colSmall.length; i++){
+		table.find('tr td:nth-child(' + colSmall[i] + ')').addClass(clas);
+		
+		/*table.find('td:eq(' + colSmall[i] + ')').each(function(){
+			$(this).addClass(clas);
+		});*/
+	}
+	return table;
+}
+	
 Tk.arrayToTable.access = function(what,row,column){
 	return $(what.children().children()[row]).children()[column].innerHTML;
 }
@@ -460,18 +583,26 @@ Tk.abbreviateNumber = function(num){
 	return '' + num;
 }
 
-Tk.flashDOM = function(html,time){
+Tk.flashDOM = function(html,time,autoRemove,before,after){
 	var bool = true;
+	before = before || {border:'2px solid white'};
+	after = after || {border:'2px solid black'};
+	
 	var interval = setInterval(function() {
 		if(bool)
-			html.css({border:'2px solid white'});
-		else html.css({border:'2px solid black'});
+			html.css(before);
+		else html.css(after);
 		bool = !bool;
 	},time || 2000);
 	
+	if(autoRemove){
+		html.on("remove", function () {
+			clearInterval(interval);
+		})
+	}
 	return function(){
 		clearInterval(interval);
-		html.css({border:'2px solid black'});
+		html.css(after);
 	};
 }
 
@@ -498,120 +629,102 @@ Tk.rotatePt = function(pt,angle,anchor){
 	anchor = anchor || {};
 	anchor.x = anchor.x || 0;
 	anchor.y = anchor.y || 0;
+	var rad_angle = angle / 180 * Math.PI;
 	return {
-		x:Tk.cos(angle) * (pt.x-anchor.x) - Tk.sin(angle) * (pt.y-anchor.y) + anchor.x,
-		y:Tk.sin(angle) * (pt.x-anchor.x) + Tk.cos(angle) * (pt.y-anchor.y) + anchor.y,
-	}	
+		x:Tk.rotatePt.x(pt.x,pt.y,rad_angle,anchor.x,anchor.y),
+		y:Tk.rotatePt.y(pt.x,pt.y,rad_angle,anchor.x,anchor.y),
+	};
+}
+Tk.rotatePt.x = function(x,y,rad_angle,anchorX,anchorY){
+	return Math.cos(rad_angle) * (x-anchorX) - Math.sin(rad_angle) * (y-anchorY) + anchorX;
+}
+Tk.rotatePt.y = function(x,y,rad_angle,anchorX,anchorY){
+	return Math.sin(rad_angle) * (x-anchorX) + Math.cos(rad_angle) * (y-anchorY) + anchorY;
+}
+
+Tk.isScrollBarBottom = function (container,weirdOffset) {
+	weirdOffset = weirdOffset || 0;
+	var height = container.height();
+	var scrollHeight = container[0].scrollHeight;
+	var st = container.scrollTop();
+	//INFO('height: ' + height + ' scrollHeight: ' + scrollHeight + ' scrollTop: ' + st );
+	return st >= scrollHeight - height - weirdOffset;	//weirdOffset no clue y but works....
+	
 }
 
 
+Tk.newCacheManager = function(func,lifeTime){
+	if(lifeTime < 0)	//aka dont use caching. used when server doesnt need but client does
+		return func;
+	var cachedValue = null;
+	var time = 0;
+	var f = function(){
+		if(Date.now()-time < lifeTime)
+			return cachedValue;
+		var res = Tk.fastApply(func,this,arguments);
+		time = Date.now();
+		cachedValue = res;
+		return res;
+	}
+	f.noCache = func;
+	return f;
+}
 
+//https://github.com/jaycetde/fast-apply/blob/master/index.js
+Tk.fastApply = function(fn, context, args) {
+    switch (args ? args.length : 0) {
+        case 0:
+            return context ? fn.call(context) : fn();
+        case 1:
+            return context ? fn.call(context, args[0]) : fn(args[0]);
+        case 2:
+            return context ? fn.call(context, args[0], args[1]) : fn(args[0], args[1]);
+        case 3:
+            return context ? fn.call(context, args[0], args[1], args[2]) : fn(args[0], args[1], args[2]);
+        case 4:
+            return context ? fn.call(context, args[0], args[1], args[2], args[3]) : fn(args[0], args[1], args[2], args[3]);
+        case 5:
+            return context ? fn.call(context, args[0], args[1], args[2], args[3], args[4]) : fn(args[0], args[1], args[2], args[3], args[4]);
+        default:
+            return fn.apply(context, args);
+    }    
+}
+
+Tk.arrayToObject = function(array,key,value){
+	var ret = {};
+	for(var i = 0 ; i < array.length; i++){	
+		if(array[i][value] === undefined)
+			ERROR(3,'undefined value',key,value);
+		ret[array[i][key]] = array[i][value];
+	}
+	return ret;
+}
+Tk.objectToArray = function(obj,key,value){
+	var ret = [];
+	for(var i in obj){
+		var a = {};
+		a[key] = i;
+		a[value] = obj[i];
+		ret.push(a);
+	}
+	return ret;
+}
+
+Tk.getSplit0 = function(str,sep){
+	var index = str.indexOf(sep);
+	if(index === -1)
+		return str;
+	return str.slice(0,index);
+}
 
 //Prototype
-Object.defineProperty(Array.prototype, "$random", {	// !name: return random element || name:  [{name:10},{name:1}] and return obj
-    enumerable: false,
-    value: function(name){
-		if(!this.length) return null;
-		if(!name) return this[Math.floor(this.length*Math.random())];
-		
-		var obj = {};	
-		for(var i in this) obj[i] = this[i][name];
-		var choosen = obj.$random();
-		return choosen !== null ? this[choosen] : null
-	}
-});
-
-Object.defineProperty(Object.prototype, "$random", {	//return attribute, must be {attribute:NUMBER}, chance of being picked depends on NUMBER
-    enumerable: false,
-    value: function(name){
-		if(!Object.keys(this).length) 
-			return null;
-		
-		var ratioed = {}; 
-		if(name) 
-			for(var i in this)	
-				ratioed[i] = this[i][name]; 
-		else ratioed = this;
-		
-		for(var i in ratioed)
-			if(typeof ratioed[i] !== 'number'){
-				return ERROR(2,'not numbers',i,ratioed,Object.keys(ratioed),ratioed[i] + '');
-			}
-		ratioed = Tk.convertRatio(ratioed);		
-		var a = Math.random();
-		for(var i in ratioed){
-			if(ratioed[i] >= a)
-				return i;
-			a -= ratioed[i];
-		}
-		
-		return null;
-	}
-});
-
-Object.defineProperty(Object.prototype, "$randomAttribute", {	//return random attribute
-    enumerable: false,
-    value: function(){
-		return Object.keys(this).$random();
-	}
-});	
-	
-Object.defineProperty(Object.prototype, "$count", {
-    enumerable: false,
-    value: function(){
-		var count = 0;
-		for(var i in this) if(this[i]) count++;
-		return count;
-	}
-});	
-
-Object.defineProperty(Object.prototype, "$isEmpty", {
-    enumerable: false,
-    value: function(){
-		var i;
-		for(i in this)
-			return false;
-		return true;
-	}
-});
-
-Object.defineProperty(Object.prototype, "$sum", {
-	enumerable: false,
-	value: function(){
-		var count = 0;
-		for(var i in this) count += this[i];
-		return count;
-	}
-});	
-	
-Object.defineProperty(Object.prototype, "$length", {
-    enumerable: false,
-    value: function(){
-		return Object.keys(this).length;
-	}
-});	
-
-Object.defineProperty(Object.prototype, "$toArray", {
-    enumerable: false,
-    value: function(){
-		var tmp = [];
-		for(var i in this)
-			tmp.push(this[i]);
-		return tmp;
-	}
-});	
-
-Object.defineProperty(Object.prototype, "$keys", {
-    enumerable: false,
-    value: function(){
-		return Object.keys(this);
-	}
-});	
-
 Object.defineProperty(Array.prototype, "$contains", {
     enumerable: false,
-    value: function(name,begin){
-		if(begin) return this.indexOf(name) === 0;
+    value: function(name,begin,binarySearch){
+		if(binarySearch)
+			return Tk.binarySearch(this,name) !== -1;
+		if(begin) 
+			return this.indexOf(name) === 0;
 		return this.indexOf(name) !== -1;
 	}
 });	
@@ -644,19 +757,88 @@ Object.defineProperty(Array.prototype, "$removeAt", {
 	}
 });
 
+Object.defineProperty(Array.prototype, "$shuffle", {
+    enumerable: false,
+    value: function () {
+		for(var j, x, i = this.length; i; j = Math.floor(Math.random() * i), x = this[--i], this[i] = this[j], this[j] = x);
+		return this;
+	}
+});
+
+Object.defineProperty(Array.prototype, "$random", {	// !name: return random element || name:  [{name:10},{name:1}] and return obj
+    enumerable: false,
+    value: function(name){
+		if(!this.length) 
+			return null;
+		if(name) 
+			return ERROR(3,'no longer supported');
+		return this[Math.floor(this.length*Math.random())];
+	}
+});
+
+Object.defineProperty(Object.prototype, "$random", {	//return attribute, must be {attribute:NUMBER}, chance of being picked depends on NUMBER
+    enumerable: false,
+    value: function(name){
+		if(!Object.keys(this).length) 
+			return null;
+		
+		var ratioed = {}; 
+		if(name) 
+			for(var i in this)	
+				ratioed[i] = this[i][name]; 
+		else ratioed = this;
+		
+		for(var i in ratioed)
+			if(typeof ratioed[i] !== 'number'){
+				return ERROR(2,'not numbers',i,ratioed,Object.keys(ratioed),'' + ratioed[i]);
+			}
+		ratioed = Tk.convertRatio(ratioed);		
+		var a = Math.random();
+		for(var i in ratioed){
+			if(ratioed[i] >= a)
+				return i;
+			a -= ratioed[i];
+		}
+		
+		return null;
+	}
+});
+
+Object.defineProperty(Object.prototype, "$randomAttribute", {	//return random attribute
+    enumerable: false,
+    value: function(){
+		return Object.keys(this).$random();
+	}
+});	
+
+Object.defineProperty(Object.prototype, "$isEmpty", {
+    enumerable: false,
+    value: function(){
+		var i;
+		for(i in this)
+			return false;
+		return true;
+	}
+});
+	
+Object.defineProperty(Object.prototype, "$length", {
+    enumerable: false,
+    value: function(){
+		return Object.keys(this).length;
+	}
+});	
+
+Object.defineProperty(Object.prototype, "$keys", {
+    enumerable: false,
+    value: function(){
+		return Object.keys(this);
+	}
+});	
+
 Object.defineProperty(Number.prototype, "r", {
     enumerable: false,
     value: function(num,count) {
 		return Tk.round(this,num || 0,count);
-	}
-});	
-	
-Object.defineProperty(Number.prototype, "mm", {
-    enumerable: false,
-    value: function(min,max) {
-		if(min === undefined){ return this; }
-		if(max === undefined){ return Math.max(min,this); }
-		return Math.min(max,Math.max(min,this));
 	}
 });	
 
@@ -673,7 +855,7 @@ Tk.baseConverter.toBinary = function(str, spaceSeparatedOctets) {
 	})
 };
 Tk.baseConverter.zeroPad = function(num) {
-	return "00000000".slice(String(num).length) + num
+	return "00000000".slice(String(num).length) + num;
 };
 
 Tk.removeComment = function(str){
@@ -687,6 +869,144 @@ Tk.getGlyph = function(id,jqueryObj){
 		return '<span class="glyphicon glyphicon-' + id + '"></span>';
 }
 
+
+Tk.newPubSub = function(multiple,onNewSub){
+	var DEFAULT = '__DEFAULT';
+	
+	var list = {};
+	
+	
+	
+	var f = function(what,func,priority){
+		if(multiple !== true)
+			ff(DEFAULT,what,func);
+		else
+			ff(what,func,priority);
+		if(onNewSub)
+			onNewSub.apply(this,arguments);
+	}
+	var ff = function(what,func,priority){
+		if(!what)
+			ERROR(3,'what is null',what);
+		list[what] = list[what] || [];
+		if(typeof func !== 'function')
+			return ERROR(3,'func is not a function',func);
+		list[what].push({
+			func:func,
+			priority:priority || 0
+		});
+		
+		list[what].sort(function(a,b){
+			return b.priority - a.priority;
+		});
+	}
+	
+	f.pub = function(what,p0,p1,p2,p3,p4,p5){	//BAD
+		if(multiple !== true)
+			return pub(DEFAULT,what,p0,p1,p2,p3,p4,p5);
+		else
+			return pub(what,p0,p1,p2,p3,p4,p5);
+		
+	}	
+	var pub = function(what,p0,p1,p2,p3,p4,p5){
+		if(typeof what === 'object' || !what)
+			return ERROR(3,'param is object or undefined when it should be id',what);
+		if(!list[what])
+			return;
+		var ret;
+		for(var i = 0 ; i < list[what].length; i++){
+			ret = list[what][i].func(p0,p1,p2,p3,p4,p5);
+		}
+		return ret;
+	}
+	f.getList = function(){
+		return list;
+	}
+	f.have = function(what){
+		return !!list[what];
+	}
+	
+	return f;
+}
+
+Tk.newCompressManager = function(array){
+	var compress = {};
+	var uncompress = [null];
+	var exp = {};
+	exp.add = function(what){
+		if(compress[what])
+			return ERROR(3,'duplicate key',what);
+		uncompress.push(what);
+		compress[what] = uncompress.indexOf(what);
+	}
+	exp.compress = function(what){
+		return compress[what] || what;
+	}
+	exp.uncompress = function(what){
+		return uncompress[what] || what;
+	}
+	if(array){
+		for(var i = 0 ; i < array.length; i++){
+			if(array[i] === null)
+				continue;
+			exp.add(array[i]);
+		}
+	}
+	exp.getArray = function(){
+		return uncompress;
+	}
+	return exp;
+}
+
+Tk.getOccurenceCount = function(big,part){
+	var r = new RegExp(part,'g');
+	return (big.match(r) || []).length;
+}
+
+
+Tk.enumContains = function(list,what){
+	for(var i in list)
+		if(list[i] === what)
+			return true;
+	return false;
+}
+
+
+Tk.getFrameSpdMod = function(what){
+	var now = Date.now();
+	if(!Tk.getFrameSpdMod.LAST_UPDATE[what]){
+		Tk.getFrameSpdMod.LAST_UPDATE[what] = now;
+		return 1;
+	}
+	var raw = (now-Tk.getFrameSpdMod.LAST_UPDATE[what])/CST.MSPF;
+	Tk.getFrameSpdMod.LAST_UPDATE[what] = now;
+	return Tk.minmax(raw,0.8,2);
+	
+}
+Tk.getFrameSpdMod.LAST_UPDATE = {};
+
+Tk.minmax = function(val,min,max){
+	return Math.max(min,Math.min(max,val));
+}
+
+Tk.getFunctionParameter = function(func){
+	var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
+	var ARGUMENT_NAMES = /([^\s,]+)/g;
+	var fnStr = func.toString().replace(STRIP_COMMENTS, '')
+	var result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES)
+	if (result === null)
+		result = []
+	return result
+}
+
+
+Tk.joinOrAnd = function(array,orAnd){
+	if(array.length === 0)
+		return '';
+	if(array.length === 1)
+		return array[0];
+	return array.slice(0,-1).join(', ') + ' ' + orAnd + ' ' + array[array.length-1];
+}
 
 //String
 Tk.keyCodeToName = function(charCode,full){	//TOFIX fusion bothfunctions
@@ -789,7 +1109,8 @@ Tk.replaceBracketPattern = function(data,func2){	//only works like [[sdadsa]]
 	};
 	for(var i = 0; i < 100; i++){
 		var data2 = data.replace(/(.*?)\[\[(.*?)\]\](.*)/,func);
-		if(data2 === data) break;
+		if(data2 === data) 
+			break;
 		data = data2;
 	}
 	return data;
@@ -835,21 +1156,21 @@ String.prototype.$contains = function(name,first){
 	return this.indexOf(name) === 0;
 }
 
-String.prototype.set = function(pos,value){
-	return this.slice(0,pos) + value + this.slice(pos+1);
+Tk.setString = function(str,pos,value){
+	return str.slice(0,pos) + value + str.slice(pos+1);
 }
 
-String.prototype.q = function () {
-    return '&quot;' + this + '&quot;';
-};
+Tk.quote = function(str){	//quote
+	return '&quot;' + str + '&quot;';
+}
 
 Tk.rgbaToObject = function(color){	//http://snipplr.com/view.php?codeview&id=60570
 	var values = {red:null,green:null,blue:null,alpha:null};
-	if( typeof color == 'string' ){
+	if( typeof color === 'string' ){
 		/* hex */
 		if( color.indexOf('#') === 0 ){
 			color = color.substr(1)
-			if( color.length == 3 )
+			if( color.length === 3 )
 				values = {
 					red:   parseInt( color[0]+color[0], 16 ),
 					green: parseInt( color[1]+color[1], 16 ),
@@ -887,11 +1208,105 @@ Tk.rgbaToObject = function(color){	//http://snipplr.com/view.php?codeview&id=605
 	}
 	return values
 }
+
 Tk.rgbaToString = function(rgba){
 	return 'rgba(' + Math.floor(rgba.red) + ',' + Math.floor(rgba.green) + ',' + Math.floor(rgba.blue) + ',' + rgba.alpha + ')';
 }
 
+Tk.getCallPerSec = function(what,log){
+	var list = Tk.getCallPerSec.LIST;
+	list[what] = list[what] || [];
+	var now = Date.now();
+	list[what].push(now);
+	
+	while(list[what][0] && (now - list[what][0] > 5000))
+		list[what].shift();
+	
+	var callPerSec = list[what].length / 5;
+	
+	//log
+	Tk.getCallPerSec.LAST_LOG[what] = Tk.getCallPerSec.LAST_LOG[what] || 0;
+	if(now - Tk.getCallPerSec.LAST_LOG[what] > 1000){
+		Tk.getCallPerSec.LAST_LOG[what] = now;
+		INFO(what + ': ' + callPerSec);
+	}
+	return callPerSec;
+}
+Tk.getCallPerSec.LIST = {};
+Tk.getCallPerSec.LAST_LOG = {};
+
+Tk.convertAngleNumToSide = function(angle,v){
+	v = v || 45;	//more or less
+	angle = (angle+360) % 360;
+	if(angle >= 360-v || angle < 0+v)
+		return 'right';
+	if(angle >= 90-v && angle < 90+v)
+		return 'down';
+	if(angle >= 180-v && angle < 180+v)
+		return 'left';
+	if(angle >= 270-v && angle < 270+v)
+		return 'up';
+	return null;	//not perpendicular
+}
+
+Tk.convertFloatToInt = function(obj,cap32Bit){
+	/*jslint bitwise: true */
+	if(typeof obj === 'number')
+		return obj | 0;
+	if(obj === null || typeof obj !== 'object')
+		return obj;
+	
+	for(var i in obj){
+		if(typeof obj[i] === 'number'){
+			if(cap32Bit && obj[i] > 214748364)
+				obj[i] = 214748364;
+			if(cap32Bit && obj[i] < 214748364)
+				obj[i] = -214748364;
+			obj[i] = obj[i] | 0;
+		}
+		else if(obj[i] !== null && typeof obj[i] === 'object')
+			Tk.convertFloatToInt(obj[i],cap32Bit);
+	}
+	return obj;	
+	/*jslint bitwise: false */	
+}
+
+Tk.toArray2D = function(grid1d,width){
+	var grid = [];
+	for(var i = 0; i < grid1d.length; i++) {
+		var y = Math.floor(i / width);
+		grid[y] = grid[y] || [];
+		grid[y][i % width] = grid1d[i];
+	}
+	return grid;
+}
+Tk.stringToNumArray = function(array){
+	for(var i = 0 ; i < array.length; i++)
+		array[i] = +array[i];
+}
+
+Tk.setTransform = function(ctx,rotation,translateX,translateY){
+	var rot = rotation / 180 * Math.PI;
+	
+	var sine = Math.sin(rot);
+	var cosine = Math.cos(rot);
+	
+	ctx.setTransform(cosine, sine, -sine, cosine, translateX, translateY);
+}
+
 if(typeof $ !== 'undefined' && typeof CanvasRenderingContext2D !== 'undefined'){ //}
+
+	//http://stackoverflow.com/questions/21159301/quotaexceedederror-dom-exception-22-an-attempt-was-made-to-add-something-to-st
+	if (typeof localStorage === 'object') {
+		try {	
+			localStorage.setItem('localStorage', 1);
+			localStorage.removeItem('localStorage');
+		} catch (e) {
+			localStorage.setItem = function() {};
+			alert('Your web browser does not support storing settings locally. In Safari, the most common cause of this is using "Private Browsing Mode". Some settings may not save or some features may not work properly for you.');
+		}
+	}
+
 	$.fn.selectRange = function(start, end) {
 		if(!end) end = start; 
 		return this.each(function() {
@@ -916,7 +1331,7 @@ if(typeof $ !== 'undefined' && typeof CanvasRenderingContext2D !== 'undefined'){
 		return this;
 	};
 
-	CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, fill, stroke, radius) {
+	/*CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, fill, stroke, radius) {
 		if (typeof stroke === "undefined" ) {  stroke = true; }
 		if (typeof fill === "undefined" ) {  fill = true; }
 		if (typeof radius === "undefined") {  radius = 5; }
@@ -931,8 +1346,10 @@ if(typeof $ !== 'undefined' && typeof CanvasRenderingContext2D !== 'undefined'){
 		this.lineTo(x, y + radius);
 		this.quadraticCurveTo(x, y, x + radius, y);
 		this.closePath();
-		if (fill) {  this.fill(); }        
-		if (stroke) {  this.stroke(); }
+		if (fill) 
+			this.fill();     
+		if (stroke) 
+			this.stroke();
 	}
 
 	CanvasRenderingContext2D.prototype.length = function(a){
@@ -944,10 +1361,11 @@ if(typeof $ !== 'undefined' && typeof CanvasRenderingContext2D !== 'undefined'){
 	}
 
 	CanvasRenderingContext2D.prototype.setFont = function(size){
-		this.font = size + 'px Kelly Slab'
-	}
+		this.font = size + 'px MiniSet2';
+	}*/
 
 
+	
 } //{
 
 

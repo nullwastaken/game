@@ -1,8 +1,48 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Message = require2('Message'), Achievement = require2('Achievement'), Sign = require2('Sign'), Server = require2('Server'), Actor = require2('Actor'), OptionList = require2('OptionList'), ItemModel = require2('ItemModel'), ItemList = require2('ItemList');
-var Main = require3('Main');
+var Message, Achievement, Sign, Server, Actor, OptionList, ItemModel, ItemList;
+global.onReady(function(){
+	Message = rootRequire('shared','Message'); Achievement = rootRequire('shared','Achievement'); Sign = rootRequire('private','Sign'); Server = rootRequire('private','Server'); Actor = rootRequire('shared','Actor'); OptionList = rootRequire('shared','OptionList'); ItemModel = rootRequire('shared','ItemModel'); ItemList = rootRequire('shared','ItemList');
+
+	var Command = rootRequire('shared','Command');
+	Command.create(CST.COMMAND.useItem,Command.MAIN,[ //{
+		Command.Param('string','Id',false),
+		Command.Param('number','Option Position',false),
+	],Main.useItem); //}
+
+	Command.create(CST.COMMAND.transferInvBank,Command.MAIN,[ //{
+		Command.Param('string','Item Id',false),
+		Command.Param('number','Amount',true,{default:1,min:1}),
+	],Main.transferInvBank); //}
+
+	Command.create(CST.COMMAND.transferBankInv,Command.MAIN,[ //{
+		Command.Param('string','Item Id',false),
+		Command.Param('number','Amount',true,{default:1,min:1}),
+	],Main.transferBankInv); //}
+
+	Command.create(CST.COMMAND.transferInvBankAll,Command.MAIN,[ //{
+	],Main.transferInvBankAll); //}
+
+	Command.create(CST.COMMAND.transferInvTrade,Command.MAIN,[ //{
+		Command.Param('string','Item Id',false),
+		Command.Param('number','Amount',true,{default:1,min:1}),
+	],Main.transferInvTrade); //}
+
+	Command.create(CST.COMMAND.transferTradeInv,Command.MAIN,[ //{
+		Command.Param('string','Item Id',false),
+		Command.Param('number','Amount',true,{default:1,min:1}),
+	],Main.transferTradeInv); //}
+	Command.create(CST.COMMAND.tradeAcceptSelf,Command.MAIN,[ //{
+		Command.Param('boolean','New State',false),
+	],Main.setTradeAcceptSelf); //}
+
+	Command.create(CST.COMMAND.tradeCloseWin,Command.MAIN,[ //{
+	],Main.stopTrade); //}
+	
+});
+var Main = rootRequire('shared','Main');
+
 
 
 var MAX_BANK_SIZE = 75;
@@ -31,6 +71,11 @@ Main.ItemList.uncompressDb = function(list,key){
 	return inv;
 }
 
+Main.ItemList.getDbSchema = function(){
+	return Array.of({id:String,amount:Number});
+}
+
+
 Main.ItemList.compressClient = function(list){
 	return list.data;
 }
@@ -52,10 +97,12 @@ Main.ItemList.checkIntegrity = function(inv){
 };
 
 Main.ItemList.loop = function(main){
-	if(!main.tradeInfo.otherId) return;
+	if(!main.tradeInfo.otherId) 
+		return;
 	
 	var main2 = Main.getTradingWith(main);
-	if(!main2) return Main.stopTrade(main);
+	if(!main2) 
+		return Main.stopTrade(main);
 	
 	var selfInTheory = Main.getTradingWith(main2);
 	if(selfInTheory !== main){
@@ -63,46 +110,40 @@ Main.ItemList.loop = function(main){
 	}
 }
 
-Main.getUpdatedTradeInfo = function(main){
-	var main2 = Main.getTradingWith(main);
-	if(!main2){
-		Main.stopTrade(main);
-		return main.tradeInfo;
-	}
-	return {
-		otherId:main2.username,
-		data:Main.ItemList.compressClient(main2.tradeList),
-		acceptSelf:main.tradeInfo.acceptSelf,
-		acceptOther:main.tradeInfo.acceptOther
-	}
-}
 
 
-Main.stopTrade = function(main){
+Main.stopTrade = function(main,message){
 	ItemList.transfer(main.tradeList,main.invList,main.tradeList.data,undefined,true);
+	
 	Main.closeDialog(main,'trade');
 	main.tradeInfo.acceptSelf = false;
 	main.tradeInfo.acceptOther = false;
 	var main2 = Main.getTradingWith(main);
 	main.tradeInfo.otherId = '';
+	
+	if(message !== false)
+		Main.addMessage(main,'Trade refused.');
 	if(main2){
+		if(message !== false)
+			Main.addMessage(main2,'Trade refused.');
 		main2.tradeInfo.otherId = '';
-		Main.stopTrade(main2);	
+		Main.stopTrade(main2,false);	
 	}
 }
 
 Main.doTrade = function(main){
 	var main2 = Main.get(main.tradeInfo.otherId);
-	if(!main2) return Main.stopTrade(main);
+	if(!main2) 
+		return Main.stopTrade(main);
 	
-	var trade = Tk.deepClone(main.tradeList.data);
-	var trade2 = Tk.deepClone(main2.tradeList.data);
-	ItemList.transfer(main.tradeList,main2.invList,trade);
-	ItemList.transfer(main2.tradeList,main.invList,trade2);
+	ItemList.transfer(main.tradeList,main2.invList,main.tradeList.data);
+	ItemList.transfer(main2.tradeList,main.invList,main2.tradeList.data);
 	Main.stopTrade(main);
 	Main.stopTrade(main2);
-	Main.addMessage(main,'Successful trade.');
-	Main.addMessage(main2,'Successful trade.');
+	Main.addMessage(main,'Trade accepted.');
+	Main.addMessage(main2,'Trade accepted.');
+	Achievement.onTrade(main);
+	Achievement.onTrade(main2);
 }
 
 Main.getTradingWith = function(main){
@@ -111,7 +152,8 @@ Main.getTradingWith = function(main){
 
 Main.setTradeAcceptSelf = function(main,value){
 	var main2 = Main.getTradingWith(main);
-	if(!main2) return Main.stopTrade(main);
+	if(!main2) 
+		return Main.stopTrade(main);
 	
 	main.tradeInfo.acceptSelf = value;
 	main2.tradeInfo.acceptOther = value;
@@ -119,9 +161,14 @@ Main.setTradeAcceptSelf = function(main,value){
 	if(main.tradeInfo.acceptSelf && main2.tradeInfo.acceptSelf){
 		Main.doTrade(main);
 	}	
-	Main.setFlag(main,'tradeInfo');
-	Main.setFlag(main2,'tradeInfo');
+	var f = function(main){
+		return Main.TradeInfo.compressClient(main);
+	}
+	Main.setFlag(main,'tradeInfo',f);
+	Main.setFlag(main2,'tradeInfo',f);
 }
+
+
 
 Main.startTrade = function(main,main2){	//shoul be requesting first
 	main.tradeInfo.otherId = main2.id;
@@ -147,12 +194,15 @@ Main.canUseBank = function(main){
 }
 
 Main.addItem = function(main,id,amount){
-	Achievement.onItemAdd(main,id,amount);	//idk if id is correctly formatted yet...
-	return ItemList.add(main.invList,id,amount);
+	if(!main.invList)
+		return ERROR(3,'invalid main',main);
+	var list = ItemList.add(main.invList,id,amount);
+	for(var i in list)
+		Achievement.onItemAdd(main,i,list[i]);
 }
 
 Main.removeItem = function(main,id,amount){
-	return ItemList.remove(main.invList,id,amount);
+	ItemList.remove(main.invList,id,amount);
 }
 
 Main.haveItem = function(main,id,amount){
@@ -175,8 +225,6 @@ Main.transferInvBank = function(main,id,amount){
 	if(!ItemModel.get(id)) return;
 	if(!ItemModel.get(id).bank) return Main.addMessage(main,'You can\'t bank this item.');
 	
-	if(main.bankList.data.$keys().length > MAX_BANK_SIZE)
-		return Message.addPopup(main.id,'You have too many items in your bank. You need to salvage unused equipments.');
 		
 	amount = Math.min(amount,Main.getItemAmount(main,id));
 	if(amount === 0) return;
@@ -184,6 +232,9 @@ Main.transferInvBank = function(main,id,amount){
 }
 
 Main.transferInvBankAll = function(main,id,amount){
+	if(main.bankList.data.$keys().length > MAX_BANK_SIZE)
+		return Message.addPopup(main.id,'You have too many items in your bank. You need to salvage unused equipments.');
+	
 	var toTransfer = {};
 	for(var i in main.invList.data){
 		if(ItemModel.get(i) && ItemModel.get(i).bank)
@@ -212,7 +263,6 @@ Main.transferInvTrade = function(main,id,amount){
 	
 	Main.setTradeAcceptSelf(main,false);
 	Main.setTradeAcceptSelf(main2,false);
-	Main.setFlag(main2,'tradeInfo');	//duplicate but makes more sense
 }
 
 Main.transferTradeInv = function(main,id,amount){
@@ -221,16 +271,17 @@ Main.transferTradeInv = function(main,id,amount){
 	
 	if(!ItemModel.get(id)) return;
 	amount = Math.min(amount,ItemList.getAmount(main.tradeList,id));
-	if(amount === 0) return;
+	if(amount === 0) 
+		return;
 	ItemList.transfer(main.tradeList,main.invList,id,amount);
 	
 	Main.setTradeAcceptSelf(main,false);
 	Main.setTradeAcceptSelf(main2,false);
-	Main.setFlag(main2,'tradeInfo');	//duplicate but makes more sense
 }
 
 Main.useItem = function(main,id,slot){
-	if(!Main.haveItem(main,id)) return;
+	if(!Main.haveItem(main,id)) 
+		return;
 	var item = ItemModel.get(id);
 	if(!item) return;
 	var option = item.option[slot];
@@ -240,10 +291,9 @@ Main.useItem = function(main,id,slot){
 		Sign.off(main.id,"Not allowed to use admin tools.");
 		return ERROR(2,'regular player using admin tools',main.username,item.id);
 	}
+	Main.playSfx(main,'select');
 	OptionList.executeOption(main,option);
 }
-
-
 
 })(); //{
 

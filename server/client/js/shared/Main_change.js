@@ -1,9 +1,12 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var ItemList = require2('ItemList'), Message = require2('Message');
-var QueryDb = require4('QueryDb'), Dialog = require4('Dialog');
-var Main = require3('Main');
+var ItemList, Dialog;
+global.onReady(function(){
+	ItemList = rootRequire('shared','ItemList');
+	Dialog = rootRequire('client','Dialog',true);
+});
+var Main = rootRequire('shared','Main');
 
 Main.getSignInPack = function(main){
 	return {
@@ -12,162 +15,91 @@ Main.getSignInPack = function(main){
 		quest:main.quest,
 		questActive:main.questActive,
 		questHint:main.questHint,
+		sideQuestHint:main.sideQuestHint,
 		invList:Main.ItemList.compressClient(main.invList),
 		bankList:Main.ItemList.compressClient(main.bankList),
-		hudState:main.hudState,	
+		hudState:main.hudState,
+		sideQuest:main.sideQuest,
 		dailyTask:main.dailyTask,
 		contribution:main.contribution,
 		achievement:main.achievement,
+		username:main.username,
+		name:main.name,
 		party:Main.Party.compressClient(main.party),
 	}
 }
 
-Main.setChangeAll = function(){
-	var frame = Main.testInterval.get();
+Main.setChangeAll = function(frame){
+	if(frame % 6 !== 0)
+		return;
 	for(var i in Main.LIST)
-		Main.setChange(Main.LIST[i],frame);
+		Main.generateChange(Main.LIST[i],frame);
 }
 
-Main.setChange = function(act,frame){
-	if(frame % 6 === 0 && Main.initFlag(act)){
-		act.change.flag = act.flag;
-		Main.resetFlag(act);
+Main.setChange = function(main,what,value,append){	//good if no compression and changed a 1 place
+	if(!append){
+		main.change[what] = value;
+		return;
 	}
-	if(frame % 6 === 0 && !act.temp.$isEmpty()){
-		act.change.temp = act.temp;
-		act.temp = {};
+	main.change[what] = main.change[what] || [];
+	main.change[what].push(value);
+}
+
+Main.generateChange = function(main,frame){
+	if(frame % 6 === 0){
+		for(var i in main.flag)
+			main.change[i] = main.flag[i](main);
+		main.flag = {};
+		
+		for(var i in main.temp)
+			main.change[i] = main.temp[i];
+		main.temp = {};
 	}
 };
 
-Main.compressDb = function(main){ //Main.Quest.compressDb separated
-	return {
-		invList:Main.ItemList.compressDb(ItemList.combine(main.invList,main.tradeList)),
-		bankList:Main.ItemList.compressDb(main.bankList),
-		social:Main.Social.compressDb(main.social),
-		chrono:Main.Chrono.compressDb(main.chrono),
-		achievement:Main.Achievement.compressDb(main.achievement),
-		killCount:Main.KillCount.compressDb(main.killCount),
-		//
-		username:main.username,
-		name:main.name,
-		reputation:main.reputation,
-		questActive:main.questActive,
-		dailyTask:main.dailyTask,
-		contribution:main.contribution,
-	}
-}
+Main.onChange('invList',function(main,data){
+	main.invList = Main.ItemList.uncompressClient(data);
+});
 
-Main.uncompressDb = function(main,key){
-	main.invList = Main.ItemList.uncompressDb(main.invList,key);
-	main.bankList = Main.ItemList.uncompressDb(main.bankList,key);
-	main.tradeList = Main.ItemList(key);
-	
-	main.killCount = Main.KillCount.uncompressDb(main.killCount);
-	
-	main.achievement = Main.Achievement.uncompressDb(main.achievement);
-	main.social = Main.Social.uncompressDb(main.social);
-	main.chrono = Main.Chrono.uncompressDb(main.chrono);
-	main.questActive = Main.QuestActive.uncompressDb(main.questActive,main);
-	main.contribution = Main.Contribution(main.contribution);
-	
-    return Main.create(key,main);
-}
+Main.onChange('chrono',function(main,data){
+	main.chrono = data;
+	Dialog.onChronoChange();
+});
 
-Main.uncompressChange = function(change){
-	if(change.flag){
-		for(var i in change.flag)
-			change[i] = change.flag[i];
-		delete change.flag;
-	}
-	
-	if(change.invList) change.invList = Main.ItemList.uncompressClient(change.invList);
-	if(change.bankList) change.bankList = Main.ItemList.uncompressClient(change.bankList);
-	if(change.tradeList) change.tradeList = Main.ItemList.uncompressClient(change.tradeList);
+Main.onChange('bankList',function(main,data){
+	main.bankList = Main.ItemList.uncompressClient(data);
+});
 
-	if(change.party) change.party = Main.Party.uncompressClient(change.party);
-	
-	if(change.questHint){	//bad
-		if(main.questActive || change.questActive)
-			change.questHint = '<span title="Hint for: ' + QueryDb.getQuestName(main.questActive || change.questActive) + '">Hint: ' + Message.receive.parseInput(change.questHint) + '</span>';
-		else
-			change.questHint = '<span title="Active a quest via the Quest Tab">No Active Quest</span>';
-	}
-	
-	if(change.dialogue !== undefined){	//sometimes null
-		if(!change.dialogue){
-			Dialog.close('dialogue');
-			Dialog.open('chat');
-		}
-		else {
-			Dialog.open('dialogue',change.dialogue);
-			Dialog.close('chat');
-		}
-		delete change.dialogue;
-	}
+Main.onChange('tradeList',function(main,data){
+	main.tradeList = Main.ItemList.uncompressClient(data);
+});
 
-	
-	return change;
-}
+Main.onChange('party',function(main,data){
+	main.party = Main.Party.uncompressClient(data);
+});
+
+Main.onChange('dialogue',function(main,data){
+	if(!data){
+		Dialog.close('dialogue');
+		Dialog.open('chat');
+	}
+	else {
+		Dialog.open('dialogue',data);
+		Dialog.close('chat');
+	}
+	main.dialogue = data;
+});
 
 Main.applyChange = function(main,change){
-	if(!change) return;
-	change = Main.uncompressChange(change);
-	
-	if(change.temp)	
-		Main.applyTempChange(main,change.temp);
-	
 	for(var i in change)
-		Tk.viaArray.set(main,i.split(','),change[i]);	
+		if(Main.onChange.have(i))
+			Main.onChange.pub(i,main,change[i]);
+		else
+			Tk.viaArray.set(main,i.split(','),change[i]);	
 }
 
-Main.Flag = function(){
-	return {};
-}
-
-Main.setFlag = function(act,what,info){
-	if(what === 'quest') 
-		act.flag[info] = 1; //gonna use info[0] == Q in initFlag
-	else if(what === 'achievement'){
-		act.flag[what] = act.flag[what] || [];
-		act.flag[what].push(info);
-	} else 
-		act.flag[what] = 1;
-}
-
-Main.initFlag = function(act){	//return true if not empty
-	var what;
-	for(what in act.flag){
-		if(what === 'invList') act.flag[what] = Main.ItemList.compressClient(act.invList);
-		else if(what === 'questHint') act.flag[what] = act.questHint; 
-		else if(what === 'party') act.flag[what] = Main.Party.compressClient(act.party); 
-		else if(what === 'social,friendList')	act.flag[what] = act.social.friendList;
-		else if(what === 'social,clanList')	act.flag[what] = act.social.clanList;
-		else if(what === 'questActive') act.flag[what] = act.questActive; 
-		else if(what === 'acceptPartyInvite') act.flag[what] = act.acceptPartyInvite;
-		else if(what === 'dialogue') act.flag[what] = act.dialogue;
-		else if(what === 'bankList') act.flag[what] = Main.ItemList.compressClient(act.bankList);
-		else if(what === 'tradeList') act.flag[what] = Main.ItemList.compressClient(act.tradeList);
-		else if(what === 'tradeInfo') act.flag[what] = Main.getUpdatedTradeInfo(act);
-		else if(what === 'currentTab') act.flag[what] = act.currentTab; 
-		else if(what === 'lookingFor') act.flag[what] = act.lookingFor; 
-		else if(what === 'dailyTask') act.flag[what] = act.dailyTask;
-		else if(what === 'contribution')	act.flag[what] = act.contribution;
-		else if(what === 'reputation') act.flag[what] = act.reputation;
-		else if(what === 'chrono')	act.flag[what] = act.chrono;
-		else if(what === 'social,muteList')	act.flag[what] = act.social.muteList;
-		else if(what === 'hudState') act.flag[what] = act.hudState; 
-		else if(what[0] === 'Q') act.flag['quest,' + what] = act.quest[what];
-		else if(what === 'achievement'){
-			for(var j = 0; j < act.flag[what].length; j++)
-				act.flag['achievement,' + act.flag[what][j]] = act.achievement[act.flag[what][j]]; 
-			delete act.flag['achievement'];
-		}
-	}
-	return !!what;
-}
-
-Main.resetFlag = function(main){
-	main.flag = {};
+Main.setFlag = function(act,what,func){ //good if compression
+	act.flag[what] = func;
 }
 
 Main.resetChangeForAll = function(){
@@ -176,8 +108,63 @@ Main.resetChangeForAll = function(){
 	}
 }
 
-})(); //{
 
+if(!SERVER)
+	return;
+
+Main.compressDb = function(main){ //main is clone. Main.Quest.compressDb separated
+	var tmp = {
+		invList:Main.ItemList.compressDb(ItemList.combine(main.invList,main.tradeList)),
+		bankList:Main.ItemList.compressDb(main.bankList),
+		chrono:Main.Chrono.compressDb(main.chrono),
+		killCount:Main.KillCount.compressDb(main.killCount),
+		reputation:Main.Reputation.compressDb(main.reputation),
+		contribution:Main.Contribution.compressDb(main.contribution),
+		username:main.username,
+		name:main.name,
+		questActive:main.questActive,
+	}
+	if(!Main.getDbSchema()(tmp))
+		ERROR(3,'invalid main schema',JSON.stringify(Main.getDbSchema().errors(tmp)),tmp);
+	return tmp;
+}
+
+var schema;
+Main.getDbSchema = function(){
+	schema = schema || require('js-schema')({
+		invList:Main.ItemList.getDbSchema(),
+		bankList:Main.ItemList.getDbSchema(),
+		chrono:Main.Chrono.getDbSchema(),
+		killCount:Main.KillCount.getDbSchema(),
+		reputation:Main.Reputation.getDbSchema(),
+		contribution:Main.Contribution.getDbSchema(),
+		username:String,
+		name:String,
+		questActive:String,
+		'*':null
+	});
+	return schema;
+}
+Main.uncompressDb = function(main,key){
+	if(!Main.getDbSchema()(main))
+		return ERROR(3,'data not following schema',JSON.stringify(Main.getDbSchema().errors(main)),main);
+	
+	main.invList = Main.ItemList.uncompressDb(main.invList,key);
+	main.bankList = Main.ItemList.uncompressDb(main.bankList,key);
+	main.tradeList = Main.ItemList(key);
+	
+	main.killCount = Main.KillCount.uncompressDb(main.killCount);
+	
+	main.social = Main.Social.uncompressDb(main.social);	//main.social not saved anymore
+	main.chrono = Main.Chrono.uncompressDb(main.chrono);
+	main.questActive = Main.QuestActive.uncompressDb(main.questActive,main);
+	main.contribution = Main.Contribution.uncompressDb(main.contribution);
+	
+    return Main.create(key,main);
+}
+
+
+})(); //{
 
 
 

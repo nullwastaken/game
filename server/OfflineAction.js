@@ -1,31 +1,29 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
-var Account = require2('Account'), Actor = require2('Actor'), Main = require2('Main'), Message = require2('Message');
+var Account, Actor, Main, Message;
+global.onReady(function(initPack){
+	Account = rootRequire('private','Account'); Actor = rootRequire('shared','Actor'); Main = rootRequire('shared','Main'); Message = rootRequire('shared','Message');
+	db = initPack.db;
+},{db:['offlineAction']});
+var OfflineAction = exports.OfflineAction = function(extra){
+	this.id = Math.randomId();
+	this.username = '';
+	this.time = Date.now();
+	this.type = '';
+	this.data = null;
+	Tk.fillExtra(this,extra);
+};
+
 var db;
-/*
-ts("OfflineAction.create('test','message',OfflineAction.Data.message('heyhey!'));")
 
-ts("OfflineAction.create('test','message',OfflineAction.Data.message('hoho!'));")
-ts("OfflineAction.create('test','addItem',OfflineAction.Data.addItem('Qsystem-wood-0',10000));")
-ts("OfflineAction.create('test','removeItem',OfflineAction.Data.removeItem('Qsystem-wood-0',5000));")
-
-ts("OfflineAction.create('aaa','addExp',OfflineAction.Data.addExp(10000000,false));")
-ts("OfflineAction.create('aaa','addItem',OfflineAction.Data.addItem('Qsystem-wood-0',10000));")
-ts("OfflineAction.create('aaa','removeItem',OfflineAction.Data.removeItem('Qsystem-wood-20',100));")
-*/
-//OfflineAction.create('aaa','addAbility',OfflineAction.Data.addAbility('Qsystem-wood-20',100));
-
-var OfflineAction = exports.OfflineAction = {};
 OfflineAction.create = function(username,type,data,dontApplyAction){
 	if(!OfflineAction.TYPE.$contains(type)) 
 		return ERROR(3,'wrong type ' + type);
-	var oa = {
-		id:Math.randomId(),
+	var oa = new OfflineAction({
 		username:username,
-		time:Date.now(),
 		type:type,
 		data:data,
-	}
+	});
 	if(dontApplyAction)
 		return oa;
 		
@@ -41,9 +39,19 @@ OfflineAction.create = function(username,type,data,dontApplyAction){
 	return oa;
 }
 
-OfflineAction.init = function(dbLink){
-	db = dbLink;	
-}
+/*
+ts("OfflineAction.create('test','message',OfflineAction.Data.message('heyhey!'));")
+
+ts("OfflineAction.create('test','message',OfflineAction.Data.message('hoho!'));")
+ts("OfflineAction.create('test','addItem',OfflineAction.Data.addItem('Qsystem-wood-0',10000));")
+ts("OfflineAction.create('test','removeItem',OfflineAction.Data.removeItem('Qsystem-wood-0',5000));")
+
+ts("OfflineAction.create('aaa','addExp',OfflineAction.Data.addExp(10000000,false));")
+ts("OfflineAction.create('aaa','addItem',OfflineAction.Data.addItem('Qsystem-wood-0',10000));")
+ts("OfflineAction.create('aaa','removeItem',OfflineAction.Data.removeItem('Qsystem-wood-0',100));")
+*/
+//OfflineAction.create('aaa','addAbility',OfflineAction.Data.addAbility('Qsystem-wood-0',100));
+
 
 OfflineAction.TYPE = [ //{
 	'message',

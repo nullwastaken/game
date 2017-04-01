@@ -1,7 +1,15 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
+var IconModel, Main;
+global.onReady(function(){
+	IconModel = rootRequire('shared','IconModel'); Main = rootRequire('shared','Main',true);
+	
+	if(!SERVER)
+		Main.onChange('message',Message.onMainChange);
+});
 var Message = exports.Message = {};
+//BAD weird constructor
 Message.create = function(msg){
 	if(!msg || !Message.TYPE.$contains(msg.type)) 
 		return ERROR(3,'invalid msg',msg);
@@ -46,8 +54,9 @@ Message.SignNotification = function(text){
 		text:text,
 	});
 }
-Message.QuestionAnswer = function(text){
+Message.QuestionAnswer = function(id,text){
 	return Message.create({
+		id:id,
 		type:'questionAnswer',
 		text:text,
 	});
@@ -84,23 +93,13 @@ Message.QuestPopup = function(text){
 	});
 }
 
-
-Message.Report = function(text,from,title){
-	return Message.create({
-		type:'report',
-		text:text,
-		from:from,
-		title:title || '',
-	});
-}
-
 Message.uncompressClient = function(msg){
 	if(typeof msg === 'string') 
 		return Message.Game(msg,Message.SERVER);	//for compression
 	return msg;
 }
 
-Message.applyTempChange = function(list){
+Message.onMainChange = function(main,list){
 	for(var i = 0 ; i < list.length; i++)
 		list[i] = Message.uncompressClient(list[i]);
 	
@@ -114,8 +113,17 @@ Message.applyTempChange = function(list){
 	if(str)
 		Message.receive(Message.QuestPopup(str.slice(0,-8)));	//-8 to remove <br><br>
 }
-		
 	
+Message.iconToText = function(id,extra){
+	return IconModel.toText(id,null,null,extra);
+}	
+
+Message.funcToText = function(func,content){	//similar to Message.generateTextLink
+	if(func.$contains('"'))
+		ERROR(3,'func contains "');
+	return '<span style="cursor:pointer" onclick="' + func + '">' + content + '</span>';
+}	
+
 //###############
 
 })(); //{

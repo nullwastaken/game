@@ -1,13 +1,17 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Actor = require4('Actor'), Command = require4('Command'), Main = require4('Main'), ReputationGrid = require4('ReputationGrid'), Stat = require4('Stat'), Img = require4('Img'), ReputationConverter = require4('ReputationConverter');
-var Dialog = require3('Dialog');
+var Actor, Command, Main, ReputationGrid, Stat, Img, ReputationConverter;
+global.onReady(function(){
+	Actor = rootRequire('shared','Actor',true); Command = rootRequire('shared','Command',true); Main = rootRequire('shared','Main',true); ReputationGrid = rootRequire('shared','ReputationGrid',true); Stat = rootRequire('shared','Stat',true); Img = rootRequire('client','Img',true); ReputationConverter = rootRequire('shared','ReputationConverter',true);
+});
+var Dialog = rootRequire('client','Dialog');
 
-Dialog.create('reputation','Reputation Reward',Dialog.Size(800,600),Dialog.Refresh(function(){
+var FIRST_LEVEL_CONVERTER = 3;
+Dialog.create('reputation','Reputation Reward',Dialog.Size('auto','auto'),Dialog.Refresh(function(){
 	Dialog.reputation.apply(this,arguments);
 },function(){
-	return Tk.stringify(main.reputation);
+	return Tk.stringify(w.main.reputation);
 }));
 var GRID = null;
 var CANVAS_LIST = [];
@@ -16,14 +20,16 @@ var CANVAS_LIST = [];
 Dialog.reputation = function (html){
 	var top = Dialog.reputation.top();
 	GRID = Dialog.reputation.grid();
-	var conv = Dialog.reputation.converter();
 	
 	html.append($('<div>')
 		.append(top,GRID)
 		.css({float:'left'})
 	);
-	html.append(conv.css({float:'right'}));
 	
+	if(Actor.getLevel(w.player) >= FIRST_LEVEL_CONVERTER){
+		var conv = Dialog.reputation.converter().css({marginLeft:'5px',float:'right'});
+		html.append(conv);
+	}
 }
 
 Dialog.reputation.converterPreview = function(id,mouseout){
@@ -37,16 +43,16 @@ Dialog.reputation.converterPreview = function(id,mouseout){
 }
 
 Dialog.reputation.top = function(){
-	var usablePt = main.reputation.usablePt.r(2);
-	var usedPt = main.reputation.list[main.reputation.activeGrid].usedPt;	//bad
+	var usablePt = w.main.reputation.usablePt.r(2);
+	var usedPt = w.main.reputation.list[w.main.reputation.activeGrid].usedPt;	//bad
 	var unusedPt = (usablePt-usedPt).r(0);
-	//var removePt = main.reputation.removePt.r(1);
+	//var removePt = w.main.reputation.removePt.r(1);
 	
 	var el = $('<div>');
 	el.append($('<span>')
-		.attr('title',unusedPt + ' Available Point(s). Level-Up to get more points.')
-		.css({fontSize:'30px'})
-		.html('Points: ' + usedPt + '/' + usablePt)
+		.attr('title','Currently using ' + usedPt + ' out of ' + usablePt + ' Points. Level-Up to get more points.')
+		.css({fontSize:'22px'})
+		.html('Points Available: ' + unusedPt)
 	);
 	/*
 	el.append($('<span>')
@@ -55,15 +61,16 @@ Dialog.reputation.top = function(){
 	);
 	*/
 	el.append($('<span>')
-		.html(' - Your Lvl: ' + Actor.getLevel(player))
+		.html(' &nbsp;&nbsp;Your Lvl: ' + Actor.getLevel(w.player))
 	);	
 	el.append($('<button>')
-		.addClass('myButtonRed')
-		.css({margin:'10px 15px',position:'absolute',top:'-5px'})
-		.html('Clear Grid')
+		.addClass('myButtonRed skinny')
+		.css({margin:'10px 15px',padding:'2px 10px',position:'absolute',top:'-5px'})
+		.html('Remove All')
 		.attr('title','Remove all selected boosts')
 		.click(function(){
-			Command.execute('win,reputation,clear',[main.reputation.activeGrid]);
+			Dialog.playSfx('select');
+			Command.execute(CST.COMMAND.reputationClear,[w.main.reputation.activeGrid]);
 		})	
 	);
 	
@@ -85,15 +92,16 @@ Dialog.reputation.grid = function(extraConv){
 	
 	
 	//Draw Stat	
-	var gridBase = ReputationGrid.getConverted(main,extraConv).base;
+	var gridBase = ReputationGrid.getConverted(w.main,extraConv).base;
 	CANVAS_LIST = [];
 	
 	var array = [];
 	
 	var helper = function(statId){
 		return function(){
+			Dialog.playSfx('mouseover');
 			for(var i = 0; i < CANVAS_LIST.length; i++){
-				if(showSameCheckbox.prop('checked') && CANVAS_LIST[i].stat.id === statId)
+				if(CANVAS_LIST[i].stat.id === statId)
 					CANVAS_LIST[i].canvas.css({border:'4px solid black',width:ic,height:ic});
 				else 
 					CANVAS_LIST[i].canvas.css({border:'',width:ic,height:ic});
@@ -104,30 +112,38 @@ Dialog.reputation.grid = function(extraConv){
 	
 	var canvasClick = function(i,j){
 		return function(){
-			Command.execute('win,reputation,add' ,[main.reputation.activeGrid,i,j]);
+			Command.execute(CST.COMMAND.reputationAdd ,[w.main.reputation.activeGrid,i,j]);
 		};
 	}
 	var canvasContextMenu = function(i,j){
 		return function(){
-			Command.execute('win,reputation,remove',[main.reputation.activeGrid,i,j]);
+			Command.execute(CST.COMMAND.reputationRemove,[w.main.reputation.activeGrid,i,j]);
 		};
 	}	
-	var grid = Main.reputation.getGrid(main);
+	var grid = Main.reputation.getGrid(w.main);
 	for(var i = 0 ; i < grid.length ; i++){
 		array.push([]);
 		for(var j = 0 ; j < grid[i].length ; j++){
 			var base = gridBase[i][j];
-			var canvas = $('<canvas>').attr({height:ic,width:ic});
+			var canvas = $('<canvas>').attr({height:ic,width:ic}).css({cursor:'pointer'});
 			var ctx = canvas[0].getContext('2d');
 			
 			var value = Main.reputation.getValue(grid,i,j);
 			//Freebies
-			if(value === ReputationGrid.FREEBY){	//TOFIX should only be ===2
+			if(value === ReputationGrid.FREEBY){
 				ctx.fillStyle = 'green';
 				ctx.fillRect(0,0,ic,ic);
 				array[i][j] = canvas;
 				continue;
 			}
+			
+			//tutorial
+			if(!Main.quest.haveCompletedTutorial(w.main)){
+				if(i <= 2 || i >= grid.length - 3 || j <= 2 || j >= grid[i].length - 3){
+					canvas.css({visibility:'hidden'});
+				}
+			}
+			
 			var haveIt = value === ReputationGrid.HAVE;
 			
 			//Border
@@ -139,19 +155,32 @@ Dialog.reputation.grid = function(extraConv){
 			canvas.click(canvasClick(i,j));
 			canvas.bind('contextmenu',canvasContextMenu(i,j));
 			
-			canvas.hover(helper(base.stat),function(){});
+			canvas.mouseover(helper(base.stat));
 			
 			//#####################
 			var stat = Stat.get(base.stat);
-			if(haveIt) 
-				canvas.attr('title','Right Click: Remove ' + stat.name);
-			else {
+			if(!stat) ERROR(3,'no stat',base.stat,base,i,j);
+			if(haveIt){
+				var str = 'Right Click: Remove ' + stat.name
+						+ '<br>' + stat.description;
+				//canvas.attr('title',str);
+				canvas.tooltip(Tk.getTooltipOptions({
+					content:str
+				}))
+			} else {
 				var header = canSelect ? 'Left Click: ' : 'LOCKED: ';
 				if(stat.custom) 
 					canvas.attr('title',header + stat.description);
-				else 
-					canvas.attr('title',header + 'Boost ' + stat.name + ' by +' + Tk.round(base.value*100,1) + '%');
+				else {
+					var str = header + 'Boost ' + stat.name + ' by +' + Tk.round(base.value*100,1) + '%'
+						+ '<br>' + stat.description;
+					//canvas.attr('title',str);
+					canvas.tooltip(Tk.getTooltipOptions({
+						content:str
+					}))
+				}
 			}
+		
 				
 			
 			if(stat.custom){
@@ -173,19 +202,11 @@ Dialog.reputation.grid = function(extraConv){
 			
 		}
 	}
-	el.append(Tk.arrayToTable(array,false,false,false,'0px'));
-	el.append('<br>')
-	var showSameCheckbox = $('<input>')
-		.attr('type','checkbox')
-		.prop('checked',true)
-		.change(helper(''));
-	el.append(showSameCheckbox);
-	el.append($('<span>')
-		.html('Highlight Same Node')
-		.click(function(){
-			showSameCheckbox.prop("checked", !showSameCheckbox.prop("checked"));
-		})
+	el.append(Tk.arrayToTable(array,false,false,false,'0px')
+		.css({border:'2px solid black'})
 	);
+	el.append('<br>')
+
 	return el;
 }
 
@@ -201,9 +222,9 @@ Dialog.reputation.converter = function(){
 	var buttonClick = function(conv,isSelected){
 		return function(){
 			if(isSelected)
-				Command.execute('win,reputation,converterRemove',[main.reputation.activeGrid,conv.id]);
+				Command.execute(CST.COMMAND.reputationConverterRemove,[w.main.reputation.activeGrid,conv.id]);
 			else
-				Command.execute('win,reputation,converterAdd',[main.reputation.activeGrid,conv.id]);
+				Command.execute(CST.COMMAND.reputationConverterAdd,[w.main.reputation.activeGrid,conv.id]);
 		}
 	}
 	
@@ -213,7 +234,9 @@ Dialog.reputation.converter = function(){
 		el.append('<h3>Level ' + g.lvl + ':</h3>');
 		for(var j in g.list){
 			var conv = ReputationConverter.get(g.list[j]);
-			var isSelected = Main.reputation.get(main).converter.$contains(conv.id);
+			if(!conv)
+				ERROR(3,'no conv',g.list[j]);
+			var isSelected = Main.reputation.get(w.main).converter.$contains(conv.id);
 			var button = conv.getButtonAppend()
 				.attr('title',conv.description)
 				.click(buttonClick(conv,isSelected))
@@ -232,21 +255,6 @@ Dialog.reputation.converter = function(){
 	}
 	return div;
 }	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 })();
 

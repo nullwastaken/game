@@ -1,170 +1,194 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Actor = require4('Actor'), Anim = require4('Anim'), ActiveList = require4('ActiveList'), Main = require4('Main'), Game = require4('Game'), Socket = require4('Socket'), Strike = require4('Strike'), Bullet = require4('Bullet'), Drop = require4('Drop');
-
+var Actor, Anim, Entity, Main, Game, Socket, MapModel, BISON;
+global.onReady(function(){
+	BISON = rootRequire('shared','BISON',true); MapModel = rootRequire('shared','MapModel',true); Actor = rootRequire('shared','Actor',true); Anim = rootRequire('server','Anim',true); Entity = rootRequire('shared','Entity',true); Main = rootRequire('shared','Main',true); Game = rootRequire('client','Game',true); Socket = rootRequire('private','Socket',true);
+	global.onLoop(Receive.loop,-10);
+	
+	Actor.onChange('transitionMap',Receive.onTransitionMap,100);
+	
+	Socket.on(CST.SOCKET.change, function(data){
+		try { 
+			if(CST.BISON) 
+				data = BISON.decode(data);
+			Receive.onPackReceived(data);	
+		} catch (err){ ERROR.err(3,err,data); }
+	});
+});
 var Receive = exports.Receive = {};
 
-
-var SHOW_TIME = false;
 var SHOWDATA_ACTIVE = false;
-var SHOWDATA_LOG = false;
 var START_TIME = 0;
-var LAST_TIME = Date.now();
-var SERVER_TIMESTAMP = Date.now();
 
+var NOT_READY_BUFFER = [];
+var DEFAULT_CHRONO_C = 2;
+var FRAME_TIL_LAST_SERVER_UPDATE = 0;
 
-Receive.getStartTime = function(){
-	return START_TIME;
-}	
+var C = CST.SEND;
 
-Receive.useData = function(data,unfreeze){
+Receive.onPackReceived = function(data){
+	//BISON in onReady
+	if(!Game.getReady()){
+		if(NOT_READY_BUFFER.length < 1000)
+			NOT_READY_BUFFER.push(data);
+		else
+			ERROR(3,'NOT_READY_BUFFER too small',NOT_READY_BUFFER.length);
+		return;
+	}
+	FRAME_TIL_LAST_SERVER_UPDATE = 0;
 	START_TIME = Date.now();
-	if(BISON.active) data = BISON.decode(data);
-	SERVER_TIMESTAMP = data.timestamp;
+	
+	Main.chrono.onPackageReceived(data[C.chrono] || DEFAULT_CHRONO_C);	//#frame since last update
+	
+	var timeDiff = Date.now() - CST.decodeTime(data[C.timestamp]);	//timestamp, data.t is only sent if bulletCreated
+	if(timeDiff < 0 || timeDiff > CST.MIN) 	//> min means bug...
+		timeDiff = 0;	//weird... but happens
+	timeDiff = timeDiff || 0;
 	
 	Receive.showData(data);
 	
-	if(!Receive.freeze.onReceive(data)) 
-		return Receive.loop();	//cuz still need to run game
-
-	//Update player
-	Actor.applyChange(player,data.p);
+	if(!Receive.freeze.onReceive(data)) 	//if map changes
+		return;	//cuz still need to run game
 	
-    //Init Anim
-	for(var i in data.a) 
-		Anim.create(data.a[i]);	
+	Receive.uncompressQU(data);	//quick update
 	
-	//fix bug if in both list
-	for(var i in data.i) 
-		if(data.r && data.r[i]) 
-			delete data.r[i];	//incase in both list
+	Actor.applyChange(w.player,data[C.player]);
+	
+	
 	
 	//Init Full List aka never seen before
-	for(var i in data.i) 
-		Receive.initEntity(data.i[i],i);
+	for(var i in data[C.init]) 
+		Entity.create(data[C.init][i],i,timeDiff);
+	
 	
 	//Update Full List
-	for(var i in data.u){	
-		var act = ActiveList.get(i);
-		if(!act){ ERROR(2,'no act',JSON.stringify(data.u),i); continue;}
-		act.toRemove = 0;
-		Actor.applyChange(act,data.u[i]); //its not always Actor but doesnt change much,...
+	for(var i in data[C.update]){	
+		var act = Entity.get(i);
+		var d = data[C.update][i];
+		if(!act){
+			ERROR(2,'no act',d,i);
+			continue;
+		}
+		act.toRemoveTimer = 0;
+		Actor.applyChange(act,d);
 	}
-   
-	for(var i in data.r){	//remove
-		var act = ActiveList.get(i);
-		if(act && act.sprite){ 
-			act.sprite.dead = 1/data.r[i] || 1;	//ratio will impact alpha or fade out
-			if(act.isActor)
-				act.hp = 0;
-		} else {
-			ActiveList.removeAny(i);	//ex: strike
-		}			
-	}
-    
-	//Update Main List
-	Main.applyChange(main,data.m);
 	
-	//Remove Inactive FullList
-	ActiveList.removeInactive();
+	if(data[C.remove]){
+		for(var i = 0; i < data[C.remove].length; i++){	//remove
+			var eid = data[C.remove][i];
+			if(data[C.init] && data[C.init][eid])		//fix bug if in both list
+				continue;
+			var e = Entity.get(eid);
+			if(e)
+				Entity.initRemove(e);
+		}
+    }
 	
-	if(unfreeze !== true) 
-		Receive.loop();
+	Main.applyChange(w.main,data[C.main]);
 	
+	
+    //Init Anim, after entity.create
+	for(var i in data[C.anim]) 
+		Anim.create(data[C.anim][i]);	
+	
+	
+	Entity.removeInactive();	
 }
 
-Receive.loop = function(){
-	if(!CST.ASYNC_LOOP){
-		var delay = (Date.now()-LAST_TIME)/2;
-		LAST_TIME = Date.now();
-		delay = delay.mm(1,100).r(0);
-		if(SHOWDATA_ACTIVE) INFO(delay);
-		Game.loop();		//first
-		setTimeout(Game.loop,delay);	//second mid way
+Receive.useNonReadyBuffer = function(){
+	for(var i = 0 ; i < NOT_READY_BUFFER.length; i++){
+		Receive.onPackReceived(NOT_READY_BUFFER[i]);
 	}
-	if(SHOW_TIME) INFO(Date.now() - START_TIME);
+	NOT_READY_BUFFER = [];
 }
 
-Receive.init = function(){	//socket on
-	Socket.on('change', function(data){
-		try {
-			Receive.useData(data);
-		} catch (err){ ERROR.err(3,err) }
-	});
+Receive.getStartTime = function(){
+	return START_TIME;
+}
+
+Receive.uncompressQU = function(data){
+	if(!data[C.quickUpdate]) return;
+	data[C.quickUpdate] = data[C.quickUpdate].split(',');
+	data[C.update] = data[C.update] || {};
+	for(var i = 0 ; i < data[C.quickUpdate].length; i++){
+		var eid = data[C.quickUpdate][i];
+		data[C.update][eid] = {};
+	}
+	delete data[C.quickUpdate];
 }
 
 Receive.showData = function(data){
-	if(!SHOWDATA_ACTIVE) return;
+	if(!SHOWDATA_ACTIVE) 
+		return;
 	var txt = JSON.stringify(data); 
-	if(SHOWDATA_LOG) Receive.log += txt;
-	else INFO(txt);
-}
-
-Receive.getServerTimestamp = function(){
-	return SERVER_TIMESTAMP;
-}
-
-Receive.initEntity = function(obj,id){
-	if(obj[0] === 'b') return Receive.initEntity.bullet(obj,id);
-	if(obj[0] === 's') return Receive.initEntity.strike(obj,id);	
-	if(obj[0] === 'npc0' || obj[0] === 'npc' || obj[0] === 'player') return Receive.initEntity.actor(obj,id);
-	if(obj[0] === 'drop')	return Receive.initEntity.drop(obj,id);
-	return ERROR(3,'obj[0] doesnt have good type',obj);
-}
-
-Receive.initEntity.actor = function(obj,id){
-	var act = Actor.undoInitPack(obj,id);
-	Actor.addToList(act);
-	ActiveList.addToList(act);
-}
-
-Receive.initEntity.strike = function(obj,id){
-	var b = Strike.undoInitPack(obj,id);
-	Strike.addToList(b);
-	ActiveList.addToList(b);
-}
-
-Receive.initEntity.bullet = function(obj,id){
-	var b = Bullet.undoInitPack(obj,id);
-	Bullet.addToList(b);
-	ActiveList.addToList(b);
-}
-
-Receive.initEntity.drop = function(obj,id){
-	var b = Drop.undoInitPack(obj,id);
-	Drop.addToList(b);	
-	ActiveList.addToList(b);
+	INFO(txt);
 }
 
 Receive.freeze = function(){
 	Receive.freeze.ACTIVE = true;
-	Main.addScreenEffect(main,Main.ScreenEffect.fadeout('mapTransition',25));
-	setTimeout(function(){
-		Receive.unfreeze();
-	},500);
 }
 Receive.freeze.LIST = [];
+
 Receive.unfreeze = function(){
 	Receive.freeze.ACTIVE = false;
-	for(var i in Receive.freeze.LIST)
-		Receive.useData(Receive.freeze.LIST[i],true);
+	for(var i = 0 ; i < Receive.freeze.LIST.length; i++)
+		Receive.onPackReceived(Receive.freeze.LIST[i]);
 	Receive.freeze.LIST = [];	
 }
 
 Receive.freeze.onReceive = function(data){
-	if(data.p && data.p.map && typeof data.p.map === 'string' && data.p.map !== player.map){
-		setTimeout(function(){
-			player.map = data.p.map;
-		},250);
-		
-		Receive.freeze();
-	}
 	if(Receive.freeze.ACTIVE){
 		Receive.freeze.LIST.push(data);
 		return false;
 	}
 	return true;
+}
+
+Receive.onTransitionMap = function(act,data,all){
+	delete all.x;
+	delete all.y;
+	delete all.transitionMap;
+	
+	if(w.player.map === data.map){
+		w.player.x = data.x;
+		w.player.y = data.y;
+		return;
+	}
+	
+	if(data.type === CST.TRANSITION_MAP.none){
+		w.player.map = w.player.map;
+		return;
+	}
+	
+	if(data.type !== CST.TRANSITION_MAP.slide){
+		Receive.freeze();
+		Main.addScreenEffect(w.main,x.Main.ScreenEffect.fadeout('mapTransition',16));
+		setTimeout(function(){
+			act.map = data.map;
+			act.x = data.x;
+			act.y = data.y;
+		},40*16/2);
+		setTimeout(function(){
+			Receive.unfreeze();
+		},40*16/2 + 10);
+	} 
+	
+	if(data.type === CST.TRANSITION_MAP.slide){
+		MapModel.startTransition(data);
+	}
+}
+
+Receive.loop = function(){
+	FRAME_TIL_LAST_SERVER_UPDATE++;
+}
+
+Receive.getFrameTilLastUpdate = function(){
+	return FRAME_TIL_LAST_SERVER_UPDATE;
+}
+
+Receive.setShowData = function(bool){
+	SHOWDATA_ACTIVE = bool;
 }
 
 })(); //{

@@ -1,14 +1,24 @@
 Raining Chain
 ==============
 
-Raining Chain is a NodeJs/HTML5 MMORPG. 
+Raining Chain is a HTML5 MMORPG using Javascript, Canvas, NodeJS, MongoDb and Socket.io. Play now for free at [https://rainingchain.com/](https://rainingchain.com/).
 
-Play now for free at http://rainingchain.com/.
+[![Raining Chain Trailer](http://i.imgur.com/Duqym7r.png)](https://youtu.be/EnwhuOsjFEY "Raining Chain Trailer")
 
-You can create your own quests using the Quest Creator Software downloadable at http://rainingchain.com/contribution.
+By popular demand, I am releasing the source of the game as of version 1.5.18. The game engine is under MIT license while the game content is under GPL license.
 
-For the list of new features not public yet, check http://rainingchain.com/patchNotes.
+While the version 1.5.18 of the game is public, more recent versions of the game are not. I am not offering support nor planning to maintain the public version of the game. The more recent versions of the game will NOT be released on Github. 
+If you would like to contribute to the latest version of Raining Chain, check [Raining Chain Development](http://rainingchain.wikia.com/wiki/Game_Development) or come chat with us on [Discord](https://discord.gg/dKEegX4).
 
+### Installation:
+* Install NodeJS
+* npm install // Install NodeJS dependencies
+* Install MongoDb.
+* The game connects to MongoDb database at localhost:27017/test and assumes the following collections exist: clientError, sideQuest, zeldaGlitch, socialMedia, achievement, pingData, report, player, contributionHistory, socialMedia, offlineAction, main, equip, account, competition, questRating, highscore, questVar, mainQuest
+* node app // Starts the server
+* Go to localhost:3000
+
+### Game Engine Structure Overview (Outdated):
 ![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/actor_zps9f43232a.png)
 ![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/data_zpsb1cd2886.png)
 ![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/playerdata_zps2b263f84.png)
@@ -18,5 +28,5 @@ For the list of new features not public yet, check http://rainingchain.com/patch
 ![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/script_zps133a627b.png)
 ![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/loop_zps57f295f9.png)
 ![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/async_zpsb5118b74.png)
-
-Check LICENSE for copyright information.
+s
+Check http://rainingchain.com/credit for the list of contributors.

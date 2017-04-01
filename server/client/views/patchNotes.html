@@ -1,7 +1,560 @@
 <% include partial/header.html %>
 <div class="container">
 	<h2>Patch Notes</h2>
-	<!-- -->
+	<!-- /ApatchNotes -->
+	
+	<h3>2015-09-24</h3>
+	<ul>
+		<li>I released the first main story quest of the game: Save The Database. </li>
+		<li>I fixed a bug where the Quest Feeedback wouldn't go away.</li>
+		<li>You can no longer teleport to other players while dead.</li>
+		<li>Certain bosses now shoot less bullets and have lighting effect and particle effect turned off.</li>
+		<li>Failing a quest now closes any opened dialogue.</li>
+		<li>I reduced the knockback from monsters.</li>
+		<li>The password recovery window now works correctly.</li>
+		<li>I fixed a problem with the ability integrity testing system.</li>
+		<li>Changing weapon now also changes your current abilities for ones you can use.</li>
+	</ul>				
+					
+	<h3>2015-09-19</h3>
+	<ul>
+		<li>I added 12 new abilities and 6 new bullet sprites. </li>
+		<li>Each ability now requires a specific type of weapon to be used.</li>
+		<li>The ability window has been changed.</li>
+		<li>I added an option to not delete chat message automatically.</li>
+		<li>I added a quick way to change quality settings.</li>
+		<li>I fixed a bug when players would appear naked.</li>
+		<li>Generating the maps is now faster.</li>
+		<li>The bone bullet now rotates correctly.</li>
+		<li>The game is now playable in IE9.</li>
+	</ul>	
+
+	<h3>2015-09-16</h3>
+	<ul>
+		<li>The Ice Boss in Boss Battle has been changed. </li>
+		<li>Drawing rotated bullets is now a lot faster.</li>
+		<li>Equip boost values now depends on the level of the equip. </li>
+		<li>Increasing the tier of an equip now requires Equip Exp rather than regular Exp. This means upgrading your equip no longer affects your leveling progress. </li>
+		<li>A daily tip has been added on the sign in page. </li>
+		<li>Quest rating is now embed inside the quest complete window. </li>
+		<li>I updated the <a href="/credit" target="_blank">credit</a> page.</li>
+		<li>I fixed a bug with the Darkness quest.</li>
+		<li>I implemented a main story quest system. I will work on actual main story quests soon.</li>
+		<li>Stairs now use the feet position rather than the middle of the sprite to slow player now.</li>
+		<li>15-Puzzle now displays the goal state in a popup.</li>
+	</ul>	
+	
+	<h3>2015-09-09</h3>
+	<ul>
+		<li>I added a progress bar when loading maps.</li>
+		<li>I improved the chat scroll.</li>
+		<li>The question popup system now supports multiple windows at once.</li>
+		<li>Popups no longer make you lose the focus when typing in chat.</li>
+		<li>I modified every map of the overworld to make them 80x80 rather than 70x70. The town map has been greatly changed.</li>
+		<li>I created new tools to massively modify maps more easily.</li>
+		<li>You can now only send a party/trade request every 15 seconds.</li>
+		<li>Ending a trade no longer causes 3 messages to appear.</li>
+	</ul>	
+		
+	
+	<h3>2015-09-06</h3>
+	<ul>
+		<li>Changing map while in a party no longer causes the whole party to be teleported.</li>
+		<li>Talking with a non-quest NPC while in a party no longer causes the whole party to talk with the NPC.</li>
+		<li>I improved the Zelda pages. They now have anchors.</li>
+		<li>Shops now have a custom icon in the minimap.</li>
+		<li>Chat messages become invisible after 1 minute. Moving the mouse over the chat will display hidden messages. Messages are removed completly after 5 minutes.</li>
+		<li>The movement script now takes into consideration the frame rate. This impacts player and bullets movement.</li>
+		<li>The player Dieu corrected grammar errors in the dialogues.</li>
+		<li>Friendly NPCs now have a green HP bar. Players who have PvP on now display a red HP bar.</li>
+		<li>I fixed a bug where red hitsplash would affect every player rather than the player being hit.</li>
+		<li>I improved the tutorial again. The help content is shown automatically more often. The bow icon now flashes in the equip window.</li>
+		<li>I added a sound effect when using an item.</li>
+		<li>I am now using AppDynamics for profiling.</li>
+	</ul>	 
+	
+	<h3>2015-09-05</h3>
+	<ul>
+		<li>The list of online players now displays the map location and the current quest of every player.	There is also an icon for teleporting to the player.</li>
+		<li>The world map has been fixed.</li>
+		<li>The maps are now correctly rendered on IE and Safari.</li>
+		<li>I added a Use button on the equip popup.</li>
+		<li>I fixed the dragon sprite.</li>
+		<li>I fixed a bug where red hitsplash would affect every player rather than the player being hit.</li>
+	</ul>	 
+					
+	
+	<h3>2015-09-04</h3>
+	<ul>
+		<li>I made major improvement to the map tileset.</li>
+		<li>The maps are now generated dynamically rather than being pre-rendred.</li>
+		<li>The collision grid and the spot layer are also dynamically generated.</li>
+		<li>The dragon boss in Boss Battle quest has been nerfed.</li>
+	</ul>
+	
+	<h3>2015-08-22</h3>
+	<ul>
+		<li>Drops on the ground are now animated and move towards the player.</li>
+		<li>Many quests now support up to 8 players in the same party.</li>
+		<li>I released a new <a href="/tutorial/html" target="_blank">HTML Interface</a> tutorial on Youtube.</li>
+		<li>There is now a button to quickly abandon a quest next to the hint.</li>		
+		<li>I fixed a bug where the sun weather effect would break the new map transition.</li>
+		<li>Quests now have a recommended party size.</li>
+		<li>The side quest Race Around The Lake is now easier.</li>
+		<li>I made changes with how death and respawn quest events work.</li>
+		<li>The settings window has been improved to correct invalid preferences.</li>
+	</ul>
+	
+	<h3>2015-08-21</h3>
+	<ul>
+		<li>I added a list of useful advices accessible via the Tips button.</li>
+		<li>Abilities no longer uncharge when teleporting or dying.</li>
+		<li>I added 2 new abilities. Chain is a melee projectile that pulls touched enemies towards you.</li>
+		<li>Regen Tornado is a healing ability that also pushes enemies away. </li>
+		<li>I added 2 new achievements: reaching a lvl 10 & 15 maps.</li>
+		<li>Opening a side quest reward chest will automatically give rewards to other players in your party.</li>
+		<li>Loading the game now displays a progress bar.</li>
+		<li>You now receive a message when someone declines a party or trade request.</li>
+		<li>I improved the data compression system and reliability.</li>
+		<li>I fixed a bug where quest markers wouldn't show in RGB quest.</li>
+		<li>I fixed a bug where PvP would stay enable after leaving a PvP quest.</li>
+		<li>The party member list now displays names rather than usernames.</li>
+	</ul>
+	
+	<h3>2015-08-20</h3>
+	<ul>
+		<li>I created a new map transition system. Instead of fading out, the camera slides between the maps.</li>
+		<li>Enemies explode into particles upon dying.</li>
+		<li>Attacking with melee now shakes the screen.</li>
+		<li>I fixed a major bug which was causing lost of data in websocket data package.</li>
+		<li>The western forest is now affected by weather.</li>
+		<li>Completing achievements and side quests is now broadcast when using Broadcast contribution reward.</li>
+		<li>A visual bug related with trading as been fixed.</li>
+		<li>I improved the admin tools for easier spying and teleporting.</li>
+		<li>I fixed a major bug with parabole and sinus bullets.</li>
+		<li>Bullets now follow a more precise path.</li>
+		<li>The party interface over the chat has been improved.</li>
+		<li>I improved the automatic error report system.</li>
+		<li>Side quests are now always available.</li>
+		<li>Non-moving enemies can no longer be pushed by attacks.</li>
+		<li>Posting a link in chat no longer changes your text over the head.</li>
+		<li>The http server is now hosted on Heroku rather than Nodejitsu.</li>
+	</ul>
+	
+	<h3>2015-08-17</h3>
+	<ul>
+		<li>Lighting effects are now only enabled on Google Chrome.</li>
+		<li>Particles no longer have lighting effects on browsers other than Chrome.</li>
+		<li>I optimize many UI elements which had redundant styling.</li>
+		<li>Drawing the hp bar and chat over the head is a lot more efficient.</li>
+		<li>I implemented a caching system for common UI getters.</li>
+	</ul>	
+	
+	<a href="https://www.youtube.com/watch?v=bYtQyjI3FEM"><h3>2015-08-16</h3></a>
+	<ul>
+		<li>I added a particle effect system. Bullets and animations now generate particles.</li>
+		<li>Climbing stairs now slows you down.</li>
+		<li>Actors no longer shake when moving the camera.</li>
+		<li>The slashing animation is a lot more precise.</li>
+	</ul>		
+					
+	<h3>2015-08-13</h3>
+	<ul>
+		<li>I added a sound effect when colliding with a monster. </li>
+		<li>You no longer bounce off enemies while not in combat.</li>
+		<li>The animations now update at proper speed.</li>
+		<li>The camera movement is now disabled in certain quests.</li>		
+		<li>Bullets now disappear faster after hitting an enemy.</li>
+		<li>I added new icons and animations.</li>
+		<li>I improved debug tools for spying actors attributes.</li>
+		<li>I improved the integrity test to detect invalid abilities and actor positioning.</li>
+		<li>0 damage hitsplash no longer shows up.</li>
+		<li>I fixed the signpost in the tutorial.</li>
+		<li>The game now stops completly upon a disconnection.</li>
+		<li>The game can now be played in Safari thanks to recent performance improvements.</li>
+		<li>Interaction distance are now calculated using the actors' egdes rather than their center.</li>
+	</ul>
+	
+	<h3>2015-08-10</h3>
+	<ul>
+		<li>The draw and the update loops are now separated. </li>
+		<li>I added an hp bar and hit splashes to players.</li>
+		<li>Players automatically pick up drops if nearby.</li>
+		<li>They now lose hp if they collide with monsters.</li>
+		<li>I added a <a href="/credit" target="_blank">credit</a> page and improved the <a href="/SpritePreview" target="_blank">Sprite Preview</a>.</li>
+		<li>The NPC IA was changed. They are more aggressive if they got hit recently or if the player attacked recently. Monsters now stand still while attacking.</li>
+		<li>Dying doesn't fail puzzle quests anymore.</li>
+		<li>Damage from burning and bleeding is now displayed.</li>
+		<li>Major refactoring of the code. I got rid of many hardcoded strings.</li>
+	</ul>	
+	
+				
+	<h3>2015-07-22</h3>
+	<ul>
+		<li>The font has been changed from Kelly Slab to Miniset2.</li>
+		<li>The camera now adjusts depending on the mouse position.</li>
+		<li>When getting hit, the player will be knocked back and the screen will flash red.</li>
+		<li>I added sound effects to the interface.</li>
+		<li>You can no longer teleport while having PvP on.</li>
+		<li>The hit splash is now different.</li>
+		<li>There is a warning when entering a high level zone.</li>
+		<li>Only a part of the Reputation Grid is shown during the tutorial.</li>
+	</ul>			
+			
+	
+	<h3>2015-07-19</h3>
+	<ul>
+		<li>The highscore now displays the display name instead of the intern username.</li>
+		<li>You get a warning if you have killed too many times the same monsters and are no longer getting exp.</li>
+		<li>Added 4 highscore for side quests.</li>
+		<li>Added dialogue keyword highlight.</li>
+		<li>Added system to limit the amount of people online at once.</li>
+		<li>Bigger revive player range.</li>
+		<li>Higher unique boost chance.</li>
+		<li>Npc can be interacted with even with a player on top of it.</li>
+		<li>Failing a quest in a party no longer displays multiple fail messages.</li>
+		<li>Removed dodge slot from ability bar.</li>
+		<li>Rerolling stats cost less.</li>
+		<li>Changed the Collect & Fight boss fight.</li>
+		<li>Minimum defence is now x1 instead of x0.5.</li>
+		<li>The window buttons now display the associated shortcut.</li>
+		<li>Monsters are less aggressive.</li>
+		<li>Nerfed burning damage at high hp.</li>
+		<li>Inventory in the equip window is now sorted.</li>
+		<li>The selected equip in the equip window is now highlighted.</li>
+		<li>The quest hint is now more obvious.</li>
+		<li>Added side quest hints.</li>
+		<li>Fixed a glitch in the Soccer quest.</li>
+		<li>You will no longer be attacked after completing a quest.</li>
+		<li>Changed the position where the player is drawn.</li>
+		<li>Chat text now always appear within the map.</li>
+		<li>You can now teleport to players who changed their username.</li>
+		<li>When leveling up, you obtain an Equip Box which gives you an equip of your choice.</li>
+		<li>Certain challenges can now only be completed in solo.</li>
+		<li>Completing a side quest now resets the kill count of the area.</li>
+		<li>Completing a side quest now makes you immune to damage until you move.</li>
+		<li>The first time side quest completion bonus is now applied correctly.</li>
+		<li>Various Tutorial improvements.</li>
+		<li>Added warning sound effect when failing to use an ability.</li> 
+		<li>Improved the sound effect system to prevent sound stacking.</li>		
+	</ul>		
+	
+	<h3>2015-07-10</h3>
+	<ul>
+		<li>I changed the boss tutorial so it's easy to kill using melee.</li>
+		<li>Entering a town now clears status effect.</li>
+		<li>Getting inside a wall now kills you.</li>
+		<li>I added new web section for <a href="/zelda/mm" target="_blank">Zelda Majora's Mask Glitches</a>.</li>
+		<li>RGB quest markers now mark the switches directly instead of map entrance.</li>
+		<li>Cut trees sprites are now smaller.</li>
+		<li>I use a new system to send initialization data. I now send 90% less data than before.</li>
+		<li>The pokemon page is now more mobile friendly.</li>
+	</ul>
+		
+	<h3>2015-07-06</h3>
+	<ul>
+		<li>There is now an option to play the game quickly without registration.</li>
+		<li>Providing email is no longer required when registrating.</li>
+		<li>You can now change your username once per week. </li>
+		<li>Music tracks are no longer preloaded.</li>
+	</ul>
+	
+	<h3>2015-07-04</h3>
+	<ul>
+		<li>Tutorial now has images and a new boss fight.</li>
+		<li>Opening the world map for the first time now causes less lag.</li> 
+		<li>You now get a rare equip the first time you complete a quest.</li>
+		<li>Salvaging equips now gives items that make sense.</li>
+		<li>I can now spy other players more easily.</li>
+		<li>I fixed minor bugs with Darkness and RGB quests.</li>
+		<li>Minions level is now equal to the summoner level.</li>
+		<li>Yes/No buttons in the question dialog has now correct width.</li>
+		<li>I changed the client prediction system a little. I might fix some lag issues.</li>
+	</ul>
+	
+	<h3>2015-07-01</h3>
+	<ul>
+		<li>I added the online <a href="/SpritePreview" target="_blank">Sprite Creator</a> and the <a href="/AnimPreview" target="_blank">Anim Creator</a>.</li>
+		<li>I improved the overworld map.  Banks and shops are now displayed. </li> 
+		<li>I added waypoints which allow players to teleport to different locations.</li>
+		<li>Waypoints must be unlocked before being able to use them.</li>
+		<li>I added 4 new achievements related to side quests.</li>
+		<li>You can now right click a player name to teleport to him.</li>
+	</ul>
+
+	<h3>2015-06-29</h3>
+	<ul>
+		<li>I added an in-game world map which shows all quests and side quests.</li>
+		<li>Players are now invincible when teleporting maps and when signing in.</li> 
+		<li>Dying before reaching the NPC who starts the quest no longer fails the quest.</li>
+		<li>Magic has been renamed to Arcane to avoid confusion.</li>
+		<li>Upon signing in, a message concerning the weekly competition is displayed.</li>
+		<li>Side quest messages are now displayed to everyone doing the side quest.</li>
+		<li>Quest Scores in the highscore are now round.</li>
+		<li>I fixed a bug which teleported players to town.</li>
+		<li>I fixed a bug where knock attacks would push in the wrong direction.</li>
+		<li>Monsters should now spawn at farther away from each other.</li>
+	</ul>
+	
+	<h3>2015-06-27</h3>
+	<ul>
+		<li>The <a href="/wiki/map" target="_blank">overworld map</a> is now x4 bigger than it used to.</li>
+		<li>Many quests have been reallocated in the western forest.</li> 
+		<li>I added 10 side quests to the game, one for each of new map. </li>
+		<li>GEM now slightly affects drop rate on top of exp. </li>
+		<li>The database has been heavily modified. I am now using database schemas to prevent data corruption.</li>
+		<li>I fixed a bug in Firefox where a black line could be seen between map images.</li>
+		<li>I fixed a bug where burning status would not be visible.</li>
+		<li>Monsters in the overworld always give at least 2 exp until the hard limit.</li>
+		<li>Map name now contains the map level.</li>
+	</ul>			
+	
+	<h3>2015-06-22</h3>
+	<ul>
+		<li>The website is now using secure websocket connection (wss) for all data transmissions.</li>
+		<li>Note: The website still uses http but no sensible data is sent via http.</li>		
+		<li>I implemented a side quest system. Actual side quests should come how soon.</li>
+		<li>Resource plots (tree/rock/squirrel) now give x3 more resources but take 15 minutes to regrow. I removed the daily limit on them.</li>
+		<li>I improved the trading window: status is now colored and you can examine your own equips.</li>
+		<li>The quest marker system now uses Dijkstra algorithm which is ran on the client rather than the server.</li>
+		<li>Reaching high level now requires having a minimal GEM. The required GEM is quite low.</li>
+		<li>The color of the advanced crafting buttons now update correctly.</li>
+		<li>Fixed a bug that wouldn't allow players to purchase equips from shop if it had reset.</li>
+		<li>You can now abandon a quest directly from the Quest Window.</li>
+		<li>Opening a window via a shortcut will close other open windows.</li>
+		<li>Fixed a bug related with pushable elements (ex: Puzzle & Bridge quest).</li>
+		<li>Improved system to send initialization data for equip and items.</li>
+		<li>Removed Stat Window from the bottom right panel. It can now be opened via the Equip Window.</li>
+		<li>Changed tab icons at the bottom right.</li>
+	</ul>
+	
+					
+	<h3>2015-06-17</h3>
+	<ul>
+		<li>You can now reroll equipment stats and power using materials once reaching level 8.</li>
+		<li>The equip window has been totally revamped.</li>		
+		<li>I made important changes to equipment. The Power formula has been changed but the resulting damage remains the same.</li>
+		<li>Gold and orange equips now also roll decent Power rolls.</li>
+		<li>Monsters can drop equipments up to 1 level higher than yours.</li>
+		<li>I removed the level cap. Exp required is highly exponential after level 20.</li>
+		<li>While in a shop, gold is moved to the first inventory slot.</li>
+		<li>Players now see the right level of other players on mouse over.</li>
+		<li>The question popup has been revamped.</li>
+		<li>You now receive a message when unlocking a Reputation Converter.</li>
+		<li>Completing the tutorial no longer grants GEM and no longer counts as a quest completed for Achievements.</li>
+	</ul>
+	
+	<h3>2015-06-15</h3>
+	<ul>
+		<li>The player Boo and I worked hard to balance the quest rewards. Quests should now give roughly the same reward per hour.</li>
+		<li>Completing a quest for the first time grants a 1000 exp bonus.</li>
+		<li>Killing summoned monsters no longer gives exp.</li>
+		<li>I made major improvements to the <a href="/zelda" target="_blank">Zelda Speedrunning</a> section of the website. 
+			It now offers a Bingo Tool and you can now submit new glitches.</li>
+		<li>I simplified the system that handles icons for equipment.</li>
+		<li>I implemented a system to sign in with bots to stress test the server.</li>
+		<li>The achievement window now has icons for abilities.</li>
+		<li>I fixed minor collisions and graphics problem with some old maps.</li>
+		<li>The NPC context popup will no longer appear when a window is opened.</li>
+		<li>I fixed various bugs related to the shops, dying and Darkness quest.</li>
+		<li>Abandonning a quest no longer removes weather effects.</li>
+		<li>The ghost boss in the quest Bad Luck Brian now spawns bombs instead of rocks.</li>
+	</ul>
+	
+	<h3>2015-06-13</h3>
+	<ul>
+		<li>The server now gracefully crashes.</li>
+		<li>I added quest markers to the tutorial.</li>
+		<li>You can no longer perform actions while dead.</li>
+		<li>I added a bunch of shortcuts to quickly open windows. Check in Settings -> Binding for more info.</li>
+		<li>The reputation grid window is now smaller if converters are hidden.</li>
+		<li>Public messages are now sent to every player in the server instead of only those near the sender.</li>
+		<li>I fixed a bug with the NPC movement and an important bug with trading.</li>
+		<li>Player sprite now changes depending on the equipment used.</li>
+		<li>Multiple popups are combine into one.</li>
+		<li>I improved client prediction concerning NPCs.</li>
+		<li>When getting experience, your GEM will be shown.</li>
+		<li>Quest Window now displays a GEM bar.</li>
+		<li>Teleporting to town now revives you.</li>
+		<li>I'm currently working on a new crafting system.</li>
+	</ul>
+	<h3>2015-06-11</h3>
+	<ul>
+		<li>New death system: You get converted into a gravestone which can be revived by a teammate.</li>
+		<li>Added a 404 page.</li>
+		<li>Clicking on a quest npc while doing another quest will no longer popup the abandon quest menu.</li>
+		<li>In the tutorial, you can no longer activate the switch without pushing the rock.</li>
+	</ul>
+	
+	<h3>2015-06-03</h3>
+	<ul>
+		<li>Inviting a player to your party while not being in a party will automatically create one.</li>
+		<li>You no longer walk towards a NPC if it was under your inventory or chat.</li>
+		<li>The "walk to" system now works with doors and caves.</li>
+		<li>After dying, you are invincible until you move. You can't attack while invincible.</li>
+		<li>The client chrono is now in sync with the server chrono.</li>
+		<li>Bullet Heaven towers hit more as the time goes.</li>
+		<li>If RainingChain is streaming on Twitch, a message will be displayed to players.</li>
+		<li>When signing in, a message with the recent patch notes will be shown.</li>
+		<li>If the server is down, check my <a href="https://twitter.com/rainingchain" target="_blank">Twitter</a> for server updates.</li>
+	</ul>
+	
+	<h3>2015-06-03</h3>
+	<ul>
+		<li>Max level is now level 25.</li>
+		<li>Killing the same monsters over and over gives less exp.</li>
+		<li>Exp for quest completion now varies depending on the quest.</li>
+		<li>Increased the base Quest Score to 50.</li>
+		<li>You can sell materials to shops for gold.</li>
+	</ul>
+	
+	<h3>2015-06-02</h3>
+	<ul>
+		<li>Materials no longer have level. Materials with level have been converted.</li>
+		<li>The server is now capable of resetting by itself.</li>
+		<li>Achievements Full Orange and Full Gold have been fixed.</li>
+		<li>The second phase of the dragon in Boss Battle is no longer random.</li>
+		<li>The challenge Short Boomerang for Boss Battle now allows healing.</li>
+		<li>Rs calculators have been optimized.</li>
+	</ul>
+	
+	<h3>2015-06-01</h3>
+	<ul>
+		<li>Added the quest Boss Battle.</li>
+		<li>Needed to adapt a few things to make the app Heroku more compatible.</li>
+	</ul>
+	
+	<h3>2015-05-31</h3>
+	<ul>
+		<li>Added the quest Tile Flipping.</li>
+		<li>Improved initialization package system. Client should not miss packages anymore.</li>
+		<li>Moved websocket server to Heroku.</li>
+		<li>Improved the cave section of Sad Tree. The correct path is now random.</li>
+		<li>Added a bunch of new icons.</li>
+		<li>Added more actorExtra in the API documentation.</li>
+		<li>I will now use Twitter to announce server maintenance.</li>
+	</ul>
+	
+	<h3>2015-05-29</h3>
+	<ul>
+		<li>Added the quest Bad Luck Brian.</li>
+		<li>Added the quest Moving Targets.</li>
+		<li>Added the quest Teleporter2000.</li>
+		<li>Implemented a new quest sequel system.</li>
+		<li>Javascript files are now minified to reduce bandwidth.</li>
+	</ul>
+	
+	<h3>2015-05-28</h3>
+	<ul>
+		<li>About 40 new achievements have been added.</li>
+		<li>Added highscore for most achievements.</li>
+		<li><a href="/wiki/stat">18 unique boosts</a> with special effects have been added, one for each equip type.</li>
+		<li><a href="/wiki/ability">9 new abilities</a> have been added.</li>
+		<li>Exp Penalty if too high level compared to monsters.</li>
+		<li>Some quests must be unlocked before starting them.</li>
+		<li>Fixed couple issues with the new "walk to" system.</li>
+		<li>You can no longer bypass bank limit via Bank All.</li>
+	</ul>	
+	
+	<h3>2015-05-20</h3>
+	<ul>
+		<li>Achievements have been added. More are to come when I'll be done with the Emblem system.</li>
+		<li>
+			Major restructure of the server. 
+			Back then, the same server handled both the game logic and the file transferring.
+			Now, one server handles file transferring while the others handle game logic.
+			This means better performance and the ability to scale to multiple servers. 
+		</li>
+		<li>When too far away from a NPC, the player will now move towards it.</li>
+		<li>New tutorials for the <a href="/QuestCreator">Quest Creator</a>: Quest Example #4 and Map Creation.</li>
+		<li>Fixed bug related with display items in chat.</li>
+		<li>Changed all dialogues to fit with new storyline.</li>
+		<li>Tower Defence is now more balanced.</li>
+		<li>Server now only loads equipment data of player currently online. This should improve server performance.</li>
+		<li>Moved the entrance to RGB north cave a bit more to the west.</li>
+		<li>Updated the look of the Quest Creator in the Quest List window.</li>
+	</ul>
+	
+	<h3>2015-05-18</h3>
+	<ul>
+		<li>NPCs no longer walk away when talking to them.</li>
+		<li>Players can no longer be attacked while in dialogue or while checking quest reward.</li>
+		<li>Reputation Grid now offers stat descriptions.</li>
+		<li>Dialogue events will no longer be triggered multiple times while in a party.</li>
+		<li>Improved the database backup system.</li>
+		<li>Monster level now scales with player level.</li>
+		<li>Tweaked movement formula. Puzzle & Switch should work correctly now.</li>
+		<li>Prevent rating multiple times the same quest.</li>
+		<li>If lagging, game offers to turn off Lighting and Weather effects.</li>
+		<li>The quit button is now more obvious.</li>
+		<li>Squirrels no longer appear with the default name Ringo.</li>
+		<li>Quick fix for chatbox scrolling up for no reason...</li>
+		<li>Revamped weakness system.</li>
+		<li>Fix major bug related with party. :D</li>
+		<li>Hotfix bug where equip stats are not valid.</li>
+		<li>Locked Memento: Dying now resets switches.</li>
+		<li>Sad Tree: Karl dialogue now starts automatically, trees are weak to fire instead of lightning.</li>
+		<li>Tutorial: heal ability now flashes, target is more obvious.</li>
+	</ul>
+	
+	<h3>2015-05-16</h3>
+	<ul>
+		<li>Revamped equip popup.</li>
+		<li>Released new tutorials for the <a href="/QuestCreator">Quest Creator</a>.</li>
+	</ul>
+	
+	<h3>2015-05-15</h3>
+	<ul>
+		<li>New quest! Locked Memento by the player Boo.</li>
+		<li>Added sell feature to shops.</li>
+		<li>Easier to know if challenge success.</li>
+		<li>Sound effect when you can level up.</li>
+		<li>Twitch link when I'm streaming on Quest Creator pages.</li>
+		<li>Opening a window will close already opened ones.</li>
+		<li>Fewer monsters in Protect Town quest.</li>
+		<li>Fix bug where enemies would stay stun forever.</li>
+		<li>Abilities must be assigned to the right slots.</li>
+		<li>Revamping the inventory to be more friendly. Bigger update coming soon once I switch to VueJS system.</li>
+		<li>Quick fixed chat scrolling up for no reason...</li>
+	</ul>	
+	
+	<h3>2015-05-14</h3>
+	<ul>
+		<li>New main story: Lord Dotex managed to hack into the game and you need to fix his glitches.</li>
+		<li>Added shops.</li>
+		<li>Better data compression with BISON for transmission. About half the size than before.</li>
+		<li>Player will no longer shake when between 2 walls.</li>
+		<li>Popups will no longer appear on top of the player.</li>
+	</ul>	
+	
+	<h3>2015-05-11</h3>
+	<ul>
+		<li>Maps no longer have black edges. This is done by moving the player off center when near an edge. The interface will move out of the way if the player is under one.</li>
+		<li>Map transition arrows will now automatically teleport the player if nearby.</li>
+		<li>Screen flashes red when health is low.</li>
+		<li>Rain drops now explode when hitting the ground.</li>
+		<li>Equip window now displays the damage with each of your abilities when changing weapon.</li>
+		<li>Players will be noticed when an admin replies to their feedback.</li>
+		<li>Player minimap icon is more obvious.</li>
+		<li>Changes with the Reputation Converter.</li>
+		<li>Upgrading equip is now cheaper.</li>
+		<li>Equip color now depends on the total amount of boost including hidden ones.</li>
+		<li>Equip can only have up to 2 visible boost when looted.</li>
+		<li>Quest List window is now smaller.</li>
+		<li>Sending a party invite now displays a message in chat.</li>
+		<li>Added more monsters in Protect Town and King of the Hill quests.</li>
+		<li>Removed monsters in Southern River.</li>
+		<li>Major changes with filter screen effects. RGB quest should now work correctly.</li>
+		<li>Ability bar will now load corectly when signing in.</li>
+	</ul>	
+	
+	<h3>2015-05-07</h3>
+	<ul>
+		<li>Entirely remade the Movement system. The game now uses client prediction more effectively.</li>
+		<li>Bullets are now removed as soon as they hit a wall. Before, client had to wait for server confirmation.</li>
+		<li>Dodge abilities have been removed from the game.</li>
+		<li><a href="/tutorial/html5">Episode 17</a> about creating your own HTML5 game is out.</li>
+	</ul>
 	
 	<h3>2015-05-03</h3>
 	<ul>
@@ -99,8 +652,7 @@
 		<li>Added Map Addon support to the Quest Creator. </li>
 		<li>Improved the dialogue and teleport system for quests.</li>
 		<li>Added a Integrity Test module to find automatically find bugs.</li>
-	</ul>	
-	
+	</ul>
 	<h3>2015-03-25</h3>
 	<ul>
 		<li>Multiple minor tutorial changes.</li>
@@ -123,6 +675,12 @@
 		<li>Changes with the tutorial. (Revamped Admin Zone and boss fight).</li>
 		<li>Added quest Puzzle & Switch.</li>
 	</ul>
+	
+	
+				
+				
+				
+	
 </div>
 <% include partial/footer.html %>
 

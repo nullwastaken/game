@@ -1,15 +1,17 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
-var Party = require2('Party'), Account = require2('Account'), ItemModel = require2('ItemModel'), Actor = require2('Actor'), Main = require2('Main');
-var Message = require3('Message');
-var db;
+var Party, Account, Server, ItemModel, Actor, Main, Socket;
+global.onReady(function(){
+	Socket = rootRequire('private','Socket'); Party = rootRequire('server','Party'); Account = rootRequire('private','Account'); Server = rootRequire('private','Server'); ItemModel = rootRequire('shared','ItemModel'); Actor = rootRequire('shared','Actor'); Main = rootRequire('shared','Main');
+	Socket.on(CST.SOCKET.message,Message.receive,60,500,true);
+});
+var Message = rootRequire('shared','Message');
 
-Message.init = function(dblink){
-	db = dblink;
-}
+var BROADCAST_PUBLIC = true;
+var ALLOW_LINK = true;
 
-Message.add = function(key,textOrMsg){
-	Main.addMessage(Main.get(key),textOrMsg);
+Message.add = function(key,textOrMsg,color){
+	Main.addMessage(Main.get(key),textOrMsg,color);
 }
 
 Message.addPopup = function(key,text){
@@ -24,24 +26,34 @@ Message.broadcast = function(text){
 
 //##################
 
-Message.receive = function(key,msg){
-	msg.from = Main.get(key).username;
+Message.receive = function(socket,msg){
+	if(msg.to === CST.LORD_DOTEX)
+		return handleLordDotexPm(socket,msg);
+	var key = socket.key;
+	msg.from = Main.get(key).name;
 	if(!Message.receive.test(key,msg)) 
 		return;
+	var admin = Server.isAdmin(key);
 	
-	var parse = Message.parseText(msg.text);     	//text
+	var parse = Message.parseText(msg.text,admin,Main.get(key).username);	//username for privilege
 	msg.hasItem = parse.hasItem;
-	msg.hasPuush = parse.hasPuush;
+	msg.hasLink = parse.hasLink;
 	msg.text = parse.text;
 	
 	
-	if(msg.type === 'public') Message.receive.public(key,msg);
-	else if(msg.type === 'pm') Message.receive.pm(key,msg); 
-	else if(msg.type === 'questionAnswer') Message.receive.question(key,msg); 
-	else if(msg.type === 'report') Message.receive.report(key,msg); 
-	
-	//else if(msg.type === 'clan') Message.receive.clan(key,msg); 
+	if(msg.type === 'public') 
+		Message.receive.public(key,msg);
+	else if(msg.type === 'pm') 
+		Message.receive.pm(key,msg); 
+	else if(msg.type === 'questionAnswer')
+		Message.receive.question(key,msg); 
+
 };
+var handleLordDotexPm = function(socket,msg){
+	var text = "01001110 01010000 01000011 00100000 01010010 01100101 01110110 01101111 01101100 01110101 01110100 01101001 01101111 01101110";
+	Message.add(socket.key,Message.Pm(text,CST.LORD_DOTEX,socket.key))
+}
+
 
 Message.receive.test = function(key,msg){
 	if(!msg.type || !msg.text || typeof msg.text !== 'string') 
@@ -64,24 +76,26 @@ Message.receive.public = function(key,msg){
 	var act = Actor.get(key);
 	var main = Main.get(key);
 	
-	msg.text = unescape.html(msg.text);	//allow html. but was parsed earlier
-	
-    if(!msg.hasItem && !msg.hasPuush)
+    if(!msg.hasItem && !msg.hasLink)
 		act.chatHead = Actor.ChatHead(msg.text);
 		
 	var custom = Main.contribution.getChat(main);
 	var newMsg = Message.Public(msg.text,msg.from,custom.color,custom.symbol);
-	Message.add(key,newMsg);
 	
 	//Send info
-	var alreadySentTo = [key];
-	for(var i in act.activeList){
-		if(!Actor.isPlayer(i)) continue;	//aka non player
-		alreadySentTo.push(i);
-		Message.add(i,newMsg);
-	}
-	Party.addMessage(Main.getParty(Main.get(key)),msg,alreadySentTo);
-
+	if(BROADCAST_PUBLIC)
+		Message.broadcast(newMsg);
+	else {
+		Message.add(key,newMsg);
+		var alreadySentTo = [key];
+		for(var i in act.activeList){
+			if(!Actor.isPlayer(i)) 
+				continue;	//aka non player
+			alreadySentTo.push(i);
+			Message.add(i,newMsg);
+		}
+		Party.addMessage(Main.getParty(Main.get(key)),msg,alreadySentTo);
+	}	
 }
 
 Message.receive.pm = function(key,msg){
@@ -93,38 +107,30 @@ Message.receive.pm = function(key,msg){
 	Message.add(key,newMsg);
 }
 
-Message.receive.clan = function(key,msg){
-	return;
-}    
-
-Message.receive.report = function(key,d){
-	return;
-	/*
-	if(d.text.length > 1000 && d.title.length > 50) return Message.add(key,'Too long text or title.');
-	
-	//db.email.report(d.title || '',(d.subcategory || '') + ':' + d.text,name);
-	
-	return db.report.insert({
-		date:new Date().toLocaleString(),
-		user:Actor.get(key).username,
-		text:d.text,
-		title:d.title,
-	});
-	*/
-}
-
 Message.receive.question = function(key,msg){
 	Main.handleQuestionAnswer(Main.get(key),msg);
 }
 
-Message.parseText = function(data){	//TODO
+Message.parseText = function(data,admin,username){
+	var linkGood = ALLOW_LINK || Server.isModerator(null,username) || admin;
+	if(linkGood && data.indexOf('http') === 0 && !data.$contains('>')){	//> to prevent injection
+		return {
+			text:'<a class=message href="' + data + '" target="_blank">' + data + '</a>',
+			hasItem:false,
+			hasLink:true,
+		}
+	}
+	if(!admin)
+		data = escape.html(data);
 	var rawData = data;
+	
 	data = Tk.replaceBracketPattern(data,Message.parseText.item);
 	
 	return {
 		text:data,
 		hasItem:rawData !== data,
-	};	
+		hasLink:false,
+	};
 }
 
 Message.parseText.item = function(id){
@@ -133,7 +139,7 @@ Message.parseText.item = function(id){
 	if(item.type !== 'equip') 
 		return '[' + item.name + ']';
 	
-	return '<fakea class="message" onclick="exports.Dialog.open(\'equipPopup\',{id:\'' + item.id + '\',notOwning:true});">[' + item.name + ']</span>';
+	return '<fakea class="message" onclick="exports.Dialog.open(\'equipPopup\',exports.Dialog.EquipPopup(\'' + item.id + '\',false));">[' + item.name + ']</fakea>';
 }
 
 Message.generateTextLink = function(onclick,text){

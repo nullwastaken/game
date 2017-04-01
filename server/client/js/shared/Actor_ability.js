@@ -1,15 +1,23 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Message = require2('Message'), Combat = require2('Combat'), Ability = require2('Ability'), Anim = require2('Anim');
+var Message, Main, Input, Combat, Ability, Anim;
+global.onReady(function(){
+	Message = rootRequire('shared','Message'); Main = rootRequire('shared','Main'); Input = rootRequire('server','Input'); Combat = rootRequire('server','Combat'); Ability = rootRequire('server','Ability'); Anim = rootRequire('server','Anim');
 
-var Actor = require3('Actor');
+	var Command = rootRequire('shared','Command');
+	Command.create(CST.COMMAND.abilitySwap,Command.ACTOR,[ //{
+		Command.Param('string','Ability Id',false),
+		Command.Param('number','Key Position',false,{max:5}),
+	],Actor.swapAbility.onCommand); //}
+});
+var Actor = rootRequire('shared','Actor');
 
 var INTERVAL_ABILITY = 3;
 
 Actor.AbilityList = function(normal,quest){
 	return {
-		normal:normal || {},	//abilityId:1
+		normal:normal || {},	//abilityId:bool
 		quest:quest || {}
 	};
 }
@@ -21,26 +29,22 @@ Actor.AbilityList.compressDb = function(abilityList){
 Actor.AbilityList.uncompressDb = function(abilityList){
 	var tmp = {};	
 	for(var i in abilityList) 
-		tmp[abilityList[i]] = 1;
-	if(!Actor.AbilityList.testIntegrity(tmp)) return Actor.AbilityList.fixIntegrity(tmp);
+		tmp[abilityList[i]] = true;
+	tmp = Actor.AbilityList.fixIntegrity(tmp);
 	return Actor.AbilityList(tmp);
 }
 
-Actor.AbilityList.testIntegrity = function(abilityList){
-	return Actor.AbilityList.fixIntegrity(abilityList,true);
+Actor.AbilityList.getDbSchema = function(){
+	return Array.of(String);
 }
 
-Actor.AbilityList.fixIntegrity = function(abilityList,onlyTesting){
+Actor.AbilityList.fixIntegrity = function(abilityList){
 	for(var i in abilityList){
-		for(var j in abilityList[i]){
-			if(!Ability.get(j)){
-				if(onlyTesting) return false;
-				ERROR(2,'ability no longer exist',j);
-				delete abilityList[i][j];
-			}
+		if(!Ability.get(i)){
+			ERROR(2,'ability no longer exist',i);
+			delete abilityList[i];
 		}
 	}
-	if(onlyTesting) return true;
 	return abilityList;
 }
 
@@ -54,35 +58,39 @@ Actor.AbilityList.uncompressClient = function(abilityList){
 		if(SERVER && !Ability.get(abilityList[i]))
 			ERROR(3,'ability dont exist',abilityList[i]);
 		else
-			tmp[abilityList[i]] = 1;
+			tmp[abilityList[i]] = true;
 	}
 	return Actor.AbilityList(tmp);
 }
 
 //################
+
 Actor.Ability = function(normal,quest){
 	return {
-		normal:normal || Actor.Ability.Part(),	//array of Ability.functionVersion
+		normal:normal || Actor.Ability.Part(),	
 		quest:quest || Actor.Ability.Part(),
 	}
 }
+
 Actor.Ability.Part = function(){
 	return [null,null,null,null,null,null];
 }
 
 Actor.Ability.compressDb = function(ability){
 	for(var i in ability.normal) 
-		ability.normal[i] = ability.normal[i] ? ability.normal[i].id : 0;
+		ability.normal[i] = ability.normal[i] ? ability.normal[i].id : "";
 	return ability.normal;
 }
 
 Actor.Ability.uncompressDb = function(ability){
 	for(var i in ability)
-		ability[i] = ability[i] ? Ability.functionVersion(ability[i]) : null;	//Ability.functionVersion already fix integrity
+		ability[i] = Ability.get(ability[i]);	
 	return Actor.Ability(ability);
 }
 
-
+Actor.Ability.getDbSchema = function(){
+	return Array.of(String);
+}
 
 Actor.Ability.compressClient = function(ability,act){
 	var list = Actor.getAbility(act);
@@ -131,21 +139,34 @@ Actor.AbilityAi.ability = function(id,distanceInfo){
 
 Actor.AbilityChange = function(ab){	//ab : ability
 	var tmp = {
-		press:'00000000000000',	//more than 6 cuz monsters
+		press:Actor.AbilityChange.press(),	//more than 6 cuz monsters
 		charge:{},	//abilityId:charge
-		chargeClient:[0,0,0,0,0,0],
+		chargeClient:'RRRRRR',	
 		globalCooldown:0
 	};
 	ab = ab || [];
 	for(var i = 0; i < ab.length; i++)
 		if(ab[i]) 
-			tmp.charge[ab[i].id] = 0;
+			tmp.charge[ab[i].id] = 0;	//aka already charged
 	return tmp;
 }
 
+Actor.AbilityChange.press = function(str){
+	if(!str)
+		return [false,false,false,false,false,false,false,false,false,false,false,false];
+	
+	var a = [];
+	for(var i = 0; i < 10; i++)
+		a.push(str[i] === '1');
+	return a;			
+}
 
-
-//#################
+Actor.onAbilityInput = function(act,str){
+	act.abilityChange.press = Actor.AbilityChange.press(str);
+	if(Actor.isPressingAbility(act) && act.combat){
+		Actor.ability.loop.clickVerify(act);
+	}
+}
 
 Actor.setAbilityListUsingAbilityAi = function(act){
 	act.abilityList = Actor.AbilityList(act.abilityAi.list);
@@ -157,8 +178,6 @@ Actor.setAbilityListUsingAbilityAi = function(act){
 
 //#################
 
-Actor.ability = {};
-
 Actor.removeAbility = function(act,name){
 	delete Actor.getAbilityList(act)[name];
 	var ab = Actor.getAbility(act);
@@ -167,8 +186,16 @@ Actor.removeAbility = function(act,name){
 			ab[i] = null;
 		}
 	}
-	Actor.setFlag(act,'ability');
-	Actor.setFlag(act,'abilityList');
+	Actor.setFlagAbility(act);
+}
+
+Actor.setFlagAbility = function(act){
+	Actor.setFlag(act,'ability',function(act){
+		return Actor.Ability.compressClient(act.ability,act);
+	});
+	Actor.setFlag(act,'abilityList',function(act){
+		return Actor.AbilityList.compressClient(act.abilityList,act);
+	});
 }
 
 Actor.swapAbility = function(act,name,position,strict){
@@ -181,31 +208,45 @@ Actor.swapAbility = function(act,name,position,strict){
 				break;	//get first empty position
 	
 	for(var i in ab){ //prevent multiple
-		if(ab[i] && ab[i].id === name) ab[i] = null; 
+		if(ab[i] && ab[i].id === name) 
+			ab[i] = null; 
 	}	
 
-	var ability = Ability.functionVersion(name);
+	var ability = Ability.get(name);
 	ab[position] = ability;
 	act.abilityChange = Actor.AbilityChange(ab);
 	
-	Actor.setFlag(act,'ability');
-	Actor.setFlag(act,'abilityList');
+	Actor.setFlagAbility(act);
+}
+
+Actor.swapAbility.onCommand = function(act,name,position){
+	Actor.swapAbility(act,name,position,true);
 }
 
 Actor.swapAbility.test = function(act,name,position){
-	if(act.combatContext.ability !== 'normal') 
-		return Message.addPopup(act.id,'You can\'t change your ability at this point of the quest.');
+	var main = Actor.getMain(act);
+	if(act.combatContext.ability !== 'normal'){
+		return Main.error(main,'You can\'t change your ability at this point of the quest.',true);
+	}
+	if(!Actor.getAbilityList(act)[name]){
+		return Main.error(main,'You don\'t have this ability',true);
+	}
+	var ability = Ability.get(name);
 	
-	if(!Actor.getAbilityList(act)[name]) 
-		return Message.add(act.id,'You don\'t have this ability');
-	
-	var ability = Ability.functionVersion(name);
-	
-	if(position === 4 && ability.type !== 'heal') 
-		return Message.addPopup(act.id,'This ability slot can only support Healing abilities.');
-	if(position === 5 && ability.type !== 'dodge') 
-		return Message.addPopup(act.id,'This ability slot can only support Dodge abilities.');
-	
+	if(position !== 4 && ability.type === CST.ABILITY.heal){
+		return Main.error(main,'The ability "' + ability.name + '" abilities can only be assigned to the <span class="shadow" style="color:#11FF11">5th slot</span>.',true);	
+	}
+	if(position === 4 && ability.type !== CST.ABILITY.heal){
+		return Main.error(main,'You can\'t assign the ability "' + ability.name + '" to the 5th slot.<br>The 5th ability slot can only support Healing abilities.',true);
+	}
+	var spec = Actor.ability.isSpecialAttack(ability);
+	if(spec && (position === 0 || position === 1)){
+		return Main.error(main,'You can\'t assign the ability "' + ability.name + '" to the slot #' + (position+1) + '.<br>Special attack abilities can only be assigned in the <span class="shadow" style="color:#11FF11">3rd and 4th slots</span>.',true);
+	}
+	if(!spec && (position === 2 || position === 3)){
+		return Main.error(main,'You can\'t assign the ability "' + ability.name + '" to the slot #' + (position+1) + '.<br>Main attack abilities can only be assigned in the <span class="shadow" style="color:#11FF11">1st and 2nd slots</span>.',true);
+	}
+	Main.playSfx(main,'select');
 	return true;
 }
 
@@ -214,10 +255,21 @@ Actor.addAbility = function(act,name){
 		return ERROR(3,'ability not exist',name);
 	Actor.getAbilityList(act)[name] = 1;
 
-	Actor.setFlag(act,'ability');
-	Actor.setFlag(act,'abilityList');
+	Actor.setFlagAbility(act);
 }
 
+Actor.isPressingAbility = function(act){
+	var press = Actor.getAbilityPress(act);
+	
+	for(var i = 0 ; i < press.length; i++)
+		if(press[i])
+			return true;
+	return false;
+}
+
+Actor.getAbilityPress = function(act){
+	return SERVER ? act.abilityChange.press : Input.getState('ability');
+}	
 
 Actor.getAbility = function(act){
 	return act.ability[act.combatContext.ability];
@@ -227,24 +279,28 @@ Actor.getAbilityList = function(act,forceContext){
 	return act.abilityList[forceContext || act.combatContext.ability];
 }
 
-
-
+Actor.ability = {};
 
 Actor.ability.loop = function(act){
 	if(!Actor.testInterval(act,INTERVAL_ABILITY)) return;
 	Actor.ability.loop.charge(act);
 	Actor.ability.loop.clickVerify(act);
-	if(act.type === 'player')
+	if(act.type === CST.ENTITY.player)
 		Actor.ability.loop.chargeClient(act);
 };
+
 Actor.ability.loop.charge = function(act){	//HOTSPOT
 	var ma = act.abilityChange;
 	ma.globalCooldown -= INTERVAL_ABILITY;
-	ma.globalCooldown = ma.globalCooldown.mm(-100,250); 	//cuz if atkSpd is low, fuck everything with stun
+		
+	if(ma.globalCooldown > 125)	//cuz if atkSpd is low, fuck everything with stun
+		ma.globalCooldown = 125;
+		
 	var ab = Actor.getAbility(act);
 	for(var i = 0; i < ab.length; i++){
-		var s = ab[i]; if(!s) continue;	//cuz can have hole if player
-		ma.charge[s.id] = (ma.charge[s.id] + act.atkSpd * INTERVAL_ABILITY) || 0;
+		if(!ab[i]) 
+			continue;	//cuz can have hole if player
+		ma.charge[ab[i].id] = (ma.charge[ab[i].id] + act.atkSpd * INTERVAL_ABILITY) || 0;
 	}
 }
 
@@ -254,43 +310,67 @@ Actor.ability.loop.chargeClient = function(act){
 	
 	ma.chargeClient = '';
 	for(var i = 0; i < ab.length; i++){
-		var s = ab[i]; if(!s){ ma.chargeClient += '0'; continue; }	//cuz can have hole if player
+		var s = ab[i]; 
+		if(!s){	//cuz can have hole if player
+			ma.chargeClient += '0'; 
+			continue; 
+		}	
 		//Client
 		var rate = ma.charge[s.id] / s.periodOwn;
-		ma.chargeClient += rate >= 1 ? 'R' : Math.round(rate*35).toString(36).slice(0,1);
+		ma.chargeClient += Actor.ability.chargeClient.compressClient(rate);
 	}
 }
 
+Actor.ability.chargeClient = {};
+
+Actor.ability.chargeClient.compressClient = function(rate){
+	return rate >= 1 ? 'R' : Math.round(rate*35).toString(36).slice(0,1);
+}
+
+Actor.ability.chargeClient.uncompressClient = function(charge){
+	var tmp = [0,0,0,0,0,0];
+	for(var i = 0 ; i < charge.length ; i++){ 
+		tmp[i] = charge[i] === 'R' ? 1 : parseInt(charge[i],36)/36;
+	}
+	return tmp;
+}
+
 Actor.ability.loop.clickVerify = function(act){
-	if(act.noAbility) return;
+	if(act.noAbility) 
+		return;
 	var ab = Actor.getAbility(act);
 	var ma = act.abilityChange;
 	
 	for(var i = 0; i < ab.length; i++){
-		var s = ab[i]; if(!s) continue;	//cuz can have hole if player
-		
-		if(ma.press[i] === '1' && ma.charge[s.id] > s.periodOwn && (s.bypassGlobalCooldown || (ma.globalCooldown <= 0))){
-			Actor.useAbility(act,s);
+		if(!ab[i]) 
+			continue;	//cuz can have hole if player
+		if(ma.press[i] === true && ma.charge[ab[i].id] > ab[i].periodOwn && (ab[i].bypassGlobalCooldown || (ma.globalCooldown <= 0))){
+			Actor.useAbility(act,ab[i]);
 			break;
 		}
 	}
 }
 
-
-
 Actor.ability.fullyRecharge = function(act){
 	var ab = Actor.getAbility(act);
 	act.abilityChange.globalCooldown = 0;
 	for(var i = 0; i < ab.length; i++){
-		var s = ab[i]; if(!s) continue;	//cuz can have hole if player
+		var s = ab[i]; 
+		if(!s) 
+			continue;	//cuz can have hole if player
 		act.abilityChange.charge[s.id] = 1000;
 	}
 }
 
+Actor.ability.isSpecialAttack = function(ability){	//BAD name but cant be Ability cuz client needs too
+	return ability.type === CST.ABILITY.attack && (ability.periodOwn > 25 || ability.costMana > 20 || ability.costHp > 20);
+}	
+
 Actor.setSpriteFilter = function(act,filter){	//dodge is hardcodded
-	act.spriteFilter = filter;
 	if(SERVER) 
-		Actor.setFlag(act,'spriteFilter');
+		Actor.setChange(act,'spriteFilter',act.spriteFilter);
+	else 
+		act.spriteFilter = filter;
 }
 
 Actor.SpriteFilter = function(filter,time){ //BAD name
@@ -300,15 +380,37 @@ Actor.SpriteFilter = function(filter,time){ //BAD name
 	}
 }
 
-Actor.useAbility = function(act,ab,mana,reset,extra){
+Actor.ability.hasEnoughResource = function(act,ab){
+	return ab.costMana <= act.mana && ab.costHp <= act.hp;
+}
+
+Actor.ability.hasEnoughCharge = function(act,slot){	//not sure if works on server
+	return act.abilityChange.chargeClient[slot] >= 1;
+}
+
+Actor.useAbility = function(act,ab,bypassRestriction,extra,noDelay){ //server
+	if(bypassRestriction !== true && !Actor.testUseAbilityWeapon(act,ab))
+		return;
 	//Mana
-	if(mana !== false && !Actor.useAbility.testResource(act,ab)) return;
-	if(reset !== false)	Actor.useAbility.resetCharge(act,ab);
+	if(bypassRestriction !== true && !Actor.useAbility.testResource(act,ab)) 
+		return;
+	
+	for(var i = 0 ; i < ab.triggerAbility.length; i++){	//potential infinite loop
+		var ab2 = Ability.get(ab.triggerAbility[i]);
+		if(!ab2)
+			ERROR(3,'no ability with id',ab2.triggerAbility[i]);
+		else
+			Actor.useAbility(act,ab2,true,extra,noDelay);
+	}
+	
+	
+	
+	if(bypassRestriction !== true)	
+		Actor.useAbility.resetCharge(act,ab);
 	
 	//Anim
-	if(ab.spriteFilter && act.isActor){
+	if(ab.spriteFilter && act.isActor)
 		Actor.setSpriteFilter(act,ab.spriteFilter);
-	}
 	
 	if(ab.preDelayAnimOverSprite)
 		Anim.create(ab.preDelayAnimOverSprite,Anim.Target(act.id));
@@ -316,25 +418,41 @@ Actor.useAbility = function(act,ab,mana,reset,extra){
 	Actor.setTimeout(act,function(){
 		if(ab.postDelayAnimOverSprite)	
 			Anim.create(ab.postDelayAnimOverSprite,Anim.Target(act.id));
-	
 		//Do Ability Action
-		if(ab.funcStr === 'attack') return Combat.attack(act,ab.param,extra);
-		else if(ab.funcStr === 'dodge') return Combat.dodge(act,ab.param);
-		else if(ab.funcStr === 'heal') return Combat.heal(act,ab.param);
-		else if(ab.funcStr === 'summon') return Combat.summon(act,ab.param);
-		else if(ab.funcStr === 'event') return Combat.event(act,ab.param);
-		else if(ab.funcStr === 'idle') return Combat.idle(act,ab.param);
-		else if(ab.funcStr === 'boost') return Combat.boost(act,ab.param);
-		ERROR(3,'invalid funcStr',ab.funcStr,act.name);
-	},ab.delay);
+		if(ab.type === CST.ABILITY.attack) 
+			Combat.attack(act,ab.param,extra);
+		else if(ab.type === CST.ABILITY.dodge) 
+			Combat.dodge(act,ab.param);
+		else if(ab.type === CST.ABILITY.heal) 
+			Combat.heal(act,ab.param);
+		else if(ab.type === CST.ABILITY.summon) 
+			Combat.summon(act,ab.param);
+		else if(ab.type === CST.ABILITY.event) 
+			Combat.event(act,ab.param);
+		else if(ab.type === CST.ABILITY.idle) 
+			Combat.idle(act,ab.param);
+		else if(ab.type === CST.ABILITY.boost) 
+			Combat.boost(act,ab.param);
+		else
+			ERROR(3,'invalid type',ab.id,ab.type,act.name,ab);
+	},noDelay ? 0 : ab.delay);
 	
 }
+
+Actor.testUseAbilityWeapon = function(act,ab){
+	if(act.type !== CST.ENTITY.player || !ab.weaponReq.length) 
+		return true;
+	var equipType = Actor.getWeaponType(act);
+	if(equipType === null)	//aka unarmed
+		return true;
+	return ab.weaponReq.$contains(equipType);
+}	
 
 Actor.useAbility.resetCharge = function(act,ab){
 	var charge = act.abilityChange.charge;
 	charge[ab.id] = 0;
 	act.abilityChange.globalCooldown = Math.max(act.abilityChange.globalCooldown,0);	//incase bypassing Global
-	act.abilityChange.globalCooldown +=  ab.periodGlobal / act.atkSpd.mm(0.05);
+	act.abilityChange.globalCooldown +=  ab.periodGlobal / Math.max(act.atkSpd,0.05);	//math max case atkSpd < 0.05 cuz stun
 
 }
 
@@ -346,8 +464,8 @@ Actor.useAbility.testResource = function(act,ab){
 }
 
 
-})(); //{
 
+})(); //{
 
 
 

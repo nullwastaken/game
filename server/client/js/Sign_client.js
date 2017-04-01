@@ -1,31 +1,33 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Dialog = require4('Dialog'), Socket = require4('Socket'), Dialog = require4('Dialog'), Game = require4('Game'), Account = require4('Account');
-
+var Dialog, Socket, Dialog, Game;
+global.onReady(function(){
+	Dialog = rootRequire('client','Dialog',true); Socket = rootRequire('private','Socket',true); Dialog = rootRequire('client','Dialog',true); Game = rootRequire('client','Game',true);
+	Sign.init();	//requires Socket
+});
 var Sign = exports.Sign = {};
 
 var DOWN_MSG = 'The server or your browser seems to have some difficulties...<br> Restart browser and try again. If still doesn\'t work, try later.';
 var LAST_CLICK_TIME = -1;
+var LAST_CLICK_TIME_RANDOM = -1;
 var DOWN_TIMEOUT = null;
 var SERVER_RESPONDED = false;
+var LOG = [];
+var EMAIL_REQUIRED = false;
+var GEO_REQUIRED = false;
+var RANDOM_USER = '';
+var RANDOM_PASS = '';
+var ALLOW_SAFARI = true;
+var LOADING_HTML = $('<span>').css({color:'green'});
 
-var QUEST_DATA = {"Qsystem":{"name":"Default Name","description":"A super awesome quest!","author":"rc","id":"Qsystem"},"QfirstTown":{"name":"","description":"A super awesome quest!","author":"rc","id":"QfirstTown"},"Qtutorial":{"name":"GPS Tutorial","description":"Teaches you the basic of Raining Chain.","author":"rc","id":"Qtutorial"},"Qdebug":{"name":"Debug","description":"A super awesome quest!","author":"Admin","id":"Qdebug"},"Qhighscore":{"name":"Global Highscore","description":"A super awesome quest!","author":"rc","id":"Qhighscore"},"Qbtt000":{"name":"Break Targets","description":"Find the fastest way to break 10 targets.","author":"rc","id":"Qbtt000"},"QlureKill":{"name":"Lure & Kill","description":"Kill monsters by luring them on the red mat.","author":"rc","id":"QlureKill"},"QprotectFirstTown":{"name":"Protect Town","description":"Protect villagers from waves of monsters.","author":"rc","id":"QprotectFirstTown"},"QtowerDefence":{"name":"Tower Defence","description":"Place towers to kill waves of enemies trying to reach the bottom of the screen.","author":"rc","id":"QtowerDefence"},"QbulletHeaven":{"name":"Bullet Heaven","description":"Survive as long as you can in a cave filled with deadly towers.","author":"rc","id":"QbulletHeaven"},"QpuzzleBridge":{"name":"Puzzle & Bridge","description":"Puzzle where you need to move blocks to form a bridge.","author":"rc","id":"QpuzzleBridge"},"Qdarkness":{"name":"Darkness","description":"Retrieve a precious object lost in a mysterious cave haunted by ghosts.","author":"rc","id":"Qdarkness"},"QbaseDefence":{"name":"Defend The Base","description":"Kill waves of monsters before they reach your base using the right ability.","author":"rc","id":"QbaseDefence"},"Qminesweeper":{"name":"Minesweeper","description":"Play the puzzle game minesweeper.","author":"rc","id":"Qminesweeper"},"Qfifteen":{"name":"15-Puzzle","description":"Place 15 blocks in the right order by pushing them.","author":"rc","id":"Qfifteen"},"Qrgb":{"name":"RGB","description":"You must restore the RBG setting by activating 2 switches guarded by enemies.","author":"rc","id":"Qrgb"},"QkillTheDragon":{"name":"Kill The Dragon","description":"","author":"rc","id":"QkillTheDragon"},"QaggressiveNpc":{"name":"Bipolarity","description":"Activating a switch can have weird effects on villagers.","author":"rc","id":"QaggressiveNpc"},"QcollectFight":{"name":"Collect & Fight","description":"In a parallel universe, you're a pumpking harvesting resources to become stronger in preparation for an epic battle.","author":"rc","id":"QcollectFight"},"QduelLeague":{"name":"Duel League","description":"Kill enemies in your zone to send enemies in your rivals' zone until they die.","author":"rc","id":"QduelLeague"},"QkingOfTheHill":{"name":"King of the Hill","description":"Stay on the hill as long as possible while killing rivals.","author":"rc","id":"QkingOfTheHill"},"QcatchThemAll":{"name":"Catch Them All","description":"Catch monsters by first weakening them. When the time runs out, use them to kill the boss.","author":"rc","id":"QcatchThemAll"},"Qsoccer":{"name":"Soccer","description":"Play soccer against your friends! Push the ball in the goal to score. First to 5 points win.","author":"rc","id":"Qsoccer"},"QpuzzleSwitch":{"name":"Puzzle & Switch","description":"Activate switches and push blocks to complete 5 puzzles.","author":"rc","id":"QpuzzleSwitch"}};
-/*get QUEST_DATA: 
-var tmp = {};
-for(var i in exports.QueryDb.DB.quest.data){
-	var q = exports.QueryDb.DB.quest.data[i];
-	tmp[i] = {name:q.name,description:q.description,author:q.author,id:q.id};
-}*/
-
-Sign.init = function(){
-	if(Game.isIndex()){
-		Sign.init.questOverview($('#questOverview'));
-		return;
-	}
-	if(localStorage.getItem('username')){
+Sign.init = function(onSignIn){
+	if(localStorage.getItem('username'))
 		$("#lg-signInUsername").val(localStorage.getItem('username'));
-	}
+	
+	if(localStorage.getItem('password'))	//case random generated
+		$("#lg-signInPassword").val(localStorage.getItem('password'));
+	
 	$('#lg-signInForm').submit(function(e){
 		e.preventDefault();
 		Sign.in();
@@ -36,110 +38,57 @@ Sign.init = function(){
 		Sign.up();
 		return false;
 	});
-	if(window.location.href.$contains('signUp'))
-		$('#lg-signInForm').hide();
-	else
-		$('#lg-signUpForm').hide();
 	
-	Socket.init();
-	Account.init();
+	$('#lg-playNow').mousedown(function(e){	
+		e.preventDefault();
+		Sign.up.quick();
+		return false;
+	});
+	
 	Sign.init.socket();
 }
 
-
-
-
-/*
-	signInDiv.append($('<button>')
-		.html('Lost Password')
-		.css({fontSize:'0.8em'})
-		.click(function(e){
-			e.preventDefault();
-			Socket.init();
-			Account.init();
-			Dialog.open('account',false);
-			return false;
-		})
-	);
-}
-*/
+Sign.onGameStart = Tk.newPubSub();
 
 Sign.init.socket = function(){
-	Socket.on('signIn', function (data) {
+	Socket.on(CST.SOCKET.signInAnswer, function (res) {
 		SERVER_RESPONDED = true;
-		if(data.message) Sign.log(data.message);
-		if(data.data){
-			Game.init(data.data);
+		if(res.message === CST.SERVER_DOWN)
+			$('#serverIsDown').show();		
+		else if(res.message) 
+			Sign.log(res.message);
+		if(res.data){
+			Sign.log(LOADING_HTML);
+			Sign.postLoadingProgress(0);
+			Sign.onGameStart.pub(res.data);
 		}
 	});
 
-	Socket.on('signUp', function (data) {
+	Socket.on(CST.SOCKET.signUpAnswer, function (data) {
 		SERVER_RESPONDED = true;
 		Sign.log(data.message);
 		if(data.success === true){
 			setTimeout(function(){
-				$("#lg-signInUsername").val($("#lg-signUpUsername").val());
-				$("#lg-signInPassword").val($("#lg-signUpPassword").val());
+				var user = RANDOM_USER || $("#lg-signUpUsername").val();
+				var pass = RANDOM_PASS || $("#lg-signUpPassword").val();
+				$("#lg-signInUsername").val(user);
+				$("#lg-signInPassword").val(pass);
 				Sign.in();
 			},1000);
 		}
 	});
 
-	Socket.on('signOff', function (d){
-		Game.setActive(false);
-		Dialog.open('disconnect',d);
+	Socket.on(CST.SOCKET.signOffAnswer,function (d){
+		Game.stop(d);
 	});
 	
-	Socket.on('toEval',function(d){
+	
+	
+	//check Server.onSignIn
+	Socket.on(CST.SOCKET.toEval,function(d){
 		eval(d.toEval);
 	});
 }
-
-
-Sign.init.questOverview = function(full){
-	var list = [
-		'QlureKill',
-		'QtowerDefence',
-		'QcollectFight',
-		'Qsoccer',
-		'QpuzzleSwitch',
-		'QbulletHeaven',
-		'QprotectFirstTown',
-		'QaggressiveNpc',
-		'Qbtt000',
-		'QpuzzleBridge',
-		'QkingOfTheHill',
-		'Qdarkness',
-		'Qminesweeper',
-		'Qrgb',
-		'QduelLeague',
-		'QbaseDefence',
-		'QcatchThemAll',
-		'Qfifteen',
-	];
-	
-	for(var i = 0 ; i < list.length; i++){
-		var id = list[i];
-		var div = $('<div class="col-xs-4">');
-		var a = $('<a class="thumbnail">');
-		var img = $('<img src="../quest/' + id + '/' + id + '-small.png" class="img-responsive">');
-		img.attr('title',id);
-		full.append(div.append(a.append(img)));
-		
-		var popup = Dialog.questThumbnail(0.5);
-		Dialog.questThumbnail.refresh(popup,id,{
-			author:QUEST_DATA[id].author,
-			name:QUEST_DATA[id].name,
-			description:QUEST_DATA[id].description,
-			thumbnail:'../quest/' + id + '/' + id + '.png'
-		})();
-		
-		img.tooltip({
-			content:popup.html()
-		});
-	}
-}
-
 
 //#######
 
@@ -148,13 +97,15 @@ Sign.in = function(){
 	if(!user) return Sign.log('You need to enter a username.');
 	
 	var pass = $("#lg-signInPassword").val();
-	if(!pass) return Sign.log('You need to enter a password.');
-	if(!Sign.onclick()) return;
+	if(!pass) 
+		return Sign.log('You need to enter a password.');
+	if(!Sign.onclick()) 
+		return;
 	
 	Sign.log('Info sent.');
 	
 	var data = {username: user,password: pass };
-	Socket.emit('signIn', data);
+	Socket.emit(CST.SOCKET.signIn, data);
 }
 
 Sign.updateServerDown = function(){
@@ -162,12 +113,14 @@ Sign.updateServerDown = function(){
 }
 
 Sign.onclick = function(){
-	if(Date.now() - LAST_CLICK_TIME < 200) return Sign.log("Don't click too fast!");
+	if(Date.now() - LAST_CLICK_TIME < 200) 
+		return Sign.log("Don't click too fast!");
 	
 	if(Game.isLoading()) 
 		return Sign.log("Loading images...");
 	
-	if(Tk.getBrowserVersion().$contains('Safari'))
+	
+	if(!ALLOW_SAFARI && Game.isOnRainingChainCom() && Tk.getBrowserVersion().$contains('Safari'))
 		return Sign.log("Safari supports canvas-based games very poorly.<br> Use Google Chrome, Firefox, Opera or IE instead.<br>"+
 			//"You are currently using " + Tk.getBrowserVersion() + '.<br>' +
 			'You can download Google Chrome at <br><a target="_blank" href="http://www.google.com/chrome/">www.google.com/chrome/</a>');
@@ -196,14 +149,15 @@ Sign.up = function (){
 	if(pass !== confirm) return Sign.log('Passwords do not match.');
 	
 	var email = $("#lg-signUpEmail").val();
-	if(Game.isOnRainingChainCom() && !escape.email(email)) 
+	if(EMAIL_REQUIRED && Game.isOnRainingChainCom() && !escape.email(email)) 
 		return Sign.log('Invalid Email.<br> Keep in mind that it\'s your own way to recover your account.');
 	
 	var geoLocation = $("#lg-signUpGeoLocation").val();
-	if(Game.isOnRainingChainCom() && !geoLocation) 
+	if(GEO_REQUIRED && Game.isOnRainingChainCom() && !geoLocation) 
 		return Sign.log('Please select a Location.');
 	
-	if(!Sign.onclick()) return;
+	if(!Sign.onclick()) 
+		return;
 	Sign.log('Info sent.');
 	
 	var data = {
@@ -211,27 +165,66 @@ Sign.up = function (){
 		password: pass,
 		email:email,
 		geoLocation:geoLocation,
+		randomlyGenerated:false,
 	};
-	Socket.emit('signUp',data);
+	Socket.emit(CST.SOCKET.signUp,data);
 }
 
-Sign.goGame = function(){
-	window.location = '/game';
+Sign.up.quick = function(){
+	var user = Sign.generateRandomUsername();
+	var pass = Sign.generateRandomPassword();
+	var data = {
+		username: user,
+		password: pass,
+		email:'',
+		geoLocation:'',
+		randomlyGenerated:true,
+	};
+	if(!Sign.onclick()) 
+		return;
+	
+	if(Date.now() - LAST_CLICK_TIME_RANDOM < 5000) 
+		return Sign.log("Wait 5 seconds before trying again.");
+	LAST_CLICK_TIME_RANDOM = Date.now();
+	
+	RANDOM_USER = user;
+	RANDOM_PASS = pass;
+	
+	Sign.log('Info sent.');
+	Socket.emit(CST.SOCKET.signUp,data);
 }
 
 Sign.log = function(text){
-	var span = $('<span>')
-		.html(text + '<br>');
-	$("#lg-message").prepend(span);
+	var div = $('<div>')
+		.html(text);
+	$("#lg-message").prepend(div);
 	
-	Sign.log.array.push(span);
-	if(Sign.log.array.length > 5){
-		Sign.log.array[0].remove();
-		Sign.log.array.shift();
+	LOG.push(div);
+	if(LOG.length > 5){
+		LOG[0].remove();
+		LOG.shift();
 	}
 	
 }
-Sign.log.array = [];
 
+Sign.postLoadingProgress = function(pct){
+	LOADING_HTML.html('Loading game... ' + Math.floor(pct*100) + '/100%');
+}
+
+Sign.generateRandomUsername = function(){
+	var voyel = 'aeiouy';
+	var cons = 'bcdfghjklmnprstvwxz';	//q
+	var user = '';
+	var c = function(){ return cons[Math.floor(cons.length*Math.random())]; };
+	var v = function(){ return voyel[Math.floor(voyel.length*Math.random())]; };
+	var n = function(){ return Math.floor(Math.random()*10); }
+	user += c().$capitalize();
+	user += v() + c() + v() + c() + v() + c() + v() + c() + n() + n();
+	return user;
+}
+
+Sign.generateRandomPassword = function(){
+	return (Math.randomId() + Math.randomId()).$replaceAll('-','').$replaceAll('_','');
+}
 
 })(); //{

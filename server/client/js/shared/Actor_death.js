@@ -1,10 +1,24 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Party = require2('Party'), Achievement = require2('Achievement'),Equip = require2('Equip'), Sprite = require2('Sprite'), ActorGroup = require2('ActorGroup'), Main = require2('Main'), Quest = require2('Quest'), Maps = require2('Maps'), ActiveList = require2('ActiveList'), Message = require2('Message'), Drop = require2('Drop'), Material = require2('Material');
-var Actor = require3('Actor');
+var Party, Achievement, Equip, Sprite, ActorGroup, Main, Quest, Maps, Entity, Message, Drop, Material;
+global.onReady(function(){
+	Party = rootRequire('server','Party'); Achievement = rootRequire('shared','Achievement'); Equip = rootRequire('server','Equip'); Sprite = rootRequire('shared','Sprite'); ActorGroup = rootRequire('server','ActorGroup'); Main = rootRequire('shared','Main'); Quest = rootRequire('server','Quest'); Maps = rootRequire('server','Maps'); Entity = rootRequire('shared','Entity'); Message = rootRequire('shared','Message'); Drop = rootRequire('shared','Drop'); Material = rootRequire('server','Material');
+
+	var Command = rootRequire('shared','Command');
+	Command.create(CST.COMMAND.respawnSelf,Command.ACTOR,[ //{
+	],Actor.onReviveCommand); //}
+});
+var Actor = rootRequire('shared','Actor');
+
 Actor.death = {};
-Actor.SPRITE_DEATH = 'waypoint-grave';
+Actor.SPRITE_DEATH = 'gravestone';
+var BASE_EXP = 20;
+var MAX_KILL_EXP_AMOUNT = 150;
+var DROP_RATE_EQUIP_VS_MAT = 1/4;
+var GEM_IMPACT_ON_DROP = 1/4;
+var FIRST_TOWN_MIN_EXP = 2;
+var DROP_RATE_MULT = 0.3;
 
 var DEATH_MESSAGE = [ //{
 	"Please don't ragequit.",
@@ -21,7 +35,7 @@ var DEATH_MESSAGE = [ //{
 Actor.die = function(act){	
 	var killers = Actor.death.getKillers(act);
 	Actor.death.removeSummonChild(act);
-	if(act.type === 'npc') 
+	if(act.type === CST.ENTITY.npc) 
 		Actor.die.npc(act,killers);
 	else 
 		Actor.die.player(act,killers);
@@ -30,61 +44,142 @@ Actor.die = function(act){
 		var killer = Actor.get(key);
 		if(!Actor.isPlayer(killer)) 
 			return;
-		Achievement.onActorKilled(Actor.getMain(killer),act);
+		Achievement.onActorKilled(Actor.getMain(killer),act.model);
 	}
 	
 	
 }
 
-Actor.die.player = function(act,killers){
+Actor.die.player = function(act,killers){	//act is player
 	var key = act.id;
 	var main = Main.get(key);
 	
-	Main.addScreenEffect(main,Main.ScreenEffect.fadeout('death',30,'black'));
+	//Main.addScreenEffect(main,Main.ScreenEffect.fadeout('death',30,'black'));
 	act.dead = true;
-	Actor.setTimeout(act,function(){
-		var party = Main.getParty(main);
-		var partyDead = Party.isPartyDead(party);
-		
-		Achievement.onDeath(main);
-		
-		//Quest
-		Actor.endPath(act,true,true);
-		if(act.deathEvent && killers[0]) 	//idk if compatible with grave
-			act.deathEvent(act.id,killers[0]);	
-		Message.add(key,'You are dead... ' + DEATH_MESSAGE.$random());
-		
-		act.respawnTimer = 25;	//above _death
-		var turnIntoGrave = Main.quest.onDeath(main,partyDead,killers[0]);
-		
-		if(partyDead){
-			Party.forEach(party,function(key){
-				Actor.onCommandRespawn(Actor.get(key));
-			});
-			return;
-		}
-		
-		
-		if(turnIntoGrave){	
-			Sprite.change(act,{name:Actor.SPRITE_DEATH});
-			act.move = 0;	//BAD
-			act.respawnTimer = 100000000;
-			Main.openDialog(Main.get(act.id),'permPopupSystem',{
-				text:'Waiting for your party to revive you...<br>'
-					+ '<button onclick="exports.Command.execute(\'respawnSelf\',[]);">Or Respawn at Waypoint</button>'
-				,css:{
-					position:'absolute',
-					width:'200px',
-					height:'auto',
-					top:'400px',
-					right:'0px'
-				}
-			});
-			
-			
-		}
-	},12,'death');
 	
+	var party = Main.getParty(main);
+	var partyDead = Party.isPartyDead(party);
+	var alone = Party.getSize(party) === 1;
+	Achievement.onDeath(main);
+	
+	//Quest
+	Actor.endPath(act);
+	handleDeathEvent(act,killers);	
+	
+	Main.dialogue.end(main);
+	Message.add(key,'You are dead... ' + DEATH_MESSAGE.$random());
+	Actor.playSfx(act,'death');
+	
+	var reviveSoloNow = Main.quest.onDeath(main,killers[0],partyDead);	//note: this can resetQuest which triggers revive in settimeout
+	
+	if(reviveSoloNow){
+		Actor.reviveAndTeleportSelfOnly(act);
+		return;
+	}	
+	
+	/*if(partyDead && !alone){
+		Actor.reviveAndTeleportParty(act);
+		return;
+	}*/
+	
+	//otherwise (alone or in coop party)
+	Sprite.change(act,{name:Actor.SPRITE_DEATH});
+	Actor.addPreset(act,'_disableMove');
+	
+	var message = alone 
+		? 'You are dead.<br>' + buttonRespawn('Respawn')
+		: 'Waiting for your party to revive you...<br>' + buttonRespawn('Or Respawn At Waypoint');
+	
+	//respawnSelf triggers reviveAndTeleportParty
+	Main.openDialog(Main.get(act.id),'permPopupSystem',{
+		text:message,
+		css:{
+			position:'absolute',
+			width:'200px',
+			height:'auto',
+			top:'50%',
+			left:'45%'
+		}
+	});
+	
+}
+
+var handleDeathEvent = function(act,killers){
+	if(!act.deathEvent)
+		return;
+	var usedKiller;
+	var key;
+	if(killers[0] && Actor.isPlayer(killers[0])){
+		usedKiller = true;
+		key = killers[0];
+	} else {
+		usedKiller = false;
+		var map = Maps.get(act.map);
+		if(map)
+			key = Maps.getPlayerInMap(map)[0];
+	}
+	if(key)
+		act.deathEvent(key,act.id,act.map,usedKiller,killers);
+	else
+		ERROR(3,'deathEvent but no player in map');
+	
+}
+
+Actor.reviveAndTeleportSelfOnly = function(act){	//normal solo revive
+	Actor.revivePlayer(act);
+	var spot = Actor.getRespawnSpot(act);
+	Actor.teleport.fromQuest(act,spot);
+}
+
+var buttonRespawn = function(text){	//BAD
+	return '<button onclick="exports.Command.execute(CST.COMMAND.respawnSelf,[]);">' + text + '</button>'
+}	
+
+Actor.reviveAndTeleportParty = function(act){	//when self click revive
+	var main = Actor.getMain(act);
+	Party.forEach(Main.getParty(main),function(key){
+		Actor.reviveAndTeleportSelfOnly(Actor.get(key));
+	});
+}
+
+Actor.revivePlayer = function(act,invincibleTilMove){		//revived by OTHER player while in gravestone
+	if(!act.dead)
+		return;
+	
+	if(act.sprite.name === Actor.SPRITE_DEATH)
+		Sprite.change(act,{name:CST.SPRITE_NORMAL});
+	Actor.removePreset(act,'_disableMove');
+	
+	Main.closeDialog(Main.get(act.id),'permPopupSystem');	//BAD, should check if permPopup about death
+	Actor.clearStatus(act);
+	Actor.boost.removeAll(act);
+	Actor.fullyRegen(act);
+	act.dead = false;
+	
+	Actor.setInvincibleDuration(act,25*5);
+	
+	Actor.rechargeAbility(act);
+	if(invincibleTilMove !== false)
+		Actor.setTimeout(act,function(){	//must be called after the respawn teleport
+			Actor.addPresetUntilMove(act,'onRespawn',50);	//need quite big cuz if spawn in wall, gets pushed
+		},25);
+}	
+
+
+Actor.onReviveCommand = function(act){
+	if(!act.dead && act.sprite.name === Actor.SPRITE_DEATH){
+		ERROR(3,'player dead=false but sprite is gravestone');
+		act.dead = true;
+	}
+	
+	if(act.dead){
+		var main = Actor.getMain(act);
+		if(main.questActive){
+			Quest.get(main.questActive).event._respawn(act.id);
+			Actor.reviveAndTeleportParty(act);
+		} else
+			Actor.reviveAndTeleportSelfOnly(act);
+	}
 }
 
 Actor.die.npc = function(act,killers){
@@ -92,24 +187,11 @@ Actor.die.npc = function(act,killers){
 	
 	Actor.death.generateDrop(act,killers);	//increase killCount here
 	Actor.death.grantExp(act,killers);
+			
+	handleDeathEvent(act,killers);//after drop, otherwise bug
 	
-	if(act.deathEvent){ //after drop, otherwise bug
-		act.deathEvent(killers[0],act.id,act.map);	//killers[0] may be null
-	}
-	
-	ActiveList.clear(act);
+	Entity.clear(act);
 	Actor.remove(act);
-}
-
-Actor.death.loop = function(act){
-	if(act.type === 'npc'){ 
-		ERROR(2,'dead npc should already have been removed'); 
-		Actor.remove(act); 
-		return; 
-	}
-	
-	if(--act.respawnTimer < 0)
-		Actor.death.respawn(act);
 }
 
 Actor.death.removeSummonChild = function(act){
@@ -120,42 +202,56 @@ Actor.death.removeSummonChild = function(act){
 	}
 }
 
+var completeTodayMod = function(num){
+	if(num <= 3)
+		return 1;
+	return 5/(5+num);	//
+}	
+
 Actor.death.getKillers = function(act){
 	for(var i in act.damagedBy) 
-		if(!Actor.get(i)) delete act.damagedBy[i];
+		if(!Actor.get(i)) 
+			delete act.damagedBy[i];
 
 	var tmp = Object.keys(act.damagedBy);	
 
 	for(var i = tmp.length-1; i >= 0; i--){
-		if(!Actor.isPlayer(tmp[i])) tmp.splice(i,1);	//remove non-player
+		if(!Actor.isPlayer(tmp[i])) 
+			tmp.splice(i,1);	//remove non-player
 	}
 	return tmp;
 
 }
 
 Actor.death.generateDrop = function(act,killers){
-	if(!act.quest) 
+	if(!act.quest || act.quest === CST.QTUTORIAL)	//BAD 
 		return;
 	var zone = Actor.getQuestZone(act);
 	if(!zone) 
 		return;
+	
+	var dropMod = Quest.get(act.quest).reward.monster * act.killRewardMod;
+	if(dropMod === 0)
+		return;	
+		
 	for(var p in killers){
 		var key = killers[p];
 		var killer = Actor.get(key);
 		if(!Actor.isPlayer(killer)) 
 			continue;
-		
-		if(!Main.get(key).quest[act.quest]){
-			ERROR(3,'invalid quest for npc',act.quest);
-			continue;
-		}
-		
-		var amount = Main.get(key).killCount[zone]++;
-		if(amount > 150) 
+				
+		var amount = Main.get(key).killCount[zone]++
+
+		if(amount > MAX_KILL_EXP_AMOUNT) 
 			continue; //prevent bot
+		var mq = Main.get(key).quest[act.quest];
 		
-		var chanceMod = Quest.get(act.quest).reward.item * (1+killer.magicFind.quantity);
-		var item;
+		var chanceMod = dropMod;
+		if(mq)
+			chanceMod *= completeTodayMod(mq.completeToday);
+			
+		var item = null;
+		var amount = 1;
 		
 		//equip
 		var baseChance = getRawDropRateEquip(amount);
@@ -164,74 +260,27 @@ Actor.death.generateDrop = function(act,killers){
 		} else {	//test for material if no equip
 			var baseChance = getRawDropRateMaterial(amount);
 			if(Math.random() < Math.probability(baseChance,chanceMod)){	
-				item = Material.getRandom(Actor.getCombatLevel(killer));
+				item = Material.getRandom();
+				var gem = (Actor.getGEM(killer)-1)*GEM_IMPACT_ON_DROP + 1;
+				amount = Math.roundRandom(gem);				
 			}
 		}
 		if(item){
-			var spot = Actor.Spot(act.x,act.y,act.map);
+			var spot = Actor.toSpot(act);
 			spot = ActorGroup.alterSpot(spot,25);
-			Drop.create(spot,item,1,[key]);		
+			Drop.create(spot,item,amount,[key]);		
 		}
 	}
 }
 
 var getRawDropRateMaterial = function(amount){
 	var baseChance = Math.min(1,10 / amount);	//killed <10 => 100%, 50 => 20%, 100 => 10%
-	baseChance *= 0.3;		//killed <10 => 30%, 50 => 6%, 100 => 3%
+	baseChance *= DROP_RATE_MULT;		//killed <10 => 20%, 50 => 3%, 100 => 1.5%
 	return baseChance;
 }
 
 var getRawDropRateEquip = function(amount){
-	return getRawDropRateMaterial(amount) / 4;
-}
-
-Actor.death.respawn = function(act,teleport,forceGroupeTele){	//for player
-	onDeathTeleport(act,teleport);
-	Actor.onRespawn(act);
-}
-
-var onDeathTeleport = function(act,teleport,forceGroupeTele){
-	//kill all party if respawn is far
-	var res = Actor.getRespawnSpot(act);
-	if(act.map !== res.map || forceGroupeTele){
-		Party.forEach(Actor.getMain(act),function(key){
-			if(key !== main.id){
-				var act2 = Actor.get(key);
-				Actor.teleport(act2,res);
-				if(act2.dead)
-					Actor.revivePlayer(act2);
-			}
-		});
-	}
-	
-	if(teleport !== false){
-		var rec = act.respawnLoc.recent;
-		var good = Maps.get(Actor.teleport.getMapName(act,rec.map)) ? rec : act.respawnLoc.safe;
-		Actor.teleport(act, good);
-	}
-}
-
-Actor.revivePlayer = function(act){		//revived by other player
-	if(act.sprite.name === Actor.SPRITE_DEATH)
-		Sprite.change(act,{name:'normal'});
-	act.move = 1; //BAD
-	Main.closeDialog(Main.get(act.id),'permPopupSystem');	//BAD, should check if permPopup about death
-	Actor.onRespawn(act);
-}	
-
-Actor.onCommandRespawn = function(act){
-	onDeathTeleport(act);
-	Actor.revivePlayer(act);
-}
-
-Actor.onRespawn = function(act){
-	Actor.status.clear(act);
-	Actor.boost.removeAll(act);
-	Actor.fullyRegen(act);
-	act.dead = false;
-	
-	Actor.becomeInvincible(act,25*5);
-	Actor.rechargeAbility(act);
+	return getRawDropRateMaterial(amount) * DROP_RATE_EQUIP_VS_MAT;
 }
 
 Actor.death.grantExp = function(act,killers){
@@ -239,28 +288,53 @@ Actor.death.grantExp = function(act,killers){
 	var zone = Actor.getQuestZone(act);
 	if(!zone) 
 		return;
-	var expMod = Quest.get(act.quest).reward.exp;
+	var expMod = Quest.get(act.quest).reward.monster * act.killRewardMod;
+	if(expMod === 0)
+		return;	
+	
 	for(var i in killers){
 		var key = killers[i];
 		var killer = Actor.get(key);
+		var expModLvl = expModifier(killer.lvl,act.lvl);
 		
 		var amount = Main.get(key).killCount[zone];
-		if(amount > 150) 
-			continue; //prevent bot
-			
-		var baseExp = 10;	//constant
-		baseExp *= Math.min(1,10 / amount);
-		baseExp *= expMod;
+		if(amount === undefined)
+			return ERROR(3,'invalid zone',zone);
 		
-		var bonus = Main.getSimpleQuestBonus(Actor.getMain(killer),act.quest);
-		baseExp *= bonus.exp;
-				
+		if(amount >= MAX_KILL_EXP_AMOUNT){
+			if(amount === MAX_KILL_EXP_AMOUNT || amount % 25 === 0)
+				Message.add(key,'You no longer get exp from killing monsters in the area. Complete a quest in the area to get exp from them again.');
+			continue; //prevent bot
+		}
+		
+		var baseExp = BASE_EXP;	//constant
+		baseExp *= Math.min(1,10 / amount);	//<10 = *1, 20=*0.5, 100=*0.1
+		baseExp *= expMod * expModLvl;
+		
+		var mq = Main.get(key).quest[act.quest];
+		if(mq)
+			amount *= completeTodayMod(mq.completeToday);
+		
+		if(act.quest === 'QfirstTown')
+			baseExp = Math.max(FIRST_TOWN_MIN_EXP,baseExp);
+		
+		if(isNaN(baseExp))
+			return ERROR(3,'exp is nan',amount,Quest.get(act.quest).reward.monster,act.killRewardMod,expModLvl,completeTodayMod(mq.completeToday));
+		
 		Actor.addExp(killer,baseExp);
 	}
 }
 
-Actor.kill = function(act){
-	if(act.combat || Actor.isPlayer(act))
+var expModifier = function(playerLvl,monsterLvl){
+	var diff = playerLvl-monsterLvl;
+	if(diff <= 0) 
+		return 1;
+	return Math.pow(2,-diff/20);
+}
+
+Actor.kill = function(act,instant){
+	act.cantDie = false;
+	if(Actor.isPlayer(act) || (!instant && act.combat))
 		act.hp = -1;
 	else
 		Actor.remove(act);

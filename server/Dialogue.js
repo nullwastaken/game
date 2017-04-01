@@ -1,16 +1,25 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-"use strict";
-var IconModel = require2('IconModel');
 
-var Dialogue = exports.Dialogue = {};
+"use strict";
+var IconModel;
+global.onReady(function(){
+	IconModel = rootRequire('shared','IconModel');
+});
+var Dialogue = exports.Dialogue = function(extra){
+	this.quest = '';
+	this.id = '';
+	this.name = '';
+	this.image = '';
+	this.nodeList = {};	//Dialogue.Node
+	Tk.fillExtra(this,extra);
+};
+
 Dialogue.create = function(Q,id,name,image,list){
-	var tmp = {
+	var tmp = new Dialogue({
 		quest:Q,
 		id:id,
 		name:name,
 		image:image,
-		nodeList:{},
-	};
+	});
 	for(var i in list)	
 		tmp.nodeList[list[i].id] = list[i];
 	
@@ -51,7 +60,7 @@ Dialogue.Option = function(Q,text,next,event){
 	return {
 		text:text,
 		next:next,
-		event:event,
+		event:event,	//either func or '$0'
 		quest:Q,
 		npc:'',		//set later,
 		node:'',	//set later

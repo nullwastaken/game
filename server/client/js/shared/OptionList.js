@@ -1,14 +1,22 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Actor = require2('Actor');
-var Command = require4('Command');
-var OptionList = exports.OptionList = {};
+var Actor, Command;
+global.onReady(function(){
+	Actor = rootRequire('shared','Actor');
+	Command = rootRequire('shared','Command',true);
+});
+var OptionList = exports.OptionList = function(extra){
+	this.name = '';
+	this.option = []; //[OptionList.Option];
+	Tk.fillExtra(this,extra);
+};
+
 OptionList.create = function(name,option){
-	return {
-		name:name || '',
-		option:option || [],	//[OptionList.Option]
-	}
+	return new OptionList({
+		name:name ,
+		option:option,	//[OptionList.Option]
+	});
 }
 
 OptionList.Option = function(func,param,name,description){
@@ -22,12 +30,12 @@ OptionList.Option = function(func,param,name,description){
 	};
 }
 
-OptionList.executeOption = function(main,option){
+OptionList.executeOption = function(main,option){	//actorOptionList
 	var param = option.param;
 	if(param[0] === OptionList.MAIN)
 		return option.func.apply(this,[main].concat(param.slice(1)));
 	if(param[0] === OptionList.ACTOR) 
-		return option.func.apply(this,[SERVER ? Actor.get(main.id) : player].concat(param.slice(1)));
+		return option.func.apply(this,[SERVER ? Actor.get(main.id) : w.player].concat(param.slice(1)));
 	if(param[0] === OptionList.NOKEY) 
 		return option.func.apply(this,param.slice(1));
 	

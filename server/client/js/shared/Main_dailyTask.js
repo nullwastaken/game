@@ -1,8 +1,12 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Quest = require2('Quest');
-var Main = require3('Main');
+var Quest;
+global.onReady(function(){
+	Quest = rootRequire('server','Quest');
+});
+var Main = rootRequire('shared','Main');
+
 
 Main.verifyDailyTask = function(main,q,challengeSuccess){	//called when quest complete
 	for(var i in main.dailyTask){
@@ -12,7 +16,7 @@ Main.verifyDailyTask = function(main,q,challengeSuccess){	//called when quest co
 			Main.addMessage(main,'Bonus: x10 Reputation, x5 Exp, x3 Item, and 1 Plan!');	//not actually x10, its +10
 			//Main.addItem(main,P lan.quickCreation(key));
 			main.dailyTask.splice(i,1);
-			Main.setFlag(main,'dailyTask');
+			Main.setChange(main,'dailyTask',main.dailyTask);
 			return true;
 		}
 	}

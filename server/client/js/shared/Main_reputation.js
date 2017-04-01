@@ -1,8 +1,41 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Actor = require2('Actor'), Achievement = require2('Achievement'), Stat = require2('Stat'), Message = require2('Message'), ReputationConverter = require2('ReputationConverter'), Boost = require2('Boost'), ReputationGrid = require2('ReputationGrid');
-var Main = require3('Main');
+var Actor, Achievement, Stat, ReputationConverter, Boost, ReputationGrid;
+global.onReady(function(){
+	Actor = rootRequire('shared','Actor'); Achievement = rootRequire('shared','Achievement'); Stat = rootRequire('shared','Stat'); ReputationConverter = rootRequire('shared','ReputationConverter'); Boost = rootRequire('shared','Boost'); ReputationGrid = rootRequire('shared','ReputationGrid');
+
+	var Command = rootRequire('shared','Command');
+	Command.create(CST.COMMAND.reputationAdd,Command.MAIN,[ //{
+		Command.Param('number','Page',false,{max:1}),
+		Command.Param('number','Y',false,{max:14}),
+		Command.Param('number','X',false,{max:14}),
+	],Main.reputation.add); //}
+
+	Command.create(CST.COMMAND.reputationClear,Command.MAIN,[ //{
+		Command.Param('number','Page',false,{max:1}),
+	],Main.reputation.clearGrid.onCommand); //}
+
+	Command.create(CST.COMMAND.reputationRemove,Command.MAIN,[ //{
+		Command.Param('number','Page',false,{max:1}),
+		Command.Param('number','Y',false,{max:14}),
+		Command.Param('number','X',false,{max:14}),
+	],Main.reputation.remove); //}
+
+	Command.create(CST.COMMAND.reputationConverterAdd,Command.MAIN,[ //{
+		Command.Param('number','Page',false,{max:1}),
+		Command.Param('string','Converter Name',false),
+	],Main.reputation.addConverter); //}
+
+	Command.create(CST.COMMAND.reputationConverterRemove,Command.MAIN,[ //{
+		Command.Param('number','Page',false,{max:1}),
+		Command.Param('string','Converter Name',false),
+	],Main.reputation.removeConverter); //}
+
+});
+var Main = rootRequire('shared','Main');
+
+
 /*
 0 - dont have
 1 - have
@@ -11,14 +44,10 @@ var Main = require3('Main');
 
 Main.Reputation = function(){
 	return {
-		exp:0,
-		lvl:0,
 		usablePt:0,
-		removePt:10,
 		activeGrid:0,		//slot for list
 		list:[
-			Main.Reputation.list(),
-			Main.Reputation.list(),		
+			Main.Reputation.list(),	
 		]
 	}
 }
@@ -43,28 +72,51 @@ Main.Reputation.list = function(){
 			'000000000000000',
 		],
 		usedPt:0,
-		freeze:null,
 		converter:[],
 	};
 }
+
+Main.Reputation.compressDb = function(rep){
+	return rep;
+}
+Main.Reputation.uncompressDb = function(rep){
+	return rep;
+}
+Main.Reputation.getDbSchema = function(){
+	return {
+		usablePt:Number,
+		activeGrid:Number,
+		list:Array.of({
+			grid:Array.of(String),
+			usedPt:Number,
+			converter:Array.of(String),
+			'*':null
+		}),
+		'*':null
+	}
+}
+
+
 
 Main.reputation = {};
 
 Main.reputation.add = function(main,num,i,j){
 	//when player wants to add a reputation
-	if(Main.reputation.getUnusedPt(main,num) < 1) 
-		return Main.addMessage(main,"You don't have any Reputation Points to use.");
+	if(Main.reputation.getUnusedPt(main,num) < 1){
+		return Main.error(main,"You don't have any Reputation Points to use. Level up to unlock more.",true);
+	}
 	if(Main.reputation.getValue(main,num,i,j) !== 0) 
-		return Main.addMessage(main,"You already have this reputation.");
+		return Main.error(main,"You already have this reputation.",true);
 	if(!Main.reputation.testAdd(Main.reputation.getGrid(main,num),i,j)) 
-		return Main.addMessage(main,"You can't choose this reputation yet.");
+		return Main.error(main,"You can't choose this reputation boost yet. It is locked.<br>You can only select yellow reputation boosts.",true);
 	
 	Main.reputation.modify(main,num,i,j,1);
+	Main.playSfx(main,'select');
 }
 
 Main.reputation.modify = function(main,num,i,j,newvalue){
 	var grid = Main.reputation.getGrid(main,num);
-	grid[i] = grid[i].set(j,'' + newvalue);
+	grid[i] = Tk.setString(grid[i],j,'' + newvalue);
 	Main.reputation.updatePt(main);
 	Main.reputation.updateBoost(main);
 	Achievement.onReputationChange(main);
@@ -84,29 +136,31 @@ Main.reputation.get = function(main,num){
 Main.reputation.remove = function(main,num,i,j){
 	//maybe system where cost nothing if lvl less than 20
 	
-	/*if(main.reputation.removePt < 1) 
-		return Main.addMessage(main,"You don't have any Reputation Remove Points to use.");*/
-	if(Main.reputation.getValue(main,num,i,j) !== 1) 
-		return Main.addMessage(main,"You don't have this reputation.");
-	if(!Main.reputation.testRemove(Main.reputation.getGrid(main,num),i,j)) 
-		return Main.addMessage(main,"You can't remove this reputation because it would create 2 subgroups.");
-	
+	if(Main.reputation.getValue(main,num,i,j) !== 1){
+		return Main.error(main,"You don't have this reputation.",true);
+	}
+	if(!Main.reputation.testRemove(Main.reputation.getGrid(main,num),i,j)){
+		return Main.error(main,"You can't remove this reputation because it would create 2 subgroups.",true);
+	}
+	Main.playSfx(main,'select');
 	Main.reputation.modify(main,num,i,j,0);
-	//main.reputation.removePt--;
 }
 
 Main.reputation.clearGrid = function(main,num){
-	/*if(main.reputation.removePt < 1) 
-		return Main.addMessage(main,"You need at least 1 Remove Points to reset the grid.");
-	main.reputation.removePt--;*/
-	
 	main.reputation.list[num] = Main.Reputation.list();
 	Main.reputation.updatePt(main);
 	Main.reputation.updateBoost(main);
 }
+Main.reputation.clearGrid.onCommand = function(main,num){
+	Main.askQuestion(main,function(){
+		Main.reputation.clearGrid(main,num);
+	},'Are you sure you want to clear the grid?','boolean');
+}
+
 
 Main.reputation.getValue = function(mainORgrid,numORi,iORj,j){	//accept grid or main
-	if(mainORgrid.username) return Main.reputation.getValue(Main.reputation.getGrid(mainORgrid,numORi),iORj,j);
+	if(mainORgrid.username) //BAD, test if main
+		return Main.reputation.getValue(Main.reputation.getGrid(mainORgrid,numORi),iORj,j);
 	return +mainORgrid[numORi][iORj];
 }
 
@@ -137,7 +191,7 @@ Main.reputation.testRemove = function(grid,yy,xx){
 	if(grid[yy][xx] === ('' + ReputationGrid.FREEBY)) return false;
 
 	var grid = Tk.deepClone(grid);
-	grid[yy] = grid[yy].set(xx,('' + ReputationGrid.NOT_HAVE));
+	grid[yy] = Tk.setString(grid[yy],xx,'' + ReputationGrid.NOT_HAVE);
 	
 	var listValid = {};
 	var listTested = {};	//list where i already checked the pts around and added they to listValid
@@ -184,38 +238,39 @@ Main.reputation.testRemove = function(grid,yy,xx){
 	
 }
 
-Main.reputation.changeActivePage = function(main,num){
-	if(main.reputation.activePage === num) return;
-	main.reputation.activePage = num;
-	Main.reputation.updateBoost(main);
-}
 Main.reputation.addConverter = function(main,num,name){
 	//test if player has access
 	if(!ReputationConverter.get(name)) return;
 	if(Main.reputation.get(main,num).converter.$contains(name))	//already contains
 		return;
-	if(!ReputationConverter.canSelect(main,num,name)) return;	//message sending done inside
+	if(!ReputationConverter.canSelect(main,num,name))  //message sending done inside
+		return;	
 	Main.reputation.get(main,num).converter.push(name);
 	Main.reputation.updateBoost(main);
 	Achievement.onReputationChange(main);
-	Main.setFlag(main,'reputation');
-	
+	Main.playSfx(main,'select');
+	Main.setChange(main,'reputation',main.reputation);
 }
+
 Main.reputation.removeConverter = function(main,num,name){
 	Main.reputation.get(main,num).converter.$remove(name);
 	Main.reputation.updateBoost(main);
-	Main.setFlag(main,'reputation');
+	Main.setChange(main,'reputation',main.reputation);
 }
 
+Main.reputation.onLevelUp = function(main,lvl){
+	Main.reputation.updatePt(main);
+	if(ReputationConverter.getGroupViaLevel(lvl))
+		Main.addPopup(main,'You have unlocked a new Reputation Converter.');
+}
 //###############
 Main.reputation.updatePt = function(main){
 	var mp = main.reputation;
 	for(var i = 0 ; i < mp.list.length; i++)
 		mp.list[i].usedPt = Main.reputation.getUsedPt(main,i);
 		
-	mp.lvl = Main.reputation.getLvl(main);
 	mp.usablePt = Main.reputation.getUsablePt(main);
-	Main.setFlag(main,'reputation');
+	Main.setChange(main,'reputation',main.reputation);
 }
 
 Main.reputation.getUnusedPt = function(main,num){
@@ -253,9 +308,9 @@ Main.reputation.getBoost = function(main,grid){	//convert the list of reputation
 			if(+grid[i][j] !== ReputationGrid.HAVE) continue;
 			var slot = base[i][j];
 			if(Stat.get(slot.stat).value.base === 0)
-				tmp.push(Boost.Perm(slot.stat,slot.value,'+'));	//+ and not *, cuz stat with 0 by default (ex:ability) wont work
+				tmp.push(Boost.Perm(slot.stat,slot.value,CST.BOOST_PLUS));	//+ and not *, cuz stat with 0 by default (ex:ability) wont work
 			else 
-				tmp.push(Boost.Perm(slot.stat,slot.value,'*'));
+				tmp.push(Boost.Perm(slot.stat,slot.value,CST.BOOST_X));
 		}
 	}
 	return Boost.stackSimilarPerm(tmp);
@@ -263,7 +318,7 @@ Main.reputation.getBoost = function(main,grid){	//convert the list of reputation
 
 Main.reputation.updateBoost = function(main){
 	var grid = Main.reputation.getGrid(main);
-	Actor.permBoost(Main.getAct(main),Main.reputation.BOOST_NAME,Main.reputation.getBoost(main,grid));
+	Actor.addPermBoost(Main.getAct(main),Main.reputation.BOOST_NAME,Main.reputation.getBoost(main,grid));
 }
 
 

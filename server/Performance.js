@@ -1,68 +1,70 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-"use strict";
-var Sign = require2('Sign'), Server = require2('Server');
 
+"use strict";
+var Sign;
+global.onReady(function(){
+	Sign = rootRequire('private','Sign');
+	global.onLoop(Performance.loop,100);
+});
 var Performance = exports.Performance = {};
+
+var FRAME_COUNT = 0;
+var DISPLAY = NODEJITSU;
+var OLD_TIME = Date.now();
+var FREQUENCE = 30*60*1000/40;
+var LAST_TICK_LENGTH = 0;
+var LAST_TICK_TIME = 0;
+
+var UPLOAD = {size:0,limitTotal:1000*1000000,limitPerMin:50*1000000};		//what server send
+var DOWNLOAD = {size:0,limitTotal:100*1000000,limitPerMin:100000};	//what client send
 
 Performance.LAST_CONSOLE_LOG = '';
 
-Performance.loop = function(){
-	Performance.loop.FRAME_COUNT++;
-	Performance.cpu();
-	Performance.bandwidth.display();
-}
-Performance.loop.FRAME_COUNT = 0;
-		
-//Performance
-Performance.cpu = function(){
-	Performance.cpu.LAST_TICK_LENGTH = Date.now()-Performance.cpu.LAST_TICK_TIME;
-	Performance.cpu.LAST_TICK_TIME = Date.now();
-	
-    if(Performance.cpu.DISPLAY && Performance.loop.FRAME_COUNT % Performance.cpu.FREQUENCE === 0){
-        var d = Date.now();	
-		Performance.LAST_CONSOLE_LOG = 'Performance (Include Server + Client Lag): ' + Math.round(40*Performance.cpu.FREQUENCE/(d - Performance.cpu.OLD_TIME)*100+15) + '%'
-        INFO(Performance.LAST_CONSOLE_LOG);	//+15 cuz weird glitch making 85% them max
-        Performance.cpu.OLD_TIME = d;
-    }
-};
-Performance.cpu.DISPLAY = NODEJITSU;
-Performance.cpu.OLD_TIME = Date.now();
-Performance.cpu.FREQUENCE = 60*1000/40;
-Performance.cpu.LAST_TICK_LENGTH = 0;
-Performance.cpu.LAST_TICK_TIME = 0;
+Performance.DOWNLOAD = 'DOWNLOAD';
+Performance.UPLOAD = 'UPLOAD';
 
-Performance.getTickInfo = function(){
-	return Performance.cpu.LAST_TICK_LENGTH + 'ms = ' + 1000/Performance.cpu.LAST_TICK_LENGTH + ' FPS';
+Performance.loop = function(){
+	FRAME_COUNT++;
+	
+	LAST_TICK_LENGTH = Date.now()-LAST_TICK_TIME;
+	LAST_TICK_TIME = Date.now();
+	
+	if(DISPLAY && FRAME_COUNT % FREQUENCE === 0){
+        var d = Date.now();
+		Performance.LAST_CONSOLE_LOG = 'Performance: ' + Math.round(40*FREQUENCE/(d - OLD_TIME)*100) + '%. '
+		OLD_TIME = d;
+		
+		INFO(
+			Performance.LAST_CONSOLE_LOG
+			+ 'Upload: ' + Math.round(UPLOAD.size/1000) + ' KB. '
+			+ 'Download: ' + Math.round(DOWNLOAD.size/1000) + ' KB.'
+		);		
+    }
+	
+	
+	
+	
 }
 
 //Bandwidth
 Performance.bandwidth = function(type,data,socket,interval){
 	interval = interval || 1;
 	var size = Performance.bandwidth.getSize(data) * interval;
+	var WHAT = type === Performance.UPLOAD ? UPLOAD : DOWNLOAD;
 	socket.bandwidth[type] += size;
-	Performance.bandwidth[type].size += size;
+	WHAT.size += size;
 	
-	if(socket.bandwidth[type] > Performance.bandwidth[type].limitTotal
-		|| socket.bandwidth[type]/Math.max(socket.globalTimer/CST.MIN,2) > Performance.bandwidth[type].limitPerMin){
+	if(socket.bandwidth[type] > WHAT.limitTotal
+		|| socket.bandwidth[type]/Math.max(socket.globalTimer/CST.MIN,2) > WHAT.limitPerMin){
 		Sign.off(socket.key,'You have capped your bandwidth for this session.');
 	}
 }
-
-
-Performance.DISPLAY_PLAYER_AMOUNT = NODEJITSU;
-Performance.bandwidth.UPLOAD = {display:NODEJITSU,size:0,limitTotal:1000*1000000,limitPerMin:50*1000000};		//what server send
-Performance.bandwidth.DOWNLOAD = {display:NODEJITSU,size:0,limitTotal:100*1000000,limitPerMin:100000};	//what client send
-Performance.bandwidth.FREQUENCE = 60*1000/40;
 Performance.bandwidth.getSize = function(obj){
 	return (Tk.stringify(obj||0).length * 2) || 0;   //in bytes
 }  
-Performance.bandwidth.display = function(){
-    if(Performance.loop.FRAME_COUNT % Performance.cpu.FREQUENCE !== 0) return;
-	
-	if(Performance.bandwidth.UPLOAD.display) INFO('Upload: ' + Math.round(Performance.bandwidth.UPLOAD.size/1000) + ' K bytes');
-	if(Performance.bandwidth.DOWNLOAD.display) INFO('Download: ' + Math.round(Performance.bandwidth.DOWNLOAD.size/1000) + ' K bytes');
-	if(Performance.DISPLAY_PLAYER_AMOUNT)	INFO("Player Count: " + Server.getPlayerCount());		
-}
+
+
+
+
 
 
 

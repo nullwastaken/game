@@ -1,8 +1,18 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var ItemModel = require2('ItemModel'), Main = require2('Main');
-var QueryDb = require4('QueryDb');
+var ItemModel, Main, Equip, QueryDb;
+global.onReady(function(){
+	ItemModel = rootRequire('shared','ItemModel'); Main = rootRequire('shared','Main'); Equip = rootRequire('server','Equip');
+	QueryDb = rootRequire('shared','QueryDb',true);
+});
+var ItemList = exports.ItemList = function(extra){
+	this.key = '';
+	this.id = '';	//same are key
+	this.data = {};	//id:amount
+	Tk.fillExtra(this,extra);
+};
+
 /*
 
 player has tradeList
@@ -18,14 +28,12 @@ when player close win, it sends message to server
 
 */
 
-var ItemList = exports.ItemList = {};
 ItemList.create = function(key,data){
-	var tmp = {
+	return new ItemList({
 		key:key,
 		id:key,
-		data:data || {},	//id:amount
-	};
-    return tmp;
+		data:data,	//id:amount
+	});
 }
 
 ItemList.getMain = function(inv){
@@ -34,9 +42,12 @@ ItemList.getMain = function(inv){
 
 ItemList.format = function(id,amount,calledFromQuest){	//if calledFromQuest, ItemList.format will be called another time, check itemFormat
 	var tmp = {};
-	if(Array.isArray(id)) return ERROR(3,'no longer supported');
-	else if(typeof id === 'string'){ tmp[id] = amount || 1; }
-	else if(typeof id === 'object') tmp = id;
+	if(Array.isArray(id)) 
+		return ERROR(3,'no longer supported');
+	else if(typeof id === 'string')
+		tmp[id] = amount || 1; 
+	else if(typeof id === 'object') 
+		tmp = id;
 	
 	if(!calledFromQuest) 
 		for(var i in tmp) { 
@@ -46,10 +57,20 @@ ItemList.format = function(id,amount,calledFromQuest){	//if calledFromQuest, Ite
 		}
 	
 	for(var i in tmp){
-		if(!calledFromQuest && !ItemModel.get(i)){ ERROR(3,'item dont exist',i,tmp); delete tmp[i]; }
-		if(Math.floor(tmp[i]) !== tmp[i]){ ERROR(3,'item amount isnt whole',i,tmp[i]); delete tmp[i]; }
-		if(tmp[i] === 0) 
+		if(SERVER && !calledFromQuest && !ItemModel.get(i)){ 
+			ERROR(3,'item dont exist',i,tmp); 
+			delete tmp[i]; 
+			continue;
+		}
+		if(Math.floor(tmp[i]) !== tmp[i]){ 
+			ERROR(3,'item amount isnt whole',i,tmp[i]); 
+			delete tmp[i]; 
+			continue;
+		}
+		if(tmp[i] === 0){
 			delete tmp[i];
+			continue;
+		}
 		if(tmp[i] < 0){
 			ERROR(3,'item amount cannot be negative');
 			delete tmp[i];
@@ -66,13 +87,24 @@ ItemList.add = function (inv,id,amount){	//only preparing
 		inv.data[i] += list[i];
 	}
 	ItemList.setFlag(inv);
+	return list;
 }
 
 ItemList.setFlag = function(inv){
 	var main = ItemList.getMain(inv);
-	if(inv === main.invList) Main.setFlag(main,'invList');
-	else if(inv === main.bankList) Main.setFlag(main,'bankList');
-	else if(inv === main.tradeList) Main.setFlag(main,'tradeList');
+	if(inv === main.invList) 
+		Main.setFlag(main,'invList',function(main){
+			return Main.ItemList.compressClient(main.invList);
+		});
+	else if(inv === main.bankList) 
+		Main.setFlag(main,'bankList',function(main){
+			return Main.ItemList.compressClient(main.bankList);
+		});
+	else if(inv === main.tradeList) 
+		Main.setFlag(main,'tradeList',function(main){
+			return Main.ItemList.compressClient(main.tradeList);
+		});
+		
 }
 
 ItemList.remove = function (inv,id,amount){		
@@ -93,42 +125,45 @@ ItemList.getAmount = function(inv,id){
 
 ItemList.have = function (inv,id,amount){
 	var list = ItemList.format(id,amount);	
-	
-	for(var i in list) if(ItemList.getAmount(inv,i) < list[i]) return false;
+	for(var i in list) 
+		if(ItemList.getAmount(inv,i) < list[i]) 
+			return false;
 	return true;
 }
 
 //############################
 
-
 ItemList.transfer = function(originInv,destinationInv,id,amount,verifyIfOwn){
 	var list = ItemList.format(id,amount);
-	if(verifyIfOwn && !ItemList.have(originInv,list)) return false;
-	ItemList.remove(originInv,list);
-	ItemList.add(destinationInv,list);	
-	
+	list = Tk.deepClone(list);
+	if(verifyIfOwn && !ItemList.have(originInv,list)) 
+		return false;
+	ItemList.add(destinationInv,list);
+	ItemList.remove(originInv,list);	
 	return true;
 }
 
-ItemList.stringify = function(list,cb){
+ItemList.stringify = function(list,cb,separator){
+	separator = separator || ', ';
 	if(!SERVER){
 		var str = '';
 		for(var i in list){
 			var item = QueryDb.get('item',i,cb);
 			if(!item) return false;
-			if(item.type !== 'ability')
-				str += 'x' + list[i] + ' ' + item.name + ', ';
+			if(item.type !== 'equip')
+				str += 'x' + list[i] + ' ' + item.name + separator;
 			else
-				str += '<u>x' + list[i] + ' ' + item.name + '</u>, ';
+				str += '<strong>x' + list[i] + ' ' + item.name + '</strong>' + separator;
 		}
-		return str.slice(0,-2);
+		return str.slice(0,-separator.length);
 	} else {
 		var str = '';
 		for(var i in list){
-			str += 'x' + list[i] + ' ' + ItemModel.get(i).name + ', ';		
+			var item = ItemModel.get(i);
+			str += 'x' + list[i] + ' ' + item.name + separator;	
 		}		
 		
-		return str.slice(0,-2);
+		return str.slice(0,-separator.length);
 	}
 }
 
@@ -149,8 +184,8 @@ ItemList.getData = function(inv){
 ItemList.getAllItemOwned = function(key){
 	var inv = ItemList.getData(Main.get(key).invList);
 	var bank = ItemList.getData(Main.get(key).bankList);
-		
-	return inv.$keys().concat(bank.$keys());
+	var equip = Equip.getAllEquipOwned(key,true);
+	return inv.$keys().concat(bank.$keys()).concat(equip);
 }
 
 ItemList.toArray = function(data){
@@ -169,8 +204,12 @@ ItemList.fromArray = function(data){
 		return data;
 	}
 	var res = {};
-	for(var i = 0 ; i < data.length; i++)
-		res[data[i].id] = data[i].amount;
+	for(var i = 0 ; i < data.length; i++){
+		if(data[i].amount !== 0){	//case db maintenance
+			res[data[i].id] = res[data[i].id] || 0;	//case duplicate, used when id changing
+			res[data[i].id] += data[i].amount;
+		}
+	}
 	return res;
 }
 

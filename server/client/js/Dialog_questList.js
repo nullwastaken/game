@@ -1,87 +1,121 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var QueryDb = require4('QueryDb'), Command = require4('Command'), Actor = require4('Actor');
-var Dialog = require3('Dialog');
+var QueryDb, Main, Command, Actor;
+global.onReady(function(){
+	QueryDb = rootRequire('shared','QueryDb',true); Main = rootRequire('shared','Main',true); Command = rootRequire('shared','Command',true); Actor = rootRequire('shared','Actor',true);
+});
+var Dialog = rootRequire('client','Dialog');
 
-Dialog.create('questList','Quest List',Dialog.Size(1200,700),Dialog.Refresh(function(html,variable,param){	// {onlyShow:[]}
-	//Daily Task
-	/*
-	if(!main.dailyTask.$isEmpty()){
-		str += '<span style="color:yellow;" title="Huge Bonus Upon Completing Those Tasks">Daily Task: ';
-		for(var i in main.dailyTask)
-			str += '<span title="' + main.dailyTask[i].date + ': ' + main.dailyTask[i].description + '"> #' + (+i+1) + ' </span>';	
-		str += '</span><br>';
-	} else {
-		str += '<span style="color:' + CST.color.green + ';" title="Good job! Come back tomorrow for another task.">Daily Task: All Done!</span><br>';
-	}
-	*/
-		
+var QUEST_CREATOR_VID_URL = 'http://www.youtube.com/embed/LFzRD94RJi0';
+
+Dialog.create('questList','Quest List',Dialog.Size('auto',535),Dialog.Refresh(function(html,variable,param){	// {onlyShow:[]}
 	//Quest
-	if(!(param && param.onlyShow)){
-		var questDone = getPctQuestDone();
-		var starHeader = getStarQuestDone(questDone[0]/questDone[1]);
-		
-		var h2 = $('<h2>');
-		if(questDone[0] !== questDone[1]){	//100% complete
-			var h2Text = $('<span>')
-				.html(Tk.round(questDone[0]/questDone[1]*100,1) + '% Complete')
-				.attr('title',questDone[0] + ' Quests and Challenges completed out of ' + questDone[1]);
-			h2.append(starHeader,' ',h2Text);
-		} else {		
-			var gemDone = getPctGemDone();
-			var h2Text = $('<span>')
-				.html(Tk.round(gemDone[0]/gemDone[1]*100,1) + '% out of Max GEM')
-				.attr('title','x' + gemDone[0].r(2) + ' GEM out of the maximum of x' + gemDone[1].r(2) + ' GEM');
-			h2.append(starHeader,' ',h2Text);
-		}
-		html.append(h2);
+	var questDone = getPctQuestDone();
+	var starHeader = getStarQuestDone(questDone[0]/questDone[1]);
+	
+	var h2 = $('<h2>');
+	if(questDone[0] !== questDone[1]){	//100% complete
+		var h2Text = $('<span>')
+			.html(Tk.round(questDone[0]/questDone[1]*100,1) + '% Complete')
+			.attr('title',questDone[0] + ' Quests and Challenges completed out of ' + questDone[1]);
+		h2.append(starHeader,' ',h2Text);
+	} else {		
+		var gemDone = getPctGemDone();
+		var h2Text = $('<span>')
+			.html(Tk.round(gemDone[0]/gemDone[1]*100,1) + '% out of Max GEM')
+			.attr('title','x' + gemDone[0].r(2) + ' GEM out of the maximum of x' + gemDone[1].r(2) + ' GEM');
+		h2.append(starHeader,' ',h2Text);
+	}
+	html.append(h2);
+	
+	//comp
+	var topButton = $('<div>')
+		.css({position:'absolute',fontSize:'1.3em',right:20,top:20});
+	html.append(topButton);
+	
+	if(w.main.questActive && w.main.questActive !== CST.QTUTORIAL){
+		var nameQA = QueryDb.get('quest',w.main.questActive).name;
+		topButton.append($('<button>')
+			.addClass('myButton skinny')
+			.html('Abandon')
+			.css({marginRight:'5px',background:'#FFCCCC'})
+			.attr('title','Abandon active quest ' + nameQA)
+			.click(function(){
+				Dialog.playSfx('select');
+				Main.askQuestion(w.main,function(){
+					Command.execute(CST.COMMAND.questAbandon,[w.main.questActive]);
+				},'Are you sure you want<br>to abandon the quest ' + nameQA + ' ?','boolean');
+			})
+		);
 	}
 	
-	var competitionBtn = $('<button>')
+	topButton.append($('<button>')
 		.addClass('myButton skinny')
-		.html('Competition')
-		.attr('title','Check current competition')
+		.html('Highscore')
+		.attr('title','Check highscore')
 		.click(function(){
-			Dialog.open('highscore','competition');
+			Dialog.playSfx('select');
+			Dialog.close('questList');
+			Dialog.open('highscore');
 		})
-		.css({position:'absolute',fontSize:'1.5em',right:20,top:20});
-	html.append(competitionBtn);
+	);
 	
 	var all = $('<div>').addClass('shadow');
 	html.append(all);
 	
+	var includePartySize = w.main.party.list.length > 1;
 	var array = [
-		['Quest','Creator','Rating','Chal. 1','Chal. 2','Chal. 3']
+		['Quest','Creator','Rating','Chal.']
 	];
+	if(includePartySize)
+		array[0].push('#');
 	
 	var thumbnail = Dialog.questThumbnail();
 	
 	var helper = function(i){
 		return function(e){
-			if(!e.shiftKey) 
+			if(!e.shiftKey){
 				Dialog.open('quest',i);
-			else if(main.questActive === i) 
-				Command.execute('win,quest,abandon',[i]);
+				Dialog.playSfx('select');
+			}
+			else if(w.main.questActive === i) 
+				Command.execute(CST.COMMAND.questAbandon,[i]);
 			else 
-				Command.execute('win,quest,start',[i]);
+				Command.execute(CST.COMMAND.questStart,[i]);
 		}
 	}
 	
-	var listQuest = main.quest.$keys();	//BAD, should sort by name, not id
-	listQuest.sort();
-	if(main.questActive){
-		listQuest.$remove(main.questActive);
-		listQuest.unshift(main.questActive);
+	var storyQuest = [];
+	var normalQuest = [];
+	for(var i in w.main.quest){	//BAD, should sort by name, not id
+		if(w.main.questActive === i)
+			continue;
+		var mq = w.main.quest[i];
+		var q = QueryDb.get('quest',i);
+		if(!q.showInTab) 
+			continue;
+		if(q.mainStory){
+			if(mq.canStart)
+				storyQuest.push(i);
+		} else if(w.main.questActive !== i)	//added later
+			normalQuest.push(i);
 	}
+	normalQuest.sort();
+	for(var i = 0 ; i < storyQuest.length; i++)
+		normalQuest.unshift(storyQuest[i]);
+	if(w.main.questActive)
+		normalQuest.unshift(w.main.questActive);
 	
-	for(var num = 0 ; num < listQuest.length; num++){
-		var i = listQuest[num];
+	var playSfx = function(){
+		Dialog.playSfx('mouseover');
+	}
+	for(var num = 0 ; num < normalQuest.length; num++){
+		var i = normalQuest[num];
 		var q = QueryDb.get('quest',i);
 		if(!q.showInTab) continue;
-		if(param && param.onlyShow && !param.onlyShow.$contains(i)) continue;
-		var mq = main.quest[i];
-		if(!mq._challengeDone){
+		var mq = w.main.quest[i];
+		if(!mq.challengeDone){
 			ERROR(3,'mq doesnt have challegeDone',i);
 			continue;
 		}
@@ -90,23 +124,25 @@ Dialog.create('questList','Quest List',Dialog.Size(1200,700),Dialog.Refresh(func
 		
 		//name
 		var color = 'red';
-		if(main.questActive === i)
+		if(w.main.questActive === i)
 			color = 'orange';
-		else if(mq._rewardScore >= 10000)
-			color = CST.color.gold;
-		else if(mq._complete) 
+		else if(mq.complete) 
 			color = 'green';
 		
-		var glyph = mq.canStart
-			? ''
-			: Tk.getGlyph('lock',true).css({color:'black'}).attr({title:q.requirement.canStartText})
+		var glyph = '';
+		if(!mq.canStart)
+			glyph = Tk.getGlyph('lock',true).css({color:'black'}).attr({title:q.requirement.canStartText});
+		if(q.mainStory)
+			glyph = Tk.getGlyph('book',true).css({color:'black'}).attr({title:'Main Story Quest'});
+		
 		
 		var name = $('<fakea>')
 			.css({color:color,cursor:'pointer'})
 			.addClass('shadow')
 			.append(glyph,' ' + q.name)
 			.click(helper(i))
-			.hover(Dialog.questThumbnail.refresh(thumbnail,i),function(){});
+			.hover(playSfx,null)
+			.mouseover(Dialog.questThumbnail.refresh(thumbnail,i));
 		sub.push(name);
 		sub.push(q.author || '-');
 		
@@ -118,57 +154,67 @@ Dialog.create('questList','Quest List',Dialog.Size(1200,700),Dialog.Refresh(func
 		}
 		
 		//Challenge
+		var challengeSpan = Tk.centerDOM($('<span>'));
+		sub.push(challengeSpan);
 		var count = 1;
-		for(var j in mq._challengeDone){
-			if(mq._challengeDone[j]){
-				sub.push(Tk.centerDOM($('<span>')
+		for(var j in mq.challengeDone){
+			if(mq.challengeDone[j]){
+				challengeSpan.append($('<span>')
 					.css({color:'green'})
 					.addClass('shadow')
-					.html(CST.CHECKMARK)
+					.html(' ' + CST.CHECKMARK)
 					.attr('title','Challenge \'' + q.challenge[j].name + '\' completed')
-				));
+				);
 			} else {
-				sub.push(Tk.centerDOM($('<span>')
+				challengeSpan.append($('<span>')
 					.css({color:'red'})
 					.addClass('shadow')
-					.html('X')
+					.html(' X')
 					.attr('title','Challenge \'' + q.challenge[j].name + '\' never completed')
-				));
+				);
 			}
 			count++;
 		}
-		for(var j = count; j < 4; j++){
-			sub.push(Tk.centerDOM('-'));
+		if(includePartySize){
+			var title = 'Max Party Size: ' + q.maxPartySize;
+			if(q.maxPartySize !== q.recommendedPartySize)
+				title += '. Recommended: ' + q.recommendedPartySize;
+			sub.push($('<span>')
+				.html(q.maxPartySize)
+				.attr('title',title)
+			);
 		}
 		
 		array.push(sub);
+		if(q.mainStory && normalQuest[num+1] && !QueryDb.get('quest',normalQuest[num+1]).mainStory)
+			array.push(['','','','']);
 	}
 	
+	//select random one to display
 	var q;
 	var limit = 0;
 	do {
-		q = QueryDb.get('quest',main.quest.$randomAttribute());
+		q = QueryDb.get('quest',w.main.quest.$randomAttribute());
 	} while(!q.showInTab && limit++ < 100);
 	
 	if(q.showInTab)
 		Dialog.questThumbnail.refresh(thumbnail,q.id)();
 	
+	//add QuestCreator
 	array.push([
-		$('<a href="http://rainingchain.com/contribution" target="_blank"></a>')
+		$('<a href="/QuestCreator" target="_blank"></a>')
 			.html('Your Quest!')
 			.css({color:'blue'})
 			.hover(Dialog.questThumbnail.refresh(thumbnail,null,{
 				description:"Create your own quest with the easy-to-use Quest Creator. "
-					+ '<a title="Open in new window." style="color:blue;text-decoration:underline;" href="/contribution" target="_blank">Check it out</a>',
+					+ '<a title="Open in new window." style="color:blue;text-decoration:underline;" href="/QuestCreator" target="_blank">Check it out!</a>',
 				author:'',
-				thumbnail:'../img/ui/questCreator.png',
+				isIframe:true,
 				name:'Quest Creator',			
 			}),function(){}),
-		player.name,
+		'YOU',
 		'-',
-		Tk.centerDOM('-'),
-		Tk.centerDOM('-'),
-		Tk.centerDOM('-')
+		'',
 	]);
 	
 	//var table = Tk.arrayToTable(array,true,false,true);//.css({fontSize:'20px',textAlign:'center'});
@@ -178,7 +224,7 @@ Dialog.create('questList','Quest List',Dialog.Size(1200,700),Dialog.Refresh(func
 	html.css({overflow:'auto'});
 	
 	var divTable = $('<div>')
-		.css({height:'500px',overflowY:'scroll'})
+		.css({display:'inline-block',verticalAlign:'top',height:'400px',overflowY:'scroll'})
 		.append(table);
 		//.append(div
 		//);
@@ -186,31 +232,26 @@ Dialog.create('questList','Quest List',Dialog.Size(1200,700),Dialog.Refresh(func
 		divTable[0].scrollTop = 0;
 	},100);
 	
-	var tableCreate = $('<div>')
-		.css({display:'inline-block',verticalAlign:'top'})
-		.append(divTable,'<br>',$('')
-			.html('Create your own quest using the Quest Creator')
-			.addClass('u')
-		);
+	thumbnail.css({display:'inline-block',verticalAlign:'top'});
 	
-	//html.append(tableCreate,thumbnail);	
-	html.append(tableCreate,thumbnail);	
+	//html.css({whiteSpace: 'nowrap',overflowX:'hidden'});
+	html.append(divTable,thumbnail);	
 },function(){
-	return main.questActive;
+	return w.main.questActive;
 },10));
 //Dialog.open('questList')
 
 var getPctQuestDone = function(){
 	var questAndChal = 0;
 	var questAndChalDone = 0;
-	for(var i in main.quest){
+	for(var i in w.main.quest){
 		if(!QueryDb.getQuestShowInTab(i)) continue;
 		questAndChal++;
-		if(main.quest[i]._complete)
+		if(w.main.quest[i].complete)
 			questAndChalDone++;
-		for(var j in main.quest[i]._challengeDone){
+		for(var j in w.main.quest[i].challengeDone){
 			questAndChal++;
-			if(main.quest[i]._challengeDone[j])
+			if(w.main.quest[i].challengeDone[j])
 				questAndChalDone++;
 		}
 	}
@@ -234,11 +275,12 @@ var getStarQuestDone = function(pct){
 		return sp.css({color:CST.color.gold}).html('★★★').attr('title','YOU ARE AMAZING!!!');
 	return sp;	//if error?
 }
+
 var getPctGemDone = function(){
-	var gem = Actor.getGEM(player);
+	var gem = Actor.getGEM(w.player);
 	var maxGem = 1;
 	
-	for(var i in main.quest){
+	for(var i in w.main.quest){
 		if(!QueryDb.getQuestShowInTab(i)) continue;
 		maxGem += Actor.getGEM.scoreToGEM(10000);	//cuz 10k is max score
 		maxGem += 0.02 * 3; //challenge
@@ -247,32 +289,40 @@ var getPctGemDone = function(){
 	return [gem,maxGem];
 }	
 
-
 Dialog.questThumbnail = function(sizeFactor){
-	sizeFactor = sizeFactor || 1;
-	var thumbnail = $('<div>');
-	var obj = $('<img>')
-		.attr({width:500*sizeFactor,height:380*sizeFactor})
+	var sizeFactor = 0.7;
+	var imgDiv = $('<div class="imgDiv">')	//class is not real...
+		.css({width:400*sizeFactor,height:300*sizeFactor})
 		.css({border:'2px solid black'});
-		
-	var thumbText = $('<div>')
-		.css({fontSize:(1.75*sizeFactor) + 'em',width:500*sizeFactor,background:'white'});
-	thumbnail.append(obj,'<br>',thumbText);
-	thumbnail.css({display:'inline-block',verticalAlign:'top',margin:'10px 10px'});
-	return thumbnail;
+	var thumbText = $('<div class="thumbText">') //class is not real...
+		.css({fontSize:(1.75*sizeFactor) + 'em',width:400*sizeFactor,background:'white'});
+	return $('<div>')
+		.css({display:'inline-block',verticalAlign:'top',margin:'10px 10px'})
+		.append(imgDiv,'<br>',thumbText);
 }
-Dialog.questThumbnail.refresh = function(thumbnail,i,questObj){
-	return function(e){
+
+Dialog.questThumbnail.refresh = function(thumbnail,i,questObj){	//q.isIframe
+	return function(){
 		var q = questObj || QueryDb.get('quest',i);
-		var obj = thumbnail.find('img');
-		var thumbText = thumbnail.find('div');
-		if(!(!obj.attr('src') && !q.thumbnail))						
-			obj.attr({src:q.thumbnail});
-		var auth = q.author ? ' (by ' + q.author + ') ' : '';
+		var imgDiv = thumbnail.find('div.imgDiv');
+		var thumbText = thumbnail.find('div.thumbText');
+		
+		
+		if(q.isIframe)
+			imgDiv.html('<iframe style="width:100%; height:100%" src="' + QUEST_CREATOR_VID_URL + '" frameborder="0" allowfullscreen></iframe>');
+			//imgDiv.find('iframe').css({width:'100%',height:'100%'});
+		else {	
+			var img = imgDiv.find('img');
+			if(!img[0]){
+				img = $('<img>');
+				imgDiv.html(img);
+			}
+			img.attr({src:Dialog.getQuestThumbnail(q),width:'100%',height:'100%'});					
+		}
+		var auth = q.author ? ' by ' + q.author : '';
 		thumbText.html('<u>' + q.name + '</u>' + auth + ':<br><span style="font-size:0.85em">' + q.description + '<span>');
 	}
 }
-
 
 Dialog.getStar = function(num){
 	var span = $('<span>').css({color:'yellow'}).addClass('shadow360');
@@ -282,8 +332,8 @@ Dialog.getStar = function(num){
 	var mod = num % 1;
 	if(mod >= 0.25 && mod <= 0.75)
 		span.append('+');
-	if(mod >= 0.75)
-		span.append('+');
+	if(mod > 0.75)
+		span.append(CST.STAR);
 	span.attr('title',num.r(3) + '/3');
 	return span;
 }

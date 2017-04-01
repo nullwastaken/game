@@ -1,8 +1,14 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Stat = require2('Stat'), Boost = require2('Boost');
-var Actor = require3('Actor');
+var Stat, Boost;
+global.onReady(function(){
+	Stat = rootRequire('shared','Stat'); Boost = rootRequire('shared','Boost');
+});
+var Actor = rootRequire('shared','Actor');
+
+
+var INTERVAL = {fast:2,reg:5,slow:25}; //fast = 2, no idea if good
 
 Actor.Boost = function(type){
 	return {          //timer aka needs to be updated every frame
@@ -10,16 +16,16 @@ Actor.Boost = function(type){
 		reg:{},
 		slow:{},
 		toUpdate:{},
-		list:Actor.Boost.list(type || 'player'),	//bad...
+		list:Actor.Boost.list(type || CST.ENTITY.player),	//bad...
 	};
 }
 Actor.Boost.list = function(type){
-	return Stat.actorBoostList(type || 'player');
+	return Stat.actorBoostList(type || CST.ENTITY.player);
 }
 
 //#################
 
-Actor.boost = function(act, boost){
+Actor.addBoost = function(act, boost){
 	//Add a boost to a actor
 
 	//list[i]: i = stat
@@ -28,7 +34,7 @@ Actor.boost = function(act, boost){
 	
 	if(Array.isArray(boost)){
 		for(var i = 0; i < boost.length; i++)
-			Actor.boost(act,boost[i]); 
+			Actor.addBoost(act,boost[i]); 
 		return;
 	}
 	
@@ -38,11 +44,13 @@ Actor.boost = function(act, boost){
 	
 }
 
+Actor.boost = {};
+
 Actor.boost.remove = function(act, boost){
 	var stat = boost.stat;
 	if(boost.name === Boost.FROM_ABILITY){ 
 		delete act.curseClient[stat];	
-		Actor.setFlag(act,'curseClient');
+		Actor.setChange(act,'curseClient',act.curseClient);
 	}
 	delete act.boost.list[stat].name[boost.id]
 	delete act.boost[boost.spd][boost.id];
@@ -68,12 +76,12 @@ Actor.boost.removeAll = function(act,stringToMatch){
 }
 
 Actor.boost.loop = function(act){
-	var list = Actor.boost.loop.INTERVAL;
-	for(var spd in list){
-		if(!Actor.testInterval(act,list[spd])) continue;
+	for(var spd in INTERVAL){
+		if(!Actor.testInterval(act,INTERVAL[spd])) 
+			continue;
 		
 		for(var j in act.boost[spd]){	//j = boost id
-			act.boost[spd][j].time -= list[spd];
+			act.boost[spd][j].time -= INTERVAL[spd];
 			if(act.boost[spd][j].time < 0)
 				Actor.boost.remove(act,act.boost[spd][j],spd,j);
 		}
@@ -84,7 +92,6 @@ Actor.boost.loop = function(act){
 		delete act.boost.toUpdate[i];
 	}
 }
-Actor.boost.loop.INTERVAL = {fast:2,reg:5,slow:25}; //fast = 2, no idea if good
 
 Actor.boost.getBase = function(act,stat){
 	if(!act.boost.list[stat])
@@ -93,16 +100,27 @@ Actor.boost.getBase = function(act,stat){
 }
 
 Actor.boost.update = function(act,statName){	// !statName means all
-	if(!statName){ for(var i in act.boost.list) Actor.boost.update(act,i); return; }
+	if(!statName){ //aka update all
+		for(var i in act.boost.list) 
+			Actor.boost.update(act,i); 
+		return; 
+	}	
 	
 	var stat = act.boost.list[statName];
 	var sum = stat.base;
 	
+	var globalMod = 1;
 	for(var i in stat.name){
 		var boost = stat.name[i];
-		if(boost.type === '+') sum += boost.value;
-		else if(boost.type === '*'){	sum += (boost.value-1)*stat.base; }
+		if(boost.type === CST.BOOST_PLUS) 
+			sum += boost.value;
+		else if(boost.type === CST.BOOST_X)
+			sum += (boost.value-1)*stat.base;
+		else if(boost.type === CST.BOOST_XXX)
+			globalMod *= boost.value;
 	}
+	sum *= globalMod;
+		
 	Stat.setValue(act,statName,sum);
 }
 
@@ -111,11 +129,11 @@ Actor.setBoostListBase = function(act){	//could be optimzed to only test things 
 	for(var i in act.boost.list){
 		act.boost.list[i].base = act.boost.list[i].permBase = Stat.getValue(act,i);	
 	}
-	if(act.type === 'player') 	//QUICKFIX
+	if(act.type === CST.ENTITY.player) 	//QUICKFIX
 		act.boost.list[i].base = act.boost.list['bullet-spd'].permBase *= 3;
 }
 
-Actor.permBoost = function(act,source,boost){
+Actor.addPermBoost = function(act,source,boost){
 	//remove permBoost if boost undefined
 	if(boost)	
 		act.permBoost[source] = Tk.arrayfy(boost);
@@ -125,6 +143,7 @@ Actor.permBoost = function(act,source,boost){
 	Actor.permBoost.update(act);
 }
 
+Actor.permBoost = {};
 Actor.permBoost.update = function(act){
 	var pb = act.boost.list;
 	//Reset to PermBase
@@ -134,8 +153,8 @@ Actor.permBoost.update = function(act){
 			base:pb[i].permBase,
 			max:Stat.get(i).value.max,
 			min:Stat.get(i).value.min,
-			x:1,xx:1,xxx:1,
-			p:0,pp:0,
+			x:1,xxx:1,
+			p:0
 		}
 	}
 	
@@ -143,30 +162,39 @@ Actor.permBoost.update = function(act){
 	for(var i in act.permBoost){	//i = Source (item)	
 		for(var j in act.permBoost[i]){	//each indidual boost boost
 			var b = act.permBoost[i][j];
-			if(b.type === '+' || b.type === 'base'){tmp[b.stat].p += b.value;}
-			else if(b.type === '++'){tmp[b.stat].pp += b.value;}
-			else if(b.type === '*'){tmp[b.stat].x += b.value;}
-			else if(b.type === '**'){tmp[b.stat].xx += b.value;}
-			else if(b.type === '***'){tmp[b.stat].xxx *= b.value;}		//used for very global things (map mod)
-			else if(b.type === 'min'){tmp[b.stat].min = Math.max(tmp[b.stat].min,b.value);}
-			else if(b.type === 'max'){tmp[b.stat].max = Math.min(tmp[b.stat].max,b.value);}			
+			if(b.type === CST.BOOST_PLUS || b.type === 'base')
+				tmp[b.stat].p += b.value;
+			else if(b.type === CST.BOOST_X)
+				tmp[b.stat].x += b.value;
+			else if(b.type === CST.BOOST_XXX)
+				tmp[b.stat].xxx *= b.value;		//used for very global things (map mod)
+			else if(b.type === 'min')
+				tmp[b.stat].min = Math.max(tmp[b.stat].min,b.value);
+			else if(b.type === 'max')
+				tmp[b.stat].max = Math.min(tmp[b.stat].max,b.value);		
 		}
 	}
 	
 	//Max and min
 	for(var i in tmp){
-		var sum = ((((tmp[i].base * tmp[i].x) + tmp[i].p) * tmp[i].xx) + tmp[i].pp) * tmp[i].xxx;
-		sum = sum.mm(tmp[i].min,tmp[i].max);
+		var t = tmp[i];
+		var sum = ((t.base * t.x) + t.p) * t.xxx;
+		sum = Math.min(Math.max(sum,t.min),t.max);
+		
 		pb[i].base = sum;
 	}
 	
+	for(var i in pb){
+		var stat = Stat.get(i);
+		if(!stat.custom) 
+			continue;
+		if(pb[i].base)
+			stat.customFunc(act.boost.list,pb[i].base,act);
+	}
+	
 	Actor.boost.update(act);
-	
-	for(var j in act.bonus.statCustom){ 
-		Stat.get(j).customFunc(act.boost,act.bonus.statCustom[j],act);
-	}	
-	
-	Actor.setFlag(act,'permBoost');
+	if(act.type === CST.ENTITY.player)
+		Actor.setPrivateChange(act,'permBoost',act.permBoost);
 }
 
 })(); //{

@@ -1,6 +1,10 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
-var Actor = require2('Actor'), Attack = require2('Attack'), Message = require2('Message'), Anim = require2('Anim'), Boost = require2('Boost');
+var Actor, Attack, Message, Anim, Boost;
+global.onReady(function(){
+	Actor = rootRequire('shared','Actor'); Attack = rootRequire('shared','Attack'); Message = rootRequire('shared','Message'); Anim = rootRequire('server','Anim'); Boost = rootRequire('shared','Boost');
+});
+var Combat = exports.Combat = {};
 /*
 *INIT
 every frame, boost ability charge, and globalCooldown--
@@ -18,77 +22,69 @@ add dmg from weapon to atk
 
 spawn bullet or strike
 */
+var ATTACK_RECEIVED_TIME = 20*25;
+var NPC_DELAY = 10;
 
-
-
-var Combat = exports.Combat = {};
-
-Combat.attack = function(act,param,extra){   	
-	var atk = typeof param === 'function' ? param() : Tk.deepClone(param); 
+Combat.attack = function(act,param,extra){
+	var atk = Tk.deepClone(param); 
 	
 	extra = extra || {};
 	
+	//Add Bonus and mastery
+	atk = Combat.applyAttackMod(act,atk);
+	
+	Combat.attack.setXYA(act,atk,extra);
+		
+	
+	if(atk.preDelayAnim){
+		Anim.create(atk.preDelayAnim,Anim.Target(extra.x,extra.y,act.map,act.viewedIf),extra.angle);	
+	}
+	
+	Actor.onAttack(act);	//outside so movement stops before attack
+	var addDelay = act.type === CST.ENTITY.npc ? NPC_DELAY : 0; 	//TEMP
+	Actor.setTimeout(act,function(){
+		if(atk.postDelayAnim)
+			Anim.create(atk.postDelayAnim,Anim.Target(extra.x,extra.y,act.map,act.viewedIf),extra.angle);
+		Combat.attack.perform(act,atk,extra);
+	},atk.delay + addDelay);
+}
+
+Combat.attack.setXYA = function(act,atk,extra){
 	if(extra.angle === undefined){
 		extra.angle = act.angle;
 	}
 	
 	if(extra.x === undefined){
-		if(atk.initPosition.type === 'actor'){
+		if(atk.initPosition.type === CST.INIT_POSITION.actor){
 			extra.x = act.x;
 			extra.y = act.y;
 		}	
-		if(atk.initPosition.type === 'mouse'){
+		if(atk.initPosition.type === CST.INIT_POSITION.mouse){
 			var end = Attack.getInitPosition(atk,act);
 			
 			extra.x = end.x;
 			extra.y = end.y;
 		}
 	}
-		
-	//Add Bonus and mastery
-	atk = Combat.applyAttackMod(act,atk);
-	
-	if(atk.preDelayAnim){
-		Anim.create(atk.preDelayAnim,Anim.Target(extra.x,extra.y,act.map,act.viewedIf));	
-	}
-	Actor.setTimeout(act,function(){
-		if(atk.postDelayAnim)
-			Anim.create(atk.postDelayAnim,Anim.Target(extra.x,extra.y,act.map,act.viewedIf));
-		Combat.attack.perform(act,atk,extra);
-	},atk.delay);
 }
 
-Combat.attack.perform = function(player,atk,extra){   //extra used for stuff like boss loop
-	//At this point, player.bonus/mastery must be already applied
+Combat.attack.perform = function(act,atk,extra){   //act may not be a actor, extra used for stuff like boss loop
+	//At this point, act.bonus/mastery must be already applied
 	var atkList = [atk];
 	for(var i = 1 ; i < atk.amount ; i ++)
 		atkList.push(Tk.deepClone(atk));
 	
-	var initAngle = extra.angle + Math.randomML() * (atk.aim + player.aim) || 0;
+	var initAngle = extra.angle + Math.randomML() * (atk.aim + act.aim) || 0;
 	var atkAngle = atk.angleRange;	//required
 	
 	for(var i = 0 ; i < atkList.length ; i ++){
 		var angle = initAngle + atkAngle * (atk.amount-2*(i+0.5)) / (atk.amount*2);
-		Attack.create(atkList[i],player,{
+		Attack.create(atkList[i],act,{
 			num:i,
-			angle:(angle%360+360)%360,
+			angle:Tk.formatAngle(angle),
 			x:extra.x,
 			y:extra.y
 		});	
-	}
-	
-	if(player.type === 'player'){
-		player.spdX /= 2;
-		player.spdY /= 2;
-		Actor.boost(player,Boost.create('useAbility','acc',1/5,3,'*'));
-	}
-	if(player.type === 'npc'){
-		player.spdX /= 8;
-		player.spdY /= 8;
-		Actor.boost(player,[
-			Boost.create('useAbility','acc',1/5,6,'*'),
-			Boost.create('useAbility','maxSpd',1/2,10,'*'),
-		]);
 	}
 }
 
@@ -99,8 +95,8 @@ Combat.summon = function(master,param){
 
 	var maxChild = param.maxChild; 
 	var time = param.time;
-	var atkMod = 1;
-	var defMod = 1;
+	var atkMod = param.globalDmg;
+	var defMod = param.globalDef;
 	
 	if(master.bonus && master.bonus.summon){
 		maxChild *= master.bonus.summon.amount;
@@ -124,131 +120,148 @@ Combat.summon = function(master,param){
 			viewedIf:master.viewedIf,//'summoned',
 			combatType:master.combatType,
 			quest:master.quest,	//for killCount
-			awareNpc:1,
+			awareNpc:true,
+			lvl:master.lvl,
+			killRewardMod:0,
 		}
 		
-		var spot = Actor.Spot(master.x,master.y,master.map);
+		var spot = Actor.toSpot(master);
 		var act = Actor.create(param.model,extra);
 		Actor.addToMap(act,spot);
 		master.summon[name].child[act.id] = 1;	
 		
+		var boost = [];
 		if(atkMod !== 1)
-			Actor.boost(act,Boost.create('summon','globalDmg',atkMod,time,'*'));
+			boost.push(Boost.Perm('globalDmg',atkMod,CST.BOOST_XXX));
 		if(defMod !== 1)
-			Actor.boost(act,Boost.create('summon','globalDmg',defMod,time,'*'));
+			boost.push(Boost.Perm('globalDmg',defMod,CST.BOOST_XXX));
+		if(boost.length){
+			Actor.addPermBoost(act,'summon',boost);
+		}
 	}	
 }
 
 Combat.boost = function(act,param){
-	Actor.boost(act,param.boost);
+	Actor.addBoost(act,param.boost);
 }
 
 Combat.heal = function(act,param){
+	if(!Actor.canUseHeal(act))
+		return Message.add(act.id,"A magical force is preventing you from healing.");
+	
 	if(act.hp === act.hpMax && param.mana === 0)	//BAD
 		return Message.add(act.id,"You're already at maximum HP. Use this ability when your HP gets low.");
 	Actor.changeResource(act,param);
+	Actor.addHitHistory(act,param.hp);
 }
 
 Combat.dodge = function(act,param){
-	Actor.dodge(act,param.time,param.distance);
+	Message.add(act.id,'Dodge has been removed from the game. This ability does nothing anymore.');
+	return;
+	//Actor.dodge(act,param.time,param.distance);
 }
 
 Combat.event = function(act,param){   	
-	param.event(act.id);
+	if(param.event)
+		param.event(act.id);
 }
 Combat.idle = function(){}
 
 //COLLISION//
-Combat.collision = function(b,act){
-	if(act.attackReceived[b.hitId]) return;    //for pierce
-    act.attackReceived[b.hitId] = 20*25;	//last for 20 sec
+Combat.onCollision = function(b,act){	
+	if(act.attackReceived[b.hitId]) 
+		return;    //for pierce
+    act.attackReceived[b.hitId] = ATTACK_RECEIVED_TIME;	//last for 20 sec
 	
 	if(!act.preventStagger && act.staggerTimer < 0){
-		act.spdX = act.spdX/4;
-		act.spdY = act.spdY/4;		
-		Actor.moveBy(act,Tk.cos(b.moveAngle)*15,Tk.sin(b.moveAngle)*15);
-		act.staggerTimer = 10;
+		Actor.applyStagger(act,b.moveAngle);
 	}
 	
-	if(b.hitAnim) 
-		Anim.create(b.hitAnim,Anim.Target(act.id));
-		
 	if(b.hitEvent)	//for quest
 		b.hitEvent(act.id,b.parent);
-		
+	if(act.hitEvent)
+		act.hitEvent(act.id,b.parent);
+	
 	if(b.onHitHeal)
 		return Actor.changeResource(act,b.onHitHeal);
 	
 	if(b.crit && b.crit.chance >= Math.random())
-		Combat.collision.crit(b)
+		Combat.onCollision.crit(b)
 	
-	var dmg = Combat.collision.damage(b,act); 
-	if(typeof dmg === 'undefined') return;
+	var dmg = Combat.onCollision.damage(b,act); 
+	
+	if(typeof dmg === 'undefined') 
+		return;	//bug?
 
 	//Mods
 	if(b.leech && b.leech.chance >= Math.random())
-		Combat.collision.leech(act,b);
+		Combat.onCollision.leech(act,b);
 		
 	if(b.pierce && b.pierce.chance >= Math.random())
-		Combat.collision.pierce(b)
-	else b.toRemove = 1;
+		Combat.onCollision.pierce(b)
+	else 
+		b.toRemove = true;
 	
 	if(b.onHit && b.onHit.chance >= Math.random())
 		Combat.attack(b,b.onHit.attack);
 	
 	if(b.curse && b.curse.chance >= Math.random())
-		Combat.collision.curse(act,b.curse);
+		Combat.onCollision.curse(act,b.curse);
+		
+	if(b.hitAnim){
+		if(act.hp > 0)	//BAD, problem is cant put anim on dead one
+			Anim.create(b.hitAnim,Anim.Target(act.id),b.angle);	
+		else	
+			Anim.create(b.hitAnim,Anim.Target(act.x,act.y,act.map),b.angle);			
+	}
 	
 	//Apply Status
-	Actor.status.afflict(dmg,b,act);
+	Actor.afflictStatus(act,b);
 	
 }
 
 //Apply Mods
-Combat.collision.curse = function(act,info){
+Combat.onCollision.curse = function(act,info){
 	for(var i = 0; i < info.boost.length; i++){
 		var boost = info.boost[i];
 		boost.name = Boost.FROM_ABILITY;
-		Actor.boost(act,boost); 
+		Actor.addBoost(act,boost); 
 		
 		act.curseClient[boost.stat] = boost.type + Tk.round(boost.value,2);
-		Actor.setFlag(act,'curseClient');
+		Actor.setChange(act,'curseClient',act.curseClient);
 	}
 }
 
-Combat.collision.pierce = function(b){
-	if(--b.pierce.amount <= 0){ b.pierce.chance = 0; }
-	b.globalDmg *= b.pierce.dmgReduc;
+Combat.onCollision.pierce = function(b){
+	if(--b.pierce.amount <= 0)
+		b.pierce.chance = 0;
+	b.dmg.main *= b.pierce.dmgReduc;
 }
 
-Combat.collision.leech = function(act,b){
-	var info = b.leech;
-	
-	var player = Actor.get(b.parent);	
-	var amount = (player.hpMax-player.hp) * info.magn;
-	Actor.changeResource(player,{hp:amount});
-	
+Combat.onCollision.leech = function(act,b){
+	var act = Actor.get(b.parent);	
+	var amount = (act.hpMax-act.hp) * b.leech.magn;
+	Actor.addHp(act,amount,true);
 }
 
-Combat.collision.crit = function(b){
+Combat.onCollision.crit = function(b){
 	b.dmg.main *= b.crit.magn;
 }
 
 //Damage
-Combat.collision.damage = function(atk,act){
+Combat.onCollision.damage = function(atk,act){
 	var def = Actor.getDef(act);
-	var dmgInfo = Combat.collision.damage.calculate(atk.dmg,def);
-	if(dmgInfo.sum === 0) return;
+	var dmgInfo = Combat.onCollision.damage.calculate(atk.dmg,def);
+	if(dmgInfo.sum === 0) 
+		return;
 	if(!dmgInfo.sum){
 		var puser = (Actor.get(atk.parent) && Actor.get(atk.parent).name) || 'unable to get parent name';
-		return ERROR(4,'dmg sum is NaN',atk.dmg,def,'atk: ' + puser,'def:' + act.def);
+		return ERROR(4,'dmg sum is NaN',atk.dmg,def,'atk: ' + puser,'def:' + act.name);
 	}
-	//if(Actor.isPlayer(act) && Actor.isPlayer(atk.parent)) 	//pvp
+	if(dmgInfo.sum > 5)
+		dmgInfo.sum += 3 * Math.random();
 	
-	Actor.addHitHistory(act,-dmgInfo.sum);
-	Actor.addHp(act,-dmgInfo.sum);
-		
-	act.lastAbilitySkill = dmgInfo.mainType;
+	Actor.addHp(act,-dmgInfo.sum,true);
 	
 	act.damagedBy[atk.parent] = act.damagedBy[atk.parent] || 0;
 	act.damagedBy[atk.parent] += dmgInfo.sum;
@@ -256,7 +269,7 @@ Combat.collision.damage = function(atk,act){
 	return dmgInfo;
 }
 
-Combat.collision.damage.calculate = function(dmg,def){
+Combat.onCollision.damage.calculate = function(dmg,def){
 	var info = {};
 	var sum = 0;
 	
@@ -265,7 +278,6 @@ Combat.collision.damage.calculate = function(dmg,def){
 		var add = mod * dmg.ratio[i]/def.ratio[i]; 
 		sum += add;
 		info[i] = add;
-		if(add) info.mainType = i;
 	}
 	info.sum = sum;
 	return info;
@@ -273,90 +285,7 @@ Combat.collision.damage.calculate = function(dmg,def){
 
 
 
-//TargetIf damageIf
-Combat.targetIf = function(atk,def){
-	if(!Combat.targetIf.global(atk,def)) return false;
 
-	if(typeof atk.targetIf === 'function'){
-		return atk.targetIf(def.id,atk.id);	//need id cuz changeable by quest, try catch?
-	} else {
-		return Combat.targetIf.list[atk.targetIf](def,atk);
-	}
-};
-
-Combat.damageIf = function(atk,def){	//could be optimized
-	if(!Combat.damageIf.global(atk,def)) return false;
-	
-	if(typeof atk.damageIf === 'function'){
-		return atk.damageIf(def.id,atk.id);	//need id cuz changeable by quest, try catch?
-	} else {
-		return Combat.damageIf.list[atk.damageIf](def,atk);
-	}
-	
-};
-
-
-Combat.targetIf.global = function(atk,def){
-	//Used first in every target if test
-	return !!(atk && def && atk.id !== def.id 
-	&& atk.parent !== def.id 
-	&& !def.dead 
-	&& def.combat 
-	&& (def.combatType === 'player' || def.combatType === 'npc')
-	&& Actor.get(def.id))
-	
-}
-
-
-Combat.targetIf.list = {	//BAD try, could be optimized
-	//List of commons Target if 
-	
-	'player-simple':function(def,atk){ 
-		return def.combatType === "player";
-	},
-	'npc-simple':function(def,atk){ 
-		return def.combatType === "npc";
-	},
-	'player':function(def,atk){ 
-		try {
-			if(!def.summoned) return def.combatType === "player"; 
-			
-			if(def.summoned.parent === atk.id) return false;
-			var hIf = typeof atk.damageIf === 'function' ? atk.damageIf : Combat.damageIf.list[atk.damageIf];
-			return hIf(Actor.get(def.summoned.parent),atk);
-			
-		} catch(err) { ERROR.err(3,err); }
-	},
-	'npc':function(def,atk){ 
-		try {
-			if(!def.summoned) return def.combatType === "npc"; 
-			
-			if(def.summoned.parent === atk.id) return false;
-			var hIf = typeof atk.damageIf === 'function' ? atk.damageIf : Combat.damageIf.list[atk.damageIf];
-			return hIf(Actor.get(def.summoned.parent),atk);
-			
-		} catch(err) { ERROR.err(3,err); }
-	},
-	'summoned':function(def,atk){
-		try {
-			if(def.id === atk.summoned.parent){ return false; }
-			var master = Actor.get(atk.summoned.parent);
-			var hIf = typeof master.damageIf === 'function' ? master.damageIf : Combat.damageIf.list[master.damageIf];
-			return hIf(def,master);
-		} catch(err) { ERROR.err(3,err); } //quickfix
-	},
-	
-	'true':function(def,atk){ 
-		return true 
-	},
-	'false':function(def,atk){ 
-		return false 
-	},
-};
-
-Combat.damageIf.global = Combat.targetIf.global;
-
-Combat.damageIf.list = Combat.targetIf.list;
 
 
 

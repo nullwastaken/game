@@ -2,29 +2,219 @@
 
 <link rel="stylesheet" href="/css/game.css"/>
 <link rel="stylesheet" href="/css/signin-bootstrap.css"/>
+<script src="/bower_components/socketio/socket.io-1.0.6.js"></script>
 
-<script src="/socket.io/socket.io.js"></script>
+<div id="startDiv" class="container">
+	<form id="lg-signInForm" <%- signIn %> class="form-signin">
+		<h2 class="form-signin-heading">Please sign in</h2>
+		<label for="lg-signInUsername" class="sr-only">Username</label>
+		<input type="text" id="lg-signInUsername" class="form-control" placeholder="Username" autofocus="">
+		<label for="lg-signInPassword" class="sr-only">Password</label>
+		<input type="password" id="lg-signInPassword" class="form-control" placeholder="Password">
+		<br>
+		<button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+		
+		<p class="form-signin" style="display: block;cursor:pointer;">
+			<a onclick="$('#lg-signInForm').hide();$('#lg-signUpForm').show();">Create an account</a><br>
+			<a style="position:relative;top:5px;" onclick="exports.Dialog.open('account');">Forgot your password?</a>
+		</p>
+	</form>
+	
+	<form id="lg-signUpForm" <%- signUp %> class="form-signin">
+		<h2 class="form-signin-heading">Account Creation</h2>
+		
+		<button class="btn btn-lg btn-primary btn-block" type="button" id="lg-playNow">Play now. Register later.</button>
+		You get to choose a username later.
+		<div style="margin:15px 0px; width:100%; text-align:center;">or</div>
+		
+		<label for="lg-signUpUsername" class="sr-only">Username</label>
+		<input type="text" id="lg-signUpUsername" class="form-control" placeholder="Username" autofocus="">
+		
+		<label for="lg-signUpPassword" class="sr-only">Password</label>
+		<input type="password" id="lg-signUpPassword" class="form-control" placeholder="Password" >
+		
+		<label for="lg-signUpPasswordConfirm" class="sr-only">Confirm</label>
+		<input type="password" id="lg-signUpPasswordConfirm" class="form-control" placeholder="Confirm Password">
+		
+		<label for="lg-signUpEmail" class="sr-only">Email (optional)</label>
+		<input type="email" id="lg-signUpEmail" class="form-control" placeholder="Email (optional)">
+		
+		<label for="lg-signUpGeoLocation" class="sr-only">Location (optional):</label>
+		<select id="lg-signUpGeoLocation" class="form-control">
+			<option value='' disabled selected style='display:none;'>Location (optional):</option>
+			<option value="EastCoast">North America (East)</option>
+			<option value="WestCoast">North America (West)</option>
+			<option value="SouthAmerica">South America</option>
+			<option value="Europe">Europe</option>
+			<option value="Asia">Asia</option>
+			<option value="Africa">Africa</option>
+			<option value="Australia">Australia</option>
+		</select>
+		<span class="glyphicon glyphicon-question-sign" title="Location only used for latency statistics. You will still be able to play with anyone."></span>
+		<br>
+		<button class="btn btn-lg btn-primary btn-block" type="submit">Sign up and play</button>
+		<a class="form-signin" style="display: block;cursor:pointer;" onclick="$('#lg-signInForm').show();$('#lg-signUpForm').hide();">Have an account?</a>
+	</form>
+	<div id="fullScreen" hidden class="form-signin">
+		Play the game fullscreen at <a title="Ctrl-Click to another in new tab" href="http://rainingchain.com/game">RainingChain.com</a>.<br>
+		Otherwise, unzoom (Ctrl-) until the game fits.
+	</div>
+	
+	<div id="sign-tip" hidden style="width:60%; max-width:400px; margin:0 auto;" class="">
+		<h4>Daily Tip: <span id="sign-tip-title"></span></h4>
+		<div id="sign-tip-text"></div>
+	</div>
+	
+	<div id="serverIsDown" hidden class="form-signin">
+		Server Status: <span class="shadow" style="color:red;">Down</span><br>
+		More info on <a href="https://twitter.com/rainingchain">Twitter</a>.
+	</div>	
+	<div id="lg-message" class="selectable form-signin"></div>
+
+</div>
+<script>
+;(function(){
+	var disableStartDiv = function(){
+		var fields = document.getElementById("startDiv").getElementsByTagName('*');
+		for(var i = 0; i < fields.length; i++)
+			fields[i].disabled = true;
+	}
+	try {
+		document.createElement('canvas').getContext('2d');
+	}catch(err){
+		var el = document.getElementById('lg-message');
+		el.innerHTML = '<span style="color:red">'
+			+ 'Your browser is too old to play this game as it doesn\'t support HTML5 canvas.<br>'
+			+ 'You can download Google Chrome at <br><a target="_blank" href="http://www.google.com/chrome/">www.google.com/chrome/</a>'
+			+ '</span>';
+		disableStartDiv();		
+	}
+	try {
+		$('#startDiv');
+	} catch(err){
+		document.getElementById('lg-message').innerHTML = '<span style="color:red">The Jquery script did not load correctly. This might be caused by using a very old browser.</span>';
+		disableStartDiv();
+	}
+
+	$(document).ready(function(){
+		window.inIframe = function() {
+			try {
+				return window.self !== window.top;
+			} catch (e) {
+				return true;
+			}
+		}
+		if(window.inIframe())
+			$('#fullScreen').show();
+	});
+})();
+
+</script>
+
+<!-- transform-origin: 0px 0px 0px; transform: scale3d(1, 1, 1); -->
+<div id="mainDiv" style="display:none; border:2px solid black; top:0px; width: 100%;  height:100%; overflow-x:hidden; margin: 0px auto;">
+	<div id="gameDiv" style="position:absolute; top:0px; width:100%; height:100%; ">
+		<div id="topLeft" style="position:absolute; top:0px; left:0px; width:50%; height:50%;"></div>
+		<div id="topRight" style="position:absolute; top:0px; right:0px; width:50%; height:50%;"></div>
+		<div id="bottomLeft" style="position:absolute; bottom:0px; left:0px; width:50%; height:50%;"></div>
+		<div id="bottomRight" style="position:absolute; bottom:0px; right:0px; width:50%; height:50%;"></div>
+	</div>
+	
+	<div id="gameBottom" style="position:absolute; white-space:normal; width:100%; font-size:30px; color:white;">
+		<div style="height:30px;font-size:0.5em; position:absolute; top:0px; right:4px;">
+			<button id="below-accountManagement" hidden style="width:auto;padding:3px 15px;" class="myButton">Account</button>
+			<button id="below-tips" style="width:auto;padding:2px 15px;" class="myButton">Tips</button>
+			<button id="below-feedback" style="width:auto;padding:2px 15px;" class="myButton">Feedback</button>
+		</div>
+		<script>
+		$(document).ready(function(){
+			$('#below-accountManagement').click(function(){
+				exports.Dialog.open('account',true);
+			});
+				
+			$("#below-tips").click(function(){
+				exports.Dialog.open('tips');
+			});
+			
+			$("#below-feedback").click(function(){
+				Tk.nicePrompt(function(text){
+					if(!text.trim())
+						return;
+					exports.Command.execute(CST.COMMAND.redditComment,[CST.GENERAL_FEEDBACK,text]);
+				},'Your constructive feedback or bug issue. Be specific with as much details as possible.','Submit feedback');
+			});
+		});
+		</script>
+	</div>
+</div>
+
+
+<script>
+;(function(){
+	
+	var func = function(){
+		var user = localStorage.getItem('username') || '';
+		if(<%- noInfo %>){
+			if(user){
+				$('#lg-signUpForm').hide();
+				$('#lg-signInForm').show();
+			} else {
+				$('#lg-signUpForm').show();
+				$('#lg-signInForm').hide();
+			}
+		}
+		$('#lg-signInUsername').val(user);
+		
+		//tips
+		if(user){
+			var tip = exports.Dialog.Tip.getRandom();
+			$('#sign-tip-title').html(tip.title);
+			$('#sign-tip-text').html(tip.text);
+			$('#sign-tip').show();
+			
+			$('#sign-tip').find('img').each(function(i,obj){
+				obj.onload = function(){
+					$(obj).css({border:'1px solid black'});
+				}
+			})
+		}
+	}
+	//func();
+	$(document).ready(func);	//case called too early
+})();
+</script>
+
+<script>
+	window.SOCKET_URL = '<%- SOCKET_URL %>';
+	window.SERVER = false;
+	var w = {	//w.player =	w.main =
+		player:{},
+		main:{},
+	}
+	window.exports = window.x = {};
+	window.global = window;
+</script>
+<script src="/js/shared/Tk.js"></script>
+<script src="/js/shared/InitManager.js"></script>
+<script src="/js/main.js"></script><!-- Contains document.ready -->
+<script src="/js/shared/CST.js"></script>
+<script src="/js/shared/ERROR.js"></script>
+
 
 <script src="/js/shared/BISON.js"></script>
-<script src="/js/main.js"></script>
 <script src="/js/Socket_client.js"></script>
 <script src="/js/SpriteFilter.js"></script>
 <script src="/js/Sign_client.js"></script>
 
 <script src="/js/Game.js"></script>
-<script src="/js/Account.js"></script>
+<script src="/js/Account_client.js"></script>
 
 <script src="/js/Dialog.js"></script>
 
-<script src="/js/shared/CST.js"></script>
-<script src="/js/shared/ERROR.js"></script>
-<script src="/js/shared/Tk.js"></script>
 <script src="/js/shared/Stat.js"></script>
 
 <script src="/js/shared/Combat_shared.js"></script>
-<script src="/js/ClientPrediction.js"></script>
 
-<script src="/js/Draw.js"></script>
 
 <script src="/js/Img.js"></script>
 
@@ -53,12 +243,16 @@
 
 <script src="/js/shared/Attack.js"></script>
 <script src="/js/shared/AttackModel.js"></script>
+<script src="/js/shared/BulletModel.js"></script>
+<script src="/js/shared/StrikeModel.js"></script>
 <script src="/js/shared/Bullet.js"></script>
 <script src="/js/shared/Strike.js"></script>
 <script src="/js/shared/Drop.js"></script>
 <script src="/js/shared/LightingEffect.js"></script>
+<script src="/bower_components/proton-1.0.1.js"></script>
+<script src="/js/shared/ParticleEffect.js"></script>
 
-<script src="/js/shared/ActiveList.js"></script>
+<script src="/js/shared/Entity.js"></script>
 
 <script src="/js/shared/Boost.js"></script>
 <script src="/js/shared/Button.js"></script>
@@ -68,6 +262,9 @@
 
 <script src="/js/Performance_client.js"></script>
 <script src="/js/Dialog_reputation.js"></script>
+<script src="/js/Dialog_shop.js"></script>
+<script src="/js/Dialog_sideQuest.js"></script>
+<script src="/js/Dialog_worldMap.js"></script>
 <script src="/js/Dialog_itemList.js"></script>
 <script src="/js/Dialog_stat.js"></script>
 <script src="/js/Dialog_ability.js"></script>
@@ -85,6 +282,8 @@
 <script src="/js/Dialog_topRight.js"></script>
 <script src="/js/Dialog_contribution.js"></script>
 <script src="/js/Dialog_achievement.js"></script>
+<script src="/js/Dialog_admin.js"></script>
+<script src="/js/Dialog_stage.js"></script>
 
 <script src="/js/shared/Main.js"></script>
 <script src="/js/shared/Main_loop.js"></script>
@@ -101,8 +300,11 @@
 <script src="/js/shared/Main_contribution.js"></script>
 <script src="/js/shared/Main_achievement.js"></script>
 <script src="/js/shared/Main_screenEffect.js"></script>
+<script src="/js/shared/Main_sideQuest.js"></script>
 <script src="/js/shared/ClientError.js"></script>
 <script src="/js/shared/Achievement.js"></script>
+<script src="/js/shared/SideQuest.js"></script>
+<script src="/js/shared/MapGraph.js"></script>
 
 <script src="/js/shared/Message.js"></script>
 <script src="/js/Message_client.js"></script>
@@ -121,82 +323,14 @@
 <script src="/js/shared/ReputationConverter.js"></script>
 
 <script src="/js/MapModel_client.js"></script>
+<script src="/js/shared/MapModel_shared.js"></script>
 <script src="/js/shared/QueryDb.js"></script>
+<script src="/js/shared/Waypoint.js"></script>
+<script src="/js/shared/TmxParser.js"></script>
+<script src="/js/SIGN_IN_PACK_STATIC.js"></script>
 
 
-<div id="startDiv" class="container">
-	<form id="lg-signInForm" class="form-signin">
-		<h2 class="form-signin-heading">Please sign in</h2>
-		<label for="lg-signInUsername" class="sr-only">Username</label>
-		<input type="text" id="lg-signInUsername" class="form-control" placeholder="Username" autofocus="">
-		<label for="lg-signInPassword" class="sr-only">Password</label>
-		<input type="password" id="lg-signInPassword" class="form-control" placeholder="Password">
-		<br>
-		<button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-		
-		<p class="form-signin" style="display: block;cursor:pointer;">
-			<a onclick="$('#lg-signInForm').hide();$('#lg-signUpForm').show();">Create an account</a><br>
-			<a style="position:relative;top:5px;" onclick="exports.Dialog.open('account');">Forgot your password?</a>
-		</p>
-		
-	</form>
-	
-	<form id="lg-signUpForm" class="form-signin">
-		<h2 class="form-signin-heading">Account Creation</h2>
-		
-		<label for="lg-signUpUsername" class="sr-only">Username</label>
-		<input type="text" id="lg-signUpUsername" class="form-control" placeholder="Username" autofocus="">
-		
-		<label for="lg-signUpPassword" class="sr-only">Password</label>
-		<input type="password" id="lg-signUpPassword" class="form-control" placeholder="Password" >
-		
-		<label for="lg-signUpPasswordConfirm" class="sr-only">Confirm</label>
-		<input type="password" id="lg-signUpPasswordConfirm" class="form-control" placeholder="Confirm Password">
-		
-		<label for="lg-signUpEmail" class="sr-only">Email</label>
-		<input type="email" id="lg-signUpEmail" class="form-control" placeholder="Email">
-		
-		<label for="lg-signUpGeoLocation" class="sr-only">Location:</label>
-		<select id="lg-signUpGeoLocation" class="form-control">
-			<option value='' disabled selected style='display:none;'>Location:</option>
-			<option value="EastCoast">North America (East)</option>
-			<option value="WestCoast">North America (West)</option>
-			<option value="SouthAmerica">South America</option>
-			<option value="Europe">Europe</option>
-			<option value="Asia">Asia</option>
-			<option value="Africa">Africa</option>
-			<option value="Australia">Australia</option>
-		</select>
-		<span class="glyphicon glyphicon-question-sign" title="Location only used for latency statistics. You will still be able to play with anyone."></span>
-		<br>
-		<button class="btn btn-lg btn-primary btn-block" type="submit">Sign up</button>
-		<a class="form-signin" style="display: block;cursor:pointer;" onclick="$('#lg-signInForm').show();$('#lg-signUpForm').hide();">Have an account?</a>
-	</form>
-	<div class="form-signin" <%- serverDown ? "" : "hidden" %> >
-		Server Status: <span class="shadow" style="color:red;">Down</span>
-	</div>	
-	<div id="lg-message" class="form-signin"></div>
-</div>
 
-<div id="mainDiv" style="display:none; border:2px solid black; top:0px; width: 100%;  height:100%; overflow-x:hidden; margin: 0px auto;">
-	<div id="gameDiv" style="position:absolute; top:0px; width:100%; height:100%; "></div>
-	
-	<div id="gameBottom" style="position:absolute; white-space:normal; width:100%; font:30px Kelly Slab; color:white;">
-		<div id="playerOnline"></div>
-		<button id="commentButton" style="width:auto; height: 30px; font-size:0.5em; position:absolute; top:0px; right:0px;" class="myButton">Feedback</button>
-		<script>
-		$(document).ready(function(){
-			$("#commentButton").click(function(){
-				Tk.nicePrompt(function(text){
-					if(!text.trim())
-						return;
-					exports.Command.execute('redditComment',['general',text]);
-				},'Your constructive feedback...','Submit feedback');
-			});
-		});
-		</script>
-		<!--<div id="infoDay"></div>-->
-	</div>
-</div>
+
 		
 <% include partial/footer.html %>

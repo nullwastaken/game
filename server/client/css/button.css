@@ -17,7 +17,7 @@
 	/*display:inline-block;*/
 	cursor:pointer;
 	color:#666666;
-	font-family:Kelly Slab;
+	font-family:MiniSet2 !important;	/*no clue why important needed...*/
 	font-size:18px;
 	font-weight:bold;
 	padding:6px 24px;
@@ -63,7 +63,7 @@
 	display:inline-block;
 	cursor:pointer;
 	color:#ffffff;
-	font-family:Kelly Slab;
+	font-family:MiniSet2 !important;	/*no clue why important needed...*/
 	font-size:15px;
 	font-weight:bold;
 	padding:6px 24px;
@@ -105,7 +105,7 @@
 	display:inline-block;
 	cursor:pointer;
 	color:#ffffff;
-	font-family:Kelly Slab;
+	font-family:MiniSet2 !important;	/*no clue why important needed...*/
 	font-size:15px;
 	font-weight:bold;
 	padding:6px 24px;

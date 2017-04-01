@@ -1,40 +1,81 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 /*jshint -W018*/
 "use strict";
-var Actor = require2('Actor');
+var Actor, Message, Socket, BISON;
+global.onReady(function(){
+	BISON = rootRequire('shared','BISON'); Socket = rootRequire('private','Socket'); Actor = rootRequire('shared','Actor'); Message = rootRequire('shared','Message');
+	Socket.on(CST.SOCKET.input,Input.key,60*40,0,true,true);
+});
 var Input = exports.Input = {};
 
-//mouse in Button.handClickServerSide
+var POSITION_INPUT = {};
+var MAX_INPUT_PER_SEC = 30;
+
+var DISPLAY_INPUT_TO = null;
+var DISPLAY_INPUT_FROM = null;
+var DISPLAY_LAST_TIME = 0;
+
+var INP = CST.INPUT;
+
+//mouse in Button.handleClickServerSide
 Input.key = function(socket,d){
+	if(CST.BISON)
+		d = BISON.decode(d);
+	
 	socket.timer = 0;
 	var act = Actor.get(socket.key);
 		
-	if(act.useUpdateInput) return;
-	if(d.i){
-		//d.i format: right,down,left,up,ability0,ability1...
-		var move = d.i.slice(0,4);
+	if(act.useUpdateInput) 
+		return;
+	
+	if(d[INP.key]) //d.i format: ability0,ability1...
+		Actor.onAbilityInput(act,d[INP.key]);
+	
+	if(d[INP.position]){
+		var p = d[INP.position];
+		//important		
+		POSITION_INPUT[socket.key] = POSITION_INPUT[socket.key] || 0;
+		POSITION_INPUT[socket.key]++;
 		
-		act.moveInput.right = !!+move[0];
-		act.moveInput.down = !!+move[1];
-		act.moveInput.left = !!+move[2];
-		act.moveInput.up = !!+move[3];
-		act.abilityChange.press = d.i.slice(4);
+		var timestamp = CST.decodeTime(d[INP.timestamp]);
 		
-		if(act.abilityChange.press !== '000000' && act.combat) 
-			Actor.ability.loop.clickVerify(act);
-	}
-	if(d.t){
-		act.targetSub = Actor.TargetSub(d.t[0],d.t[1],callback);
+		if(POSITION_INPUT[socket.key] < MAX_INPUT_PER_SEC*5)	//cuz setInterval 5000
+			Actor.onPositionInput(act,p[0],p[1],p[2],timestamp);	//p[2] for admin
+		
+		//extra
+		if(DISPLAY_INPUT_TO && DISPLAY_INPUT_FROM === act.name){
+			var diff = Date.now() - DISPLAY_LAST_TIME;
+			DISPLAY_LAST_TIME = Date.now();
+			Message.add(DISPLAY_INPUT_TO,'time=' + diff 
+				+ ', x=' + Math.floor(p[0]) 
+				+ ', y=' + Math.floor(p[1]) 
+				+ ', vx=' + (act.x-Math.floor(p[0])) 
+				+ ', vy=' + (act.y-Math.floor(p[1])));
+		}
+		
 	}
 	
-	if(d.m){
-		act.mouseX = Math.min(Math.max(d.m[0],-CST.WIDTH),CST.WIDTH);
-		act.mouseY = Math.min(Math.max(d.m[1],-CST.HEIGHT),CST.HEIGHT);
+	if(d[INP.mouse]){
+		var m = d[INP.mouse];
+		act.mouseX = Math.min(Math.max(m[0],-CST.WIDTH*1.5),CST.WIDTH*1.5);
+		act.mouseY = Math.min(Math.max(m[1],-CST.HEIGHT*1.5),CST.HEIGHT*1.5);
+		act.angle = Tk.atan2.precise(act.mouseY,act.mouseX);
 	}
-	act.angle = Tk.atan2(act.mouseY,act.mouseX);	
 }
 
-var callback = function(key){
-	Actor.get(key).targetSub.active = false;
-};
+Input.listenTo = function(admin,lagger){	//admin:key, lagger:name
+	if(!admin || !lagger){
+		DISPLAY_INPUT_TO = null;
+		DISPLAY_INPUT_FROM = null;
+		return;
+	}
+	DISPLAY_INPUT_TO = admin;
+	DISPLAY_INPUT_FROM = lagger;
+}
+
+
+setInterval(function(){	//because server can run slower than client
+	POSITION_INPUT = {};
+},5000);
+
 

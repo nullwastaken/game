@@ -1,47 +1,19 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var QueryDb = require4('QueryDb'), Message = require4('Message'), OptionList = require4('OptionList'), Input = require4('Input'), Command = require4('Command'), Main = require4('Main');
-var Dialog = require3('Dialog');
-/*Dialog.create('hax','Most Wanted Hax List',Dialog.Size(700,700),Dialog.Refresh(function(html,variable,param){
-	$.get('../html/hax.html').success(function(data){ 
-		html.html(data);
-	});
-}));*/
+var QueryDb, Actor,Img, Message, OptionList, Input, Command, Main, MapModel;
+global.onReady(function(){
+	Img = rootRequire('shared','Img',true); MapModel = rootRequire('shared','MapModel',true); QueryDb = rootRequire('shared','QueryDb',true); Actor = rootRequire('shared','Actor',true); Message = rootRequire('shared','Message',true); OptionList = rootRequire('shared','OptionList',true); Input = rootRequire('server','Input',true); Command = rootRequire('shared','Command',true); Main = rootRequire('shared','Main',true);
+});
+var Dialog = rootRequire('client','Dialog');
 
-//###########################
-
-Dialog.create('contactAdmin','Contact Admin',Dialog.Size(600,400),Dialog.Refresh(function(html,variable,param){
-	html.append('Title: ');
-	var title = $('<input>')
-		.val(param || '');
-	html.append(title);
-	
-	html.append('<br>');
-	var text = $('<textarea>')
-		.attr({rows:10,cols:50});
-	html.append(text)
-	html.append('<br>');
-	html.append($('<button>')
-		.addClass('myButton')
-		.html('Submit')
-		.click(function(){
-			Message.sendToServer(Message.Report(text.val(),player.name,title.val()));
-			Message.add(null,"Your message has been sent.");
-			Dialog.close('contactAdmin');
-		})
-	);	
-}));
-
-//###########################
-
-Dialog.UI('disconnect',{	
+Dialog.UI('disconnect',null,{	
 	position:'absolute',
 	top:'30%',
 	left:'40%',
 	border:'2px solid black',
 	zIndex:Dialog.ZINDEX.HIGH,	
-	font:'1.5em Kelly Slab',
+	fontSize:'1.5em',
 	backgroundColor:'red',
 	height:'auto',
 	width:'auto',
@@ -49,20 +21,15 @@ Dialog.UI('disconnect',{
 	color:'white',
 	padding:'20px 20px 20px 20px',	//0px cuz h3?
 },Dialog.Refresh(function(html,variable,d){	//d:{message,backgroundColor}	check Sign.off
-	if(!d) return false;
+	if(!d) 
+		return false;
+	if(d === true)
+		d = {message:'The game stopped.',backgroundColor:'red'};
 	html.html(d.message);
 	html.css({backgroundColor:d.backgroundColor});
-	setTimeout(function(){
-		Dialog.close('disconnect');
-		location.reload();
-	},5000);	
 }));
 
-
-
-//#####################
-
-Dialog.UI('context',{		//uses Dialog.quickContextRefresh
+Dialog.UI('context',null,{		//uses Dialog.quickContextRefresh
 	position:'relative',
 	height:150,
 	width:'100%',
@@ -75,7 +42,7 @@ Dialog.UI('context',{		//uses Dialog.quickContextRefresh
 			marginTop:'15px',
 			padding:'3px',
 			border:'2px solid black',
-			font:'1.5em Kelly Slab',
+			fontSize:'1.5em',
 			color:'black',
 			lineHeight:'100%',
 			backgroundColor:'white',
@@ -88,7 +55,7 @@ Dialog.UI('context',{		//uses Dialog.quickContextRefresh
 		});
 	variable.div = context;	
 	html.append(context);
-	variable.hidden = true;
+	variable.visible = false;
 	html.hide();
 	return null;	//Dialog.open wont force the show
 },function(){},10000000,function(html,variable,text){
@@ -96,13 +63,15 @@ Dialog.UI('context',{		//uses Dialog.quickContextRefresh
 		return;
 	variable.oldText = text;
 	if(!text){
-		variable.hidden = true;
+		variable.visible = false;
 		html.hide();
 		return;
 	}
-	if(variable.hidden){
+	if(variable.visible !== true){
+		variable.visible = true;
 		html.show();
 	}
+	
 	variable.div.html(text);
 }));
 
@@ -111,63 +80,53 @@ Dialog.UI('context',{		//uses Dialog.quickContextRefresh
 //Dialog.open('questPopup',{text:'heasdad asd asjkhd askjd askjd haskdh askd haskd haskdhj akdhas kjdh akjdha kjdhaskj hdask dhasdkj asy',time:3000})
 
 //param:{text}
-var questPopupCOUNT = 10;	
-(function(){ //}
-	var func = function(html,variable,param){
-		html.css({	
-			zIndex:Dialog.ZINDEX.HIGH + 5,	
-			font:'18px Kelly Slab',
-			fontSize:'1.3em',
-			color:'black',
-			lineHeight:'100%',
-			backgroundColor:'white',
-			maxWidth:'600px',
-			width:'400px',
-			height:'auto',
-			textAlign:'center',
-			display:'inline-block',
-		});
-		
-		if(!param) return false;
-		/*
-		if(variable.timeout) 
-			clearTimeout(variable.timeout)
-		
-		variable.timeout = setTimeout(function(){
-			Dialog.close('questPopup');
-		},param.time * 40);
-		*/
-		var x = 50 + Math.randomML()*5 + "%";
-		var y = 50 + Math.randomML()*5 + "%";
-		html.dialog('option','position',[x,y]);	//so dont perfectly pile up
-		html.html(param.text);
-	};
-	for(var i = 0 ; i < questPopupCOUNT; i++){
-		Dialog.create('questPopup' + i,'Info',Dialog.Size('auto','auto'),Dialog.Refresh(func));
-	}
-})(); //{
+
+var QUESTPOPUP_CONTENT;
+	
+Dialog.create('questPopup','Info',Dialog.Size('auto','auto'),Dialog.Refresh(function(html,variable,param){
+	html.css({	
+		zIndex:Dialog.ZINDEX.HIGH + 5,
+		fontSize:'1.1em',
+		color:'black',
+		lineHeight:'100%',
+		backgroundColor:'white',
+		maxWidth:'600px',
+		width:'400px',
+		height:'auto',
+		textAlign:'center',
+		display:'inline-block',
+	});
+	html.dialog({
+		width:'auto', 
+		height:'auto',
+	});
+			
+	if(!param) 
+		return false;
+	param.text = Message.receive.parseInput(param.text);
+	html.html(param.text);
+	Dialog.positionPopup(html);
+	QUESTPOPUP_CONTENT = html;
+}));
+
 
 Dialog.displayQuestPopup = function(msg){
-	for(var i = 0 ; i < questPopupCOUNT; i++){
-		if(!Dialog.isActive('questPopup'+i)){
-			Dialog.open('questPopup'+i,msg);
-			return;
-		}
-	}
-	//all 10 used, overwrite first one
-	Dialog.open('questPopup0',msg);
+	if(Dialog.isActive('questPopup'))
+		QUESTPOPUP_CONTENT.prepend(msg.text + '<hr style="height:1px;">');
+	else
+		Dialog.open('questPopup',msg);
 }
 
 //#####################
 
-Dialog.UI('optionList',{	
+Dialog.UI('optionList',null,{	
 	position:'absolute',
 	
 	marginTop:'15px',
 	padding:'3px',
 	border:'2px solid black',
 	zIndex:Dialog.ZINDEX.HIGH,	
-	font:'1.1em Kelly Slab',
+	fontSize:'1.1em',
 	color:'black',
 	lineHeight:'100%',
 	backgroundColor:'white',
@@ -183,7 +142,7 @@ Dialog.UI('optionList',{
 	
 	html.append($('<span>')
 		.html(info.name + '<br>')
-		.css({font:'1.3em Kelly Slab'})
+		.css({fontSize:'1.3em'})
 	);
 	
 	var optionHtml = $('<div>')
@@ -192,7 +151,7 @@ Dialog.UI('optionList',{
 	
 	var helper = function(i){		//mousedown and NOT click... cuz Button.onclick is on down
 		return function(){
-			OptionList.executeOption(main,option[i]);
+			OptionList.executeOption(w.main,option[i]);
 		}
 	}
 	for(var i = 0 ; i < option.length ; i++){
@@ -207,62 +166,99 @@ Dialog.UI('optionList',{
 	}
 	html.append(optionHtml);
 	
-	var width = html.outerWidth(true).mm(50);
-	var height = html.outerHeight(true).mm(50);
+	var width = Math.max(html.outerWidth(true),50);
+	var height = Math.max(html.outerHeight(true),50);
 	
 	var mouse = Input.getMouse(true);
 	var idealX = CST.WIDTH - mouse.x;
 	var idealY = CST.HEIGHT - mouse.y - height;
 	html.css({
-		right:idealX.mm(0,CST.WIDTH - width-5),
-		bottom:idealY.mm(0,CST.HEIGHT - height-5),
-	});
-	
-	
+		right:Math.min(Math.max(idealX,0),CST.WIDTH - width-5),
+		bottom:Math.min(Math.max(idealY,0),CST.HEIGHT - height-5),
+	});	
 },null,null,null,null,function(){	//onclose
 	$(document).tooltip('enable');
 }));
 
-//Dialog.open('permPopup',{text:'heyads asd as das  dsad',css:{top:'100px',left:'100px',width:'400px',height:'400px'}});
-//Dialog.open('permPopup',{text:'heyads asd as das  dsad',css:{}});
+//Dialog.open('permPopup',{text:'heyads asd as das  dsad',model:'',css:{top:'100px',left:'100px',width:'400px',height:'400px'}});
+//Dialog.open('permPopup',{text:'heyads asd as das  dsad',model:'',css:{}});
 var BOTTOM = 240; //hardcoded
-Dialog.UI('permPopup',{},Dialog.Refresh(function(html,variable,param){
-	if(!param) return false;
-	var def = {	
-		position:'absolute',
-		zIndex:Dialog.ZINDEX.HIGH,
-		font:'18px Kelly Slab',
-		fontSize:'1.3em',
-		color:'black',
-		lineHeight:'100%',
-		backgroundColor:'white',
-		textAlign:'center',
-		border:'1px solid black',
-		padding:'2px 2px',
-		display:'inline-block',
-	}
-	
-	
-	html.css(def);
-	html.html(param.text);
-	html.css(param.css || {});
-	
-	if(param.model === 'aboveInventory'){
+var PERM_WIDTH = 200;
+var ON_HELP = false;
+var WAS_FORCED = false;
+
+var applyModel = function(html,model){
+	if(model === 'aboveInventory'){
 		html.css({
 			right:0,
-			width:200,
+			width:PERM_WIDTH,
 			bottom:BOTTOM,
 			height:'auto',
 		});
 	}	
-}));
-
-Dialog.UI('permPopupSystem',{},Dialog.Refresh(function(html,variable,param){
+	if(model === 'help'){
+		html.css({
+			right:0,
+			width:PERM_WIDTH,
+			bottom:BOTTOM,
+			height:'auto',
+		});
+		var close = function(){
+			WAS_FORCED = false;
+			ON_HELP = false;
+			Dialog.close('permPopupMouseover');
+		};
+		html.hover(function(){
+			if(!WAS_FORCED){
+				ON_HELP = true;
+				Dialog.playSfx('mouseover');
+				Command.execute(CST.COMMAND.getTutorialHelp,[]);
+			} else 
+				close();
+		},close);
+	}
+	
+}
+Dialog.UI('permPopup',null,{},Dialog.Refresh(function(html,variable,param){
 	if(!param) return false;
 	var def = {	
 		position:'absolute',
 		zIndex:Dialog.ZINDEX.HIGH,
-		font:'18px Kelly Slab',
+		fontSize:'1.3em',
+		color:'black',
+		lineHeight:'100%',
+		backgroundColor:'white',
+		textAlign:'center',
+		border:'1px solid black',
+		padding:'2px 2px',
+		display:'inline-block',
+	}
+	
+	
+	html.css(def);
+	html.html(param.text);
+	html.css(param.css || {});
+	
+	html.unbind('mouseout mouseover');
+	
+	applyModel(html,param.model);
+		
+}));
+
+
+setInterval(function(){	//BAD, linked with tutorial
+	if(WAS_FORCED)
+		$('.' + CST.TUTORIAL_CLASS_BLINK_HELP).toggle();
+	else
+		$('.' + CST.TUTORIAL_CLASS_BLINK_HELP).hide();		
+},1000);
+
+
+Dialog.UI('permPopupSystem',null,{},Dialog.Refresh(function(html,variable,param){
+	if(!param) return false;
+	var def = {	
+		position:'absolute',
+		zIndex:Dialog.ZINDEX.HIGH,
 		fontSize:'1.3em',
 		color:'black',
 		lineHeight:'100%',
@@ -277,19 +273,40 @@ Dialog.UI('permPopupSystem',{},Dialog.Refresh(function(html,variable,param){
 	html.html(param.text);
 	html.css(param.css || {});
 	
-	if(param.model === 'aboveInventory'){
-		html.css({
-			right:0,
-			width:200,
-			bottom:BOTTOM,
-		});
+	applyModel(html,param.model);
+}));
+Dialog.UI('permPopupMouseover',null,{},Dialog.Refresh(function(html,variable,param){
+	if(param && param.forceOpen){
+		WAS_FORCED = true;
+		ON_HELP = true;
+	} else
+		WAS_FORCED = false;
+	if(!param || !ON_HELP) 
+		return false;
+	
+	var def = {	
+		position:'absolute',
+		zIndex:Dialog.ZINDEX.HIGH,
+		fontSize:'1.3em',
+		color:'black',
+		lineHeight:'100%',
+		backgroundColor:'white',
+		textAlign:'center',
+		border:'1px solid black',
+		padding:'2px 2px',
+		display:'inline-block',
+		right:PERM_WIDTH,
+		top:'25%',
 	}
+	
+	html.css(def);
+	html.html(param.text);
 }));
 
 //#####################
 
-//Dialog.open('questRating','QlureKill');
-Dialog.UI('questRating',{		
+//Dialog.open('questFeedback','QlureKill');
+Dialog.UI('questFeedback',null,{		
 	position:'absolute',
 	top:15,
 	left:'50%',
@@ -297,53 +314,62 @@ Dialog.UI('questRating',{
 	padding:'3px',
 	border:'2px solid black',
 	zIndex:Dialog.ZINDEX.HIGH,
-	font:'1.1em Kelly Slab',
+	fontSize:'1.1em',
 	color:'black',
 	backgroundColor:'white',
 	height:'auto',
 	width:'auto',
 	textAlign:'center',
 	whiteSpace:'nowrap',	
-},Dialog.Refresh(function(html,variable,param){ //param = Main.displayQuestRating
-	if(!param) return false;
-	html.append($('<span>')
-		.html('Rate ' + QueryDb.getQuestName(param.quest) + ':<br>')
-		.css({fontSize:'1.5em'})
-	);
+},Dialog.Refresh(function(html,variable,param){
+	Dialog.QuestFeedback(html,variable,param);	//cant be direct cuz undefined at this point
+}));
+
+Dialog.QuestFeedback = function(html,variable,param){ //param = Main.QuestFeedbackParam
+	if(!param) 
+		return false;
+	if(!param.embed || param.displayStar)
+		html.append($('<span>')
+			.html(param.embed ? 'Rate: ' : 'Rate ' + QueryDb.getQuestName(param.quest) + ':<br>')
+			.css({fontSize:'1.5em'})
+		);
+	
 	//###################
 	var STAR_CLICKED = null;
-	var array = [];	
-	
-	var hoverOn = function(i){
-		return function(){
+	if(param.displayStar){
+		var array = [];	
+		
+		var hoverOn = function(i){
+			return function(){
+				if(STAR_CLICKED !== null) return;
+				for(var j=0;j<array.length;j++)
+					array[j].css({color:i >= j ? 'gold' : 'white'});
+			}
+		}
+		var helper = function(i){
+			return function(){
+				STAR_CLICKED = i;
+				comment.show();
+				Dialog.playSfx('select');
+			}
+		}
+		var hoverOff = function(){
 			if(STAR_CLICKED !== null) return;
 			for(var j=0;j<array.length;j++)
-				array[j].css({color:i >= j ? 'gold' : 'white'});
+				array[j].css({color:'white'})
+		};
+		
+		for(var i = 0 ; i < 3; i++){
+			var span = $('<span>')
+				.html(CST.STAR)
+				.css({color:'white',fontSize:'2em'})
+				.addClass('shadow360')
+				.hover(hoverOn(i),hoverOff())
+				.click(helper(i));
+			array.push(span)		
+			html.append(span);
 		}
 	}
-	var helper = function(i){
-		return function(){
-			STAR_CLICKED = i;
-			div.show();
-		}
-	}
-	var hoverOff = function(){
-		if(STAR_CLICKED !== null) return;
-		for(var j=0;j<array.length;j++)
-			array[j].css({color:'white'})
-	};
-	
-	for(var i = 0 ; i < 3; i++){
-		var span = $('<span>')
-			.html(CST.STAR)
-			.css({color:'white',fontSize:'2em'})
-			.addClass('shadow360')
-			.hover(hoverOn(i),hoverOff())
-			.click(helper(i));
-		array.push(span)		
-		html.append(span);
-	}
-	
 	var aban = $('<select>')
 		.append('<option value=""></option>')
 		.append('<option value="No clue what to do">No clue what to do</option>')
@@ -352,15 +378,24 @@ Dialog.UI('questRating',{
 		.append('<option value="Other">Other</option>');
 	if(param.abandon)
 		html.append('<br>Reason for abandon: ',aban);
-	
+		
 	//Comment
-	var div = $('<div>')
-		.css({textAlign:'center'})
-		.hide();
-	var placeholder = param.abandon ? 'Tell us more about why you abandonned the quest?' : 'Comment - Your feedback is highly appreciated!';
+	var comment = $('<div>')
+		.css({textAlign:'center'});
+	if(param.displayStar)
+		comment.hide();
+	var placeholder = param.abandon 
+		? 'Tell us more about why you abandonned the quest?' 
+		: 'What did you think of the quest?';
 	var textarea = $('<textarea>')
 		.attr({rows:5,col:50,placeholder:placeholder});
-		
+	if(param.embed){
+		comment.css({textAlign:'left'});
+		textarea.click(function(){
+			button.show();
+		})
+		.attr({rows:3}).css({width:'80%',marginTop:'-20px'})
+	}
 	//Submit
 	var abandonReason = param.abandon ? (aban.val() || 'Not Specified') : "";
 	var button = $('<button>')
@@ -368,30 +403,43 @@ Dialog.UI('questRating',{
 		.addClass('myButton skinny')
 		.attr('title','Submit Quest Rating')
 		.click(function(){
-			Command.execute('questRating',[param.quest,STAR_CLICKED+1,textarea.val(),abandonReason,param.hint]);	//+1 cuz 1-3 stars
-			Dialog.close('questRating');
-		})
-		
-	div.append(textarea).append('<br>').append(button);
-	html.append('<br>')
-	html.append(div);
+			var rating = STAR_CLICKED === null ? 0 : STAR_CLICKED + 1;
+			Command.execute(CST.COMMAND.questFeedback,[param.quest,rating,textarea.val(),abandonReason,param.hint]);	//+1 cuz 1-3 stars
+			if(!param.embed)
+				Dialog.close('questFeedback');
+			else
+				html.hide();
+			Dialog.playSfx('select');
+		});
+	if(param.embed)
+		button.hide();	//shown on click textarea
+	comment.append('<br>',textarea,'<br>',button);
+	html.append(comment);
 	
 	
-}));
+}
 
-Dialog.UI('expPopup',{
+
+Dialog.UI('expPopup',null,{
 	position:'absolute',
 	left:'60%',
 	top:'50%',
 	width:'auto',
 	height:'auto',
 	color:'white',
-	font:'1.3em Kelly Slab',
+	fontSize:'1.3em',
 },Dialog.Refresh(function(html,variable,param){
-	if(!param) return false;
+	if(!param) 
+		return false;
+	
+	var GEM = Actor.getGEM(w.player);
+	param /= GEM;
+	
 	var val = param.r(0);
-	if(val <= 0) return false;
-	html.html(val + ' Exp');
+	if(val <= 0) 
+		return false;
+	
+	html.html(val + ' Exp <span style="font-size:0.7em">(x' + GEM.r(2) + ')</span>');
 	if(variable.timeout)
 		clearTimeout(variable.timeout);
 	variable.timeout = setTimeout(function(){
@@ -399,59 +447,60 @@ Dialog.UI('expPopup',{
 	},2000);
 }));
 
-Dialog.UI('playerOnline',{
+Dialog.UI('playerOnline','gameBottom',{
 	width:'auto',
 	height:'auto',
 	color:'white',
-	font:'0.8em Kelly Slab',
+	fontSize:'0.6em',
 },Dialog.Refresh(function(html,variable,temp){
 	if(!temp)
 		temp = variable.whatever;
 	if(!temp) 
-		temp = {playerOnline:[{username:player.name,category:'',comment:''}]};
+		temp = [{name:w.player.name,category:'',comment:''}];
 	variable.whatever = temp;
 	
-	var myCategory = main.lookingFor.category;
+	var myCategory = w.main.lookingFor.category;
 	
 	var sortedList = [];	//kinda bad... but w/e
-	for(var i = 0 ; i < temp.playerOnline.length; i++){
-		if(temp.playerOnline[i].category === myCategory)
-			sortedList.push(temp.playerOnline[i]);
+	for(var i = 0 ; i < temp.length; i++){
+		if(temp[i].category === myCategory)
+			sortedList.push(temp[i]);
 	}
-	for(var i = 0 ; i < temp.playerOnline.length; i++){
-		if(temp.playerOnline[i].category !== myCategory)
-			sortedList.push(temp.playerOnline[i]);
+	for(var i = 0 ; i < temp.length; i++){
+		if(temp[i].category !== myCategory)
+			sortedList.push(temp[i]);
 	}
-	temp.playerOnline = sortedList;
+	temp = sortedList;
 	
 	var div = $('<div>');
+	html.append(div);
 	
 	
-	if(main.hudState.pvpLookingFor !== Main.hudState.INVISIBLE){
+	if(w.main.hudState.pvpLookingFor !== Main.hudState.INVISIBLE){
 		var pvpButton;
 		
-		if(player.pvpEnabled){
+		if(w.player.pvpEnabled){
 			pvpButton = $('<button>')
-				.html('PvP On')
-				.css({top:-3,fontSize:'14px',padding:'2px 3px'})
+				.html('PvP is On')
+				.css({top:-3,fontSize:'14px',padding:'2px 3px',marginRight:'3px'})
 				.addClass('myButtonGreen')
 				.attr('title','Turn PvP Off')
 				.click(function(){
-					Command.execute('enablePvp',[false]);
+					Command.execute(CST.COMMAND.enablePvp,[false]);
 				});
 		} else {
 			pvpButton = $('<button>')
-				.html('PvP Off')
-				.css({top:-3,fontSize:'14px',padding:'2px 3px'})
+				.html('PvP is Off')
+				.css({top:-3,fontSize:'14px',padding:'2px 3px',marginRight:'3px'})
 				.addClass('myButtonRed')
 				.attr('title','Turn PvP On')
 				.click(function(){
-					Command.execute('enablePvp',[true]);
+					Command.execute(CST.COMMAND.enablePvp,[true]);
 				});
 		}
 		div.append(pvpButton);
 		
-		
+		/*
 		var select = $('<select>').css({color:'black',fontSize:'14px'});
 		select.append($('<option>')
 			.attr({value:'',selected:!myCategory})
@@ -472,54 +521,65 @@ Dialog.UI('playerOnline',{
 		
 		select.change(function(){
 			if(select.val() === ''){
-				Command.execute('setLookingFor',['','']);
+				Command.execute(CST.COMMAND.setLookingFor,['','']);
 				return;
 			} 
 			
-			Main.question(main,function(str){	
-				Command.execute('setLookingFor',[select.val(),str]);
+			Main.askQuestion(w.main,function(key,str){	
+				Command.execute(CST.COMMAND.setLookingFor,[select.val(),str]);
 			},'Extra comment (optional)','string');
 		});
 		div.append(select);
 		
 		div.append(' ');
+		*/
 	}
 	
 	
 	
-	div.append(temp.playerOnline.length + ' player(s) online: ');
-	
-	html.append(div);
-	
-	div.append('You');
-	if(main.lookingFor.category){
-		div.append($('<span>')
-			.html(' + ')
-			.attr('title',Main.LookingFor.toString(main.lookingFor))
-		);
-	}
-	if(temp.playerOnline.length > 1)
-		div.append(', ');
-	
-	for(var i = 0; i < temp.playerOnline.length; i++){
-		if(temp.playerOnline[i].username !== player.name){
-			div.append(playerOnlineConverter(temp.playerOnline[i]));
+	if(w.main.hudState.playerOnline !== Main.hudState.INVISIBLE){
+		if(temp.length <= 1)
+			return;
+		div.append(temp.length + ' players online: ');
+		
+		
+		div.append('You');
+		/*if(w.main.lookingFor.category){
+			div.append($('<span>')
+				.html(' + ')
+				.attr('title',Main.LookingFor.toString(w.main.lookingFor))
+			);
+		}*/
+		if(temp.length > 1)
 			div.append(', ');
-		}
-	}	
-	
+		
+		for(var i = 0; i < temp.length; i++){
+			if(temp[i].name !== w.player.name){
+				div.append(playerOnlineConverter(temp[i]));
+				div.append(', ');
+			}
+		}	
+	}
 },function(){
-	return '' + player.pvpEnabled + main.lookingFor + main.hudState.pvpLookingFor;
+	return '' + w.main.questActive + w.player.pvpEnabled + w.main.lookingFor + w.main.hudState.playerOnline + w.main.hudState.pvpLookingFor;
 }));
-Dialog.setParent('playerOnline','#playerOnline');
 
-Dialog.UI('processBar',{
+Dialog.ProcessBarTracker = function(max){
+	return {
+		max:max || 0,
+		min:0,
+		value:0,
+	}
+}
+
+//always open via Dialog.open('processBar',{},true);	//< true to force new
+Dialog.UI('processBar',null,{
 	position:'absolute',
-	top:'50%',
-	left:'50%',
-	width:'300px',
+	top:'5%',
+	left:'40%',
+	width:'200px',
 	height:'auto',
-	font:'1.6em Kelly Slab',
+	fontSize:'1.2em',
 	background:'white',
 	border:'2px solid black',
 	borderRadius:'5px',
@@ -531,43 +591,71 @@ Dialog.UI('processBar',{
 	if(variable.param.value >= variable.param.max) 
 		return false;
 	
+	html.show();
+	
 	var pct = Math.floor((variable.param.value / variable.param.max)*100) + '%';
 	var big = $("<div>")
 		.css({background:'rgba(0,0,0,1)',border:'1px solid black',borderRadius:'3px',padding:'2px'})
 
 	var bar = $("<div>")
-		.css({pointerEvents:'none',backgroundColor:'green',width:pct,height:'15px',borderRadius:'2px'})
+		.css({pointerEvents:'none',backgroundColor:'green',width:pct,height:'10px',borderRadius:'2px'})
 	variable.bar = bar;	
 	big.append(bar);
+	
 	var span = $('<span>')
 		.html(variable.param.value + ' / ' + variable.param.max);
 	variable.span = span;
+	
 	var btn = $('<button>')
 		.html('Hide Bar')
-		.addClass('myButton')
+		.addClass('myButton skinny')
 		.css({marginLeft:10})
 		.click(function(){
 			Dialog.close('processBar');
 		});
 	html.append(big,span,btn);
+
+	
 },function(html,variable,param){
-	return '' + variable.param.value;
+	return '' + Math.floor(variable.param.value);
 },3,function(html,variable,param){
 	if(variable.param.value >= variable.param.max) 
 		return false;
 	var pct = Math.floor((variable.param.value / variable.param.max)*100) + '%';
 	variable.bar.css({width:pct});
-	variable.span.html(variable.param.value + ' / ' + variable.param.max);
+	variable.span.html(Math.floor(variable.param.value) + ' / ' + variable.param.max);
 }));
 
 var playerOnlineConverter = function(info){	
-	var span = $('<span>')
-		.html(info.username)
+	var text = 'Click to send PM. (Map: ' + MapModel.get(info.mapModel).name;
+	
+	if(info.questActive)
+		text += ', Quest: ' + QueryDb.getQuestName(info.questActive);
+	if(info.pvpEnabled)
+		text += ', PVP';
+	text += ')';
+	
+	var span = $('<span>');
+	var name = $('<span>')
+		.css({cursor:'pointer'})
+		.html(info.name)
 		.click(function(){
-			Message.setInputForPM(null,info.username);
+			Message.setInputForPM(null,info.name);
 		})
-		.attr('title','Click to send PM');
-	if(main.lookingFor.category && main.lookingFor.category === info.category){
+		.attr('title',text);
+		
+	span.append(name);
+	if(!info.questActive && !info.pvpEnabled && !w.main.questActive && !w.player.pvpEnabled){
+		var btn = Img.drawIcon.html('ui-waypoint',20,'Click to teleport to ' + info.name + '.')
+			.css({cursor:'pointer'})
+			.click(function(){
+				Command.execute(CST.COMMAND.teleportTo,[info.name]);
+			});
+		span.append(' ',btn)
+		
+	}
+	/*
+	if(w.main.lookingFor.category && w.main.lookingFor.category === info.category){
 		span.css({textDecoration:'underline'})
 	}
 	
@@ -578,113 +666,194 @@ var playerOnlineConverter = function(info){
 			.css({fontSize:'0.8em'})
 		);
 	}
+	*/
 	return span;
 }
 
-Dialog.create('adminQuestRating','Quest Rating',Dialog.Size(800,700),Dialog.Refresh(function(html,variable,param){
-	if(!param) return false;
-	html.html('');
-	var questList = {};
-	
-	for(var i = 0 ; i < param.list.length; i++){
-		var q = param.list[i];
-		if(!q.text && !q.abandonReason) continue;
-		questList[q.quest] = questList[q.quest] || [];
-		questList[q.quest].push(q);
+
+/*	
+var TUTORIAL_LINK = 'http://www.youtube.com/embed/pA2u3Gkv2W4';
+Dialog.create('videoTutorial','Tutorial',Dialog.Size(800,450),Dialog.Refresh(function(html,variable,param){
+	html.css({padding:'0px',overflowX:'hidden',overflowY:'hidden'});
+		
+	param = param || 0;
+	var iframe = $('<iframe>')
+		.attr({
+			src:TUTORIAL_LINK + '?autoplay=1&modestbranding=1&showinfo=0?start=' + param,
+			width:'100%',
+			height:'100%',
+		})
+		.css({
+			position:'absolute',top:0,left:0,
+			width:'100%',
+			height:'100%',
+		});
+	html.append(iframe);
+}));
+*/
+
+var Tip = Dialog.Tip = function(category,title,text,advancedText){
+	var t = {
+		category:category,
+		id:Tip.LIST.length,
+		title:title,
+		text:text,		
+		advancedText:advancedText || '',
 	}
-	var div = $('<div>').css({height:500,overflowY:'scroll'});
+	Tip.LIST.push(t);
+	return t;
+}
+Tip.LIST = [];
+
+Tip.getRandom = function(category){
+	var r = Tip.LIST.$random();
+	if(category && r.category !== category)
+		return Tip.getRandom(category);
+	return r;
+}
+Tip.get = function(num){
+	if(num < 0)
+		num += Tip.LIST.length;
+	num %= Tip.LIST.length;
+	return Tip.LIST[num];
+}
+Tip.getViaTitle = function(title){
+	for(var i = 0 ; i < Tip.LIST.length; i++)
+		if(Tip.LIST[i].title === title)
+			return Tip.LIST[i];
+	return null;
+}
+
+var link = function(href,text){
+	return '<a target="_blank" style="color:blue;" href="' + href + '">' + text + '</a>';
+}
+var img = function(src,height){
+	return '<img style="margin-top:10px" src="/img/tips/' + src + '.png" height="' + height + '">';
+}
+
+;(function(){	//init
+	var CAT = {combat:'combat',ui:'ui',misc:'misc'};
+	
+	Tip(CAT.ui,"Quick Reply","Press tab to reply to the last player who PMed you.");
+	Tip(CAT.ui,"Chatting","Press Enter to chat. Messages are sent to every player online no matter where they are.");
+	Tip(CAT.ui,"Esc Key","Press Esc to remove the current input in chat, close windows and remove tooltips.");
+	Tip(CAT.ui,"Show Item in Chat","Shift-left click an item in inventory to display it in chat. It also works for equips.");
+	Tip(CAT.ui,"Links","You can post links in the chat. Links must start with http and your chat line must only contain the link, no other text.");
+	Tip(CAT.ui,"PvP","PvP can be enabled anywhere while not doing a quest. When PvP is on, you can kill other players that also have PvP on.<br>" + img('pvp',100));
+	Tip(CAT.ui,"Party","Quests can be completed with other players. To do so, you must create a party and invite them.<br>" + img('party',100));
+	Tip(CAT.ui,"Teleport to Town","A quick way to come back to the town is with the Teleport to Town button.<br>" + img('homeTele',100));
+	Tip(CAT.ui,"Ping","Moving your mouse over the FPS counter will tell you your ping (the time for your inputs to reach the server).<br>" + img('ping',100));
+	Tip(CAT.ui,"Join Friends","By right-clicking the name of your friend, you can instantly teleport to his location.<br>" + img('playerOnline',100),
+		"You can only join a friend if you aren't doing a quest and aren't in PvP.");
+	Tip(CAT.ui,"Abandon Quest","You can abandon an active quest by clicking the X button on the hint.<br>" + img('abandonQuest',100));
+	
+	
+	//Finding Weapons title important Input.onPressAbility
+	Tip(CAT.combat,"Finding Weapons","Weapons can be obtained from killing monsters, completing quests or bought from the shop in town.<br>" + img('shop',100));
+	Tip(CAT.combat,"Ability & Weapon","You can use any ability with any weapon. (Ex: Slash with a bow. Shoot arrow with a sword.) However, using the wrong weapon will decrease your damage considerably.");
+	Tip(CAT.combat,"Party Loot","When a monster dies, it will drop an item for every player who contributed to the kill. You can only see and pick one copy of the item. This means other players can't steal your loot.");
+	Tip(CAT.combat,"Monster Exp","Monsters give exp and items upon killing. However, the loot has diminishing returns. The more you kill, the less likely you will get loot. Completing a quest near the enemies location will reset the diminishing returns.");
+	Tip(CAT.combat,"Reputation Points","Levelling-up grants a Reputation point that can be used to boost a stat of your choice via the Reputation Grid.");
+	Tip(CAT.combat,"Bleeding","Every Melee Ability has a default 5% chance to bleed. Bleed deals damage over time.");
+	Tip(CAT.combat,"Knockback","Every Range Ability has a default 5% chance to knockback, pushing the enemy away from you.");
+	Tip(CAT.combat,"Mana Drain","Every Arcane Ability has a default 5% chance to drain mana and replenish yours.");
+	Tip(CAT.combat,"Burning","Every Fire Ability has a default 5% chance to burn. Burning deals damage over time related to the remaining life.");
+	Tip(CAT.combat,"Chilling","Every Cold Ability has a default 5% chance to chill which reduces movement and attack speed.");
+	Tip(CAT.combat,"Stun","Every Lightning Ability has a default 5% chance to stun. Stunning stops the targets and reduces its ability charges, delaying its next attack.");
+	Tip(CAT.combat,"Cooldowns","Every ability has 2 types of cooldowns. The global cooldown prevents you from using any another ability. The local cooldown prevents you from using the same ability again.");
+	Tip(CAT.combat,"Mana","The most powerful abilities require mana. If you don't have enough mana, you can't use them.","You can increase your maximum mana and mana regen with Reputation points and equips. The mana draining status effect that Arcane abilities have quickly regens mana.");
+	Tip(CAT.combat,"Weakness","Every monster has a weakness (x2 more damage) and a resistance (x2 less damage) that can be seen when moving your mouse over it.",
+		"It is recommended to use two different element types, normally the two elements your weapon is strong in.");
+	Tip(CAT.combat,"Equip Boost","Level up to gain access to better equips. Their maximum power increase by 5% every level.");
+	Tip(CAT.combat,"Unique Boost","Every equipment has a tiny chance of having an " + link('/wiki/stat','unique boost') + ". Those boosts have very special effects and are very powerful.");
+	Tip(CAT.combat,"Monster Scaling","Monsters' damage and defence scale with your own level. They also become stronger if multiple players are around.",
+		"Monsters become 5.5% stronger every level. Monsters gains approximately 25% damage and 50% defence for every player nearby");
+	Tip(CAT.combat,"Weapon Element","Using an ability that matches the weapon elemental types will increase damage by 50%.",
+		"Every weapon has 2 elements. If you are fighting a monster that is resistant to your first weapon element, use the other weapon element.");
+	
+	Tip(CAT.misc,"Skill Plots","You can only harvest skill plots once (ex: trees). To harvest it again, you need to complete the related quest and wait 15 minutes.",
+		"Red trees give wood, rock gives metal and squirrel gives bone. Each skill plot can also give gems (Ruby, Sapphire, Topaz) at random.");
+	Tip(CAT.misc,"Material Rarity","There are 6 types of materials. The gems (Ruby, Sapphire, Topaz) are 3 times rarer than the others (Metal, Wood, Bone)");
+	Tip(CAT.misc,"Convert Material","You can convert your materials (ex: selling Ruby to get Wood) at the shop.");
+	Tip(CAT.misc,"Unlock New Abilities","Completing achievements is the best way to get new abilities. The hardest achievements give the most powerful abilities.");
+	Tip(CAT.misc,"Equip Level","Level up to gain access to better equips. Their maximum power increase by 5% every level.");
+	Tip(CAT.misc,"Sell Equip","If you no longer need an equip, you can sell it to get useful materials.");
+	Tip(CAT.misc,"Unlock Equip Boost","When looting an equip, most of its boosts will be locked. Use materials to upgrade the equip and make it more powerful.");
+	Tip(CAT.misc,"GEM","Every exp you get is multiply be your GEM (Global Exp Modifier). Completing quests increase your GEM.","Each quest can give up to +0.10 GEM. This is done by getting 10,000 Score (+0.04 GEM) and completing the 3 challenges. (x3 +0.02 GEM)");
+	Tip(CAT.misc,"Challenge","You need to beat a quest at least once before activating a challenge. A challenge gives better rewards but makes the quest harder.");
+	
+	/*Tip(CAT.,"","");
+	Tip(CAT.,"","");
+	Tip(CAT.,"","");
+	Tip(CAT.,"","");
+	Tip(CAT.,"","");
+	Tip(CAT.,"","");
+	Tip(CAT.,"","");
+	Tip(CAT.,"","");
+	Tip(CAT.,"","");
+	Tip(CAT.,"","");*/
+	
+	
+})();
+
+var SHOW_DETAIL = false;
+Dialog.create('tips','Tips & Tricks',Dialog.Size(600,'auto',false),Dialog.Refresh(function(html,variable,param){
+	param = param || Tip.getRandom();
+	
+	var div = $('<div>');
+	div.append($('<h3>').html('#' + (param.id+1) + ' ' + param.title));
+	div.append(param.text);
+	if(SHOW_DETAIL)
+		div.append(' ' + param.advancedText);
+	
 	html.append(div);
 	
-	var helper = function(q,btn){
-		return function(){
-			Command.execute('addCPQuestFeedback',[q.username,QueryDb.getQuestName(q.quest)]);			
-			btn.hide();
-		}
-	}
 	
-	for(var i in questList){
-		div.append('<h3>' + i + '</h3>');
-		for(var j = 0 ; j < questList[i].length; j++){
-			var q = questList[i][j];
-			var str = q.username + ': ' + q.text;
-			
-			if(q.hint)
-				str += '<br> &nbsp;&nbsp;&nbsp;&nbsp;Hint: ' + q.hint;
-			if(q.abandonReason)
-				str += '<br> &nbsp;&nbsp;&nbsp;&nbsp;Abandon: ' + q.abandonReason;
-			str += '<hr>';
-			
-			var btn = $("<button>")
-				.html('+');
-			btn.click(helper(q,btn));
-				
-			div.append(btn,str);
-		}
-	}
-	html.append('<br>',$('<button>')
-		.html('Set as Read')
+	var topRight = $('<div>')
+		//.css({position:'absolute',right:'20px',top:'0px'})
+		.append(
+			$('<div>')
+			.addClass('checkbox')
+			.append($('<label>')
+				.append($('<input>')
+					.attr('type','checkbox')
+					.change(function(){
+						SHOW_DETAIL = $(this)[0].checked;
+						Dialog.open('tips',param);
+					})
+					.prop('checked', SHOW_DETAIL)
+					,' Show Details'
+				)
+			)
+		);
+	html.append('<br>');		
+	html.append(topRight);
+	
+	var btns = $('<div>').css({position:'absolute',right:'20px',top:'0px'});
+		
+	btns.append($('<button>')
+		.addClass('myButton skinny')
+		.html('Previous')
 		.click(function(){
-			ts.setQuestRatingAsRead();
+			Dialog.open('tips',Tip.get(param.id - 1));
 		})
 	);
-}));
-
-Dialog.create('adminQuestStats','Quest Statistics',Dialog.Size(800,700),Dialog.Refresh(function(html,variable,param){
-	var array = [
-		['Quest','# Complete','% Complete','# Repeat'],
-	];
-	for(var i in main.quest){
-		var q = QueryDb.get('quest',i);
-		if(!q) 
-			continue;
-		if(['Qdebug','Qhighscore','Qcontribution'].$contains(i))
-			continue;
-		array.push([
-			i,
-			q.statistic.countComplete,
-			q.statistic.countStarted === 0 ? ' - ' : Math.floor(q.statistic.countComplete / q.statistic.countStarted * 100) + "%",
-			Tk.round(q.statistic.averageRepeat,2)	
-		]);		
-	}
-	html.html(Tk.arrayToTable(array,true,false,true));	
-}));
-
-
-
-Dialog.create('adminSpyPlayer','Spy Players',Dialog.Size(800,700),Dialog.Refresh(function(html,variable,param){
-	html.append($('<button>')
-		.html('Refresh')
+	btns.append($('<button>')
+		.addClass('myButton skinny')
+		.html('Random')
 		.click(function(){
-			ts.spyPlayer();
+			Dialog.open('tips');
 		})
 	);
+	btns.append($('<button>')
+		.addClass('myButton skinny')
+		.html('Next')
+		.click(function(){
+			Dialog.open('tips',Tip.get(param.id + 1));
+		})
+	);	
+	html.append(btns);
 	
-	var array = [
-		['Name','Key','Map','Quest','Spy'],
-	];
-	
-	param.data.sort(function(a,b){
-		return a.username < b.username;
-	})
-	
-	var helper = function(id){
-		return function(){
-			Command.execute('activeBotwatch',[id]);
-		}
-	}
-	
-	for(var i = 0 ; i < param.data.length; i++){
-		array.push([
-			param.data[i].username,
-			param.data[i].id,
-			param.data[i].map,
-			param.data[i].questActive,
-			$('<button>')
-				.click(helper(param.data[i].id))
-				.html('Spy')
-		]);
-	}
-	html.append('<br>',Tk.arrayToTable2(array,true).addClass('table selectable'));	
 }));
 
 

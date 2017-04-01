@@ -1,7 +1,10 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var IconModel = require4('IconModel');
+var IconModel, QueryDb;
+global.onReady(function(){
+	IconModel = rootRequire('shared','IconModel',true); QueryDb = rootRequire('shared','QueryDb',true);
+});
 var Img = exports.Img = {};
 
 var ZINDEX = 20;	//bad...
@@ -24,8 +27,9 @@ Img.load = function(src,cb){
 Img.icon = [];
 
 Img.getMinimapIconSize = function(name){
-	if(name === 'minimapIcon-quest') return 24;
-	if(name === 'minimapIcon-questMarker') return 24;
+	if(name === CST.ICON.quest) return 24;
+	if(name === 'worldMap-sideQuest') return 24;
+	if(name === CST.ICON.questMarker) return 24;
 	if(name.$contains('color')) return 6;
 	return 16;
 }
@@ -35,15 +39,22 @@ Img.getIcon = function(a,b){
 Img.drawIcon = function(ctx,info,size,x,y){	
 	size = size || 32;
 	var ret = ctx;
-
-	if(info.$contains('.'))
-		ERROR(3,'dot',info);
 		
-	info = info.replace('.','-');
 	var iconModel = IconModel.get(info);
 	if(!iconModel) 
 		return;	//error handled in get
 
+	
+	if(iconModel.img && iconModel.img.complete){	//fast common case
+		ctx.drawImage(
+			iconModel.img,
+			0,0,
+			iconModel.size,iconModel.size,
+			x,y,
+			size,size
+		);
+		return ret;
+	}
 	var draw = function(){
 		ctx.drawImage(
 			iconModel.img,
@@ -53,12 +64,12 @@ Img.drawIcon = function(ctx,info,size,x,y){
 			size,size
 		);
 	}
+	
 	if(!iconModel.img)
 		iconModel.img = Img.load(iconModel.src,draw);
-	else if(!iconModel.img.complete)
-		$(iconModel.img).load(draw);
-	else	
-		draw();		
+	else 
+		if(!iconModel.img.complete)
+			$(iconModel.img).load(draw);
 	return ret;
 }
 
@@ -71,7 +82,8 @@ Img.drawIcon.html = function(icon,size,title,alpha){
 		})
 		.css({
 			zIndex:ZINDEX,
-			border: icon ? '' : '2px solid black',
+			//border: icon ? '' : '2px solid black',
+			boxShadow:icon ? '' : 'inset 2px 2px black,inset -2px -2px black,inset 2px -2px black,inset -2px 2px black', //'inset #000000 0px -2px 0px 0px'
 		});
 	if(title)
 		canvas.attr('title',title);
@@ -84,11 +96,8 @@ Img.drawIcon.html = function(icon,size,title,alpha){
 	return canvas;
 }
 
-
-
 Img.drawIcon.img = function(icon,size,title,alpha){	//unused
 	size = size || 24;
-	
 	var src = icon ? IconModel.get(icon).src : '';
 	var img = $('<img>')
 		.attr({
@@ -99,7 +108,8 @@ Img.drawIcon.img = function(icon,size,title,alpha){	//unused
 		.css({
 			zIndex:ZINDEX,
 			opacity:alpha !== undefined ? alpha : 1,
-			border: icon ? '' : '2px solid black',
+			//border: icon ? '' : '2px solid black',
+			boxShadow:icon ? '' : 'inset 2px 2px black,inset -2px -2px black,inset 2px -2px black,inset -2px 2px black', //'inset #000000 0px -2px 0px 0px'
 		});
 	if(title)
 		img.attr('title',title);
@@ -107,28 +117,40 @@ Img.drawIcon.img = function(icon,size,title,alpha){	//unused
 	return img;
 }
 
-
 Img.redrawIcon = function(canvas,icon,title,alpha){
-	if(title)
+	if(canvas[0].title !== title)
 		canvas.attr('title',title);
-	
+		
 	var ctx = canvas[0].getContext("2d");
-	if(alpha !== undefined) 
-		ctx.globalAlpha = alpha;
-	else 
-		ctx.globalAlpha = 1;
-	
 	var size = canvas[0].width;	//assume square
-	ctx.clearRect(0,0,size,size);
-	if(icon) 
-		Img.drawIcon(ctx,icon,size,0,0);
+	if(alpha !== undefined)
+		if(ctx.globalAlpha !== alpha)
+			ctx.globalAlpha = alpha;
+		
+	if(!icon){
+		ctx.clearRect(0,0,size,size);
+		return canvas;
+	}
+	if(ctx.globalAlpha !== 1)	//if 1, drawIcon will overwrite
+		ctx.clearRect(0,0,size,size);
+	Img.drawIcon(ctx,icon,size,0,0);
+		
 	return canvas;
+}
 
+
+var isQuestItem = function(id){
+	return id[0] === 'Q' && !id.$contains('Qsystem-',true);
 }
 
 //Dialog.get('inventory')
-Img.drawItem = function(iconId,size,title,amount){
+Img.drawItem = function(itemId,size,title,amount,cb){
+	amount = amount || 0;
+	
+	var item = itemId && QueryDb.get('item',itemId,cb);
+	var iconId = item ? item.icon : '';
 	var icon = Img.drawIcon.html(iconId,size || 40,title || '');
+	applyBorder(icon,item,cb);
 	
 	var amountText = Img.drawItem.getAmounText(amount);
 	
@@ -159,6 +181,14 @@ Img.drawItem = function(iconId,size,title,amount){
 	return total;
 }
 
+var applyBorder = function(icon,item,cb){
+	if(item && item.id && isQuestItem(item.id))
+		icon.css({border:'1px solid red'});
+	else
+		icon.css({border:'none'});
+}
+
+
 Img.drawItem.getAmounText = function(amount){
 	if(amount <= 1)
 		return '';
@@ -172,8 +202,7 @@ Img.drawItem.getAmounText = function(amount){
 	return amountText;
 }
 	
-Img.redrawItem = function(total,iconId,amount){
-	
+Img.redrawItem = function(total,itemId,amount,cb){
 	var c = total.children();
 	var amountHtml = $(c[1]);
 	
@@ -185,15 +214,19 @@ Img.redrawItem = function(total,iconId,amount){
 		amountHtml.html(amountText);
 		amountHtml.show();
 	}
-	Img.redrawIcon($(c[0]),iconId);
+	
+	var item = itemId && QueryDb.get('item',itemId,cb);
+	var iconId = item ? item.icon : '';
+	var icon = $(c[0]);
+	Img.redrawIcon(icon,iconId);
+	
+	applyBorder(icon,item,cb);
 	return total;
 }
 
 Img.drawFace = function(info,size){
 	size = size || 96;
-	if(info.image === 'player') 
-		info = {image:'warriorMale-0',name:player.name};	//BAD
-	
+
 	var face = $('<div>')
 		.css({textAlign:'center'})
 		.append(Img.drawIcon.html(info.image,size))
@@ -248,8 +281,11 @@ villagerFemale-8
 villagerFemale-9
 002006019004002001004007019001001001003001001001100100100100060020020100100100100100100100100100000040100100100100100100060060060100100100100100100100100100100100100100100100100100
 
-villagerMale-0
+face-creator
 003006011013001001007002025001001001001001001001093092087100020080040100100100100100100100100100040040040100100100100100100100100100100100100100100100100100040040040100100100100100
+
+villagerMale-0
+003004007004001001008002001002001007001001001001092083074100055046053100100100100100100100100100100058048100051053048100100100100100100100100100100100100100100100100100100100100100
 
 villagerMale-1
 001002003034001001007002005001001001001001001001100100100100020040020100100100100100100100100100076038000100100100100100100100100100100100100100100100100100100100100100100100100100

@@ -1,8 +1,12 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
+
 "use strict";
 (function(){ //}
-var Command = require4('Command'), SpriteModel = require4('SpriteModel'), Main = require4('Main');
-var Dialog = require3('Dialog');
+var Command, SpriteModel, Main;
+global.onReady(function(){
+	Command = rootRequire('shared','Command',true); SpriteModel = rootRequire('shared','SpriteModel',true); Main = rootRequire('shared','Main',true);
+});
+var Dialog = rootRequire('client','Dialog');
+
 var LOG;
 var LOG_LIST = [];
 //
@@ -14,12 +18,12 @@ var TABLE_CSS = {background:'rgba(0,0,0,0.04)',border:'2px solid black',borderRa
 Dialog.create('contribution','Contribution',Dialog.Size(725,600),Dialog.Refresh(function(){
 	Dialog.contribution.apply(this,arguments);
 },function(){
-	return Tk.stringify(main.contribution);
+	return Tk.stringify(w.main.contribution);
 }));
 
 
 Dialog.contribution = function(html,variable,param){
-	var c = main.contribution;
+	var c = w.main.contribution;
 	html.append('<h3 title="Cumulative CP: ' + c.ptTotal + '">Balance: ' + c.pt + ' CP</h3>');
 	
 	LOG = LOG || $('<div>');
@@ -51,8 +55,9 @@ var howToGet = function(c){
 	}
 	var ul = $('<ul>').addClass('list-group').append(
 		li('Leave useful quest feedback.'),
-		li('Create maps with <a style="color:blue;" target="_blank" href="/contribution">Tiled</a>.'),
-		li('Create quests with the <a style="color:blue;" target="_blank" href="/contribution">Quest Creator</a>.')	
+		li('<a style="color:blue" target="_blank" href="/contribution">Create maps.</a>'),
+		li('Create quests with the <a style="color:blue;" target="_blank" href="/contribution">Quest Creator</a>.')	,
+		li('Create new sprites and art. <a style="color:blue;" target="_blank" href="/contribution">Art Bounties</a>.')	
 	);
 	div.append(ul);
 	return div;
@@ -89,7 +94,7 @@ var chatSymbol = function(c){
 	
 	var helper = function(what){
 		return function(){
-			Command.execute('contribution,select',[what]);
+			Command.execute(CST.COMMAND.contributionSelect,[what]);
 		}
 	}	
 		
@@ -138,7 +143,7 @@ var bullet = function(c){
 	
 	var helper = function(action,what){
 		return function(){
-			Command.execute('contribution,' + action,[what]);
+			Command.execute(action,[what]);
 		}
 	}
 	
@@ -150,18 +155,18 @@ var bullet = function(c){
 			html = 'Active';
 			title = 'Click to desactivate';
 			color = GREEN;
-			action = 'reset';
+			action = CST.COMMAND.contributionReset;
 			id = list[i][2];
 		} else if(c.unlocked[id]){
 			title = '';
 			html = 'Select';
 			color = YELLOW;
-			action = 'select';
+			action = CST.COMMAND.contributionSelect;
 		} else {
 			title = '';
 			html = 'Cost ' + list[i][4] + ' CP';
 			color = c.pt < list[i][4] ? RED : YELLOW;
-			action = 'purchase';
+			action = CST.COMMAND.contributionPurchase;
 		}
 		
 		array.push([
@@ -198,7 +203,7 @@ var chatColor = function(c){
 	var helper = function(action,what){
 		return function(){
 			if(!action) return;
-			Command.execute('contribution,' + action,[what]);
+			Command.execute(action,[what]);
 		}
 	}	
 		
@@ -212,11 +217,11 @@ var chatColor = function(c){
 		} else if(c.unlocked[id]){
 			html = 'Select';
 			color = YELLOW;
-			action = 'select';
+			action = CST.COMMAND.contributionSelect;
 		} else {
 			html = 'Cost ' + list[i][2] + ' CP';
 			color = c.pt < list[i][2] ? RED : YELLOW;
-			action = 'purchase';
+			action = CST.COMMAND.contributionPurchase;
 		}
 		
 		array.push([
@@ -243,7 +248,7 @@ var broadcastAchievement = function(c){
 		.addClass('myButton')
 		.html('Buy 5 for 10 CP')
 		.click(function(){
-			Command.execute('contribution,purchase',['broadcastAchievement',"5"]);
+			Command.execute(CST.COMMAND.contributionPurchase,['broadcastAchievement',"5"]);
 		})
 	);
 	return div;
@@ -256,8 +261,7 @@ var playerSprite = function(){
 	div.append('<h3>Player Sprite</h3>');
 	div.append('<p>Change player appearance.</p>');
 	
-	CANVAS = CANVAS || $('<canvas>')
-		.attr({width:270,height:120});
+	CANVAS = CANVAS || Tk.createSharpCanvas(270,120);
 		
 	SKIN = SKIN || $('<select>');
 	SKIN.unbind('change');	//BAD... for whatever reason, change gets removed when close then reopen
@@ -291,7 +295,7 @@ var playerSprite = function(){
 		.html('Get for 50 CP')
 		.click(function(){
 			var str = playerSprite.getValue();
-			Command.execute('contribution,purchase',['playerSprite',str]);
+			Command.execute(CST.COMMAND.contributionPurchase,['playerSprite',str]);
 		})
 	);
 	left.append('<br>');
@@ -300,8 +304,8 @@ var playerSprite = function(){
 		.css({width:'100%'})
 		.html('Reset')
 		.click(function(){
-			Main.question(main,function(){
-				Command.execute('contribution,reset',['playerSprite']);
+			Main.askQuestion(w.main,function(){
+				Command.execute(CST.COMMAND.contributionReset,['playerSprite']);
 			},'Revert to default player sprite?','boolean');
 		})
 	);
@@ -397,20 +401,20 @@ Earning</button> | <button id="contributionBtnSpending" onclick="Contribution.cl
 <div id="contributionEarning">
 	
 	<h3>Quest Creation: <span id="contributionQuestPt">0</span> CP Earned</h3>
-	Create a quest for Raining Chain. Grant 1 CP for every player who completes the quest.<br>
+	Create a quest for GAME_NAME. Grant 1 CP for every player who completes the quest.<br>
 	<!-- -->Check this <a style="text-decoration:underline;color:blue;font-size:20px;" href="http://www.youtube.com/watch?v=3j4d2xkhJP4" target="_blank">Youtube video</a> for a fully detailed guide about creating quests for beginner coders.<br>
 	History:<div style="padding:5px" id="contributionQuestHistory"></div><br>
 	
 	<!--
 	<h3>Map Creation: </h3>
-	Create a map for Raining Chain.<br>
+	Create a map for GAME_NAME.<br>
 	CP Earned: <span id="contributionMapPt">0</span> CP<br>
 	History:<br>
 	<div style="padding:5px" id="contributionMapHistory"></div><br>
 	-->
 	
 	<h3>Youtube: <span id="contributionYoutubePt">0</span> CP Earned <button onclick="Contribution.updateSocialMedia('youtube');">Update</button></h3>
-	Post a video on Youtube with Raining Chain in the title. Grant 1 CP/10 views.<br>
+	Post a video on Youtube with GAME_NAME in the title. Grant 1 CP/10 views.<br>
 	Account: <input onchange="this.style.color = 'orange';" id="contributionYoutubeUsername" placeholder="None"></input> <button onclick="Contribution.change('youtube',$('#contributionYoutubeUsername')[0].value);">Change Name</button><br>
 	History:<div style="padding:5px" id="contributionYoutubeHistory"></div><br>
 	
@@ -420,12 +424,12 @@ Earning</button> | <button id="contributionBtnSpending" onclick="Contribution.cl
 	History:<div style="padding:5px" id="contributionRedditHistory"></div><br>
 	
 	<h3>Twitter: <span id="contributionTwitterPt">0</span> CP Earned <button onclick="Contribution.updateSocialMedia('twitter');">Update</button></h3>
-	Tweet about Raining Chain with the hashtag #rainingchain. Grant 1 CP per tweet.<br>
+	Tweet about GAME_NAME with the hashtag #rainingchain. Grant 1 CP per tweet.<br>
 	Account: <input onchange="this.style.color = 'orange';" id="contributionTwitterUsername" placeholder="None"></input> <button onclick="Contribution.change('twitter',$('#contributionTwitterUsername')[0].value);">Change Name</button><br>
 	History:<div style="padding:5px" id="contributionTwitterHistory"></div><br>
 	
 	<h3>Twitch: <span id="contributionTwitchPt">0</span> CP Earned <button title="Click this button while streaming." onclick="Contribution.updateSocialMedia('twitch');">Update</button></h3>
-	<!-- -->Stream under the game <a href="http://www.twitch.tv/directory/game/Raining%20Chain" target="_blank" title="Your stream should appear in this list.">"Raining Chain"</a> on Twitch.<br>
+	<!-- -->Stream under the game <a href="http://www.twitch.tv/directory/game/Raining%20Chain" target="_blank" title="Your stream should appear in this list.">"GAME_NAME"</a> on Twitch.<br>
 	While streaming, click the Update button to get 1 CP/3 viewers rounded up. (Limit of 1 Update/Hour).<br>
 	Account: <input  onchange="this.style.color = 'orange';" id="contributionTwitchUsername" placeholder="None"></input> <button onclick="Contribution.change('twitch',$('#contributionTwitchUsername')[0].value);">Change Name</button><br>
 	History:<div style="padding:5px" id="contributionTwitchHistory"></div><br>

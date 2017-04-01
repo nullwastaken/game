@@ -1,34 +1,44 @@
-//LICENSED CODE BY SAMUEL MAGNAN FOR RAININGCHAIN.COM, LICENSE INFORMATION AT GITHUB.COM/RAININGCHAIN/RAININGCHAIN
-"use strict";
-var Actor = require2('Actor'), Maps = require2('Maps');
 
-var ActorGroup = exports.ActorGroup = {};
+"use strict";
+var Actor, Maps;
+global.onReady(function(){
+	Actor = rootRequire('shared','Actor'); Maps = rootRequire('server','Maps');
+	global.onLoop(ActorGroup.loop);
+});
+
+var NO_RESPAWN = -10;
+var ActorGroup = exports.ActorGroup = function(extra){
+	this.id = Math.randomId();
+	this.map = '';
+	this.list = {};  		//hold enemies
+	this.respawn = 0;  		//time before respawn when all monster dead, NO_RESPAWN = remove group when dead
+	this.param = [];		//BAD used to revive node appgroup
+	Tk.fillExtra(this,extra);
+}
+
 ActorGroup.create = function(spot,list,respawn,v){
-	var enemyIdList = [];
-		
-	var id = Math.randomId();
-	LIST[id] = {
-		id:id,
+	var g = new ActorGroup({
 		map:spot.map,
-		list:{},             		//hold enemies
-		respawn:respawn || false,  		//time before respawn when all monster dead, false = remove group when dead
-		param:Tk.deepClone([spot,list,respawn,v]),		//used to revive node appgroup
-	};
+		respawn:respawn || NO_RESPAWN,
+		param:Tk.deepClone([spot,list,respawn,v]),		
+	});
 	
-	Maps.addToEntityList(Maps.get(spot.map),'group',id);
+	Maps.addToEntityList(Maps.get(spot.map),'group',g.id);
 	
 	for(var i in list){
 		//list[i].extra.group = id;
 		for(var j = 0 ; j < list[i].amount; j++){
 			var pos = ActorGroup.alterSpot(Tk.deepClone(spot),v);
 			var e = Actor.create(list[i].model,list[i].extra);
-			e.group = id;
+			e.group = g.id;
 			Actor.addToMap(e,pos);
-			LIST[id].list[e.id] = 1;
-			enemyIdList.push(e.id);
+			g.list[e.id] = true;
 		}
 	}
-	return enemyIdList;
+	
+	ActorGroup.addToList(g);
+	
+	return g.list.$keys();
 	
 }
 
@@ -37,8 +47,8 @@ var LIST = ActorGroup.LIST = {};
 ActorGroup.get = function(id){
 	return LIST[id] || null;
 }
-ActorGroup.addToList = function(bullet){
-	LIST[bullet.id] = bullet;
+ActorGroup.addToList = function(g){
+	LIST[g.id] = g;
 }
 ActorGroup.removeFromList = function(id){
 	delete LIST[id]; 
@@ -46,25 +56,26 @@ ActorGroup.removeFromList = function(id){
 
 ActorGroup.removeActorFromGroup = function(act){
 	var group = LIST[act.group];
-	if(!group) return ERROR(3,'Actor.remove no group','name',act.name);
+	if(!group) 
+		return ERROR(3,'Actor.remove no group',act.name);
 	delete group.list[act.id];
 }
 
 ActorGroup.alterSpot = function(spot,v){
-	if(!v) return spot;
+	if(!v) 
+		return spot;
 	
 	for(var i = 0; i < 100; i++){
 		var x = spot.x + Math.randomML() * v;
 		var y = spot.y + Math.randomML() * v;
 		if(!Actor.isStuck(
-			{map:spot.map,mapModel:Maps.getModel(spot.map),x:spot.x,y:spot.y,type:'npc'},	//BAD
-			{map:spot.map,mapModel:Maps.getModel(spot.map),x:x,y:y,type:'npc'})
+			{map:spot.map,mapModel:spot.mapModel,x:spot.x,y:spot.y,type:CST.ENTITY.npc},	//BAD
+			{map:spot.map,mapModel:spot.mapModel,x:x,y:y,type:CST.ENTITY.npc})
 		){
-			return {x:x,y:y,map:spot.map};
+			return Maps.Spot(x,y,spot.map,spot.mapModel);
 		}
 	}
 	return spot;	//if all 100 tries fail
-	
 }
 
 ActorGroup.List = function(model,amount,extra){
@@ -88,10 +99,11 @@ ActorGroup.loop.forEach = function(g){
 	if(!g.list.$isEmpty()) return;
 	
 	//if no return => all dead
-	if(g.respawn === false) return ActorGroup.remove(g);
+	if(g.respawn === NO_RESPAWN) 
+		return ActorGroup.remove(g);
 
 	if(--g.respawn <= 0){
-		ActorGroup.create(g.param[0],g.param[1],g.param[2],g.param[3]); 	
+		ActorGroup.create.apply(this,g.param); 	
 		ActorGroup.remove(g);
 	}
 

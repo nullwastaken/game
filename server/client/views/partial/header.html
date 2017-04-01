@@ -8,33 +8,27 @@
 		<meta name="description" content="Raining Chain HTML5 MMORPG">
 		<meta name="author" content="Samuel Magnan">
 		<meta name="google" value="notranslate" />
-		<link rel="icon" type="image/png" href="/img/ui/interface/favicon.png?v=7">
+		<link rel="icon" type="image/png" href="/img/ui/favicon.png?v=8">
 	
-		<script src="../bower_components/jquery/dist/jquery.min.js"></script>
+		<script src="/bower_components/jquery/dist/jquery.min.js"></script>
 		
-		<script src="../bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-		<link href="../bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
-		<script src="../bower_components/jquery-ui/jquery-ui-1.10.4.custom.min.js"></script>
-		
-		
-		
+		<script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+		<link href="/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+		<script src="/bower_components/jquery-ui/jquery-ui-1.10.4.custom.min.js"></script>
 		
 		<!-- 
-		if i use default (1.11) zIndex is fucked when opening multi dialog
-		<script src="../bower_components/jquery-ui/jquery-ui.min.js"></script>
+		if i use default (1.11) zIndex is messed up when opening multi dialog
+		<script src="/bower_components/jquery-ui/jquery-ui.min.js"></script>
 		-->
 		
-		<link href="../bower_components/jquery-ui-bootstrap/jquery.ui.theme.css" rel="stylesheet">
-		<link href="../bower_components/jquery-ui/themes/rainingchain/jquery-ui.css" rel="stylesheet">
+		<link href="/bower_components/jquery-ui-bootstrap/jquery.ui.theme.css" rel="stylesheet">
+		<link href="/bower_components/jquery-ui/themes/rainingchain/jquery-ui.css" rel="stylesheet">
 		
-		<link href='http://fonts.googleapis.com/css?family=Kelly Slab' rel='stylesheet' type='text/css'>
-			  
-		<!--
-		<link href="../bower_components/fontawesome/font-awesome.min.css" rel="stylesheet">
-		-->
+		<!--<link href='http://fonts.googleapis.com/css?family=Kelly Slab' rel='stylesheet' type='text/css'>-->
+			
         
-		<link rel="stylesheet" href="../css/CSSTableGenerator.css" type="text/css" />
-		<link rel="stylesheet" href="../css/button.css" type="text/css" />
+		<link rel="stylesheet" href="/css/CSSTableGenerator.css" type="text/css" />
+		<link rel="stylesheet" href="/css/button.css" type="text/css" />
 	  
 		<title>Raining Chain MMORPG HTML5</title>
 		
@@ -42,7 +36,22 @@
 	<body>
 		<style>
 			body {
-				background-image: url("../css/img/white_wall_hash.png");
+				background-image: url("/css/img/white_wall_hash.png");
+				<% if(location === "game"){ %>
+				font-family:MiniSet2;
+				<% } %>	
+			}
+			.aspect-ratio {
+			  position: relative;
+			  width: 100%;
+			  height: 0;
+			  padding-bottom: 51%;
+			}
+			.aspect-ratio iframe {
+			  position: absolute;
+			  width: 100%;
+			  height: 100%;
+			  left: 0; top: 0;
 			}
 		</style>
 		<nav id="myNavbar" style="z-index:10" class="navbar navbar-default navbar-static-top">	<!-- zindex so below jqueryui-->
@@ -64,7 +73,7 @@
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Contribute <b class="caret"></b></a>
 				
 							<ul class="dropdown-menu">
-								<li><a href="/contribution">How Can I Contribute?</a></li>
+								<li><a href="/contribution">How to Contribute</a></li>
 								<li><a href="/QuestCreator">Quest Creator</a></li>
 								<li><a href="https://trello.com/b/cLJknVQ4/general" target="_blank">Art Bounties</a></li>
 							</ul>
@@ -83,13 +92,19 @@
 								<li><a href="/wiki/exp">Experience</a></li>
 								<li><a href="/wiki/equip">Equipment</a></li>
 								<li><a href="/wiki/stat">Stats</a></li>
-								<li><a href="/wiki/material">Materials</a></li>
 							</ul>
 						</li>
 						
-						<li class=""><a href="/tutorial/html5">Code Tutorial</a></li>
-						<li class=""><a target="_blank" href="http://github.com/rainingchain/rainingchain">Source Code</a></li>
+						<li class="dropdown <%- ["tutorial"].indexOf(location) !== -1 ? "active" : ""%>">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Code Tutorial <b class="caret"></b></a>
+				
+							<ul class="dropdown-menu">
+								<li><a href="/tutorial/html5">HTML5 Game Logic</a></li>
+								<li><a href="/tutorial/html">HTML Interface</a></li>
+							</ul>
+						</li>
 						
+						<li><a target="_blank" href="http://github.com/rainingchain/rainingchain">Source Code</a></li>
 						
 						<li class="dropdown <%- ["rs","zelda","pokemon"].indexOf(location) !== -1 ? "active" : ""%>">
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Other <b class="caret"></b></a>
@@ -105,4 +120,39 @@
 				</div><!--/.nav-collapse -->
 			</div>
 		</nav>
+		<div  id="header-twitch" hidden class="container">
+			<a target="_blank" href="http://twitch.tv/rainingchain">
+				<img src="/img/ui/twitch.png" width="24px" height="24px">
+				<span>I'm on Twitch right now if you have questions.</span>
+			</a>
+		</div>
+		<script>
+		$(document).ready(function(){
+			if(["contribution","QuestCreator"].indexOf('<%- location %>') !== -1)
+				$.ajax({
+					url: 'https://api.twitch.tv/kraken/streams/RainingChain',
+					dataType: 'jsonp',
+					type: 'GET',
+					crossDomain: true,
+					success: function(data){
+						if(data.stream)
+							$('#header-twitch').show();
+					},
+				});
+		});
+		</script>
 		
+		<% if(["pokemon","zelda","rs"].indexOf(location) !== -1){ %>
+			<div class="container">
+				<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+				<!-- MyFirstAdUnit -->
+				<ins class="adsbygoogle"
+					 style="display:block"
+					 data-ad-client="ca-pub-1241816180726161"
+					 data-ad-slot="6502839353"
+					 data-ad-format="auto"></ins>
+				<script>
+				(adsbygoogle = window.adsbygoogle || []).push({});
+				</script>
+			</div>
+		<% } %>	

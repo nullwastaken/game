@@ -1,4 +1,5 @@
 <% include ../partial/header.html %>
+<script src="/js/shared/Tk.js"></script>
 <div class="container">
 	<h3>Monsters</h3>
 	<p>
@@ -11,16 +12,15 @@
 	#myTable tr td:first-child {
 		/*text-decoration:underline;*/
 		font-weight: 900;
-		font-size:1.6em;
 	}
 	
 	</style>
-	<table id="myTable" class="CSSTableGenerator2">
+	<table id="myTable" class="table">
 		<tr>
 			<th>Monster</th>
-			<th>Resist</th>
-			<th>Weakness</th>
-			<th>Behaviour</th>
+			<th class="hidden-xs hidden-sm">Resist</th>
+			<th class="hidden-xs hidden-sm">Weakness</th>
+			<th class="hidden-xs hidden-sm">Behaviour</th>
 			<th>Attacks</th>
 		</tr>
 		<tr>
@@ -32,7 +32,7 @@
 		</tr>
 		<tr>
 			<td>Bee</td>
-			<td>Magic</td>
+			<td>Arcane</td>
 			<td>Fire</td>
 			<td>Go towards target</td>
 			<td>Shoot Darts, Scratch</td>
@@ -47,34 +47,34 @@
 		<tr>
 			<td>Mushroom</td>
 			<td>Fire</td>
-			<td>Magic</td>
+			<td>Arcane</td>
 			<td>Move Randomly</td>
 			<td>Shoot Spores, Leave Spore Trails</td>
 		</tr>	
 		<tr>
 			<td>Plant</td>
 			<td>Fire</td>
-			<td>Magic</td>
+			<td>Arcane</td>
 			<td>Go towards target</td>
 			<td>Chilling Darts, Scratch</td>
 		</tr>	
 		<tr>
 			<td>Slime</td>
 			<td>Fire</td>
-			<td>Magic</td>
+			<td>Arcane</td>
 			<td>Go towards target</td>
 			<td>Summon Slime Minions, Heal Allies, Ice Shard</td>
 		</tr>
 		<tr>
 			<td>Slime Minion</td>
 			<td>Fire</td>
-			<td>Magic</td>
+			<td>Arcane</td>
 			<td>Go towards target</td>
 			<td>Ice Shard</td>
 		</tr>
 		<tr>
 			<td>Salamander</td>
-			<td>Magic</td>
+			<td>Arcane</td>
 			<td>Melee</td>
 			<td>Stay afar</td>
 			<td>Burn, Freeze, Stun, Bleeding Blow, Drain Mana</td>
@@ -82,13 +82,13 @@
 		<tr>
 			<td>Orc Warrior</td>
 			<td>Range</td>
-			<td>Magic</td>
+			<td>Arcane</td>
 			<td>Go towards target</td>
 			<td>Slash, Shoot arrows</td>
 		</tr>
 		<tr>
 			<td>Goblin Ranger</td>
-			<td>Magic</td>
+			<td>Arcane</td>
 			<td>Melee</td>
 			<td>Stay afar</td>
 			<td>Shoot Arrows, Scratch, Lightning Slash</td>
@@ -103,13 +103,13 @@
 		<tr>
 			<td>Orc Warrior</td>
 			<td>Range</td>
-			<td>Magic</td>
+			<td>Arcane</td>
 			<td>Go towards target</td>
 			<td>Slash, Enrage, Shoot Arrows</td>
 		</tr>
 		<tr>
 			<td>Orc Ranger</td>
-			<td>Magic</td>
+			<td>Arcane</td>
 			<td>Melee</td>
 			<td>Stay afar</td>
 			<td>Shoot Arrows, Scratch, Lightning Slash</td>
@@ -159,7 +159,7 @@
 		<tr>
 			<td>Demon</td>
 			<td>Fire</td>
-			<td>Magic</td>
+			<td>Arcane</td>
 			<td>Stay afar</td>
 			<td>Fire Spiral, Fireball, Scratch, Fire Strike</td>
 		</tr>
@@ -193,7 +193,9 @@
 		</tr>
 	</table>
 	<br>
-	
+	<script>
+	Tk.responsiveTable($('#myTable'));
+	</script>
 	
 
 </div>

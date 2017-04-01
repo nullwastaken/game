@@ -1,10 +1,14 @@
-.npmignore
-gulpfile.js
-jshint-setting.json
-
-TODO.txt
-TODO_LOW_PRIORITY.txt
-TODO_QUEST.txt
-
-server/client/quest/tileset
+admin
+node_modules
+server
 *.backup
+
+*.pdn
+
+#If websocket
+#*.png
+#*.html
+#*.mp3
+#*.ogg
+#*.css
+
