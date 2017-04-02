@@ -48,8 +48,7 @@ global.onReady(function(initPack){
 var ONLINE_QUEST_LIST = [
 	"Qsystem","QfirstTown","Qdebug","QsideQuest",
 	"Qcontribution","Qhighscore",	
-	"QlockedMemento","QsadTree","QaggressiveNpc","QbaseDefence","Qbtt000","QbulletHeaven","QcatchThemAll","QcollectFight","Qdarkness","QduelLeague","Qfifteen","QkingOfTheHill","QlureKill","Qminesweeper","QprotectFirstTown","QpuzzleBridge","QpuzzleSwitch","Qrgb","Qsoccer","QtowerDefence","Qtutorial",
-	"QbadLuck","Qbtt001","Qspawner",'QflipTile',"QbossBattle","QmSaveDb"
+	//TODO
 ];
 
 var Quest = exports.Quest = function(extra){

@@ -230,38 +230,6 @@ fixEquipStatBoost = function(){	//when stat name changes
 	});
 }
 
-
-
-/*fixScore = function(){
-	var db = D.B;	
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QaggressiveNpc"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 1.5}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QbadLuck"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 7.5}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QdefenceBase"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 5}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QbossBattle"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 6.25}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"Qbtt000"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 0.35}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"Qbtt001"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 0.35}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QbulletHeaven"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 5}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QcatchThemAll"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 3.75}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QcollectFight"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 5}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"Qdarkness"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 5.75}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QduelLeague"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 1.25}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"Qfifteen"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 3}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QflipTile"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 0.5}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QkingOfTheHill"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 3.75}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QlockedMemento"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 4}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QlureKill"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 2.25}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"Qminesweeper"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 2.5}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QprotectFirstTown"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 2.5}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QpuzzleBridge"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 12}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QpuzzleSwitch"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 12.5}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"Qrgb"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 4.75}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QsadTree"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 4.5}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"Qsoccer"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 3.75}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"Qspawner"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 3.75}});});
-	db.mainQuest.find({rewardScore:{"$gt": 200},quest:"QtowerDefence"},{quest:1,rewardScore:1,username:1}).forEach(function(err,e) {	if(e) db.mainQuest.update({quest:e.quest,username:e.username},{$set:{rewardScore:e.rewardScore * 4.5}});});
-}*/
-
-
 findMaterial = function(){
 	var list = ['metal','wood','bone','ruby','sapphire','topaz'];
 	

@@ -203,10 +203,7 @@ Competition.getCurrent = function(){
 Competition.getNext = function(){
 	var list = [
 		'QlureKill-timeEasy',
-		'QbaseDefence-remainingpteasy',
 		'Qbtt000-speedrun',
-		'Qminesweeper-speedrun',
-		'QtowerDefence-remainingpteasy',
 	];
 	return list.$random();
 }
