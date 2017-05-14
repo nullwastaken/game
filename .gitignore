@@ -1,5 +1,6 @@
 admin
 node_modules
+db
 *.backup
 
 *.pdn

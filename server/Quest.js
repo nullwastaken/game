@@ -496,6 +496,7 @@ Quest.QuestMarker = function(x,y,map){
 //ts("Quest.updateRating(true)")
 //Dialog.open('questRating','QlureKill')
 Quest.updateRating = function(){
+  return;
 	db.questRating.aggregate([
 		{ 
 			$match: {
@@ -533,6 +534,7 @@ Quest.updateRating = function(){
 
 //ts("Quest.updateStatistic('QlureKill')")
 Quest.updateStatistic = function(quest){
+  return;
 	if(!quest){
 		for(var i in DB)
 			Quest.updateStatistic(i);
@@ -556,6 +558,7 @@ Quest.updateStatistic = function(quest){
 }
 
 Quest.getQuestFeedback = function(key,readToo){	//admin
+  return;
 	var query = {}; //text:{$ne:""}};
 	if(!readToo)
 		query.read = false;

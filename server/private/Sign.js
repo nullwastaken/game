@@ -302,7 +302,7 @@ Sign.in.addToGame = function(key,account,main,questVar,player,socket,cb){	//BAD 
 	
 	Quest.onSignIn(main,questVar,account);	//after cuz might teleport elsewhere
 	OfflineAction.onSignIn(main.username);
-	Competition.onSignIn(main,firstSignIn);
+	//Competition.onSignIn(main,firstSignIn);
 	var pack = Sign.in.getSignInPack(key,player,main,account);
 	
 	Socket.emit(socket,CST.SOCKET.signInAnswer,{ 

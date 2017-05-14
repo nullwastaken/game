@@ -13,10 +13,13 @@ If you would like to contribute to the latest version of Raining Chain, check [R
 ### Installation:
 * Install NodeJS
 * npm install // Install NodeJS dependencies
-* Install MongoDb.
-* The game connects to MongoDb database at localhost:27017/test and assumes the following collections exist: clientError, sideQuest, zeldaGlitch, socialMedia, achievement, pingData, report, player, contributionHistory, socialMedia, offlineAction, main, equip, account, competition, questRating, highscore, questVar, mainQuest
 * node app // Starts the server
 * Go to localhost:3000
+
+### Database:
+* By default, the game uses the embedded database TingoDB which requires no installation.
+* To use MongoDB instead, install MongoDB and change `USE_TINGO_DB = true;` by `USE_TINGO_DB = false;` in app.js.
+* The game will connect to MongoDb database at localhost:27017/test and assumes the following collections exist: clientError, sideQuest, zeldaGlitch, socialMedia, achievement, pingData, report, player, contributionHistory, socialMedia, offlineAction, main, equip, account, competition, questRating, highscore, questVar, mainQuest
 
 ### Game Engine Structure Overview (Outdated):
 ![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/actor_zps9f43232a.png)

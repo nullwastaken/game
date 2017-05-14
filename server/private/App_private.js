@@ -18,6 +18,8 @@ var Account, Competition, Highscore;	//only for http
 var Server;	//only for socket
 var EMAIL_ACTIVE = NODEJITSU ? true : (MINIFY ? false : ((false)) );
 
+var dbFile = USE_TINGO_DB ? './Db_tingodb' : './Db_private';
+
 exports.init_app = function(processArgv){ //}
 	if(MINIFY) INFO('Using MINIFY.\r\nTo play, open Google Chrome and go to the url "localhost:3000".');
 	if(NODEJITSU && MINIFY)	return INFO('Cant use NODEJITSU and MINIFY');
@@ -67,7 +69,7 @@ exports.init_app = function(processArgv){ //}
 			initHttpApp(app);
 						
 			require('./InitDb').setInitDbHttp(app,SOCKET_SERVER,function(initInfo){
-				var dbFull = require('./Db_private').initDb(initInfo);
+				var dbFull = require(dbFile).initDb(initInfo);
 				db = dbFull.require(['account','competition','highscore','zeldaGlitch']);
 				
 				Account = require('./Account').Account;
@@ -83,7 +85,7 @@ exports.init_app = function(processArgv){ //}
 			var io = initWebsocket(serv);
 						
 			require('./InitDb').setInitDbWebsocket(app,function(initInfo){
-				var dbFull = require('./Db_private').initDb(initInfo);
+				var dbFull = require(dbFile).initDb(initInfo);
 				var email = require('./Email').init({
 					emailPassword:initInfo.emailPassword
 				},dbFull.require('account'),EMAIL_ACTIVE);
@@ -99,7 +101,7 @@ exports.init_app = function(processArgv){ //}
 			INFO("Send info to connect to the database.");
 			initHttpApp(app);
 			require('./InitDb').setInitDbHttp(app,SOCKET_SERVER,function(initInfo){
-				var dbFull = require('./Db_private').initDb(initInfo);
+				var dbFull = require(dbFile).initDb(initInfo);
 				db = dbFull.require(['account','competition','highscore','zeldaGlitch']);
 				
 				var io = initWebsocket(serv);
@@ -126,7 +128,7 @@ exports.init_app = function(processArgv){ //}
 		initHttpApp(app);
 		var io = initWebsocket(serv);
 		
-		var dbFull = require('./Db_private').initDb({	
+		var dbFull = require(dbFile).initDb({	
 			databaseURI:null,
 			onlineDb:processArgv.onlineDb,	
 			deleteDb:processArgv.deleteDb,

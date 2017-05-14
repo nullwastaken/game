@@ -91,6 +91,7 @@ Competition.Reward.randomlyGenerate = function(place){
 }
 
 Competition.init = function(){
+  return;
 	Competition.getCurrentFromDb(db,function(comp){
 		if(comp)
 			CURRENT = comp;

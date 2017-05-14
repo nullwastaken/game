@@ -11,6 +11,8 @@ MINIFY = NODEJITSU ? false : PUBLIC_VERSION;
 INFO = ERROR = function(){ console.log.apply(console,arguments); };	//here so doesnt show in search all
 ERROR.err = INFO;	//until overwritten
 
+ROOT = __dirname;
+USE_TINGO_DB = true;
 //simulate http only: 		node app.js --http --compiled --doNotStartServer --useSignInPackStatic
 //simulate websocket only:	node app.js --websocket --compiled --doNotStartServer --useSignInPackStatic
 
