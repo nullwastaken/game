@@ -277,6 +277,7 @@ Competition.getDbSchema = function(){
 
 //no dependencies
 Competition.getHomePageContent = function(db){
+  return;
 	if(Date.now() - LAST_UPDATE > 60000){
 		LAST_UPDATE = Date.now();
 		Competition.getCurrentFromDb(db,function(comp){
