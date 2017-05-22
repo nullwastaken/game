@@ -362,7 +362,7 @@ Account.sendActivationKey = function(account){
 Account.encryptString = function(pass,sel,cb){
 	if(!sel) 
 		Account.getSalt(function(salt){
-			crypto.pbkdf2(pass,salt,2000,64,function(err,pass){
+			crypto.pbkdf2(pass,salt,2000,64,'sha1', function(err,pass){
 				var buff = new Buffer(pass, 'binary');
 				pass = buff.toString('base64');
 				buff = null;
@@ -370,7 +370,7 @@ Account.encryptString = function(pass,sel,cb){
 			});
 		});
 	else
-		crypto.pbkdf2(pass,sel,2000,64,function(err,pass){
+		crypto.pbkdf2(pass,sel,2000,64,'sha1',function(err,pass){
 			var buff = new Buffer(pass, 'binary');
 			pass = buff.toString('base64');
 			buff = null;
