@@ -21,15 +21,4 @@ If you would like to contribute to the latest version of Raining Chain, check [R
 * To use MongoDB instead, install MongoDB and change `USE_TINGO_DB = true;` by `USE_TINGO_DB = false;` in app.js.
 * The game will connect to MongoDb database at localhost:27017/test and assumes the following collections exist: clientError, sideQuest, zeldaGlitch, socialMedia, achievement, pingData, report, player, contributionHistory, socialMedia, offlineAction, main, equip, account, competition, questRating, highscore, questVar, mainQuest
 
-### Game Engine Structure Overview (Outdated):
-![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/actor_zps9f43232a.png)
-![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/data_zpsb1cd2886.png)
-![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/playerdata_zps2b263f84.png)
-![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/image_zpsc34a8eed.png)
-![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/collision_zps105d39b8.png)
-![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/interface_zpsdeb93b2e.png)
-![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/script_zps133a627b.png)
-![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/loop_zps57f295f9.png)
-![alt tag](http://i1378.photobucket.com/albums/ah83/FCones1944/async_zpsb5118b74.png)
-s
 Check http://rainingchain.com/credit for the list of contributors.
