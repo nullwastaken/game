@@ -3,7 +3,7 @@ Raining Chain
 
 Raining Chain is a HTML5 MMORPG using Javascript, Canvas, NodeJS, MongoDb and Socket.io. Play now for free at [https://rainingchain.com/](https://rainingchain.com/).
 
-![Raining Chain Trailer](http://i.imgur.com/Duqym7r.png)](https://youtu.be/EnwhuOsjFEY "Raining Chain Trailer")
+[![Raining Chain Trailer](http://i.imgur.com/Duqym7r.png)](https://youtu.be/EnwhuOsjFEY "Raining Chain Trailer")
 
 By popular demand, I am releasing the source of the game as of version 1.5.18. The game engine is under MIT license while the game content is under GPL license.
 
